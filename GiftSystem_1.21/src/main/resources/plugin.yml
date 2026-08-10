@@ -1,0 +1,36 @@
+name: GiftSystem
+version: 1.0.0
+main: com.plugins.giftsystem.GiftSystem
+api-version: '1.21'
+description: A comprehensive gifting system with GUI and admin control
+author: PluginDeveloper
+website: https://example.com
+
+commands:
+  gift:
+    description: Send a gift to another player
+    usage: /gift <player> [message]
+    aliases: [sendgift]
+  gifts:
+    description: Open your gift inbox
+    usage: /gifts
+    aliases: [giftinbox, giftbox]
+  giftgui:
+    description: Open the gift creation GUI
+    usage: /giftgui
+    aliases: [creategift]
+  giftadmin:
+    description: Admin commands for gift management
+    usage: /giftadmin <clear|list|reload> [args]
+    permission: giftsystem.admin
+
+permissions:
+  giftsystem.use:
+    description: Allows players to use gifting features
+    default: true
+  giftsystem.admin:
+    description: Allows access to admin commands
+    default: op
+  giftsystem.bypass:
+    description: Bypass cooldowns and limits
+    default: op
