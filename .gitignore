@@ -1,0 +1,10 @@
+```
+# Compiled and build artifacts
+*.class
+*.jar
+target/
+
+# Dependencies
+.mvn/
+mvn/
+```
