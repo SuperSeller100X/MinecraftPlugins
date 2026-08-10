@@ -1,0 +1,32 @@
+name: GiftSystem
+version: '1.0.0'
+main: com.giftsystem.GiftSystemPlugin
+api-version: '1.21'
+description: A comprehensive gifting system with GUIs and admin control
+author: GiftSystemTeam
+
+commands:
+  gift:
+    description: Send a gift to another player
+    usage: /<command> <player> [message]
+    permission: giftsystem.use
+  gifts:
+    description: Open your gift inbox
+    usage: /<command>
+    permission: giftsystem.use
+  giftgui:
+    description: Open the gift creation GUI
+    usage: /<command>
+    permission: giftsystem.use
+  giftadmin:
+    description: Admin commands for gift management
+    usage: /<command> <clear|list|reload> [player]
+    permission: giftsystem.admin
+
+permissions:
+  giftsystem.use:
+    description: Allows players to use gift commands
+    default: true
+  giftsystem.admin:
+    description: Allows admins to manage gifts
+    default: op

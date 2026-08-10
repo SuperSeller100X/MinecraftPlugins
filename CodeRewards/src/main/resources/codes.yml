@@ -1,0 +1,5 @@
+# Reward Codes Storage
+# This file stores all reward codes and their redemption status
+# Do not edit manually while the server is running!
+
+codes: {}

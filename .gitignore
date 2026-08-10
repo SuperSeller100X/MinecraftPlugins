@@ -7,16 +7,11 @@
 target/
 
 # Dependencies
-.mypy_cache/
-.pytest_cache/
-.coverage
-coverage/
-htmlcov/
+.gradle/
 
 # Logs and temp files
 *.log
 *.tmp
-*.swp
 
 # Environment
 .env
@@ -27,7 +22,7 @@ htmlcov/
 .vscode/
 .idea/
 
-# System files
+# OS specific
 .DS_Store
 Thumbs.db
 ```

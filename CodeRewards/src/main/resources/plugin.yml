@@ -1,23 +1,18 @@
 name: CodeRewards
-version: 1.0.0
-main: com.plugins.coderewards.CodeRewards
+version: '${project.version}'
+main: com.example.coderewards.CodeRewardsPlugin
 api-version: '1.21'
-description: A code redemption system with rewards and GUI
-author: PluginDeveloper
-website: https://example.com
+description: A plugin for redeeming codes for rewards with admin control and GUIs
+author: Example
 
 commands:
-  coderedeem:
-    description: Redeem a code for rewards
-    usage: /coderedeem <code>
-    aliases: [redeemcode, cr]
-  coderewards:
-    description: Open the code rewards GUI
-    usage: /coderewards
-    aliases: [cr gui, codes]
+  code:
+    description: Redeem a reward code or open the code GUI
+    usage: /code [code]
+    permission: coderewards.use
   codeadmin:
-    description: Admin commands for code management
-    usage: /codeadmin <create|delete|list|reload> [args]
+    description: Admin commands for managing codes
+    usage: /codeadmin <add|remove|list|reload>
     permission: coderewards.admin
 
 permissions:
@@ -25,8 +20,5 @@ permissions:
     description: Allows players to redeem codes
     default: true
   coderewards.admin:
-    description: Allows access to admin commands
-    default: op
-  coderewards.bypass:
-    description: Bypass cooldowns and limits
+    description: Allows admins to manage codes
     default: op

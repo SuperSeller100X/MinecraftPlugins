@@ -1,0 +1,31 @@
+name: CodeRewards
+version: '1.0.0'
+main: com.coderewards.CodeRewardsPlugin
+api-version: '1.21'
+description: A code redemption system with rewards and GUIs
+author: CodeRewardsTeam
+
+commands:
+  redeem:
+    description: Redeem a code for rewards
+    usage: /<command> <code>
+    permission: coderewards.redeem
+  codes:
+    description: Open the codes GUI
+    usage: /<command>
+    permission: coderewards.use
+  codeadmin:
+    description: Admin commands for code management
+    usage: /<command> <create|delete|list|reload> [args]
+    permission: coderewards.admin
+
+permissions:
+  coderewards.redeem:
+    description: Allows players to redeem codes
+    default: true
+  coderewards.use:
+    description: Allows players to use code GUI
+    default: true
+  coderewards.admin:
+    description: Allows admins to manage codes
+    default: op

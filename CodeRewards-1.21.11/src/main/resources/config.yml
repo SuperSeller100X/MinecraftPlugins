@@ -1,0 +1,49 @@
+# CodeRewards Configuration
+
+# Enable or disable the plugin
+enabled: true
+
+# Default reward types and amounts for demo codes
+demo-codes:
+  WELCOME123:
+    rewardType: diamond
+    amount: 5
+    active: true
+  STARTER456:
+    rewardType: exp
+    amount: 100
+    active: true
+  GOLD789:
+    rewardType: gold
+    amount: 10
+    active: true
+
+# Messages
+messages:
+  code-redeemed: "&aSuccessfully redeemed code!"
+  invalid-code: "&cInvalid or expired code!"
+  already-redeemed: "&cYou have already redeemed this code!"
+  no-permission: "&cYou don't have permission!"
+
+# GUI Settings
+gui:
+  title: "&6Code Rewards"
+  background-material: PURPLE_STAINED_GLASS_PANE
+
+# Sounds
+sounds:
+  code-redeemed: ENTITY_PLAYER_LEVELUP
+  code-invalid: BLOCK_ANVIL_DESTROY
+
+# Reward Types Supported:
+# - money (requires economy plugin)
+# - exp
+# - health
+# - hunger
+# - diamond
+# - emerald
+# - gold
+# - iron
+# - speed (potion effect, minutes)
+# - strength (potion effect, minutes)
+# - enchanted_book

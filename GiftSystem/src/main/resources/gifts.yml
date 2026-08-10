@@ -1,0 +1,5 @@
+# Gifts Storage
+# This file stores all gifts and their claim status
+# Do not edit manually while the server is running!
+
+gifts: {}

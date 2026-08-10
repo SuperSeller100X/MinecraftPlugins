@@ -1,52 +1,23 @@
 # GiftSystem Configuration
 
-# Enable or disable the gifting system entirely
-gifting-enabled: true
-
-# Cooldown in seconds between sending gifts (per player)
-cooldown-seconds: 60
-
-# Maximum number of items that can be sent in one gift
-max-gifts-per-send: 36
-
-# Allow players to send gifts to offline players
-allow-offline-gifting: true
-
-# Maximum number of pending gifts a player can receive
-max-pending-gifts: 108
-
-# Auto-delete gifts after X days (set to -1 to disable)
-gift-expiry-days: 30
-
-# Notify admins when a player receives a gift (for monitoring)
-admin-notification: false
-
-# Sound played when receiving a gift
-receive-sound: ENTITY_PLAYER_LEVELUP
-
-# Sound played when claiming a gift
-claim-sound: ENTITY_EXPERIENCE_ORB_PICKUP
-
-# GUI Settings
-gui-settings:
-  # Title of the gift inbox GUI
-  title: "&6Your Gifts"
-  # Use custom filler item for empty slots
-  use-filler: true
-  # Filler item material
-  filler-material: GRAY_STAINED_GLASS_PANE
-  # Filler item name (use " " for invisible)
-  filler-name: " "
-
-# Message customization
-messages:
-  prefix: "&6[GiftSystem] "
-  no-permission: "&cYou don't have permission to do that!"
-  player-not-found: "&cPlayer not found or offline!"
-  cannot-gift-self: "&cYou cannot send a gift to yourself!"
-  on-cooldown: "&cYou are on cooldown! Please wait before sending another gift."
-  inventory-full: "&cYour inventory is full! Make room to claim gifts."
-  gift-sent: "&aYou sent &e{amount} &agift(s) to &e{player}&a!"
-  gift-received: "&e{player} &asent you a gift! Use &e/gifts &ato view it!"
-  gift-claimed: "&aYou claimed a gift from &e{player}&a!"
-  admin-cleared: "&cAn admin has cleared your pending gifts."
+settings:
+  # Enable or disable the plugin
+  enabled: true
+  
+  # Maximum items per gift
+  max-items-per-gift: 36
+  
+  # Gift expiration in days (0 = never expire)
+  gift-expiration-days: 30
+  
+  # Cooldown between sending gifts in seconds
+  gift-cooldown: 60
+  
+  # Sound played when receiving a gift
+  receive-sound: ENTITY_PLAYER_LEVELUP
+  
+  # Sound played when claiming a gift
+  claim-sound: ENTITY_EXPERIENCE_ORB_PICKUP
+  
+  # Message prefix
+  prefix: "&6[GiftSystem] &r"

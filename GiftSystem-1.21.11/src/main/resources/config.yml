@@ -1,0 +1,20 @@
+enabled: true
+cooldown: 300
+max-items-per-gift: 9
+gift-expiration-hours: 168
+allow-offline-gifting: true
+
+messages:
+  gift-sent: "&aGift sent successfully!"
+  gift-received: "&6You received a gift!"
+  no-permission: "&cYou don't have permission!"
+  cooldown-active: "&cPlease wait before sending another gift!"
+
+gui:
+  title: "&6Create a Gift"
+  background-material: GRAY_STAINED_GLASS_PANE
+  confirm-material: LIME_STAINED_GLASS_PANE
+
+sounds:
+  gift-sent: ENTITY_PLAYER_LEVELUP
+  gift-received: ENTITY_ITEM_PICKUP
