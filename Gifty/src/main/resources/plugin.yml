@@ -1,0 +1,65 @@
+name: Gifty
+version: 1.0.0
+main: dev.superseller.gifty.GiftyPlugin
+api-version: '1.21'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPluginsTest
+description: A sweet gift & delivery system with a DonutSMP-style GUI.
+softdepend: [Vault, PlaceholderAPI]
+
+commands:
+  gift:
+    description: Send a gift to a player through a GUI
+    usage: /gift <player>
+    aliases: [gifts]
+    permission: gifty.send
+  inbox:
+    description: Open your delivery inbox
+    usage: /inbox [page]
+    aliases: [deliveries, mailbox]
+    permission: gifty.inbox
+  giftadmin:
+    description: Gifty admin commands
+    usage: /giftadmin <reload|view|clear|expire|info>
+    aliases: [gadmin]
+    permission: gifty.admin
+
+permissions:
+  gifty.use:
+    description: Base permission for Gifty (send & receive)
+    default: true
+  gifty.send:
+    description: Allow sending gifts with /gift
+    default: true
+  gifty.inbox:
+    description: Allow opening the delivery inbox with /inbox
+    default: true
+  gifty.message:
+    description: Allow adding a written message to gifts
+    default: true
+  gifty.money:
+    description: Allow including money in gifts
+    default: true
+  gifty.cooldown.bypass:
+    description: Bypass the per-player send cooldown
+    default: op
+  gifty.full.bypass:
+    description: Send gifts even when the recipient's inbox is full
+    default: op
+  gifty.admin:
+    description: Access /giftadmin
+    default: op
+    children:
+      gifty.admin.reload:
+        description: Reload Gifty configuration
+        default: op
+      gifty.admin.view:
+        description: View another player's inbox
+        default: op
+      gifty.admin.clear:
+        description: Clear another player's inbox
+        default: op
+      gifty.admin.expire:
+        description: Expire & refund another player's deliveries
+        default: op
