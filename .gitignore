@@ -31,3 +31,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 ```
+# Gifty build output & runtime data
+Gifty/target/
+Gifty/data/

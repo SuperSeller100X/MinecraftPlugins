@@ -1,0 +1,47 @@
+# ============================================================
+#  Gifty configuration
+#  Reload with /giftadmin reload
+# ============================================================
+
+general:
+  # How many item slots the gift compose GUI has (1-54).
+  # 1-45 slots fit nicely with the summary GUI; 46-54 use a full
+  # 6-row grid.
+  send-slots: 1
+
+  # Materials that may never be gifted (uppercase Bukkit material names).
+  # Leave empty to allow every item.
+  blacklisted-materials: []
+
+  # Seconds a player must wait between sending gifts (0 = no cooldown).
+  # Permission gifty.cooldown.bypass skips this.
+  cooldown-seconds: 60
+
+  # Maximum pending deliveries a player may have in their inbox.
+  # Senders with gifty.full.bypass can still deliver to a full inbox.
+  max-pending-per-player: 108
+
+  # Number of inbox pages (45 deliveries per page, /inbox 1, /inbox 2, ...)
+  inbox-pages: 2
+
+  # Hours until an unclaimed delivery expires and is refunded to the
+  # sender (0 = deliveries never expire).
+  expire-hours: 0
+
+  # Send a chat message to the recipient when a gift arrives.
+  notify-on-send: true
+
+  # Play click/success sounds in the GUIs.
+  play-sounds: true
+
+  # Maximum length of a gift message.
+  max-message-length: 100
+
+  # How often Gifty writes its data to disk, in seconds.
+  save-interval-seconds: 300
+
+economy:
+  # auto = use Vault if an economy plugin is present, otherwise disable
+  # true = require Vault (warn if missing)
+  # false = never use money
+  enabled: auto
