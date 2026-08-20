@@ -1,0 +1,29 @@
+request-timeout-seconds: 30
+confirmation-countdown-seconds: 3
+trade-title: '&8FairDeal: &a{player}'
+recovery-title: '&8FairDeal Recovery'
+log-title: '&8FairDeal History'
+blacklist: []
+# Optional persistent-data keys to block, e.g. "myplugin:untradeable".
+blacklist-custom-keys: []
+# When true, money controls are unavailable unless Vault has a live economy provider.
+economy-required-for-money: true
+sounds:
+  enabled: true
+  request: ENTITY_EXPERIENCE_ORB_PICKUP
+  locked: BLOCK_NOTE_BLOCK_PLING
+  completed: ENTITY_PLAYER_LEVELUP
+  cancelled: ENTITY_VILLAGER_NO
+# Trade safety and visual controls
+money:
+  minimum: 0.01
+  maximum: 1000000000000
+  accept-all-keyword: true
+recovery:
+  deliver-overflow-to-inbox: true
+logs:
+  retention-days: 0 # 0 means retain indefinitely
+ui:
+  offer-slots-per-player: 27
+  lock-material: GRAY_DYE
+  confirmed-material: LIME_DYE
