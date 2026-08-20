@@ -1,0 +1,8 @@
+name: AtTag
+version: 1.0.0
+main: dev.superseller.attag.AtTagPlugin
+api-version: '1.21'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPluginsTest
+description: '@-mentions with ping sounds (@player), coordinates (@here) and everyone pings (@everyone/@all) for Minecraft 26.2 (Paper / Purpur / Folia).'
