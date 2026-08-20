@@ -29,3 +29,15 @@ complete trade logs, and anti-bait-and-switch protection.
 
 See [FairDeal/README.md](FairDeal/README.md) for the detailed requirements and
 planned feature documentation.
+
+## AtTag 🔔
+
+Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):
+
+- `@playername` — the mentioned player hears a ping sound
+- `@here` — replaced with your coordinates in chat, e.g. `[100, 64, 100]`
+- `@everyone` / `@all` — every online player gets pinged
+
+Zero commands, zero permissions, configurable sounds. See
+[AtTag/README.md](AtTag/README.md) for the full documentation. Build with
+`mvn -B clean package` in `AtTag/` (or use the offline `AtTag/build.sh`).

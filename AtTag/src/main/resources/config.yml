@@ -1,0 +1,29 @@
+# ============================================================
+#  AtTag configuration
+#
+#  AtTag has no commands and no permissions — every player can
+#  use all @-mentions. This file only tunes the ping sounds.
+#
+#  Changes are picked up on the next server restart (or plugin
+#  reload).
+# ============================================================
+
+# Sound played to a player when someone mentions them with
+# @playername. Any Bukkit/Paper sound name works, for example:
+#   ENTITY_EXPERIENCE_ORB_PICKUP   (subtle "pop")
+#   BLOCK_NOTE_BLOCK_PLING         (classic "ding")
+#   BLOCK_NOTE_BLOCK_BELL          (bell)
+#   UI_BUTTON_CLICK                (click)
+#   ENTITY_PLAYER_LEVELUP          (level-up jingle)
+player-sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+# Sound played to every player (except the sender) when someone
+# uses @everyone or @all.
+everyone-sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+# Volume (0.0 - 2.0) of the ping sounds.
+volume: 1.0
+
+# Pitch (0.5 - 2.0) of the ping sounds. 1.0 = normal, higher =
+# "squeakier" and easier to notice.
+pitch: 1.0
