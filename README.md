@@ -2,6 +2,12 @@
 
 A collection of Minecraft plugins.
 
+## PlayerBank 🏦
+
+Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via Vault, compound interest (default 2.5% every 10 real minutes). Bank money cannot be used by `/pay`, shops, or other plugins until withdrawn.
+
+See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/`.
+
 ## Gifty 🍩
 
 A sweet gift & delivery system with a DonutSMP-style GUI for Minecraft

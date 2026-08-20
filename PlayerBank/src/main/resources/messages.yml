@@ -1,0 +1,46 @@
+prefix: "<gold>[PlayerBank]</gold> "
+
+no-permission: "<red>You do not have permission to do that."
+player-only: "<red>Only players can use this command."
+unknown-player: "<red>Unknown player: <white>{player}"
+invalid-amount: "<red>That is not a valid amount."
+economy-missing: "<red>No Vault economy provider is available. Bank transfers are disabled."
+below-min: "<red>Minimum transaction is <white>{amount}</white>."
+above-max: "<red>Maximum for this action is <white>{amount}</white>."
+insufficient-wallet: "<red>You only have <white>{amount}</white> in your wallet."
+insufficient-bank: "<red>You only have <white>{amount}</white> in your bank."
+not-enough-wallet: "<red>Vault rejected the withdraw from your wallet."
+not-enough-bank: "<red>Could not complete that bank operation."
+
+balance-self: "<gray>Bank: <green>{bank}</green>  Wallet: <yellow>{wallet}"
+balance-other: "<gray>{player}'s bank: <green>{bank}"
+
+deposit-success: "<green>Deposited <white>{amount}</white> into your bank. New bank balance: <white>{bank}"
+withdraw-success: "<green>Withdrew <white>{amount}</white> from your bank. New bank balance: <white>{bank}"
+deposit-all: "<green>Deposited your entire wallet (<white>{amount}</white>)."
+withdraw-all: "<green>Withdrew your entire bank (<white>{amount}</white>)."
+
+interest-lookup: "<gray>Rate: <white>{rate}%</white> every <white>{interval}</white> (compound). Next tick in <white>{next}</white>."
+interest-disabled: "<gray>Interest is currently disabled."
+interest-received: "<green>Bank interest: +<white>{amount}</white> ({rate}%). New balance: <white>{bank}"
+interest-forced: "<green>Forced an interest tick. Accounts updated: <white>{count}"
+
+logs-header: "<gold>Bank logs</gold> <gray>(page {page}/{pages}) for <white>{player}"
+logs-empty: "<gray>No bank activity yet."
+logs-line: "<dark_gray>[{time}]</dark_gray> <white>{type}</white> <yellow>{amount}</yellow> <gray>{note}"
+
+refresh-ok: "<green>Config reloaded and interest timer restarted."
+reload-ok: "<green>PlayerBank configuration reloaded."
+admin-set: "<green>Set <white>{player}</white>'s bank to <white>{amount}</white>."
+admin-give: "<green>Added <white>{amount}</white> to <white>{player}</white>'s bank. Now <white>{bank}</white>."
+admin-take: "<green>Removed <white>{amount}</white> from <white>{player}</white>'s bank. Now <white>{bank}</white>."
+
+help:
+  - "<gold>PlayerBank commands"
+  - "<yellow>/bank</yellow> <gray>— show balances"
+  - "<yellow>/bank deposit <amount|all></yellow> <gray>— wallet → bank"
+  - "<yellow>/bank withdraw <amount|all></yellow> <gray>— bank → wallet"
+  - "<yellow>/bank interest</yellow> <gray>— look up rate & interval"
+  - "<yellow>/bank logs [page]</yellow> <gray>— transaction history"
+  - "<yellow>/bank refresh</yellow> <gray>— reload config (staff)"
+  - "<gray>The bank is isolated: other plugins cannot spend it."
