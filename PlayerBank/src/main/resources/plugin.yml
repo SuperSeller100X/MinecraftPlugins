@@ -1,0 +1,72 @@
+name: PlayerBank
+version: ${project.version}
+main: dev.superseller.playerbank.PlayerBankPlugin
+api-version: '1.21'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPluginsTest
+description: Isolated player bank with Vault deposits, withdrawals, and compound interest.
+softdepend: [Vault]
+
+commands:
+  bank:
+    description: Deposit, withdraw, view interest, logs, and refresh the bank.
+    usage: /bank <deposit|withdraw|interest|logs|refresh|balance|help> [args]
+    aliases: [playerbank, pb]
+    permission: playerbank.use
+  bankadmin:
+    description: Admin tools for PlayerBank
+    usage: /bankadmin <reload|set|give|take|forceinterest>
+    aliases: [pba]
+    permission: playerbank.admin
+
+permissions:
+  playerbank.use:
+    description: Use /bank
+    default: true
+  playerbank.deposit:
+    description: Deposit wallet money into the bank
+    default: true
+  playerbank.withdraw:
+    description: Withdraw bank money back to the wallet
+    default: true
+  playerbank.interest:
+    description: Look up the current interest rate and interval
+    default: true
+  playerbank.logs:
+    description: View your own bank transaction logs
+    default: true
+  playerbank.balance:
+    description: View your bank balance
+    default: true
+  playerbank.logs.others:
+    description: View another player's bank logs
+    default: op
+  playerbank.balance.others:
+    description: View another player's bank balance
+    default: op
+  playerbank.refresh:
+    description: Reload config and restart the interest timer
+    default: op
+  playerbank.admin:
+    description: Full admin access
+    default: op
+    children:
+      playerbank.refresh: true
+      playerbank.logs.others: true
+      playerbank.balance.others: true
+      playerbank.admin.reload: true
+      playerbank.admin.set: true
+      playerbank.admin.give: true
+      playerbank.admin.take: true
+      playerbank.admin.forceinterest: true
+  playerbank.admin.reload:
+    default: op
+  playerbank.admin.set:
+    default: op
+  playerbank.admin.give:
+    default: op
+  playerbank.admin.take:
+    default: op
+  playerbank.admin.forceinterest:
+    default: op

@@ -1,0 +1,44 @@
+# PlayerBank — all knobs live here.
+
+economy:
+  # Vault is required at runtime for deposit/withdraw.
+  required: true
+
+bank:
+  # Compound interest applied to the isolated bank balance (not wallet).
+  interest:
+    enabled: true
+    # Percent per interval. 2.5 means +2.5% of current bank balance.
+    rate-percent: 2.5
+    # Real-time interval between interest ticks.
+    interval:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    # Skip interest if bank balance is below this.
+    min-balance: 0.01
+    # Optional hard cap on bank balance after interest (0 = unlimited).
+    max-balance: 0
+    # Round interest payout to this many decimal places.
+    decimal-places: 2
+    # Notify online players when they receive interest.
+    notify-players: true
+
+  # Limits for deposit / withdraw (0 = unlimited).
+  min-transaction: 0.01
+  max-deposit: 0
+  max-withdraw: 0
+
+logs:
+  # How many log lines to keep per player.
+  max-entries: 100
+  # Lines shown per /bank logs page.
+  page-size: 8
+
+storage:
+  # YAML file under plugins/PlayerBank/
+  file: data.yml
+  # Autosave interval in real-time seconds (0 = only on disable / dirty flush).
+  autosave-seconds: 60
+
+messages-file: messages.yml
