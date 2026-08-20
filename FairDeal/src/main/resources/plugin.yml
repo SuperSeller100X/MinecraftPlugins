@@ -1,0 +1,20 @@
+name: FairDeal
+version: 1.0.0
+main: com.fairdeal.FairDealPlugin
+api-version: '26.2'
+author: super_seller
+description: Secure peer-to-peer item and escrow trading.
+folia-supported: true
+softdepend: [Vault, PlaceholderAPI]
+commands:
+  trade:
+    description: Secure player trading
+    usage: /trade <player>|accept|deny|cancel|inbox|log|toggle
+  fairdealadmin:
+    description: FairDeal administration
+permissions:
+  fairdeal.use: {default: true}
+  fairdeal.inbox: {default: true}
+  fairdeal.log: {default: true}
+  fairdeal.toggle: {default: true}
+  fairdeal.admin: {default: op}
