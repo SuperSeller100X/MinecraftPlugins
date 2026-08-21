@@ -54,9 +54,13 @@ public final class BankStorage {
                     acc.balance(sec.getDouble("balance", 0));
                     for (Map<?, ?> map : sec.getMapList("logs")) {
                         long time = toLong(map.get("time"));
-                        String type = String.valueOf(map.getOrDefault("type", "?"));
+                        // Map<?,?>.getOrDefault(key, "literal") does not compile:
+                        // the default must match the captured value type.
+                        Object rawType = map.get("type");
+                        String type = rawType == null ? "?" : String.valueOf(rawType);
                         double amount = toDouble(map.get("amount"));
-                        String note = String.valueOf(map.getOrDefault("note", ""));
+                        Object rawNote = map.get("note");
+                        String note = rawNote == null ? "" : String.valueOf(rawNote);
                         acc.logs().addLast(new BankLogEntry(time, type, amount, note));
                     }
                     accounts.put(uuid, acc);

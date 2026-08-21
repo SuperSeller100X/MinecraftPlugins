@@ -1,7 +1,10 @@
 package dev.superseller.attag.engine;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +36,9 @@ public final class PingEngine {
     private static final Pattern HERE_TOKEN = tokenPattern("here");
     private static final Pattern EVERYONE_TOKEN = tokenPattern("everyone");
     private static final Pattern ALL_TOKEN = tokenPattern("all");
+    /** One pass over the message extracts every @token; names are then map lookups. */
+    private static final Pattern MENTION_TOKEN =
+            Pattern.compile("(?<![A-Za-z0-9_])@([A-Za-z0-9_]+)");
 
     private PingEngine() {
     }
@@ -99,6 +105,9 @@ public final class PingEngine {
 
         Set<String> named = new LinkedHashSet<>();
         if (onlineNames != null) {
+            // O(players) map build + O(message) token scan instead of compiling
+            // one regex per online player per chat message.
+            Map<String, String> lookup = new HashMap<>();
             for (String name : onlineNames) {
                 if (name == null || name.isEmpty()) {
                     continue;
@@ -109,8 +118,13 @@ public final class PingEngine {
                 if (isSpecialName(name)) {
                     continue; // @here/@everyone/@all take precedence
                 }
-                if (tokenPattern(name).matcher(message).find()) {
-                    named.add(name);
+                lookup.put(name.toLowerCase(Locale.ROOT), name);
+            }
+            Matcher mentions = MENTION_TOKEN.matcher(message);
+            while (mentions.find()) {
+                String actual = lookup.get(mentions.group(1).toLowerCase(Locale.ROOT));
+                if (actual != null) {
+                    named.add(actual);
                 }
             }
         }

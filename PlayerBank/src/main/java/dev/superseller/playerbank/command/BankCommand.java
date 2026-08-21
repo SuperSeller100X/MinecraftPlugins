@@ -109,7 +109,9 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(player, "invalid-amount");
             return true;
         }
-        double amount = cfg.roundMoney(parsed);
+        boolean allKeyword = args[1].equalsIgnoreCase("all") || args[1].equalsIgnoreCase("max");
+        // "all" must round down: half-up rounding could exceed the wallet and fail.
+        double amount = allKeyword ? cfg.floorMoney(parsed) : cfg.roundMoney(parsed);
         if (amount < cfg.minTransaction()) {
             plugin.messages().send(player, "below-min", Map.of("amount", plugin.vault().format(cfg.minTransaction())));
             return true;
@@ -161,7 +163,9 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(player, "invalid-amount");
             return true;
         }
-        double amount = cfg.roundMoney(parsed);
+        boolean allKeyword = args[1].equalsIgnoreCase("all") || args[1].equalsIgnoreCase("max");
+        // "all" must round down: half-up rounding could exceed the balance and fail.
+        double amount = allKeyword ? cfg.floorMoney(parsed) : cfg.roundMoney(parsed);
         if (amount < cfg.minTransaction()) {
             plugin.messages().send(player, "below-min", Map.of("amount", plugin.vault().format(cfg.minTransaction())));
             return true;
