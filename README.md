@@ -18,7 +18,7 @@ A sweet gift & delivery system with a DonutSMP-style GUI for Minecraft
 - Flat-file storage, Vault economy, PlaceholderAPI, full permissions
 
 See [Gifty/README.md](Gifty/README.md) for the full documentation.
-The ready-to-install jar is built with [Gifty/build.sh](Gifty/build.sh).
+Build with `mvn -B clean package` in `Gifty/` (JDK 25 required).
 
 ## FairDeal 🛡️
 

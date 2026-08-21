@@ -17,7 +17,7 @@ Wallet money (Essentials, CMI, or any **Vault** economy) stays in the normal eco
 
 ## Requirements
 
-- Java 21+
+- Java **25** (required by Minecraft / Paper 26.2)
 - Paper (or Purpur / Folia) **26.2**
 - [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin (EssentialsX, CMI, etc.)
 

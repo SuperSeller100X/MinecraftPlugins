@@ -1,7 +1,7 @@
 name: PlayerBank
 version: ${project.version}
 main: dev.superseller.playerbank.PlayerBankPlugin
-api-version: '1.21'
+api-version: '26.2'
 # NOTE: not Folia-compatible — InterestService and BankStorage use the legacy
 # BukkitScheduler, which Folia rejects at runtime. Re-add folia-supported only
 # after migrating to the global-region/async schedulers.

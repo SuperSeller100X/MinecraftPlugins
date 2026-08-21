@@ -150,25 +150,17 @@ and Minecraft updates.
 
 ## 🔨 Building from source
 
-This project builds **without Maven/Gradle and without downloading the
-Paper API** — handy for offline/restricted environments:
-
 ```bash
-./build.sh          # requires any Java 17+ runtime + python3
+cd Gifty
+mvn -B clean package
 # -> target/Gifty-1.0.0.jar
 ```
 
-How it works:
+Requires **JDK 25** (Paper 26.2's `paper-api` is compiled for Java 25) and Maven.
+Vault and PlaceholderAPI are `provided` dependencies (softdepends at runtime).
 
-- `libs/ecj.jar` — the Eclipse Compiler for Java (vendored)
-- `stub-api/` — minimal compile-only stubs of the Bukkit/Paper/Vault/PAPI
-  APIs Gifty uses. **The stubs are never packaged** — at runtime the plugin
-  binds to the real server classes. The stub signatures were verified
-  against Paper 26.2's `paper-api`.
-- `smoke/` — offline tests: unit tests for the pure logic plus a full
-  mock-server flow test (compose → confirm → send → inbox → claim →
-  refund → cooldown → quit-returns). Both run as part of `build.sh`.
-
+An older offline stub/`build.sh` layout may still exist under `stub-api/` and
+`libs/` for reference, but Maven is the supported build.
 ## 📝 Notes
 
 - Only chat input prompts temporarily capture chat; everything else
