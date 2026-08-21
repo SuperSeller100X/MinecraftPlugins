@@ -117,9 +117,17 @@ public final class FairDealPlugin extends JavaPlugin implements Listener, Comman
     Trade t=h.trade; e.setCancelled(true);
     if(!trades.containsKey(p.getUniqueId()) || !h.viewer.equals(p.getUniqueId())) return;
     int raw=e.getRawSlot();
-    // Only the owner may use their 27 offer slots. Every bottom-inventory,
-    // shift, number-key, double-click and offhand action is rejected here;
-    // this deliberately trades convenience for a no-duplication boundary.
+    // Only the owner may use their 27 offer slots. Shift, number-key,
+    // double-click and offhand actions are rejected everywhere; plain
+    // pickup/place clicks inside the player's own inventory stay allowed so
+    // items can actually reach the cursor and be offered.
+    if(raw>=54){
+      InventoryAction act=e.getAction();
+      if(act==InventoryAction.PICKUP_ALL||act==InventoryAction.PICKUP_HALF||act==InventoryAction.PICKUP_SOME||act==InventoryAction.PICKUP_ONE
+        ||act==InventoryAction.PLACE_ALL||act==InventoryAction.PLACE_SOME||act==InventoryAction.PLACE_ONE||act==InventoryAction.SWAP_WITH_CURSOR)
+        e.setCancelled(false);
+      return;
+    }
     if(raw>=0&&raw<27){
       if(t.locked(p.getUniqueId())) return;
       ItemStack current=e.getInventory().getItem(raw), cursor=e.getCursor();
@@ -186,5 +194,5 @@ public final class FairDealPlugin extends JavaPlugin implements Listener, Comman
   private static final class RecoveryHolder implements InventoryHolder {final List<ItemStack> items;final int page;RecoveryHolder(List<ItemStack> items,int page){this.items=items;this.page=page;}public Inventory getInventory(){return null;}}
   private static final class TradeHolder implements InventoryHolder {final Trade trade;final UUID viewer;TradeHolder(Trade t,UUID v){trade=t;viewer=v;}public Inventory getInventory(){return null;}}
   private enum TradeState { OPEN, LOCKED, COUNTDOWN, COMPLETING, COMPLETED, CANCELLED }
-  private static final class Trade {final UUID id=UUID.randomUUID();final UUID a,b; TradeState state=TradeState.OPEN;final ItemStack[] offerA=new ItemStack[27],offerB=new ItemStack[27];double moneyA,moneyB;boolean lockA,lockB,confirmA,confirmB,countingDown;Trade(UUID a,UUID b){this.a=a;this.b=b;}UUID other(UUID x){return x.equals(a)?b:a;}ItemStack[] offer(UUID x){return x.equals(a)?offerA:offerB;}double money(UUID x){return x.equals(a)?moneyA:moneyB;}void setMoney(UUID x,double v){if(x.equals(a))moneyA=v;else moneyB=v;}boolean locked(UUID x){return x.equals(a)?lockA:lockB;}void lock(UUID x){if(x.equals(a))lockA=true;else lockB=true;if(lockA&&lockB)state=TradeState.LOCKED;}void unlock(){lockA=lockB=confirmA=confirmB=countingDown=false;state=TradeState.OPEN;}boolean bothLocked(){return lockA&&lockB;}void confirm(UUID x){if(x.equals(a))confirmA=true;else confirmB=true;}boolean bothConfirmed(){return confirmA&&confirmB;}}
+  private static final class Trade {final UUID id=UUID.randomUUID();final UUID a,b; TradeState state=TradeState.OPEN;final ItemStack[] offerA=new ItemStack[27],offerB=new ItemStack[27];double moneyA,moneyB;boolean lockA,lockB,confirmA,confirmB,countingDown;Trade(UUID a,UUID b){this.a=a;this.b=b;}UUID other(UUID x){return x.equals(a)?b:a;}ItemStack[] offer(UUID x){return x.equals(a)?offerA:offerB;}double money(UUID x){return x.equals(a)?moneyA:moneyB;}void setMoney(UUID x,double v){if(x.equals(a))moneyA=v;else moneyB=v;}boolean locked(UUID x){return x.equals(a)?lockA:lockB;}boolean confirmed(UUID x){return x.equals(a)?confirmA:confirmB;}void lock(UUID x){if(x.equals(a))lockA=true;else lockB=true;if(lockA&&lockB)state=TradeState.LOCKED;}void unlock(){lockA=lockB=confirmA=confirmB=countingDown=false;state=TradeState.OPEN;}boolean bothLocked(){return lockA&&lockB;}void confirm(UUID x){if(x.equals(a))confirmA=true;else confirmB=true;}boolean bothConfirmed(){return confirmA&&confirmB;}}
 }

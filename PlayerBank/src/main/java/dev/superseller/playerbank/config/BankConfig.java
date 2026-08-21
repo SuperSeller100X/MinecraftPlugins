@@ -140,4 +140,10 @@ public final class BankConfig {
         double factor = Math.pow(10, decimalPlaces);
         return Math.round(value * factor) / factor;
     }
+
+    /** Rounds toward zero — used for "all"/"max" so the result never exceeds the source balance. */
+    public double floorMoney(double value) {
+        double factor = Math.pow(10, decimalPlaces);
+        return Math.floor(value * factor) / factor;
+    }
 }
