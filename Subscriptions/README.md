@@ -251,7 +251,7 @@ mvn -B clean test package
 
 The shaded jar is `target/Subscriptions-1.0.0.jar` (sqlite-jdbc is bundled; Vault / PlaceholderAPI / LuckPerms are not).
 
-CI: `.github/workflows/subscriptions.yml` runs the same command on Temurin 25.
+A Maven workflow lives at `Subscriptions/.github/workflows/build.yml` (Temurin 25). Copy it to the repository-root `.github/workflows/` folder if you want GitHub Actions to run it automatically.
 
 ### Tests
 
