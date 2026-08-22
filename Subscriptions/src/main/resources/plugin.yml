@@ -1,0 +1,129 @@
+name: Subscriptions
+version: ${project.version}
+main: dev.superseller.subscriptions.SubscriptionsPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Recurring subscriptions for money, items, commands, permissions and ranks.
+softdepend: [Vault, VaultUnlocked, PlaceholderAPI, LuckPerms]
+
+commands:
+  subscriptions:
+    description: Open the Subscriptions menu or run a subcommand
+    usage: /subscriptions [browse|create|inbox|mysubs|myplans|help]
+    aliases: [sub, subscription, subs]
+    permission: subscriptions.use
+  subinbox:
+    description: Open your subscription inbox
+    usage: /subinbox
+    aliases: [sinbox]
+    permission: subscriptions.inbox
+  subadmin:
+    description: Subscriptions administration
+    usage: /subadmin <reload|give|cancel|info|stats|forcebill|webhook>
+    aliases: [sadmin, subscriptionsadmin]
+    permission: subscriptions.admin
+
+permissions:
+  subscriptions.use:
+    description: Open /subscriptions and use the base GUI
+    default: true
+  subscriptions.browse:
+    description: Browse the public marketplace
+    default: true
+  subscriptions.subscribe:
+    description: Subscribe to a published plan
+    default: true
+  subscriptions.create:
+    description: Create and publish your own plans
+    default: true
+  subscriptions.inbox:
+    description: Open and claim the subscription inbox
+    default: true
+  subscriptions.history:
+    description: View your personal charge history
+    default: true
+  subscriptions.cancel:
+    description: Cancel your own subscriptions
+    default: true
+  subscriptions.pause:
+    description: Pause or resume your own subscriptions
+    default: true
+  subscriptions.policy:
+    description: Change your personal charge policy on a subscription
+    default: true
+  subscriptions.plan.edit:
+    description: Edit plans you own
+    default: true
+  subscriptions.plan.stock:
+    description: Deposit or withdraw kit stock on plans you own
+    default: true
+  subscriptions.plan.infinite:
+    description: Mark a plan as infinite stock (admins / trusted sellers)
+    default: op
+  subscriptions.plan.command:
+    description: Attach console/player command rewards to a plan
+    default: op
+  subscriptions.plan.permission:
+    description: Attach LuckPerms permission rewards to a plan
+    default: op
+  subscriptions.plan.group:
+    description: Attach LuckPerms group/rank rewards to a plan
+    default: op
+  subscriptions.plan.money:
+    description: Attach money payout rewards (seller pays subscriber)
+    default: true
+  subscriptions.plan.items:
+    description: Attach item-kit rewards
+    default: true
+  subscriptions.bypass.limit:
+    description: Bypass plan / subscription count limits
+    default: op
+  subscriptions.bypass.price:
+    description: Bypass configured min/max price
+    default: op
+  subscriptions.bypass.interval:
+    description: Bypass configured min/max interval
+    default: op
+  subscriptions.admin:
+    description: Full admin access
+    default: op
+    children:
+      subscriptions.admin.reload: true
+      subscriptions.admin.give: true
+      subscriptions.admin.cancel: true
+      subscriptions.admin.info: true
+      subscriptions.admin.stats: true
+      subscriptions.admin.forcebill: true
+      subscriptions.admin.view: true
+      subscriptions.admin.webhook: true
+      subscriptions.plan.infinite: true
+      subscriptions.plan.command: true
+      subscriptions.plan.permission: true
+      subscriptions.plan.group: true
+      subscriptions.bypass.limit: true
+  subscriptions.admin.reload:
+    description: Reload config and messages
+    default: op
+  subscriptions.admin.give:
+    description: Force-subscribe a player to a plan
+    default: op
+  subscriptions.admin.cancel:
+    description: Force-cancel any subscription
+    default: op
+  subscriptions.admin.info:
+    description: Inspect any plan or subscription
+    default: op
+  subscriptions.admin.stats:
+    description: View global plugin statistics
+    default: op
+  subscriptions.admin.forcebill:
+    description: Run a billing pass immediately
+    default: op
+  subscriptions.admin.view:
+    description: View another player's inbox or subscriptions
+    default: op
+  subscriptions.admin.webhook:
+    description: Test the Discord webhook
+    default: op
