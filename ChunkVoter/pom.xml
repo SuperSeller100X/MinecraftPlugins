@@ -5,12 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>dev.superseller</groupId>
-    <artifactId>PlayerBank</artifactId>
+    <artifactId>ChunkVoter</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>PlayerBank</name>
-    <description>Isolated player bank with Vault deposits, withdrawals, and compound interest.</description>
-    <url>https://github.com/SuperSeller100X/MinecraftPluginsTest</url>
+
+    <name>ChunkVoter</name>
+    <description>Community-voted chunk regeneration with optional WorldGuard owner control. Minecraft 26.2 (Paper / Purpur / Folia).</description>
+    <url>https://github.com/SuperSeller100X/MinecraftPlugins</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -23,10 +24,6 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
 
     <dependencies>
@@ -36,16 +33,10 @@
             <version>${paper.api.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.MilkBowl</groupId>
-            <artifactId>VaultAPI</artifactId>
-            <version>1.7.1</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>PlayerBank-${project.version}</finalName>
+        <finalName>ChunkVoter-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -108,7 +108,7 @@ through chat.
 - **Paper**, **Purpur** and **Folia** (region-scheduler aware — Folia-safe
   sound delivery via the entity scheduler, with automatic fallback to the
   Bukkit scheduler on other Paper-family servers)
-- Server JVM: Java 21+ (26.2 servers typically run Java 25)
+- Server JVM: Java **25** (required by Minecraft / Paper 26.2)
 - No external dependencies (no Vault, no PlaceholderAPI, nothing)
 
 ---
@@ -149,7 +149,7 @@ Requires a Java runtime (17+) and `python3`. Produces the same
 
 ```
 AtTag/
-├── pom.xml                     # Maven build (paper-api 26.2-R0.1-SNAPSHOT, Java 21)
+├── pom.xml                     # Maven build (paper-api 26.2.build.112-stable, Java 25)
 ├── build.sh                    # offline ECJ build + tests
 ├── pack.py                     # jar packager used by build.sh
 ├── libs/ecj.jar                # Eclipse compiler (offline builds)

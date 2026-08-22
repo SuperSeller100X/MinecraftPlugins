@@ -1,7 +1,7 @@
 name: AtTag
 version: 1.0.0
 main: dev.superseller.attag.AtTagPlugin
-api-version: '1.21'
+api-version: '26.2'
 folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPluginsTest

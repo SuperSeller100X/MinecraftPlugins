@@ -2,11 +2,30 @@
 
 A collection of Minecraft plugins.
 
+
 ## Subscriptions 🔁
 
 Recurring marketplace for Minecraft **26.2** (Paper / Purpur / Folia). Players and staff create plans for items, money, commands, permissions and ranks; billing is real-world time (`10m`, `1h`, `1d`) with `k/m/b/t` prices, a subscription inbox, and anti-scam policies (pause / skip / auto-cancel — never charge when stock is out). Vault / VaultUnlocked, PlaceholderAPI, LuckPerms, Discord webhooks, SQLite.
 
 See [Subscriptions/README.md](Subscriptions/README.md). Build with `mvn -B clean package` in `Subscriptions/`.
+
+## ChunkVoter 🗳️
+
+Community-voted chunk regeneration for Minecraft **26.2** (Paper / Purpur /
+Folia). Run `/chunkvoter` in a chunk to open a YES/NO vote shown in the
+action bar (over the hotbar) with clickable chat buttons; if a majority votes
+**YES** the chunk is regenerated from the world seed. ChunkVoter includes
+standalone **Anvil (`.mca`) chunk regeneration** (working without WorldEdit)
+and also reflectively supports WorldEdit's `//regen` adapter when available.
+Optional WorldGuard support lets only the **region owner** decide on claimed
+chunks (admins bypass). No persistent storage, fully translatable, Folia-safe.
+
+- `/chunkvoter` / `/cv` — start a vote, vote yes/no, or view the vote
+- `/chunkvoteadmin` / `/cva` — reload, list, cancel, force, info
+- Permissions: `chunkvoter.*` (use/start/vote default-on, admin/bypass op)
+
+See the full documentation in [ChunkVoter/README.md](ChunkVoter/README.md).
+Build with `mvn -B clean package` in `ChunkVoter/` (JDK 25 required).
 
 ## PlayerBank 🏦
 
@@ -24,7 +43,7 @@ A sweet gift & delivery system with a DonutSMP-style GUI for Minecraft
 - Flat-file storage, Vault economy, PlaceholderAPI, full permissions
 
 See [Gifty/README.md](Gifty/README.md) for the full documentation.
-The ready-to-install jar is built with [Gifty/build.sh](Gifty/build.sh).
+Build with `mvn -B clean package` in `Gifty/` (JDK 25 required).
 
 ## FairDeal 🛡️
 
