@@ -22,6 +22,11 @@ the world seed.
   the command directly
 - **Simple majority wins** — more YES than NO regenerates the chunk; a tie or
   a NO majority leaves the chunk untouched
+- **Standalone Anvil chunk regeneration**: works without WorldEdit by safely
+  clearing chunk location headers in Anvil (`.mca`) region files (`region/`,
+  `poi/`, `entities/`) and reloading the chunk so the seed generator recreates it
+- **Reflective WorldEdit integration**: uses WorldEdit's `//regen` adapter when
+  WorldEdit is present, falling back to Anvil regeneration when WorldEdit is absent
 - **Optional WorldGuard / region integration:** inside a claimed region only
   the **owner** can start the vote and cast the deciding vote; **admins** and
   `chunkvoter.bypass` always bypass. Without WorldGuard anyone can vote.
@@ -37,14 +42,14 @@ the world seed.
 |-------------|---------|-------|
 | Server      | Paper / Purpur / Folia **26.2** (or newer 26.x) | `folia-supported: true` |
 | Java        | **25** | Required by Minecraft 26.2 |
-| WorldEdit   | 7.4.x (MC 26.2) | **Recommended / required for regeneration on modern Paper/Purpur** — ChunkVoter uses WorldEdit's `//regen` implementation reflectively |
+| WorldEdit   | 7.4.x (MC 26.2) | **Optional** — ChunkVoter uses WorldEdit's `//regen` adapter when available, but does not require it |
 | WorldGuard  | 7.0.x (MC 26.1 – 26.2) | **Optional** — enables owner control on claimed chunks; requires WorldEdit |
 
 > Modern Paper/Purpur deliberately do **not** implement Bukkit's deprecated
-> `World#regenerateChunk(int, int)` API and throw `UnsupportedOperationException`
-> instead. Install WorldEdit to let ChunkVoter use WorldEdit's supported
-> version-specific regeneration hook. If WorldEdit is absent, ChunkVoter falls
-> back to the legacy Bukkit API for older platforms that still implement it.
+> `World#regenerateChunk(int, int)` API. ChunkVoter solves this by providing
+> built-in **Anvil chunk regeneration** that zeroes the chunk's MCA region
+> headers so the server recreates it from the world seed, in addition to
+> supporting WorldEdit reflectively when WorldEdit is installed.
 >
 > WorldGuard is a Bukkit-only plugin and is **not Folia-compatible**. On a
 > Folia server WorldGuard simply won't load, so owner control disables itself
@@ -53,8 +58,8 @@ the world seed.
 ## 🚀 Installation
 
 1. Drop `ChunkVoter-1.0.0.jar` into your `plugins/` folder.
-2. Install [WorldEdit] if you want chunk regeneration on modern Paper/Purpur;
-   optionally install [WorldGuard] as well for region ownership control.
+2. (Optional) Install [WorldEdit] if you want WorldEdit-driven regeneration;
+   optionally install [WorldGuard] for region ownership control.
 3. Start the server — `plugins/ChunkVoter/config.yml` and `messages.yml` are
    generated automatically.
 4. Edit the config, then run `/chunkvoteadmin reload` (no restart needed).
@@ -135,6 +140,10 @@ worldguard:
 worldedit:
   mode: auto                     # auto | true | false; use WorldEdit regen first
 
+anvil:
+  mode: auto                     # auto | true | false; direct Anvil .mca regeneration
+  safe-teleport: true            # safely move players outside chunk during regen
+
 regenerate:
   require-chunk-load: true       # load the chunk before regenerating it
 ```
@@ -167,12 +176,10 @@ or hard runtime dependency.
 
 ## 📝 Notes
 
-- Regeneration tries WorldEdit first (`worldedit.mode: auto|true`) and then
-  falls back to Bukkit's deprecated `World#regenerateChunk(int, int)` when
-  WorldEdit is disabled or absent. This matters because current Paper/Purpur
-  intentionally leave the Bukkit method unimplemented; without WorldEdit those
-  servers report *"Chunk regeneration is not supported by Bukkit on this server
-  platform."*
+- Regeneration pipeline: ChunkVoter tries WorldEdit first (`worldedit.mode: auto|true`),
+  then direct Anvil regeneration (`anvil.mode: auto|true`), and finally falls back to
+  Bukkit's legacy API. This ensures chunk regeneration works seamlessly on Paper/Purpur/Folia
+  servers even when WorldEdit is not installed.
 - Chunk regeneration may alter blocks on the edge of adjacent chunks — this is
   expected behaviour of generator-driven regeneration. On Folia the chunk is
   touched on its owning region thread.

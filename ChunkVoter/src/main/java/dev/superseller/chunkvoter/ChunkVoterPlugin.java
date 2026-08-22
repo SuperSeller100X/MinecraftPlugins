@@ -4,6 +4,7 @@ import dev.superseller.chunkvoter.command.ChunkVoteAdminCommand;
 import dev.superseller.chunkvoter.command.ChunkVoteCommand;
 import dev.superseller.chunkvoter.config.ChunkVoterConfig;
 import dev.superseller.chunkvoter.config.Messages;
+import dev.superseller.chunkvoter.hook.AnvilHook;
 import dev.superseller.chunkvoter.hook.WorldEditHook;
 import dev.superseller.chunkvoter.hook.WorldGuardHook;
 import dev.superseller.chunkvoter.listener.PlayerQuitListener;
@@ -25,6 +26,7 @@ public final class ChunkVoterPlugin extends JavaPlugin {
     private Messages messages;
     private WorldGuardHook worldGuard;
     private WorldEditHook worldEdit;
+    private AnvilHook anvil;
     private VoteManager voteManager;
 
     @Override
@@ -44,6 +46,8 @@ public final class ChunkVoterPlugin extends JavaPlugin {
         worldGuard.init(config);
         worldEdit = new WorldEditHook(this);
         worldEdit.init(config);
+        anvil = new AnvilHook(this);
+        anvil.init(config);
 
         voteManager = new VoteManager(this);
         voteManager.start();
@@ -53,7 +57,7 @@ public final class ChunkVoterPlugin extends JavaPlugin {
 
         getLogger().info("ChunkVoter enabled. Vote duration: " + config.durationSeconds()
                 + "s, cooldown: " + config.cooldownSeconds() + "s, WorldGuard hook: " + worldGuard.describe()
-                + ", WorldEdit hook: " + worldEdit.describe());
+                + ", WorldEdit hook: " + worldEdit.describe() + ", Anvil hook: " + anvil.describe());
     }
 
     private void registerCommands() {
@@ -78,6 +82,7 @@ public final class ChunkVoterPlugin extends JavaPlugin {
         messages.load();
         worldGuard.init(config);
         worldEdit.init(config);
+        anvil.init(config);
         getLogger().info("ChunkVoter configuration reloaded.");
     }
 
@@ -103,6 +108,10 @@ public final class ChunkVoterPlugin extends JavaPlugin {
 
     public WorldEditHook worldEdit() {
         return worldEdit;
+    }
+
+    public AnvilHook anvil() {
+        return anvil;
     }
 
     public VoteManager voteManager() {

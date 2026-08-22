@@ -23,6 +23,9 @@ public final class ChunkVoterConfig {
     private boolean worldEditEnabled;
     private boolean worldEditRequired;
 
+    private boolean anvilEnabled;
+    private boolean anvilSafeTeleport;
+
     private boolean requireChunkLoad;
 
     public ChunkVoterConfig(ChunkVoterPlugin plugin) {
@@ -46,6 +49,10 @@ public final class ChunkVoterConfig {
         String worldEditMode = mode(c.getString("worldedit.mode", "auto"));
         worldEditEnabled = !"false".equals(worldEditMode);
         worldEditRequired = "true".equals(worldEditMode);
+
+        String anvilMode = mode(c.getString("anvil.mode", "auto"));
+        anvilEnabled = !"false".equals(anvilMode);
+        anvilSafeTeleport = c.getBoolean("anvil.safe-teleport", true);
 
         requireChunkLoad = c.getBoolean("regenerate.require-chunk-load", true);
     }
@@ -92,6 +99,14 @@ public final class ChunkVoterConfig {
 
     public boolean worldEditRequired() {
         return worldEditRequired;
+    }
+
+    public boolean anvilEnabled() {
+        return anvilEnabled;
+    }
+
+    public boolean anvilSafeTeleport() {
+        return anvilSafeTeleport;
     }
 
     public boolean requireChunkLoad() {
