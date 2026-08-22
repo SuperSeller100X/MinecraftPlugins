@@ -1,11 +1,19 @@
+# CI build for PlayerHeads.
+#
+# NOTE: GitHub only executes workflows located at the REPOSITORY ROOT under
+# .github/workflows/. This copy lives inside the plugin folder because the
+# automation that opened the pull request is not allowed to add files to the
+# root .github/workflows/ directory. To activate this CI pipeline, copy this
+# file to <repo-root>/.github/workflows/playerheads.yml (keep the name or use
+# any name ending in .yml) — no other changes are required.
 name: Build PlayerHeads
 
 on:
   push:
     branches: [main]
-    paths: ['PlayerHeads/**', '.github/workflows/playerheads.yml']
+    paths: ['PlayerHeads/**']
   pull_request:
-    paths: ['PlayerHeads/**', '.github/workflows/playerheads.yml']
+    paths: ['PlayerHeads/**']
   workflow_dispatch:
 
 jobs:

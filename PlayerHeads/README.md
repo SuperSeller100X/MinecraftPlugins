@@ -101,12 +101,17 @@ mvn -B clean package
 # → target/PlayerHeads-1.0.0.jar
 ```
 
-The GitHub Actions workflow `.github/workflows/playerheads.yml` builds the
-plugin on every push/PR (Temurin 25 + Maven against
+The CI workflow `PlayerHeads/.github/workflows/build.yml` builds the plugin
+on every push/PR (Temurin 25 + Maven against
 `io.papermc.paper:paper-api:26.2.build.115-stable`), runs the offline smoke
 test **and** boots a real Paper 26.2 server with the plugin to verify it
-enables and its commands respond. The built jar is attached as a workflow
+enables and its commands respond, attaching the built jar as a workflow
 artifact.
+
+> **Note:** GitHub only runs workflows from the repository root
+> `.github/workflows/` directory. Copy `build.yml` there once (e.g. as
+> `playerheads.yml`) to activate the pipeline — see the comment at the top of
+> the file.
 
 ### Offline smoke test
 

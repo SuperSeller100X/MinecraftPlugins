@@ -59,8 +59,10 @@ asynchronously, works for accounts that never joined) for Minecraft **26.2**
 - Permissions: `playerheads.use` / `.reload` / `.bypass-max` (all default op)
 
 See the full documentation in [PlayerHeads/README.md](PlayerHeads/README.md).
-Build with `mvn -B clean package` in `PlayerHeads/` (JDK 25 required). CI
-builds the jar and smoke-tests it on a live Paper 26.2 server.
+Build with `mvn -B clean package` in `PlayerHeads/` (JDK 25 required). A CI
+workflow that builds the jar and smoke-tests it on a live Paper 26.2 server is
+included at `PlayerHeads/.github/workflows/build.yml` (copy it to the repo
+root `.github/workflows/` to activate it).
 
 
 ## AtTag 🔔
