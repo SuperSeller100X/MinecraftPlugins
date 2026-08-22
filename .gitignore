@@ -44,3 +44,6 @@ Subscriptions/data/
 =======
 # ChunkVoter
 ChunkVoter/target/
+
+# PlayerHeads smoke classes
+smoke-classes/

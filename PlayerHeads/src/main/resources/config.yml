@@ -1,0 +1,18 @@
+# PlayerHeads configuration (Minecraft 26.2 — Paper / Purpur / Folia)
+# Reload with /playerheads reload (permission playerheads.reload).
+
+settings:
+  # Amount given when the command omits the amount argument (/ph Notch).
+  default-amount: 1
+
+  # Maximum amount a single command may give (permission playerheads.bypass-max ignores this).
+  max-amount: 64
+
+  # When the player's inventory is full:
+  #   true  = surplus heads are dropped on the ground at the player's location
+  #   false = surplus heads are not given at all (the player is warned)
+  drop-when-full: true
+
+  # Regular expression a name must match before a skin lookup is attempted.
+  # Default matches vanilla account names: letters, digits, underscores, 1-16 chars.
+  name-pattern: "^[A-Za-z0-9_]{1,16}$"
