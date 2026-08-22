@@ -335,6 +335,8 @@ public final class VoteManager {
                 err = t;
             }
 
+            boolean worldEditFailed = worldEditResult != null
+                    && worldEditResult.status() == WorldEditHook.Status.FAILED;
             if (!ok && worldEditResult != null && worldEditResult.error() != null) {
                 plugin.getLogger().warning("WorldEdit regeneration failed: "
                         + worldEditResult.error().getClass().getSimpleName() + ": "
@@ -343,9 +345,9 @@ public final class VoteManager {
 
             if (ok) {
                 broadcastMessage(world.getName(), plugin.messages().component("regen-success", ph));
-            } else if (err instanceof UnsupportedOperationException
+            } else if (!worldEditFailed && (err instanceof UnsupportedOperationException
                     || (worldEditResult != null && worldEditResult.status() == WorldEditHook.Status.UNAVAILABLE
-                    && plugin.configuration().worldEditRequired())) {
+                    && plugin.configuration().worldEditRequired()))) {
                 broadcastMessage(world.getName(), plugin.messages().component("regen-unsupported", ph));
             } else {
                 plugin.getLogger().warning("Failed to regenerate chunk " + world.getName()

@@ -48,6 +48,7 @@ public final class WorldEditHook {
     private volatile boolean enabled;
     private volatile boolean required;
     private volatile boolean present;
+    private volatile ClassLoader worldEditClassLoader;
 
     public WorldEditHook(ChunkVoterPlugin plugin) {
         this.plugin = plugin;
@@ -124,18 +125,35 @@ public final class WorldEditHook {
 
     private boolean detectWorldEdit() {
         Plugin we = plugin.getServer().getPluginManager().getPlugin("WorldEdit");
-        return we != null && we.isEnabled();
+        if (we == null || !we.isEnabled()) {
+            worldEditClassLoader = null;
+            return false;
+        }
+        worldEditClassLoader = we.getClass().getClassLoader();
+        return true;
+    }
+
+    private Class<?> worldEditClass(String name) throws ClassNotFoundException {
+        ClassLoader loader = worldEditClassLoader;
+        if (loader == null) {
+            Plugin we = plugin.getServer().getPluginManager().getPlugin("WorldEdit");
+            if (we != null) {
+                loader = we.getClass().getClassLoader();
+                worldEditClassLoader = loader;
+            }
+        }
+        return Class.forName(name, true, loader == null ? getClass().getClassLoader() : loader);
     }
 
     private Object createBukkitWorld(World world) throws ReflectiveOperationException {
-        Class<?> bukkitWorldClass = Class.forName("com.sk89q.worldedit.bukkit.BukkitWorld");
+        Class<?> bukkitWorldClass = worldEditClass("com.sk89q.worldedit.bukkit.BukkitWorld");
         Constructor<?> ctor = bukkitWorldClass.getConstructor(World.class);
         return ctor.newInstance(world);
     }
 
     private Object createChunkRegion(Object bukkitWorld, World world, int chunkX, int chunkZ)
             throws ReflectiveOperationException {
-        Class<?> vectorClass = Class.forName("com.sk89q.worldedit.math.BlockVector3");
+        Class<?> vectorClass = worldEditClass("com.sk89q.worldedit.math.BlockVector3");
         Method at = vectorClass.getMethod("at", int.class, int.class, int.class);
 
         int minX = chunkX << 4;
@@ -148,8 +166,8 @@ public final class WorldEditHook {
         Object min = at.invoke(null, minX, minY, minZ);
         Object max = at.invoke(null, maxX, maxY, maxZ);
 
-        Class<?> regionWorldClass = Class.forName("com.sk89q.worldedit.world.World");
-        Class<?> cuboidClass = Class.forName("com.sk89q.worldedit.regions.CuboidRegion");
+        Class<?> regionWorldClass = worldEditClass("com.sk89q.worldedit.world.World");
+        Class<?> cuboidClass = worldEditClass("com.sk89q.worldedit.regions.CuboidRegion");
         try {
             return cuboidClass.getConstructor(regionWorldClass, vectorClass, vectorClass)
                     .newInstance(bukkitWorld, min, max);
@@ -159,10 +177,10 @@ public final class WorldEditHook {
     }
 
     private Object createEditSession(Object bukkitWorld) throws ReflectiveOperationException {
-        Class<?> worldEditClass = Class.forName("com.sk89q.worldedit.WorldEdit");
+        Class<?> worldEditClass = worldEditClass("com.sk89q.worldedit.WorldEdit");
         Object worldEdit = worldEditClass.getMethod("getInstance").invoke(null);
 
-        Class<?> weWorldClass = Class.forName("com.sk89q.worldedit.world.World");
+        Class<?> weWorldClass = worldEditClass("com.sk89q.worldedit.world.World");
         try {
             return worldEditClass.getMethod("newEditSession", weWorldClass).invoke(worldEdit, bukkitWorld);
         } catch (NoSuchMethodException ignored) {
@@ -173,7 +191,7 @@ public final class WorldEditHook {
     }
 
     private Object bukkitImplAdapter() throws ReflectiveOperationException {
-        Class<?> pluginClass = Class.forName("com.sk89q.worldedit.bukkit.WorldEditPlugin");
+        Class<?> pluginClass = worldEditClass("com.sk89q.worldedit.bukkit.WorldEditPlugin");
         Object worldEditPlugin;
         try {
             worldEditPlugin = pluginClass.getMethod("getInstance").invoke(null);
@@ -221,7 +239,7 @@ public final class WorldEditHook {
 
     private Object createRegenOptions() throws ReflectiveOperationException {
         try {
-            Class<?> optionsClass = Class.forName("com.sk89q.worldedit.world.RegenOptions");
+            Class<?> optionsClass = worldEditClass("com.sk89q.worldedit.world.RegenOptions");
             Object builder = optionsClass.getMethod("builder").invoke(null);
             try {
                 Method regenBiomes = builder.getClass().getMethod("regenBiomes", boolean.class);
