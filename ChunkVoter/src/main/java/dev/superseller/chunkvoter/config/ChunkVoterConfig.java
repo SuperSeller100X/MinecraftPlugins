@@ -20,6 +20,9 @@ public final class ChunkVoterConfig {
     private boolean wgRequireOwner;
     private boolean wgAdminsBypass;
 
+    private boolean worldEditEnabled;
+    private boolean worldEditRequired;
+
     private boolean requireChunkLoad;
 
     public ChunkVoterConfig(ChunkVoterPlugin plugin) {
@@ -35,10 +38,14 @@ public final class ChunkVoterConfig {
         announce = c.getBoolean("vote.announce", true);
         autoCancelOnQuit = c.getBoolean("vote.auto-cancel-on-quit", true);
 
-        String wgMode = c.getString("worldguard.mode", "auto");
+        String wgMode = mode(c.getString("worldguard.mode", "auto"));
         wgRequireOwner = c.getBoolean("worldguard.require-owner", true);
         wgAdminsBypass = c.getBoolean("worldguard.admins-bypass", true);
-        wgEnabled = !"false".equalsIgnoreCase(wgMode);
+        wgEnabled = !"false".equals(wgMode);
+
+        String worldEditMode = mode(c.getString("worldedit.mode", "auto"));
+        worldEditEnabled = !"false".equals(worldEditMode);
+        worldEditRequired = "true".equals(worldEditMode);
 
         requireChunkLoad = c.getBoolean("regenerate.require-chunk-load", true);
     }
@@ -79,7 +86,26 @@ public final class ChunkVoterConfig {
         return wgAdminsBypass;
     }
 
+    public boolean worldEditEnabled() {
+        return worldEditEnabled;
+    }
+
+    public boolean worldEditRequired() {
+        return worldEditRequired;
+    }
+
     public boolean requireChunkLoad() {
         return requireChunkLoad;
+    }
+
+    private static String mode(String value) {
+        if (value == null) {
+            return "auto";
+        }
+        String normalized = value.trim().toLowerCase();
+        return switch (normalized) {
+            case "true", "false", "auto" -> normalized;
+            default -> "auto";
+        };
     }
 }

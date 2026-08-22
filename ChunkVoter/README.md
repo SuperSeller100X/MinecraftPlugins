@@ -37,8 +37,15 @@ the world seed.
 |-------------|---------|-------|
 | Server      | Paper / Purpur / Folia **26.2** (or newer 26.x) | `folia-supported: true` |
 | Java        | **25** | Required by Minecraft 26.2 |
-| WorldGuard  | 7.0.x (MC 26.1 – 26.2) | **Optional** — enables owner control on claimed chunks |
+| WorldEdit   | 7.4.x (MC 26.2) | **Recommended / required for regeneration on modern Paper/Purpur** — ChunkVoter uses WorldEdit's `//regen` implementation reflectively |
+| WorldGuard  | 7.0.x (MC 26.1 – 26.2) | **Optional** — enables owner control on claimed chunks; requires WorldEdit |
 
+> Modern Paper/Purpur deliberately do **not** implement Bukkit's deprecated
+> `World#regenerateChunk(int, int)` API and throw `UnsupportedOperationException`
+> instead. Install WorldEdit to let ChunkVoter use WorldEdit's supported
+> version-specific regeneration hook. If WorldEdit is absent, ChunkVoter falls
+> back to the legacy Bukkit API for older platforms that still implement it.
+>
 > WorldGuard is a Bukkit-only plugin and is **not Folia-compatible**. On a
 > Folia server WorldGuard simply won't load, so owner control disables itself
 > gracefully and voting works as an *unclaimed* area (anyone can vote).
@@ -46,7 +53,8 @@ the world seed.
 ## 🚀 Installation
 
 1. Drop `ChunkVoter-1.0.0.jar` into your `plugins/` folder.
-2. (Optional) Install [WorldGuard] + [WorldEdit] for region ownership control.
+2. Install [WorldEdit] if you want chunk regeneration on modern Paper/Purpur;
+   optionally install [WorldGuard] as well for region ownership control.
 3. Start the server — `plugins/ChunkVoter/config.yml` and `messages.yml` are
    generated automatically.
 4. Edit the config, then run `/chunkvoteadmin reload` (no restart needed).
@@ -124,6 +132,9 @@ worldguard:
   require-owner: true            # only region owners may decide claimed chunks
   admins-bypass: true            # chunkvoter.admin always bypasses
 
+worldedit:
+  mode: auto                     # auto | true | false; use WorldEdit regen first
+
 regenerate:
   require-chunk-load: true       # load the chunk before regenerating it
 ```
@@ -151,17 +162,20 @@ mvn -B clean package
 ```
 
 Requires **JDK 25** (Paper 26.2's `paper-api` is compiled for Java 25) and
-Maven. WorldGuard is **optional** and accessed reflectively — it is never a
-build or hard runtime dependency.
+Maven. WorldEdit and WorldGuard are accessed reflectively — neither is a build
+or hard runtime dependency.
 
 ## 📝 Notes
 
-- `World#regenerateChunk(int, int)` (Bukkit API) is used; it is deprecated
-  but the supported way to reset a single chunk from the world seed. It may
-  also alter blocks on the edge of adjacent chunks — this is expected
-  behaviour of chunk regeneration. On Folia the chunk is touched on its
-  owning region thread; if a platform does not implement it, the plugin
-  reports *"Chunk regeneration is not supported on this server platform."*
+- Regeneration tries WorldEdit first (`worldedit.mode: auto|true`) and then
+  falls back to Bukkit's deprecated `World#regenerateChunk(int, int)` when
+  WorldEdit is disabled or absent. This matters because current Paper/Purpur
+  intentionally leave the Bukkit method unimplemented; without WorldEdit those
+  servers report *"Chunk regeneration is not supported by Bukkit on this server
+  platform."*
+- Chunk regeneration may alter blocks on the edge of adjacent chunks — this is
+  expected behaviour of generator-driven regeneration. On Folia the chunk is
+  touched on its owning region thread.
 - Voting only applies to the chunk you're standing in; you must be in the
   chunk to cast a vote.
 - Chat input is used only for the optional click-to-type vote interaction —

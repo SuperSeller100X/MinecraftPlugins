@@ -4,6 +4,7 @@ import dev.superseller.chunkvoter.command.ChunkVoteAdminCommand;
 import dev.superseller.chunkvoter.command.ChunkVoteCommand;
 import dev.superseller.chunkvoter.config.ChunkVoterConfig;
 import dev.superseller.chunkvoter.config.Messages;
+import dev.superseller.chunkvoter.hook.WorldEditHook;
 import dev.superseller.chunkvoter.hook.WorldGuardHook;
 import dev.superseller.chunkvoter.listener.PlayerQuitListener;
 import dev.superseller.chunkvoter.scheduler.PlatformScheduler;
@@ -23,6 +24,7 @@ public final class ChunkVoterPlugin extends JavaPlugin {
     private ChunkVoterConfig config;
     private Messages messages;
     private WorldGuardHook worldGuard;
+    private WorldEditHook worldEdit;
     private VoteManager voteManager;
 
     @Override
@@ -40,6 +42,8 @@ public final class ChunkVoterPlugin extends JavaPlugin {
 
         worldGuard = new WorldGuardHook(this);
         worldGuard.init(config);
+        worldEdit = new WorldEditHook(this);
+        worldEdit.init(config);
 
         voteManager = new VoteManager(this);
         voteManager.start();
@@ -48,7 +52,8 @@ public final class ChunkVoterPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(this), this);
 
         getLogger().info("ChunkVoter enabled. Vote duration: " + config.durationSeconds()
-                + "s, cooldown: " + config.cooldownSeconds() + "s, WorldGuard hook: " + worldGuard.describe());
+                + "s, cooldown: " + config.cooldownSeconds() + "s, WorldGuard hook: " + worldGuard.describe()
+                + ", WorldEdit hook: " + worldEdit.describe());
     }
 
     private void registerCommands() {
@@ -66,12 +71,13 @@ public final class ChunkVoterPlugin extends JavaPlugin {
         }
     }
 
-    /** Reloads config/messages and re-detects WorldGuard. */
+    /** Reloads config/messages and re-detects optional hooks. */
     public void reload() {
         reloadConfig();
         config.load();
         messages.load();
         worldGuard.init(config);
+        worldEdit.init(config);
         getLogger().info("ChunkVoter configuration reloaded.");
     }
 
@@ -93,6 +99,10 @@ public final class ChunkVoterPlugin extends JavaPlugin {
 
     public WorldGuardHook worldGuard() {
         return worldGuard;
+    }
+
+    public WorldEditHook worldEdit() {
+        return worldEdit;
     }
 
     public VoteManager voteManager() {

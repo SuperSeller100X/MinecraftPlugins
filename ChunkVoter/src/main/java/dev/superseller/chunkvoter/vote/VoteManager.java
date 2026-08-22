@@ -2,6 +2,7 @@ package dev.superseller.chunkvoter.vote;
 
 import dev.superseller.chunkvoter.ChunkVoterPlugin;
 import dev.superseller.chunkvoter.config.Messages;
+import dev.superseller.chunkvoter.hook.WorldEditHook;
 import dev.superseller.chunkvoter.scheduler.PlatformScheduler;
 
 import java.util.ArrayList;
@@ -183,7 +184,8 @@ public final class VoteManager {
                 "duration", String.valueOf(plugin.configuration().durationSeconds()),
                 "cooldown", String.valueOf(plugin.configuration().cooldownSeconds()),
                 "max", String.valueOf(plugin.configuration().maxActivePerWorld()),
-                "worldguard", plugin.worldGuard().describe())));
+                "worldguard", plugin.worldGuard().describe(),
+                "regen", plugin.worldEdit().describe())));
     }
 
     public boolean cancel(ChunkKey key) {
@@ -312,18 +314,39 @@ public final class VoteManager {
         PlatformScheduler.runRegionSync(world, cx, cz, () -> {
             boolean ok = false;
             Throwable err = null;
+            WorldEditHook.Result worldEditResult = null;
             try {
                 if (plugin.configuration().requireChunkLoad() && !world.isChunkLoaded(cx, cz)) {
                     world.loadChunk(cx, cz, false);
                 }
-                ok = world.regenerateChunk(cx, cz);
+
+                if (plugin.configuration().worldEditEnabled()) {
+                    worldEditResult = plugin.worldEdit().regenerate(world, cx, cz);
+                    ok = worldEditResult.status() == WorldEditHook.Status.SUCCESS;
+                    if (!ok && plugin.configuration().worldEditRequired()) {
+                        err = worldEditResult.error();
+                    }
+                }
+
+                if (!ok && !plugin.configuration().worldEditRequired()) {
+                    ok = world.regenerateChunk(cx, cz);
+                }
             } catch (Throwable t) {
                 err = t;
             }
-            if (err instanceof UnsupportedOperationException) {
-                broadcastMessage(world.getName(), plugin.messages().component("regen-unsupported", ph));
-            } else if (ok) {
+
+            if (!ok && worldEditResult != null && worldEditResult.error() != null) {
+                plugin.getLogger().warning("WorldEdit regeneration failed: "
+                        + worldEditResult.error().getClass().getSimpleName() + ": "
+                        + worldEditResult.error().getMessage());
+            }
+
+            if (ok) {
                 broadcastMessage(world.getName(), plugin.messages().component("regen-success", ph));
+            } else if (err instanceof UnsupportedOperationException
+                    || (worldEditResult != null && worldEditResult.status() == WorldEditHook.Status.UNAVAILABLE
+                    && plugin.configuration().worldEditRequired())) {
+                broadcastMessage(world.getName(), plugin.messages().component("regen-unsupported", ph));
             } else {
                 plugin.getLogger().warning("Failed to regenerate chunk " + world.getName()
                         + " (" + cx + ", " + cz + ")" + (err == null ? "" : ": " + err.getMessage()));
