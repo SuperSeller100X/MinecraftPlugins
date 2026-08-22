@@ -1,0 +1,29 @@
+name: Build Subscriptions
+
+on:
+  push:
+    paths:
+      - "Subscriptions/**"
+      - ".github/workflows/subscriptions.yml"
+  pull_request:
+    paths:
+      - "Subscriptions/**"
+      - ".github/workflows/subscriptions.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Test and package
+        run: mvn -B -f Subscriptions/pom.xml clean test package
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: Subscriptions
+          path: Subscriptions/target/Subscriptions-*.jar

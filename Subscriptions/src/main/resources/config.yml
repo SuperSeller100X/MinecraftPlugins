@@ -1,0 +1,69 @@
+# ============================================================
+#  Subscriptions — Minecraft 26.2 (Paper / Purpur / Folia)
+#  Reload with /subadmin reload
+# ============================================================
+
+limits:
+  # Real-world time. Players type 10m, 1h, 1d, 1w, 1h30m, "every 2 days".
+  min-interval-seconds: 60
+  max-interval-seconds: 31536000
+  min-price: 0
+  max-price: 1000000000000
+  max-plans-per-player: 10
+  max-active-subscriptions: 20
+  max-rewards-per-plan: 12
+  max-inbox-items: 216
+  max-name-length: 32
+  max-description-length: 160
+
+economy:
+  # auto = use Vault / VaultUnlocked when present
+  # true = require an economy (warn if missing)
+  # false = disable money (item / command / rank plans still work if free)
+  enabled: auto
+  decimal-places: 2
+  # Percent taken from each subscriber payment before the seller is paid.
+  tax-percent: 0
+  accept-all-keyword: true
+
+billing:
+  # How often the scheduler looks for due subscriptions. 1 second is fine.
+  tick-seconds: 1
+
+items:
+  # Uppercase Bukkit material names that may never be used as rewards.
+  blacklist: []
+
+logs:
+  csv: true
+  # 0 = keep forever
+  retention-days: 30
+
+discord:
+  # Incoming webhook URL. Leave empty to disable.
+  webhook-url: ""
+  notify-charges: true
+  notify-cancels: true
+  notify-stock: true
+
+ui:
+  sounds: true
+  notify-on-join: true
+  titles:
+    main: "&8Subscriptions"
+    browse: "&8Marketplace"
+    plan: "&8Plan"
+    create: "&8Create plan"
+    mysubs: "&8My subscriptions"
+    myplans: "&8My plans"
+    inbox: "&8Subscription inbox"
+    history: "&8Charge history"
+    stock: "&8Deposit kits"
+    policy: "&8Charge policy"
+    confirm: "&8Confirm"
+
+sounds:
+  click: UI_BUTTON_CLICK
+  success: ENTITY_PLAYER_LEVELUP
+  fail: ENTITY_VILLAGER_NO
+  deliver: ENTITY_ITEM_PICKUP

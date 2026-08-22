@@ -2,6 +2,12 @@
 
 A collection of Minecraft plugins.
 
+## Subscriptions 🔁
+
+Recurring marketplace for Minecraft **26.2** (Paper / Purpur / Folia). Players and staff create plans for items, money, commands, permissions and ranks; billing is real-world time (`10m`, `1h`, `1d`) with `k/m/b/t` prices, a subscription inbox, and anti-scam policies (pause / skip / auto-cancel — never charge when stock is out). Vault / VaultUnlocked, PlaceholderAPI, LuckPerms, Discord webhooks, SQLite.
+
+See [Subscriptions/README.md](Subscriptions/README.md). Build with `mvn -B clean package` in `Subscriptions/`.
+
 ## PlayerBank 🏦
 
 Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via Vault, compound interest (default 2.5% every 10 real minutes). Bank money cannot be used by `/pay`, shops, or other plugins until withdrawn.
