@@ -6,7 +6,7 @@ folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPlugins
 description: Community-voted chunk regeneration with optional WorldGuard owner control.
-softdepend: [WorldGuard]
+softdepend: [WorldGuard, WorldEdit]
 
 commands:
   chunkvoter:

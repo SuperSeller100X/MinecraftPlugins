@@ -24,7 +24,7 @@ result-no: "<red>Regeneration rejected.</red> <gray>YES <white>{yes}</white> vs 
 result-tie: "<yellow>It's a tie</yellow> <gray>(YES <white>{yes}</white> vs NO <white>{no}</white>). The chunk <white>{world} ({x}, {z})</white> will not be regenerated.</gray>"
 regen-success: "<green>Chunk <white>{world} ({x}, {z})</white> has been regenerated.</green>"
 regen-failed: "<red>Failed to regenerate chunk <white>{world} ({x}, {z})</white>. Check the console for details.</red>"
-regen-unsupported: "<red>Chunk regeneration is not supported on this server platform.</red>"
+regen-unsupported: "<red>Chunk regeneration is not supported by Bukkit on this server platform.</red> <gray>Install/enable WorldEdit so ChunkVoter can use WorldEdit's modern regeneration hook.</gray>"
 
 # --- vote info ---
 info-header: "<gold>Chunk vote</gold> <gray>({world} {x}, {z})</gray>"
@@ -49,7 +49,7 @@ admin-cancelled: "<green>Cancelled the vote at chunk <white>{world} ({x}, {z})</
 admin-none: "<gray>No active chunk votes.</gray>"
 admin-list-header: "<gold>Active chunk votes</gold> <gray>({count})</gray>"
 admin-list-line: "<gray>•</gray> <white>{world} ({x}, {z})</white> — YES <green>{yes}</green> / NO <red>{no}</red> · <white>{time}s</white> left · initiator <white>{initiator}</white>"
-admin-info: "<gray>Votes: <white>{duration}s</white> · cooldown: <white>{cooldown}s</white> · max/world: <white>{max}</white> · WorldGuard: <white>{worldguard}</white>"
+admin-info: "<gray>Votes: <white>{duration}s</white> · cooldown: <white>{cooldown}s</white> · max/world: <white>{max}</white> · WorldGuard: <white>{worldguard}</white> · Regen: <white>{regen}</white>"
 
 help:
   chunkvoter:

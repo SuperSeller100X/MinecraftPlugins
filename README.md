@@ -7,9 +7,11 @@ A collection of Minecraft plugins.
 Community-voted chunk regeneration for Minecraft **26.2** (Paper / Purpur /
 Folia). Run `/chunkvoter` in a chunk to open a YES/NO vote shown in the
 action bar (over the hotbar) with clickable chat buttons; if a majority votes
-**YES** the chunk is regenerated from the world seed. Optional WorldGuard
-support lets only the **region owner** decide on claimed chunks (admins
-bypass). No persistent storage, fully translatable, Folia-safe.
+**YES** the chunk is regenerated from the world seed. On modern Paper/Purpur,
+ChunkVoter uses WorldEdit's supported `//regen` implementation because Bukkit's
+legacy regeneration API is unimplemented. Optional WorldGuard support lets only
+the **region owner** decide on claimed chunks (admins bypass). No persistent
+storage, fully translatable, Folia-safe.
 
 - `/chunkvoter` / `/cv` — start a vote, vote yes/no, or view the vote
 - `/chunkvoteadmin` / `/cva` — reload, list, cancel, force, info

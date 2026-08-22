@@ -22,6 +22,12 @@ worldguard:
   # Players with chunkvoter.admin are always allowed to decide regardless.
   admins-bypass: true
 
+worldedit:
+  # auto = use WorldEdit when it is present; true = require it; false = never.
+  # Modern Paper/Purpur do not implement Bukkit's deprecated regenerateChunk;
+  # installing WorldEdit is the supported way to regenerate chunks there.
+  mode: auto
+
 regenerate:
   # Load the chunk first if needed before regenerating it.
   require-chunk-load: true
