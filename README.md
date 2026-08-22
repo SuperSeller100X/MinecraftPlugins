@@ -48,6 +48,21 @@ complete trade logs, and anti-bait-and-switch protection.
 See [FairDeal/README.md](FairDeal/README.md) for the detailed requirements and
 planned feature documentation.
 
+## PlayerHeads 🗿
+
+Give server admins the player head of any Minecraft account (skin fetched
+asynchronously, works for accounts that never joined) for Minecraft **26.2**
+(Paper / Purpur / Folia). Admin-only by default, no cooldown, Folia-safe.
+
+- `/playerheads <player> [amount]` / `/ph <player> [amount]` — receive heads
+- `/playerheads reload` / `/ph reload` — reload config & messages
+- Permissions: `playerheads.use` / `.reload` / `.bypass-max` (all default op)
+
+See the full documentation in [PlayerHeads/README.md](PlayerHeads/README.md).
+Build with `mvn -B clean package` in `PlayerHeads/` (JDK 25 required). CI
+builds the jar and smoke-tests it on a live Paper 26.2 server.
+
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):

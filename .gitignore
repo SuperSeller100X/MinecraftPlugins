@@ -39,3 +39,6 @@ Gifty/data/
 PlayerBank/target/
 # ChunkVoter
 ChunkVoter/target/
+
+# PlayerHeads smoke classes
+smoke-classes/

@@ -1,0 +1,22 @@
+# PlayerHeads messages (MiniMessage format — https://docs.advntr.dev/minimessage/format.html)
+# Placeholders: {player} {name} {amount} {max} {input} {count}
+
+prefix: "<gradient:#ffd700:#ff8c00><bold>PlayerHeads</bold></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+players-only: "<red>Only players can receive heads.</red>"
+player-not-found: "<red>No Minecraft account found for <white>{player}</white>.</red>"
+invalid-name: "<red><white>{name}</white> is not a valid Minecraft username.</red>"
+invalid-amount: "<red><white>{input}</white> is not a valid amount.</red>"
+amount-too-low: "<red>The amount must be at least <white>1</white>.</red>"
+amount-too-high: "<red>The amount can't be more than <white>{max}</white>.</red>"
+head-given: "<green>You received <white>{amount}x</white> the head of <white>{player}</white>.</green>"
+inventory-full-dropped: "<yellow>Your inventory was full — <white>{count}x</white> head(s) were dropped on the ground.</yellow>"
+inventory-full: "<red>Your inventory is full — some heads could not be given. Make room and try again.</red>"
+reloaded: "<green>Configuration and messages reloaded.</green>"
+
+help:
+  - "<gray>————</gray> <gradient:#ffd700:#ff8c00><bold>PlayerHeads</bold></gradient> <gray>————</gray>"
+  - "<yellow>/playerheads <player> [amount]</yellow> <gray>— receive that player's head</gray>"
+  - "<yellow>/playerheads reload</yellow> <gray>— reload configuration and messages</gray>"
+  - "<gray>Short form:</gray> <yellow>/ph <player> [amount]</yellow>"

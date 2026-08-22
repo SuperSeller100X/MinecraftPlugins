@@ -1,0 +1,33 @@
+name: PlayerHeads
+version: '${project.version}'
+main: dev.superseller.playerheads.PlayerHeadsPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Give server admins the player head of any Minecraft account.
+
+commands:
+  playerheads:
+    description: Give yourself the player head of any Minecraft account
+    usage: /playerheads <player> [amount] | /playerheads reload
+    aliases: [playerhead, phead, ph]
+    permission: playerheads.use
+
+permissions:
+  playerheads.use:
+    description: Allows using /playerheads to receive player heads (admin command)
+    default: op
+  playerheads.reload:
+    description: Allows reloading the PlayerHeads configuration with /playerheads reload
+    default: op
+  playerheads.bypass-max:
+    description: Allows receiving more heads at once than settings.max-amount allows
+    default: op
+  playerheads.*:
+    description: Grants all PlayerHeads permissions
+    default: op
+    children:
+      playerheads.use: true
+      playerheads.reload: true
+      playerheads.bypass-max: true
