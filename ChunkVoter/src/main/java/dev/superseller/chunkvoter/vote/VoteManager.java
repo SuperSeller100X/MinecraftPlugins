@@ -2,6 +2,7 @@ package dev.superseller.chunkvoter.vote;
 
 import dev.superseller.chunkvoter.ChunkVoterPlugin;
 import dev.superseller.chunkvoter.config.Messages;
+import dev.superseller.chunkvoter.hook.AnvilHook;
 import dev.superseller.chunkvoter.hook.WorldEditHook;
 import dev.superseller.chunkvoter.scheduler.PlatformScheduler;
 
@@ -180,12 +181,17 @@ public final class VoteManager {
     }
 
     public void adminInfo(CommandSender sender) {
+        String regenSummary = plugin.worldEdit().present()
+                ? "WorldEdit (" + plugin.worldEdit().describe() + ")"
+                : "Anvil (" + plugin.anvil().describe() + ")";
         sender.sendMessage(plugin.messages().component("admin-info", Map.of(
                 "duration", String.valueOf(plugin.configuration().durationSeconds()),
                 "cooldown", String.valueOf(plugin.configuration().cooldownSeconds()),
                 "max", String.valueOf(plugin.configuration().maxActivePerWorld()),
                 "worldguard", plugin.worldGuard().describe(),
-                "regen", plugin.worldEdit().describe())));
+                "worldedit", plugin.worldEdit().describe(),
+                "anvil", plugin.anvil().describe(),
+                "regen", regenSummary)));
     }
 
     public boolean cancel(ChunkKey key) {
@@ -315,6 +321,7 @@ public final class VoteManager {
             boolean ok = false;
             Throwable err = null;
             WorldEditHook.Result worldEditResult = null;
+            AnvilHook.Result anvilResult = null;
             try {
                 if (plugin.configuration().requireChunkLoad() && !world.isChunkLoaded(cx, cz)) {
                     world.loadChunk(cx, cz, false);
@@ -328,6 +335,14 @@ public final class VoteManager {
                     }
                 }
 
+                if (!ok && !plugin.configuration().worldEditRequired() && plugin.configuration().anvilEnabled()) {
+                    anvilResult = plugin.anvil().regenerate(world, cx, cz);
+                    ok = anvilResult.status() == AnvilHook.Status.SUCCESS;
+                    if (!ok && anvilResult.error() != null) {
+                        err = anvilResult.error();
+                    }
+                }
+
                 if (!ok && !plugin.configuration().worldEditRequired()) {
                     ok = world.regenerateChunk(cx, cz);
                 }
@@ -337,15 +352,23 @@ public final class VoteManager {
 
             boolean worldEditFailed = worldEditResult != null
                     && worldEditResult.status() == WorldEditHook.Status.FAILED;
+            boolean anvilFailed = anvilResult != null
+                    && anvilResult.status() == AnvilHook.Status.FAILED;
+
             if (!ok && worldEditResult != null && worldEditResult.error() != null) {
                 plugin.getLogger().warning("WorldEdit regeneration failed: "
                         + worldEditResult.error().getClass().getSimpleName() + ": "
                         + worldEditResult.error().getMessage());
             }
+            if (!ok && anvilResult != null && anvilResult.error() != null) {
+                plugin.getLogger().warning("Anvil regeneration failed: "
+                        + anvilResult.error().getClass().getSimpleName() + ": "
+                        + anvilResult.error().getMessage());
+            }
 
             if (ok) {
                 broadcastMessage(world.getName(), plugin.messages().component("regen-success", ph));
-            } else if (!worldEditFailed && (err instanceof UnsupportedOperationException
+            } else if (!worldEditFailed && !anvilFailed && (err instanceof UnsupportedOperationException
                     || (worldEditResult != null && worldEditResult.status() == WorldEditHook.Status.UNAVAILABLE
                     && plugin.configuration().worldEditRequired()))) {
                 broadcastMessage(world.getName(), plugin.messages().component("regen-unsupported", ph));

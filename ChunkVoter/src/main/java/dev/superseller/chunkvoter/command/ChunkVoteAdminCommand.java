@@ -54,7 +54,9 @@ public final class ChunkVoteAdminCommand implements CommandExecutor, TabComplete
         }
         plugin.reload();
         plugin.messages().send(sender, "admin-reload",
-                Map.of("worldguard", plugin.worldGuard().describe()));
+                Map.of("worldguard", plugin.worldGuard().describe(),
+                       "worldedit", plugin.worldEdit().describe(),
+                       "anvil", plugin.anvil().describe()));
         return true;
     }
 
