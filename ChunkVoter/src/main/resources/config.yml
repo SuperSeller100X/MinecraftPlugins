@@ -1,0 +1,27 @@
+# ChunkVoter — community-voted chunk regeneration for Minecraft 26.2.
+# All times are in real-time seconds.
+
+vote:
+  # How long a regeneration vote stays open before it is counted.
+  duration-seconds: 30
+  # Wait between two votes started by the same player (0 = no cooldown).
+  cooldown-seconds: 120
+  # Maximum number of votes that can be active at once per world.
+  max-active-per-world: 5
+  # Send the clickable YES/NO announcement message when a vote starts.
+  announce: true
+  # Cancel a vote if the player who started it logs out.
+  auto-cancel-on-quit: true
+
+worldguard:
+  # auto = use WorldGuard when it is present; true = require it; false = never.
+  mode: auto
+  # When a chunk sits inside a WorldGuard region, only the region owner
+  # may start the vote and cast the deciding vote. Admins bypass.
+  require-owner: true
+  # Players with chunkvoter.admin are always allowed to decide regardless.
+  admins-bypass: true
+
+regenerate:
+  # Load the chunk first if needed before regenerating it.
+  require-chunk-load: true

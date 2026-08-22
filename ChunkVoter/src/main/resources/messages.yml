@@ -1,0 +1,67 @@
+prefix: "<gold>[ChunkVoter]</gold> "
+
+no-permission: "<red>You do not have permission to do that."
+player-only: "<red>Only players can use this command."
+console-only: "<red>Only the console can use this command."
+invalid-coords: "<red>Invalid coordinates. Use <white>/chunkvoteadmin <x> <z></white> (player) or <white>/chunkvoteadmin <world> <x> <z></white> (console)."
+
+# --- starting / voting ---
+vote-started: "<green>A <white>chunk regeneration</white> vote has started at <white>{world} ({x}, {z})</white>!"
+already-active: "<red>A vote is already running at this chunk <white>({world} {x}, {z})</white>."
+start-denied-owner: "<red>This chunk is claimed. Only the region owner <white>(or an admin)</white> can decide its regeneration."
+cooldown: "<red>Please wait <white>{remaining}s</white> before starting another vote."
+max-active: "<red>Too many chunk votes are already running in this world."
+no-active: "<red>There is no active regeneration vote in the chunk you are standing in."
+vote-finished: "<red>That vote has already finished."
+already-voted: "<gray>You already voted <white>{choice}</white> here — your vote has been updated."
+vote-cast: "<green>You voted <white>{choice}</white> for this chunk's regeneration."
+not-allowed-here: "<red>Only the region owner <white>(or an admin)</white> can vote on this claimed chunk."
+vote-done: "<gray>Voting for chunk <white>{world} ({x}, {z})</white> has ended."
+
+# --- results ---
+result-yes: "<green>Regeneration approved!</green> <gray>YES <white>{yes}</white> vs NO <white>{no}</white>. Regenerating chunk <white>{world} ({x}, {z})</white>...</gray>"
+result-no: "<red>Regeneration rejected.</red> <gray>YES <white>{yes}</white> vs NO <white>{no}</white>. Chunk <white>{world} ({x}, {z})</white> will not be changed.</gray>"
+result-tie: "<yellow>It's a tie</yellow> <gray>(YES <white>{yes}</white> vs NO <white>{no}</white>). The chunk <white>{world} ({x}, {z})</white> will not be regenerated.</gray>"
+regen-success: "<green>Chunk <white>{world} ({x}, {z})</white> has been regenerated.</green>"
+regen-failed: "<red>Failed to regenerate chunk <white>{world} ({x}, {z})</white>. Check the console for details.</red>"
+regen-unsupported: "<red>Chunk regeneration is not supported on this server platform.</red>"
+
+# --- vote info ---
+info-header: "<gold>Chunk vote</gold> <gray>({world} {x}, {z})</gray>"
+info-line: "<gray>YES <green>{yes}</green> · NO <red>{no}</red> · <white>{time}s</white> left · started by <white>{initiator}</white>"
+info-in-region: "<gray>Region control: <white>{value}</white>"
+
+# --- action bar (shown over the hotbar while a vote runs) ---
+actionbar: "<green>✔ YES <white>{yes}</white></green> <red>✘ NO <white>{no}</white></red> <gray>•</gray> <white>{time}s</white> <gray>• chunk {world} ({x}, {z})</gray>"
+
+# --- clickable vote buttons (used in the announcement message) ---
+vote-button-yes: "<green>[] YES</green>"
+vote-button-no: "<red>[] NO</red>"
+
+# --- quit / cancellation ---
+vote-cancelled: "<red>The chunk regeneration vote at <white>{world} ({x}, {z})</white> was cancelled.</red>"
+vote-cancelled-init: "<red>Your chunk regeneration vote was cancelled because you left.</red>"
+
+# --- admin ---
+admin-reload: "<green>ChunkVoter configuration reloaded. WorldGuard hook: <white>{worldguard}</white>."
+admin-forced: "<green>Forced regeneration of chunk <white>{world} ({x}, {z})</white>.</green>"
+admin-cancelled: "<green>Cancelled the vote at chunk <white>{world} ({x}, {z})</white>.</green>"
+admin-none: "<gray>No active chunk votes.</gray>"
+admin-list-header: "<gold>Active chunk votes</gold> <gray>({count})</gray>"
+admin-list-line: "<gray>•</gray> <white>{world} ({x}, {z})</white> — YES <green>{yes}</green> / NO <red>{no}</red> · <white>{time}s</white> left · initiator <white>{initiator}</white>"
+admin-info: "<gray>Votes: <white>{duration}s</white> · cooldown: <white>{cooldown}s</white> · max/world: <white>{max}</white> · WorldGuard: <white>{worldguard}</white>"
+
+help:
+  chunkvoter:
+    - "<gold>ChunkVoter commands</gold>"
+    - "<yellow>/chunkvoter</yellow> <gray>— start a regen vote for the chunk you're in</gray>"
+    - "<yellow>/chunkvoter yes|no</yellow> <gray>— cast your vote (alias <white>/cv</white>)</gray>"
+    - "<yellow>/chunkvoter info</yellow> <gray>— show the active vote in your chunk</gray>"
+    - "<yellow>/chunkvoteadmin</yellow> <gray>— admin commands (reload|list|cancel|force|info)</gray>"
+  chunkvoteadmin:
+    - "<gold>ChunkVoter admin commands</gold>"
+    - "<yellow>/chunkvoteadmin reload</yellow> <gray>— reload config & messages</gray>"
+    - "<yellow>/chunkvoteadmin list</yellow> <gray>— list active votes</gray>"
+    - "<yellow>/chunkvoteadmin cancel [x z|-all]</yellow> <gray>— cancel a vote</gray>"
+    - "<yellow>/chunkvoteadmin force [x z]</yellow> <gray>— regenerate a chunk immediately</gray>"
+    - "<yellow>/chunkvoteadmin info</yellow> <gray>— show config summary</gray>"

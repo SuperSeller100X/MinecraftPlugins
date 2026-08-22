@@ -1,0 +1,54 @@
+name: ChunkVoter
+version: 1.0.0
+main: dev.superseller.chunkvoter.ChunkVoterPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Community-voted chunk regeneration with optional WorldGuard owner control.
+softdepend: [WorldGuard]
+
+commands:
+  chunkvoter:
+    description: Start a chunk regeneration vote, or cast a yes/no vote
+    usage: /chunkvoter [yes|no|info]
+    aliases: [chunkvote, cv]
+    permission: chunkvoter.use
+  chunkvoteadmin:
+    description: ChunkVoter admin commands
+    usage: /chunkvoteadmin <reload|list|cancel|force|info>
+    aliases: [cva, chunkvoteradmin]
+    permission: chunkvoter.admin
+
+permissions:
+  chunkvoter.use:
+    description: Base permission for ChunkVoter
+    default: true
+  chunkvoter.start:
+    description: Start a chunk regeneration vote
+    default: true
+  chunkvoter.vote:
+    description: Cast a yes/no vote on an active chunk vote
+    default: true
+  chunkvoter.bypass:
+    description: Bypass chunk ownership checks (WorldGuard regions)
+    default: op
+  chunkvoter.admin:
+    description: Access /chunkvoteadmin
+    default: op
+    children:
+      chunkvoter.admin.reload:
+        description: Reload ChunkVoter configuration
+        default: op
+      chunkvoter.admin.list:
+        description: List active chunk votes
+        default: op
+      chunkvoter.admin.cancel:
+        description: Cancel an active chunk vote
+        default: op
+      chunkvoter.admin.force:
+        description: Force a chunk regeneration (skip the vote)
+        default: op
+      chunkvoter.admin.info:
+        description: Show ChunkVoter configuration summary
+        default: op
