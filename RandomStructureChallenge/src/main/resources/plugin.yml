@@ -1,0 +1,44 @@
+name: RandomStructureChallenge
+version: '${project.version}'
+main: dev.superseller.randomstructurechallenge.RandomStructureChallengePlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Random vanilla-structure challenge. After /challenge start, enter an interval; every N seconds a random Minecraft structure is placed on every online player. Hotbar timer + percent BossBar. Paper / Purpur / Folia 26.2.
+
+commands:
+  challenge:
+    description: Start, stop, pause, resume, or inspect the random structure challenge.
+    usage: /<command> <start|stop|pause|resume|status|reload|help> [interval]
+    aliases: [ch, rsc, rschallenge, randomstructurechallenge]
+
+permissions:
+  randomstructurechallenge.start:
+    description: Start the challenge (/challenge start, /ch s) and enter the interval.
+    default: op
+  randomstructurechallenge.stop:
+    description: Stop the running challenge (/challenge stop, /ch x).
+    default: op
+  randomstructurechallenge.pause:
+    description: Pause the running challenge timer (/challenge pause, /ch p).
+    default: op
+  randomstructurechallenge.resume:
+    description: Resume a paused challenge (/challenge resume, /ch r).
+    default: op
+  randomstructurechallenge.status:
+    description: View challenge status (/challenge status, /ch i).
+    default: true
+  randomstructurechallenge.reload:
+    description: Reload config.yml and messages.yml (/challenge reload, /ch rl).
+    default: op
+  randomstructurechallenge.*:
+    description: All RandomStructureChallenge permissions.
+    default: op
+    children:
+      randomstructurechallenge.start: true
+      randomstructurechallenge.stop: true
+      randomstructurechallenge.pause: true
+      randomstructurechallenge.resume: true
+      randomstructurechallenge.status: true
+      randomstructurechallenge.reload: true

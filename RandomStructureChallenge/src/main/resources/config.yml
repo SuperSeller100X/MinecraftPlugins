@@ -1,0 +1,63 @@
+# RandomStructureChallenge — Minecraft 26.2 (Paper / Purpur / Folia)
+# Reload with /challenge reload  (permission randomstructurechallenge.reload)
+
+settings:
+  # Lowest / highest interval accepted after /challenge start (seconds).
+  min-interval-seconds: 5
+  max-interval-seconds: 3600
+
+  # How long a player has to type the interval in chat after /challenge start.
+  input-timeout-seconds: 30
+
+  # When true, every online player receives the SAME random structure each wave.
+  # When false, each player gets an independently chosen structure.
+  same-structure-for-all: true
+
+  # Also place on spectators / vanished-style players. Dead players are always skipped.
+  include-spectators: true
+
+  # Chunks loaded around the player before /place structure (radius in chunks).
+  load-chunk-radius: 4
+
+  # How many different structures to try if vanilla placement fails (biome / chunk).
+  placement-retries: 8
+
+  # After a structure lands, carve / teleport so the player is not suffocating.
+  safe-pocket: true
+
+  # Empty list = every world. Otherwise only these Bukkit world names.
+  worlds: []
+
+  # Empty whitelist = every registered structure (vanilla + datapacks).
+  # Keys look like "minecraft:village_plains" or just "village_plains".
+  structure-whitelist: []
+
+  # Always skipped, even if they appear in the whitelist.
+  structure-blacklist: []
+
+display:
+  bossbar:
+    enabled: true
+    # PURPLE, PINK, BLUE, RED, GREEN, YELLOW, WHITE
+    color: PURPLE
+    # PROGRESS (smooth %), NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20
+    overlay: PROGRESS
+  actionbar:
+    enabled: true
+    # Seconds remaining at which the hotbar timer switches to the "low" style.
+    low-threshold: 5
+    # Width of the ▰▱ bar drawn on the action bar.
+    bar-width: 10
+  title-on-spawn: true
+
+sounds:
+  enabled: true
+  # Adventure / vanilla sound keys (namespace:path). Empty = silent.
+  start: "minecraft:item.goat_horn.sound.0"
+  spawn: "minecraft:entity.wither.spawn"
+  tick-low: "minecraft:block.note_block.hat"
+  stop: "minecraft:ui.toast.challenge_complete"
+  pause: "minecraft:block.note_block.bass"
+  resume: "minecraft:block.note_block.pling"
+  volume: 0.8
+  pitch: 1.0
