@@ -9,7 +9,7 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>PlayerBank</name>
-    <description>Isolated player bank with Vault deposits, withdrawals, and compound interest.</description>
+    <description>Isolated player bank with Vault / EssentialsX deposits, withdrawals, and compound interest.</description>
     <url>https://github.com/SuperSeller100X/MinecraftPluginsTest</url>
 
     <properties>

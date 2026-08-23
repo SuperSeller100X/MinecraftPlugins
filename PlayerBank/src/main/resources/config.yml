@@ -1,7 +1,8 @@
 # PlayerBank — all knobs live here.
 
 economy:
-  # Vault is required at runtime for deposit/withdraw.
+  # Wallet deposits/withdrawals need Vault (any economy) or EssentialsX.
+  # Bank balances stay inside this plugin either way.
   required: true
 
 bank:

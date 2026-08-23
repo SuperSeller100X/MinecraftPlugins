@@ -2,13 +2,14 @@
 
 Isolated player bank for **Minecraft 26.2** (Paper / Purpur / Folia).
 
-Wallet money (Essentials, CMI, or any **Vault** economy) stays in the normal economy. Bank money is stored **only** by this plugin. Other plugins — auctions, shops, `/pay`, orders — **cannot** spend the bank balance.
+Wallet money stays in the normal economy: **EssentialsX** (directly, or through **Vault**) or any other Vault provider (CMI, etc.). Bank money is stored **only** by this plugin. Other plugins — auctions, shops, `/pay`, orders — **cannot** spend the bank balance.
 
 ## Features
 
 - **Deposit** wallet → bank (`/bank deposit`)
 - **Withdraw** bank → wallet (`/bank withdraw`)
-- **Vault** support for any economy plugin
+- **EssentialsX** wallet support (with or without Vault)
+- **Vault** support for any other economy plugin
 - **Compound interest** (default **2.5%** every **10 real-time minutes**)
 - Interest interval is real-world **hours / minutes / seconds** in `config.yml`
 - Transaction **logs**
@@ -19,7 +20,7 @@ Wallet money (Essentials, CMI, or any **Vault** economy) stays in the normal eco
 
 - Java **25** (required by Minecraft / Paper 26.2)
 - Paper (or Purpur / Folia) **26.2**
-- [Vault](https://www.spigotmc.org/resources/vault.34315/) and an economy plugin (EssentialsX, CMI, etc.)
+- An economy plugin: **[EssentialsX](https://essentialsx.net/)** (`economy.enabled: true` in `plugins/Essentials/config.yml`) and/or **[Vault](https://www.spigotmc.org/resources/vault.34315/)** plus a Vault provider (EssentialsX, CMI, …)
 
 ## Build (Maven)
 
@@ -28,7 +29,7 @@ cd PlayerBank
 mvn -B clean package
 ```
 
-The jar is `target/PlayerBank-1.0.0.jar`. Drop it in `plugins/` next to Vault and your economy plugin.
+The jar is `target/PlayerBank-1.0.0.jar`. Drop it in `plugins/` next to EssentialsX and/or Vault.
 
 ## Commands
 
@@ -68,7 +69,7 @@ Aliases: `/playerbank`, `/pb`, `/pba`.
 
 ## Isolation (important)
 
-The bank account is **not** a Vault account.
+The bank account is **not** a Vault / EssentialsX bank account.
 
 - Players **cannot** `/pay` from the bank.
 - Shops, auctions, jobs, claims, and other plugins only see the **wallet**.

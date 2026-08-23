@@ -29,9 +29,9 @@ public final class PlayerBankPlugin extends JavaPlugin {
         messages.load();
 
         vault = new VaultHook(this);
-        vault.hook();
+        vault.start();
         if (bankConfig.economyRequired() && !vault.isEnabled()) {
-            getLogger().severe("Vault economy is required but not available. Deposit/withdraw will fail until an economy plugin is present.");
+            getLogger().severe("No wallet economy yet (Vault or EssentialsX). Deposit/withdraw will retry when one is available.");
         }
 
         storage = new BankStorage(this, bankConfig);
