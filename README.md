@@ -77,6 +77,18 @@ included at `PlayerHeads/.github/workflows/build.yml` (copy it to the repo
 root `.github/workflows/` to activate it).
 
 
+## ConnectedTools 🔗 (Professional)
+
+Connect items and tools to nearby blocks with **vanilla-style toggling** (levers, buttons, doors, observers, comparators, repeaters, redstone wire, gates, trapdoors) for Minecraft **26.2** (Paper / Purpur / Folia). Professional architecture: `PluginSettings`, `messages.yml`, `ConnectionAPI`, `ConnectionService`, `RedstoneService`, `GuiManager` with `MenuHolder`, `PlatformScheduler` for Folia, YAML persistence (`ConnectionStore`), and full **tab completers** on all commands.
+
+- Commands (`/ct` / `/ct connect` / `/ct disconnect` / `/ct list` / `/ct info` / `/ct gui` / `/ct reload`) — all with tab completion and aliases (`c`, `d`, `l`, `i`).
+- Redstone mechanism: toggles real `BlockData` instead of placing temporary redstone blocks.
+- Permissions: `connectedtools.connect`, `.disconnect`, `.list`, `.info`, `.gui`, `.reload`, `.all` (with children).
+- GUI: inventory-based connection management (`/ct gui`).
+- Cross-platform (Linux / Windows / Mac), Java 25, Maven build with Paper 26.2 API.
+
+See [ConnectedTools/README.md](ConnectedTools/README.md). Build with `mvn -B clean package` in `ConnectedTools/` (JDK 25 required).
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):

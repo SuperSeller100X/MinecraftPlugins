@@ -1,0 +1,49 @@
+name: ConnectedTools
+version: ${project.version}
+main: dev.superseller.connectedtools.ConnectedToolsPlugin
+api-version: '26.2'
+folia-supported: true
+load: STARTUP
+softdepend: []
+
+description: 'Connect items to blocks and emit redstone pulses. Vanilla-style toggling (levers, buttons, doors, observers, comparators, repeaters, redstone wire, gates, trapdoors). Commands + GUI + tab completers + full permissions for Minecraft 26.2 (Paper / Purpur / Folia).'
+
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+
+commands:
+  connectedtools:
+    description: Main command for ConnectedTools. Connect items to blocks, emit redstone pulses, manage via GUI.
+    usage: /<command> [connect|disconnect|list|info|gui|reload|c|d|l|i]
+    aliases: [ct, conn, conntools]
+    permission: connectedtools.connect
+
+permissions:
+  connectedtools.connect:
+    description: Bind held item to a block by clicking it.
+    default: true
+  connectedtools.disconnect:
+    description: Unbind the held item.
+    default: true
+  connectedtools.list:
+    description: List all your connections.
+    default: true
+  connectedtools.info:
+    description: Show info for the held item.
+    default: true
+  connectedtools.gui:
+    description: Open the connection management GUI.
+    default: true
+  connectedtools.reload:
+    description: Reload the plugin configuration.
+    default: op
+  connectedtools.all:
+    description: Full access to all ConnectedTools features.
+    default: false
+    children:
+      connectedtools.connect: true
+      connectedtools.disconnect: true
+      connectedtools.list: true
+      connectedtools.info: true
+      connectedtools.gui: true
+      connectedtools.reload: true

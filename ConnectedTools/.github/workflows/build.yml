@@ -1,0 +1,42 @@
+# CI build for ConnectedTools.
+# NOTE: To activate, copy this file to the repo root .github/workflows/ directory.
+name: Build ConnectedTools
+
+on:
+  push:
+    branches: [main, arena/*]
+    paths: ['ConnectedTools/**']
+  pull_request:
+    paths: ['ConnectedTools/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Maven build (JDK 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B -f ConnectedTools/pom.xml clean package
+
+      - name: Offline smoke test
+        run: |
+          mkdir -p smoke-classes
+          javac -d smoke-classes \
+            ConnectedTools/smoke/SmokeTest.java
+          java -cp smoke-classes dev.superseller.connectedtools.smoke.SmokeTest
+
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ConnectedTools-plugin
+          path: ConnectedTools/target/ConnectedTools-*.jar
+          if-no-files-found: error

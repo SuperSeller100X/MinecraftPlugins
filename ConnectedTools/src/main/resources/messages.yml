@@ -1,0 +1,48 @@
+prefix: "&8[&dConnectedTools&8] &r"
+
+binding:
+  active: "&aBinding mode active. Left-click a block within {distance} blocks."
+  bound: "&aBound &f{item} &ato &f{target} &aat {location}&a."
+  too-far: "&cThat block is too far (max {distance} blocks)."
+  not-holding: "&cHold the item you want to bind."
+
+emit:
+  pulse: "&7Redstone pulse emitted at {location} ({target})."
+  no-connection: "&cThat item is not connected to any block."
+
+disconnect:
+  success: "&aDisconnected {item} from {location} ({target})."
+  none: "&cThis item has no connection."
+
+gui:
+  title: "&5Connected Tools — {player}"
+  disconnect-lore: "&eClick to disconnect."
+  empty: "&7No connections."
+  claim: "&eDisconnected: {item}"
+
+command:
+  help-title: "&6=== ConnectedTools Help ==="
+  connect-desc: "&e/ct connect (c) &7— Bind held item to a clicked block"
+  disconnect-desc: "&e/ct disconnect (d) &7— Unbind held item"
+  list-desc: "&e/ct list (l) &7— List connections"
+  info-desc: "&e/ct info (i) &7— Show info for held item"
+  gui-desc: "&e/ct gui &7— Open management GUI"
+  reload-desc: "&e/ct reload &7— Reload config (op)"
+  reload-ok: "&aConfiguration reloaded."
+  help-empty: "&7Hold an item and use /ct connect to bind it."
+
+permission:
+  denied: "&cYou do not have permission."
+
+redstone:
+  lever-toggled: "&7Lever toggled at {location}."
+  button-pressed: "&7Button pressed at {location}."
+  door-toggled: "&7Door toggled at {location}."
+  wire-powered: "&7Redstone wire powered at {location}."
+  torch-toggled: "&7Torch toggled at {location}."
+  observer-triggered: "&7Observer triggered at {location}."
+  comparator-toggled: "&7Comparator toggled at {location}."
+  repeater-toggled: "&7Repeater toggled at {location}."
+  trapdoor-toggled: "&7Trapdoor toggled at {location}."
+  gate-toggled: "&7Fence gate toggled at {location}."
+  generic-pulse: "&7Redstone pulse emitted at {location} ({target})."

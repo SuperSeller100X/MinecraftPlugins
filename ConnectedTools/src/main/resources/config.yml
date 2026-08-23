@@ -1,0 +1,20 @@
+# ============================================================
+#  ConnectedTools — Professional Configuration
+#  Plugin: Connect items to blocks, emit vanilla redstone pulses.
+#  Paper / Purpur / Folia 26.2 | Java 25 | Maven
+# ============================================================
+
+# Whether to send chat notifications when binding / emitting.
+notifications: true
+
+# Maximum number of connections per player (persisted in YAML).
+max-connections: 50
+
+# Duration of redstone pulse in ticks (1 tick = 1/20 second).
+pulse-duration-ticks: 2
+
+# Maximum distance (in blocks) a player can bind to.
+max-bind-distance: 10
+
+# Play sounds on GUI clicks (recommended).
+sounds: true
