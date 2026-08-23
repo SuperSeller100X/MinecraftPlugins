@@ -59,75 +59,67 @@ public final class ConnectedToolsCommand implements CommandExecutor, TabComplete
 
         String sub = args[0].toLowerCase(Locale.ROOT);
 
-        switch (sub) {
-            case "connect", "c" -> {
-                if (!service.hasPermission(player, "connectedtools.connect")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                ItemStack item = player.getInventory().getItemInMainHand();
-                service.enterBindingMode(player, item);
+        if (sub.equals("connect") || sub.equals("c")) {
+            if (!service.hasPermission(player, "connectedtools.connect")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
             }
-            case "disconnect", "d" -> {
-                if (!service.hasPermission(player, "connectedtools.disconnect")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                ItemStack item = player.getInventory().getItemInMainHand();
-                service.disconnect(player, item);
+            ItemStack item = player.getInventory().getItemInMainHand();
+            service.enterBindingMode(player, item);
+        } else if (sub.equals("disconnect") || sub.equals("d")) {
+            if (!service.hasPermission(player, "connectedtools.disconnect")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
             }
-            case "list", "l" -> {
-                if (!service.hasPermission(player, "connectedtools.list")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                List<dev.superseller.connectedtools.model.Connection> connections = store.getConnections(player.getUniqueId());
-                if (connections.isEmpty()) {
-                    player.sendMessage(Colors.parse(settings.msg("gui.empty")));
-                } else {
-                    player.sendMessage(Colors.parse("&6=== Connected Items ==="));
-                    for (dev.superseller.connectedtools.model.Connection c : connections) {
-                        player.sendMessage(Colors.parse("&a" + c.getItemName()
-                                + " &7-> &f" + c.getLocationString()
-                                + " &7(" + c.getTargetType() + ")"));
-                    }
+            ItemStack item = player.getInventory().getItemInMainHand();
+            service.disconnect(player, item);
+        } else if (sub.equals("list") || sub.equals("l")) {
+            if (!service.hasPermission(player, "connectedtools.list")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
+            }
+            List<dev.superseller.connectedtools.model.Connection> connections = store.getConnections(player.getUniqueId());
+            if (connections.isEmpty()) {
+                player.sendMessage(Colors.parse(settings.msg("gui.empty")));
+            } else {
+                player.sendMessage(Colors.parse("&6=== Connected Items ==="));
+                for (dev.superseller.connectedtools.model.Connection c : connections) {
+                    player.sendMessage(Colors.parse("&a" + c.getItemName()
+                            + " &7-> &f" + c.getLocationString()
+                            + " &7(" + c.getTargetType() + ")"));
                 }
             }
-            case "info", "i" -> {
-                if (!service.hasPermission(player, "connectedtools.info")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                ItemStack item = player.getInventory().getItemInMainHand();
-                dev.superseller.connectedtools.model.Connection conn = store.getConnection(player.getUniqueId(), item);
-                if (conn == null) {
-                    player.sendMessage(Colors.parse(settings.msg("disconnect.none")));
-                } else {
-                    player.sendMessage(Colors.parse("&6=== Connection Info ==="));
-                    player.sendMessage("&aItem: &f" + conn.getItemName());
-                    player.sendMessage("&aTarget: &f" + conn.getTargetType());
-                    player.sendMessage("&aLocation: &f" + conn.getLocationString());
-                    player.sendMessage("&aWorld: &f" + conn.getWorldName());
-                }
+        } else if (sub.equals("info") || sub.equals("i")) {
+            if (!service.hasPermission(player, "connectedtools.info")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
             }
-            case "gui" -> {
-                if (!service.hasPermission(player, "connectedtools.gui")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                new GuiManager(settings, store).openMain(player);
+            ItemStack item = player.getInventory().getItemInMainHand();
+            dev.superseller.connectedtools.model.Connection conn = store.getConnection(player.getUniqueId(), item);
+            if (conn == null) {
+                player.sendMessage(Colors.parse(settings.msg("disconnect.none")));
+            } else {
+                player.sendMessage(Colors.parse("&6=== Connection Info ==="));
+                player.sendMessage("&aItem: &f" + conn.getItemName());
+                player.sendMessage("&aTarget: &f" + conn.getTargetType());
+                player.sendMessage("&aLocation: &f" + conn.getLocationString());
+                player.sendMessage("&aWorld: &f" + conn.getWorldName());
             }
-            case "reload" -> {
-                if (!service.hasPermission(player, "connectedtools.reload")) {
-                    player.sendMessage(Colors.parse(settings.msg("permission.denied")));
-                    return true;
-                }
-                settings.load();
-                player.sendMessage(Colors.parse(settings.msg("command.reload-ok")));
+        } else if (sub.equals("gui")) {
+            if (!service.hasPermission(player, "connectedtools.gui")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
             }
-            default -> {
-                sendHelp(player, label);
+            new GuiManager(settings, store).openMain(player);
+        } else if (sub.equals("reload")) {
+            if (!service.hasPermission(player, "connectedtools.reload")) {
+                player.sendMessage(Colors.parse(settings.msg("permission.denied")));
+                return true;
             }
+            settings.load();
+            player.sendMessage(Colors.parse(settings.msg("command.reload-ok")));
+        } else {
+            sendHelp(player, label);
         }
         return true;
     }
