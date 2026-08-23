@@ -1,0 +1,16 @@
+# ============================================================
+#  ConnectedTools configuration
+#  Plugin: Connect items to blocks with redstone pulse emission.
+# ============================================================
+
+# Whether to send chat notifications when entering binding mode.
+notifications: true
+
+# Maximum number of connections per player.
+max-connections: 50
+
+# Duration of the redstone pulse in ticks (1 tick = 1/20 second).
+pulse-duration-ticks: 2
+
+# Maximum distance (in blocks) a player can bind to from their position.
+max-bind-distance: 10

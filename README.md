@@ -77,6 +77,20 @@ included at `PlayerHeads/.github/workflows/build.yml` (copy it to the repo
 root `.github/workflows/` to activate it).
 
 
+## ConnectedTools 🔗
+
+Connect items and tools to nearby blocks (redstone, storage, etc.) for Minecraft **26.2** (Paper / Purpur / Folia). Commands (`/ct connect` / `/ct c`), GUI (`/ct gui`), full permissions (`connectedtools.*`), and redstone pulse emission on right-click. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
+
+- `/ct connect (c)` — bind held item to a clicked block
+- `/ct disconnect (d)` — unbind held item
+- `/ct list (l)` — list connections
+- `/ct info (i)` — show info
+- `/ct gui` — manage via inventory
+- `/ct reload` — reload config (op)
+- Permissions: `connectedtools.connect`, `.disconnect`, `.list`, `.info`, `.gui`, `.reload`, `.all`
+
+See [ConnectedTools/README.md](ConnectedTools/README.md). Build with `mvn -B clean package` in `ConnectedTools/` (JDK 25 required).
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):
