@@ -1,0 +1,55 @@
+# TeleportSigns — Minecraft 26.2 (Paper / Purpur / Folia)
+# Reload with /ts reload  (permission: teleportsigns.reload)
+
+settings:
+  # How far (blocks) /ts looks for the sign you are facing.
+  max-look-distance: 6
+
+  # Default /ts list radius when none is given.
+  list-radius: 32
+
+  # Maximum signs shown by /ts list.
+  list-max: 20
+
+  # Wax bound signs so a normal right-click teleports instead of opening the editor.
+  wax-on-bind: true
+
+  # If true, sneaking and right-clicking a teleport sign does not teleport
+  # (so you can still dye / glow / interact with the block).
+  sneak-to-edit: true
+
+  # Play this sound after a successful teleport (Bukkit Sound name, or empty to disable).
+  sound: ENTITY_ENDERMAN_TELEPORT
+
+  # Spawn this particle at the destination (Bukkit Particle name, or empty to disable).
+  particle: PORTAL
+
+safety:
+  enabled: true
+  check-lava: true
+  check-fire: true
+  require-solid-below: true
+  reject-void: true
+  # How far down (blocks) we look for a solid floor when require-solid-below is true.
+  max-fall: 4
+
+cooldown:
+  # Seconds a player must wait between teleports. 0 disables.
+  seconds: 3.0
+
+warmup:
+  # Seconds a player must stand still before teleporting. 0 = instant.
+  seconds: 0.0
+  cancel-on-move: true
+  cancel-on-damage: true
+
+economy:
+  # auto = use Vault / VaultUnlocked when present
+  # true = require an economy provider when a cost is configured
+  # false = never charge
+  enabled: auto
+  # Used when a sign has no per-sign cost (/ts cost).
+  default-cost: 0.0
+  # allow = teleport for free if a cost is set but no economy is hooked
+  # deny  = refuse the teleport until Vault is available
+  missing-policy: allow
