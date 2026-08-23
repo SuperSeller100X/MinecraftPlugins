@@ -1,6 +1,7 @@
 package dev.superseller.randomstructurechallenge.challenge;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -70,7 +71,7 @@ public final class ChallengeManager {
     public void beginAwaiting(Player player) {
         synchronized (this) {
             if (isActive()) {
-                messages.send(player, "already-running", Map.of("state", state.name().toLowerCase()));
+                messages.send(player, "already-running", Map.of("state", state.name().toLowerCase(Locale.ROOT)));
                 return;
             }
             if (state == State.AWAITING && awaitingPlayer != null && !awaitingPlayer.equals(player.getUniqueId())) {
@@ -98,7 +99,7 @@ public final class ChallengeManager {
         }
         synchronized (this) {
             if (isActive()) {
-                messages.send(starter, "already-running", Map.of("state", state.name().toLowerCase()));
+                messages.send(starter, "already-running", Map.of("state", state.name().toLowerCase(Locale.ROOT)));
                 return;
             }
             state = State.RUNNING;
@@ -145,6 +146,7 @@ public final class ChallengeManager {
 
     public void pause(CommandSender actor) {
         int remaining;
+        int interval;
         synchronized (this) {
             if (state == State.PAUSED) {
                 messages.send(actor, "already-paused");
@@ -156,8 +158,9 @@ public final class ChallengeManager {
             }
             state = State.PAUSED;
             remaining = remainingSeconds;
+            interval = intervalSeconds;
         }
-        display.showCountdown(remaining, intervalSeconds, true);
+        display.showCountdown(remaining, interval, true);
         broadcast("paused", Map.of(
                 "player", actor.getName(),
                 "seconds", Integer.toString(remaining)
@@ -167,6 +170,7 @@ public final class ChallengeManager {
 
     public void resume(CommandSender actor) {
         int remaining;
+        int interval;
         synchronized (this) {
             if (state != State.PAUSED) {
                 messages.send(actor, "not-paused");
@@ -174,8 +178,9 @@ public final class ChallengeManager {
             }
             state = State.RUNNING;
             remaining = remainingSeconds;
+            interval = intervalSeconds;
         }
-        display.showCountdown(remaining, intervalSeconds, false);
+        display.showCountdown(remaining, interval, false);
         broadcast("resumed", Map.of(
                 "player", actor.getName(),
                 "seconds", Integer.toString(remaining)
