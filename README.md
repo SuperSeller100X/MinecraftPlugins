@@ -97,6 +97,18 @@ Connect items and tools to nearby blocks (redstone, storage, etc.) for Minecraft
 
 See [ConnectedTools/README.md](ConnectedTools/README.md). Build with `mvn -B clean package` in `ConnectedTools/` (JDK 25 required).
 
+## RandomStructureChallenge ⚡
+
+A random vanilla-structure challenge for Minecraft **26.2** (Paper / Purpur / Folia). `/challenge start` (or `/ch s`) then type an interval like `60`; every N seconds a real Minecraft structure is placed on **every online player** via `/place structure`. Custom hotbar countdown plus a BossBar titled `seconds left until next structure:` whose fill is the remaining percent.
+
+- `/challenge start` / `/ch s` — start (chat interval or `/ch s 60`)
+- `/challenge stop` / `/ch x` — stop
+- `/challenge pause` / `/ch p` · `/challenge resume` / `/ch r`
+- `/challenge status` / `/ch i` · `/challenge reload` / `/ch rl`
+- Permissions: `randomstructurechallenge.*` (status default-on, the rest op)
+
+See [RandomStructureChallenge/README.md](RandomStructureChallenge/README.md). Build with `mvn -B clean package` in `RandomStructureChallenge/` (JDK 25 required).
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):

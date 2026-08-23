@@ -1,0 +1,60 @@
+# RandomStructureChallenge messages (MiniMessage)
+# https://docs.advntr.dev/minimessage/format.html
+# Placeholders: {player} {seconds} {interval} {clock} {percent} {bar} {structure}
+#               {name} {state} {spawns} {players} {min} {max} {input} {worlds}
+
+prefix: "<gradient:#ff2d95:#7b2cbf><bold>RSC</bold></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+players-only: "<red>Only players can type the interval in chat. Use <white>/challenge start &lt;seconds&gt;</white> from console.</red>"
+unknown-subcommand: "<red>Unknown subcommand <white>{input}</white>. Try <white>/challenge help</white>.</red>"
+
+already-running: "<red>A challenge is already {state}. Use <white>/challenge stop</white> first.</red>"
+not-running: "<red>No challenge is running.</red>"
+already-paused: "<red>The challenge is already paused.</red>"
+not-paused: "<red>The challenge is not paused.</red>"
+await-cancelled: "<yellow>Interval input cancelled.</yellow>"
+await-timeout: "<red>You took too long to enter an interval. Run <white>/challenge start</white> again.</red>"
+await-prompt: "<gray>Type the interval in chat — e.g. <white>60</white>, <white>1m</white> or <white>1:30</white>. You have <white>{seconds}s</white>. Type <white>cancel</white> to abort.</gray>"
+await-in-progress: "<gray>Still waiting for an interval. Type a number like <white>60</white> or <white>cancel</white>.</gray>"
+
+invalid-interval: "<red><white>{input}</white> is not a valid interval. Try <white>60</white>, <white>90s</white>, <white>1m</white> or <white>1:30</white>.</red>"
+interval-too-low: "<red>The interval must be at least <white>{min}</white> seconds.</red>"
+interval-too-high: "<red>The interval cannot be more than <white>{max}</white> seconds.</red>"
+
+started: "<green>Challenge started by <white>{player}</white> — a random structure drops on <white>every player</white> every <white>{interval}s</white>.</green>"
+stopped: "<yellow>Challenge stopped by <white>{player}</white>. Structures dropped: <white>{spawns}</white>.</yellow>"
+paused: "<yellow>Challenge paused by <white>{player}</white> with <white>{seconds}s</white> left.</yellow>"
+resumed: "<green>Challenge resumed by <white>{player}</white> — <white>{seconds}s</white> until the next structure.</green>"
+reloaded: "<green>Configuration and messages reloaded.</green>"
+
+spawn-broadcast: "<light_purple><bold>✦ STRUCTURE DROP ✦</bold></light_purple> <gray>→</gray> <white>{structure}</white>"
+spawn-failed: "<red>Could not place a structure this wave (vanilla /place structure rejected every attempt).</red>"
+
+# BossBar title — keep this wording; the bar itself is the remaining %.
+bossbar-title: "seconds left until next structure: {seconds}"
+bossbar-title-paused: "PAUSED — seconds left until next structure: {seconds}"
+
+# Action bar (over the hotbar). {bar} is ▰▱ blocks, {clock} is mm:ss.
+action-bar: "<gold>⚡</gold> <gradient:#00f5d4:#9b5de5><bold>{clock}</bold></gradient> <dark_gray>│</dark_gray> <aqua>{bar}</aqua> <gray>{percent}%</gray>"
+action-bar-low: "<red><bold>⚠ {clock}</bold></red> <dark_gray>│</dark_gray> <red>{bar}</red> <gray>{percent}%</gray>"
+action-bar-paused: "<yellow>⏸ PAUSED</yellow> <dark_gray>│</dark_gray> <white>{clock}</white> <gray>{percent}%</gray>"
+action-bar-spawn: "<light_purple><bold>✦ STRUCTURE DROP ✦</bold></light_purple> <white>{structure}</white>"
+
+title-spawn: "<gradient:#ff2d95:#7b2cbf><bold>STRUCTURE DROP</bold></gradient>"
+subtitle-spawn: "<white>{structure}</white>"
+
+status-idle: "<gray>No challenge is running.</gray>"
+status-header: "<gray>————</gray> <gradient:#ff2d95:#7b2cbf><bold>Challenge status</bold></gradient> <gray>————</gray>"
+status-line: "<gray>{input}</gray> <white>{name}</white>"
+
+help:
+  - "<gray>————</gray> <gradient:#ff2d95:#7b2cbf><bold>RandomStructureChallenge</bold></gradient> <gray>————</gray>"
+  - "<yellow>/challenge start</yellow> <dark_gray>(/ch s)</dark_gray> <gray>— start, then type the interval in chat</gray>"
+  - "<yellow>/challenge start &lt;seconds&gt;</yellow> <gray>— start immediately (60, 1m, 1:30)</gray>"
+  - "<yellow>/challenge stop</yellow> <dark_gray>(/ch x)</dark_gray> <gray>— stop the challenge</gray>"
+  - "<yellow>/challenge pause</yellow> <dark_gray>(/ch p)</dark_gray> <gray>— freeze the timer</gray>"
+  - "<yellow>/challenge resume</yellow> <dark_gray>(/ch r)</dark_gray> <gray>— unfreeze the timer</gray>"
+  - "<yellow>/challenge status</yellow> <dark_gray>(/ch i)</dark_gray> <gray>— who started it, time left, last structure</gray>"
+  - "<yellow>/challenge reload</yellow> <dark_gray>(/ch rl)</dark_gray> <gray>— reload config &amp; messages</gray>"
+  - "<gray>Aliases:</gray> <yellow>/ch</yellow><gray>,</gray> <yellow>/rsc</yellow><gray>,</gray> <yellow>/rschallenge</yellow>"
