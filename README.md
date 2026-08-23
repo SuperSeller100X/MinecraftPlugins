@@ -2,6 +2,12 @@
 
 A collection of Minecraft plugins.
 
+## TeleportSigns 🪧
+
+Look at a written sign, bind a destination with `/ts [world] x y z [yaw] [pitch]`, and right-click to teleport. Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Operators create signs; every player can use them. Folia-safe `teleportAsync`, safety checks, cooldown/warmup, optional Vault cost, tab completion, and short aliases (`/ts s`, `/ts r`, `/ts i`, `/ts l`, `/ts c`, `/ts rl`).
+
+See [TeleportSigns/README.md](TeleportSigns/README.md). Build with `mvn -B clean package` in `TeleportSigns/` (JDK 25 required).
+
 ## ChestLock 🔐
 
 Passcode and transferable-key protection for chests, trapped chests, barrels, and placed shulker boxes on Minecraft **26.2** (Paper / Purpur / Folia). Native GUI workflows, per-lock timed access, personal settings, secure salted hashes, failed-attempt cooldowns, owner/admin management, and Folia-safe scheduling.

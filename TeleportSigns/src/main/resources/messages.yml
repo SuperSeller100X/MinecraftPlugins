@@ -1,0 +1,61 @@
+# TeleportSigns messages (MiniMessage — https://docs.advntr.dev/minimessage/format.html)
+# Placeholders: {world} {x} {y} {z} {yaw} {pitch} {cost} {count} {radius} {seconds} {input} {reason}
+
+prefix: "<gradient:#38bdf8:#818cf8><bold>TeleportSigns</bold></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+players-only: "<red>Only players can use this command.</red>"
+reloaded: "<green>Configuration, messages and sign index reloaded.</green>"
+not-a-sign: "<red>Look at a sign within <white>{radius}</white> blocks first.</red>"
+no-target: "<red>You are not looking at a block.</red>"
+not-teleport-sign: "<red>That sign has no teleport action.</red>"
+invalid-number: "<red><white>{input}</white> is not a valid number.</red>"
+invalid-world: "<red>World <white>{world}</white> is not loaded.</red>"
+usage-set: "<red>Usage: /ts [world] &lt;x&gt; &lt;y&gt; &lt;z&gt; [yaw] [pitch]</red>"
+usage-cost: "<red>Usage: /ts cost &lt;amount&gt;</red>"
+usage-list: "<red>Usage: /ts list [radius]</red>"
+
+bound: "<green>Bound this sign to <white>{world}</white> <white>{x}</white> <white>{y}</white> <white>{z}</white>{rotation}.</green>"
+bound-here: "<green>Bound this sign to your current location.</green>"
+unbound: "<green>Removed the teleport action from this sign.</green>"
+cost-set: "<green>This sign now costs <white>{cost}</white> per teleport.</green>"
+
+info-header: "<gray>————</gray> <aqua>Teleport sign</aqua> <gray>————</gray>"
+info-dest: "<gray>Destination:</gray> <white>{world}</white> <white>{x}</white> <white>{y}</white> <white>{z}</white>{rotation}"
+info-cost: "<gray>Cost:</gray> <white>{cost}</white>"
+info-created: "<gray>Created by</gray> <white>{player}</white> <gray>at</gray> <white>{time}</white>"
+
+list-empty: "<gray>No teleport signs within <white>{radius}</white> blocks.</gray>"
+list-header: "<gray>————</gray> <aqua>{count}</aqua> <gray>nearby teleport sign(s) (r=<white>{radius}</white>)</gray>"
+list-line: "<dark_gray>•</dark_gray> <white>{world}</white> <gray>{x} {y} {z}</gray> <dark_gray>→</dark_gray> <white>{dest}</white>"
+
+teleported: "<green>Teleported to <white>{world}</white> <white>{x}</white> <white>{y}</white> <white>{z}</white>.</green>"
+teleport-failed: "<red>Teleport failed. The destination may be unloaded or invalid.</red>"
+unsafe: "<red>Destination is unsafe ({reason}).</red>"
+unsafe-void: "void / out of world"
+unsafe-lava: "lava"
+unsafe-fire: "fire"
+unsafe-solid: "blocked / no standing room"
+unsafe-floor: "no solid floor"
+
+cooldown: "<red>Wait <white>{seconds}</white>s before using another teleport sign.</red>"
+warmup: "<yellow>Stand still... teleporting in <white>{seconds}</white>s.</yellow>"
+warmup-cancelled-move: "<red>Teleport cancelled because you moved.</red>"
+warmup-cancelled-damage: "<red>Teleport cancelled because you took damage.</red>"
+already-warming: "<red>You are already preparing to teleport.</red>"
+
+cost-charged: "<gray>Charged <white>{cost}</white>.</gray>"
+cannot-afford: "<red>You need <white>{cost}</white> to use this sign.</red>"
+economy-missing: "<red>This sign has a cost, but no economy plugin is available.</red>"
+
+help:
+  - "<gray>————</gray> <gradient:#38bdf8:#818cf8><bold>TeleportSigns</bold></gradient> <gray>————</gray>"
+  - "<yellow>/ts <x> <y> <z></yellow> <gray>— bind the sign you look at</gray>"
+  - "<yellow>/ts set|s [world] <x> <y> <z> [yaw] [pitch]</yellow>"
+  - "<yellow>/ts here|.</yellow> <gray>— bind to your current location</gray>"
+  - "<yellow>/ts remove|r</yellow> <gray>— unbind the looked-at sign</gray>"
+  - "<yellow>/ts info|i</yellow> <gray>— show the looked-at sign</gray>"
+  - "<yellow>/ts list|l [radius]</yellow> <gray>— nearby teleport signs</gray>"
+  - "<yellow>/ts cost|c <amount></yellow> <gray>— set a per-sign price</gray>"
+  - "<yellow>/ts reload|rl</yellow> <gray>— reload config</gray>"
+  - "<gray>Aliases:</gray> <yellow>/teleportsigns</yellow> <yellow>/tpsign</yellow> <yellow>/tpsigns</yellow> <yellow>/telesign</yellow>"

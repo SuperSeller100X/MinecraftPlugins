@@ -1,0 +1,70 @@
+name: TeleportSigns
+version: '${project.version}'
+main: dev.superseller.teleportsigns.TeleportSignsPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Bind coordinates to signs and right-click to teleport. Paper / Purpur / Folia 26.2.
+softdepend: [Vault, VaultUnlocked]
+
+commands:
+  teleportsigns:
+    description: Bind, inspect, list, or remove teleport signs.
+    usage: /<command> [set|here|remove|info|list|cost|reload|help] ...
+    aliases: [ts, tpsign, tpsigns, telesign]
+
+permissions:
+  teleportsigns.use:
+    description: Right-click a teleport sign to teleport.
+    default: true
+  teleportsigns.create:
+    description: Bind a destination to the sign you are looking at.
+    default: op
+  teleportsigns.remove:
+    description: Remove a teleport action from the looked-at sign.
+    default: op
+  teleportsigns.info:
+    description: View destination info for the looked-at sign.
+    default: op
+  teleportsigns.list:
+    description: List nearby teleport signs.
+    default: op
+  teleportsigns.cost:
+    description: Set a per-sign teleport cost.
+    default: op
+  teleportsigns.reload:
+    description: Reload TeleportSigns configuration and messages.
+    default: op
+  teleportsigns.bypass.cooldown:
+    description: Skip the teleport cooldown.
+    default: op
+  teleportsigns.bypass.warmup:
+    description: Skip the teleport warmup.
+    default: op
+  teleportsigns.bypass.cost:
+    description: Skip the Vault teleport cost.
+    default: op
+  teleportsigns.bypass.safety:
+    description: Allow teleporting to destinations the safety check would reject.
+    default: op
+  teleportsigns.admin:
+    description: All administrative TeleportSigns permissions.
+    default: op
+    children:
+      teleportsigns.create: true
+      teleportsigns.remove: true
+      teleportsigns.info: true
+      teleportsigns.list: true
+      teleportsigns.cost: true
+      teleportsigns.reload: true
+      teleportsigns.bypass.cooldown: true
+      teleportsigns.bypass.warmup: true
+      teleportsigns.bypass.cost: true
+      teleportsigns.bypass.safety: true
+  teleportsigns.*:
+    description: Every TeleportSigns permission, including use.
+    default: op
+    children:
+      teleportsigns.use: true
+      teleportsigns.admin: true
