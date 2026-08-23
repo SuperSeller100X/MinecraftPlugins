@@ -1,0 +1,70 @@
+name: ChestLock
+version: '${project.version}'
+main: dev.superseller.chestlock.ChestLockPlugin
+api-version: '26.2'
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Passcode and physical-key protection for chests and other containers.
+folia-supported: true
+
+commands:
+  chestlock:
+    description: Open ChestLock or perform a lock action.
+    usage: /chestlock [lock|unlock|info|change|remove|key|settings|help|bypass|forceremove|reload]
+    aliases: [cl]
+    permission: chestlock.use
+
+permissions:
+  chestlock.*:
+    description: Grants every ChestLock player and administrative permission.
+    default: op
+    children:
+      chestlock.use: true
+      chestlock.lock: true
+      chestlock.unlock: true
+      chestlock.info: true
+      chestlock.manage: true
+      chestlock.key: true
+      chestlock.key.use: true
+      chestlock.settings: true
+      chestlock.admin: true
+  chestlock.use:
+    description: Allows /chestlock and /cl.
+    default: true
+  chestlock.lock:
+    description: Allows creating locks.
+    default: true
+  chestlock.unlock:
+    description: Allows attempting passcode unlocks.
+    default: true
+  chestlock.info:
+    description: Allows viewing non-secret lock information.
+    default: true
+  chestlock.manage:
+    description: Allows owners to change or remove their locks.
+    default: true
+  chestlock.key:
+    description: Allows owners to issue and revoke physical keys.
+    default: true
+  chestlock.key.use:
+    description: Allows a held physical key to open its bound container.
+    default: true
+  chestlock.settings:
+    description: Allows changing personal ChestLock settings.
+    default: true
+  chestlock.admin:
+    description: Grants all ChestLock administrative permissions.
+    default: op
+    children:
+      chestlock.admin.reload: true
+      chestlock.admin.bypass: true
+      chestlock.admin.forceremove: true
+  chestlock.admin.reload:
+    description: Allows reloading ChestLock configuration and messages.
+    default: op
+  chestlock.admin.bypass:
+    description: Allows explicitly toggling lock protection bypass mode.
+    default: op
+  chestlock.admin.forceremove:
+    description: Allows removing any lock without its passcode.
+    default: op

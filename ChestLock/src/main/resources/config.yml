@@ -1,0 +1,59 @@
+# ChestLock 1.0.0 — Minecraft 26.2 / Java 25
+# Restart or use /cl reload after changing this file.
+
+target-distance: 6
+
+containers:
+  chests: true          # normal and trapped chests; both halves of a double chest share one lock
+  barrels: true
+  shulker-boxes: true   # every placed shulker-box color
+
+passcodes:
+  min-length: 4
+  max-length: 64
+  # PBKDF2-HMAC-SHA256 work factor. Existing locks remember the value used to create them.
+  iterations: 210000
+  attempts-before-cooldown: 3
+  attempt-window-seconds: 30
+  base-cooldown-seconds: 5
+  max-cooldown-seconds: 300
+
+unlock-duration:
+  min-seconds: 5
+  max-seconds: 3600
+  default-seconds: 30
+
+protection:
+  explosions: true
+  pistons: true
+  fire: true
+  entity-block-changes: true
+  # Deliberately false per the selected design: hoppers and hopper minecarts may transfer items.
+  block-hoppers: false
+
+keys:
+  material: TRIPWIRE_HOOK
+  glint: true
+
+player-defaults:
+  create-key: false
+  auto-open: false
+  sounds: true
+  particles: true
+  action-bar: true
+  break-confirmation: true
+  attempt-notifications: true
+
+feedback:
+  success-sound: BLOCK_NOTE_BLOCK_PLING
+  failure-sound: ENTITY_VILLAGER_NO
+  locked-sound: BLOCK_CHEST_LOCKED
+  success-particle: HAPPY_VILLAGER
+
+security:
+  clear-sessions-on-quit: true
+  dialog-timeout-seconds: 120
+  break-confirmation-seconds: 4
+
+logging:
+  audit-actions: true

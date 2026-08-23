@@ -2,6 +2,11 @@
 
 A collection of Minecraft plugins.
 
+## ChestLock 🔐
+
+Passcode and transferable-key protection for chests, trapped chests, barrels, and placed shulker boxes on Minecraft **26.2** (Paper / Purpur / Folia). Native GUI workflows, per-lock timed access, personal settings, secure salted hashes, failed-attempt cooldowns, owner/admin management, and Folia-safe scheduling.
+
+See [ChestLock/README.md](ChestLock/README.md). Build with `mvn -B clean verify` in `ChestLock/` (JDK 25 required).
 
 ## Subscriptions 🔁
 
