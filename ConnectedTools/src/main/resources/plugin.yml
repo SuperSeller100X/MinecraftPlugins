@@ -1,41 +1,42 @@
 name: ConnectedTools
-version: 1.0.0
+version: ${project.version}
 main: dev.superseller.connectedtools.ConnectedToolsPlugin
 api-version: '26.2'
 folia-supported: true
 load: STARTUP
-softdepend: [Folia]
+softdepend: []
 
-description: 'Connect items and tools to redstone, storage, and other blocks. Commands, GUI, and permissions for Minecraft 26.2 (Paper / Purpur / Folia).'
+description: 'Connect items to blocks and emit redstone pulses. Vanilla-style toggling (levers, buttons, doors, observers, comparators, repeaters, redstone wire, gates, trapdoors). Commands + GUI + tab completers + full permissions for Minecraft 26.2 (Paper / Purpur / Folia).'
 
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPlugins
 
 commands:
   connectedtools:
-    description: Main command for ConnectedTools.
+    description: Main command for ConnectedTools. Connect items to blocks, emit redstone pulses, manage via GUI.
+    usage: /<command> [connect|disconnect|list|info|gui|reload|c|d|l|i]
     aliases: [ct, conn, conntools]
-    usage: /<command> [connect|disconnect|list|info|reload|gui|c|d|l|i]
+    permission: connectedtools.connect
 
 permissions:
   connectedtools.connect:
-    description: Allows connecting an item to a block.
+    description: Bind held item to a block by clicking it.
     default: true
   connectedtools.disconnect:
-    description: Allows disconnecting an item from a block.
+    description: Unbind the held item.
     default: true
   connectedtools.list:
-    description: Allows listing connections.
+    description: List all your connections.
     default: true
   connectedtools.info:
-    description: Allows viewing connection info.
+    description: Show info for the held item.
+    default: true
+  connectedtools.gui:
+    description: Open the connection management GUI.
     default: true
   connectedtools.reload:
-    description: Allows reloading the plugin config.
+    description: Reload the plugin configuration.
     default: op
-  connectedtools.gui:
-    description: Allows opening the connection GUI.
-    default: true
   connectedtools.all:
     description: Full access to all ConnectedTools features.
     default: false
@@ -44,5 +45,5 @@ permissions:
       connectedtools.disconnect: true
       connectedtools.list: true
       connectedtools.info: true
-      connectedtools.reload: true
       connectedtools.gui: true
+      connectedtools.reload: true

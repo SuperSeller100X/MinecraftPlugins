@@ -77,17 +77,15 @@ included at `PlayerHeads/.github/workflows/build.yml` (copy it to the repo
 root `.github/workflows/` to activate it).
 
 
-## ConnectedTools 🔗
+## ConnectedTools 🔗 (Professional)
 
-Connect items and tools to nearby blocks (redstone, storage, etc.) for Minecraft **26.2** (Paper / Purpur / Folia). Commands (`/ct connect` / `/ct c`), GUI (`/ct gui`), full permissions (`connectedtools.*`), and redstone pulse emission on right-click. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
+Connect items and tools to nearby blocks with **vanilla-style toggling** (levers, buttons, doors, observers, comparators, repeaters, redstone wire, gates, trapdoors) for Minecraft **26.2** (Paper / Purpur / Folia). Professional architecture: `PluginSettings`, `messages.yml`, `ConnectionAPI`, `ConnectionService`, `RedstoneService`, `GuiManager` with `MenuHolder`, `PlatformScheduler` for Folia, YAML persistence (`ConnectionStore`), and full **tab completers** on all commands.
 
-- `/ct connect (c)` — bind held item to a clicked block
-- `/ct disconnect (d)` — unbind held item
-- `/ct list (l)` — list connections
-- `/ct info (i)` — show info
-- `/ct gui` — manage via inventory
-- `/ct reload` — reload config (op)
-- Permissions: `connectedtools.connect`, `.disconnect`, `.list`, `.info`, `.gui`, `.reload`, `.all`
+- Commands (`/ct` / `/ct connect` / `/ct disconnect` / `/ct list` / `/ct info` / `/ct gui` / `/ct reload`) — all with tab completion and aliases (`c`, `d`, `l`, `i`).
+- Redstone mechanism: toggles real `BlockData` instead of placing temporary redstone blocks.
+- Permissions: `connectedtools.connect`, `.disconnect`, `.list`, `.info`, `.gui`, `.reload`, `.all` (with children).
+- GUI: inventory-based connection management (`/ct gui`).
+- Cross-platform (Linux / Windows / Mac), Java 25, Maven build with Paper 26.2 API.
 
 See [ConnectedTools/README.md](ConnectedTools/README.md). Build with `mvn -B clean package` in `ConnectedTools/` (JDK 25 required).
 
