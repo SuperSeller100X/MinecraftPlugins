@@ -1,0 +1,95 @@
+# ============================================================
+#  ShardTools messages (MiniMessage format)
+#  Placeholders: %player%, %amount%, %balance%, %item%, %price%,
+#                %time%, %minutes%, %rank%, %symbol%
+# ============================================================
+prefix: "<gray>[</gray><aqua>ShardTools</aqua><gray>]</gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+player-only: "<red>Only players can use this command.</red>"
+invalid-player: "<red>Player <white>%player%</white> was not found.</red>"
+invalid-amount: "<red>'<white>%amount%</white>' is not a valid amount.</red>"
+invalid-item: "<red>Unknown item id <white>%item%</white>. Use /st items.</red>"
+unknown-command: "<red>Unknown subcommand. Try /st help.</red>"
+
+balance:
+  self: "<gray>Your balance: <aqua>%symbol%%balance%</aqua></gray>"
+  other: "<gray>Balance of <white>%player%</white>: <aqua>%symbol%%balance%</aqua></gray>"
+
+pay:
+  sent: "<gray>Sent <aqua>%symbol%%amount%</aqua> to <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
+  received: "<gray>Received <aqua>%symbol%%amount%</aqua> from <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
+  self: "<red>You cannot pay yourself.</red>"
+  insufficient: "<red>You only have <aqua>%symbol%%balance%</aqua>.</red>"
+
+award:
+  received: "<gray>Shard income: <aqua>+%symbol%%amount%</aqua> <dark_gray>(every %minutes% min)</dark_gray></gray>"
+  enabled: "<gray>Automatic shard income is now <green>%state%</green>.</gray>"
+  interval-set: "<gray>Shard income interval set to <yellow>%minutes% minutes</yellow>.</gray>"
+  amount-set: "<gray>Shard income amount set to <yellow>%symbol%%amount%</yellow>.</gray>"
+
+shop:
+  purchased: "<gray>Purchased <white>%item%</white> for <aqua>%symbol%%price%</aqua>. Remaining: <aqua>%symbol%%balance%</aqua></gray>"
+  insufficient: "<red>This costs <aqua>%symbol%%price%</aqua> but you only have <aqua>%symbol%%balance%</aqua>.</red>"
+  title: "<dark_gray>Shard Shop</dark_gray> <gray>-</gray> <aqua>%symbol%%balance%</aqua>"
+  confirm-title: "<dark_gray>Buy</dark_gray> <white>%item%</white><dark_gray>?</dark_gray>"
+  price-line: "<dark_gray>Price: <aqua>%symbol%%price%</aqua></dark_gray>"
+  click-to-buy: "<yellow>Click to purchase</yellow>"
+  click-to-confirm: "<green>Click to confirm</green>"
+  click-to-cancel: "<red>Click to cancel</red>"
+
+give:
+  given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"
+  received: "<gray>You received <white>%amount%x %item%</white>.</gray>"
+
+items:
+  header: "<gray>Shop items <dark_gray>(id - price - lifetime)</dark_gray>:</gray>"
+  entry: "<dark_gray>-</dark_gray> <white>%item%</white> <dark_gray>%symbol%%price%</dark_gray> <gray>%time%</gray>"
+
+price:
+  set: "<gray>Price of <white>%item%</white> set to <aqua>%symbol%%price%</aqua>.</gray>"
+
+shards:
+  given: "<gray>Gave <aqua>%symbol%%amount%</aqua> to <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
+  taken: "<gray>Took <aqua>%symbol%%amount%</aqua> from <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
+  set: "<gray>Balance of <white>%player%</white> set to <aqua>%symbol%%balance%</aqua>.</gray>"
+  insufficient: "<red><white>%player%</white> only has <aqua>%symbol%%balance%</aqua>.</red>"
+
+info:
+  holding: "<gray>Holding <white>%item%</white> <dark_gray>(%symbol%%price%)</dark_gray> - <yellow>%time%</yellow> remaining.</gray>"
+  permanent: "never expires"
+  not-holding: "<red>Hold a shard item to inspect it.</red>"
+
+top:
+  header: "<gray>Shard leaderboard:</gray>"
+  entry: "<yellow>#%rank%</yellow> <white>%player%</white> <dark_gray>-</dark_gray> <aqua>%symbol%%balance%</aqua>"
+  empty: "<gray>Nobody has any shards yet.</gray>"
+
+expire:
+  destroyed: "<red>Your <white>%item%</white> crumbled into shards of dust!</red>"
+  warning: "<yellow>Your <white>%item%</white> self-destructs in <red>%time%</red>!</yellow>"
+
+potion:
+  haste: "<gray>You feel a surge of energy: <yellow>Haste II for %time%</yellow>.</gray>"
+
+time:
+  permanent: "unlimited"
+
+reload:
+  done: "<gray>Configuration, messages and shop catalog reloaded.</gray>"
+
+help:
+  header: "<gray>=== </gray><aqua>ShardTools</aqua><gray> ===</gray>"
+  line-shop: "<yellow>/st shop</yellow> <dark_gray>(s)</dark_gray> <gray>- open the shard shop</gray>"
+  line-balance: "<yellow>/st balance [player]</yellow> <dark_gray>(b)</dark_gray> <gray>- check shard balance</gray>"
+  line-pay: "<yellow>/st pay <player> <amount></yellow> <dark_gray>(p)</dark_gray> <gray>- send shards</gray>"
+  line-top: "<yellow>/st top [n]</yellow> <dark_gray>(t)</dark_gray> <gray>- shard leaderboard</gray>"
+  line-info: "<yellow>/st info</yellow> <dark_gray>(i)</dark_gray> <gray>- inspect held shard item</gray>"
+  line-give: "<yellow>/st give <player> <item> [amount]</yellow> <dark_gray>(g)</dark_gray> <gray>- give shop items <dark_gray>(op)</dark_gray></gray>"
+  line-items: "<yellow>/st items</yellow> <dark_gray>(l)</dark_gray> <gray>- list item ids <dark_gray>(op)</dark_gray></gray>"
+  line-setprice: "<yellow>/st setprice <item> <price></yellow> <dark_gray>(sp)</dark_gray> <gray>- change price <dark_gray>(op)</dark_gray></gray>"
+  line-shards: "<yellow>/st shards <player> <give|take|set> <amount></yellow> <dark_gray>(sh)</dark_gray> <gray>- edit balance <dark_gray>(op)</dark_gray></gray>"
+  line-interval: "<yellow>/st interval <minutes></yellow> <dark_gray>(iv)</dark_gray> <gray>- income interval <dark_gray>(op)</dark_gray></gray>"
+  line-amount: "<yellow>/st amount <shards></yellow> <dark_gray>(am)</dark_gray> <gray>- income amount <dark_gray>(op)</dark_gray></gray>"
+  line-award: "<yellow>/st award <on|off></yellow> <dark_gray>(aw)</dark_gray> <gray>- toggle income <dark_gray>(op)</dark_gray></gray>"
+  line-reload: "<yellow>/st reload</yellow> <dark_gray>(rl)</dark_gray> <gray>- reload config <dark_gray>(op)</dark_gray></gray>"

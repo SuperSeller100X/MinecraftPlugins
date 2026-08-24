@@ -1,0 +1,106 @@
+# CI build for ShardTools.
+#
+# NOTE: GitHub only executes workflows located at the REPOSITORY ROOT under
+# .github/workflows/. This copy lives inside the plugin folder because the
+# automation that opened the pull request may not be allowed to add files to
+# the root .github/workflows/ directory. To activate this CI pipeline, copy
+# this file to <repo-root>/.github/workflows/shardtools.yml - no other
+# changes are required.
+name: Build ShardTools
+
+on:
+  push:
+    branches: [main]
+    paths: ['ShardTools/**']
+  pull_request:
+    paths: ['ShardTools/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Maven build (JDK 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B -f ShardTools/pom.xml clean package
+
+      - name: Offline smoke test (pure logic)
+        run: |
+          mkdir -p smoke-classes
+          javac -d smoke-classes \
+            ShardTools/smoke/SmokeTest.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/util/Numbers.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/util/TimeWords.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/expiry/ExpiryMath.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/tools/AreaPlane.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/tools/TreeFeller.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/shop/PriceBook.java
+          java -cp smoke-classes dev.superseller.shardtools.smoke.SmokeTest
+
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShardTools-plugin
+          path: ShardTools/target/ShardTools-*.jar
+          if-no-files-found: error
+
+  server-smoke:
+    name: Live Paper 26.2 server smoke test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Download plugin jar
+        uses: actions/download-artifact@v4
+        with:
+          name: ShardTools-plugin
+          path: plugin
+
+      - name: Download latest Paper 26.2 (Fill API)
+        run: |
+          set -euo pipefail
+          LATEST="$(curl -fsSL 'https://fill.papermc.io/v3/projects/paper/versions/26.2/builds/latest')"
+          URL="$(echo "$LATEST" | jq -r '.downloads["server:default"].url')"
+          NAME="$(echo "$LATEST" | jq -r '.downloads["server:default"].name')"
+          echo "Downloading $NAME ..."
+          curl -fLo paper.jar "$URL"
+
+      - name: Boot Paper 26.2 with ShardTools
+        run: |
+          set -euo pipefail
+          mkdir -p server/plugins
+          cp plugin/ShardTools-*.jar server/plugins/
+          cp paper.jar server/paper.jar
+          cd server
+          echo 'eula=true' > eula.txt
+          echo 'online-mode=false' >> server.properties
+          # Feed console commands after the server has booted, then stop it.
+          ( sleep 120; echo 'st help'; sleep 5; echo 'st shop'; sleep 5; \
+            echo 'st interval 10'; sleep 5; echo 'st amount 10'; sleep 5; \
+            echo 'st award off'; sleep 3; echo 'st award on'; sleep 3; \
+            echo 'st setprice haste_potion 5000'; sleep 5; echo 'st items'; sleep 5; \
+            echo 'st top'; sleep 5; echo 'st rl'; sleep 8; echo 'stop' ) \
+            | java -Xms512M -Xmx2G -jar paper.jar nogui > boot.log 2>&1 || true
+          echo '--- boot.log (tail 80) ---'
+          tail -n 80 boot.log
+
+      - name: Assert plugin behaviour
+        run: |
+          set -euo pipefail
+          grep -q  'ShardTools enabled' server/boot.log
+          grep -qi 'Only players can use this command' server/boot.log
+          grep -q  'Shard income interval set to' server/boot.log
+          grep -q  'Shard income amount set to' server/boot.log
+          grep -qi 'Automatic shard income is now enabled' server/boot.log
+          grep -q  'Price of haste_potion set to' server/boot.log
+          grep -q  'shop catalog reloaded' server/boot.log
+          echo 'Server smoke test OK'

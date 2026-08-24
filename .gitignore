@@ -47,3 +47,6 @@ ChunkVoter/target/
 
 # PlayerHeads smoke classes
 smoke-classes/
+
+# ShardTools offline build output
+ShardTools/build/

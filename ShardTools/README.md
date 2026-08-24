@@ -1,0 +1,212 @@
+# ShardTools ✦
+
+**DonutSMP-style Shard economy for Minecraft 26.2** — a brand-new **Shards** currency,
+self-destructing **Shard Tools** (3×3 pickaxe, tree-felling axe, 3×3 shovel), the **Shard Potion
+of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — for
+**Paper, Purpur and Folia**.
+
+- **Minecraft:** 26.2 "Chaos Cubed" (`api-version: '26.2'`)
+- **Servers:** Paper 26.2 · Purpur 26.2 · Folia 26.2 (`folia-supported: true`, regionized-scheduler aware)
+- **Java:** 25 (OpenJDK 25 — required by Minecraft ≥ 26.1)
+- **Build:** Maven, `release 25` · runs identically on **Linux, Windows and macOS**
+- **No hard dependencies** — no Vault, no economy plugins, everything is self-contained
+
+---
+
+## What it does
+
+### Shards — the new currency
+- Every player on the server automatically earns **5 Shards every 5 minutes** (default,
+  fully configurable — `/st interval`, `/st amount`, `/st award off`).
+- Balances persist in `plugins/ShardTools/shards.yml`, survive restarts, and are paid
+  between players with `/st pay`.
+- Leaderboard with `/st top`.
+
+### Shard Tools — like DonutSMP
+| Item | Price | Enchants (pre-applied) | Effect | Lifetime |
+|---|---|---|---|---|
+| Shard Pickaxe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Mines a **3×3 plane** (perpendicular to your view) | **24 h real time** |
+| Shard Pickaxe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Mines a **3×3 plane** | **24 h real time** |
+| Shard Axe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | **Fells an entire tree** with one swing | **24 h real time** |
+| Shard Axe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Fells an entire tree | **24 h real time** |
+| Shard Shovel (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Digs a **3×3 plane** | **24 h real time** |
+| Shard Shovel (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Digs a **3×3 plane** | **24 h real time** |
+| Shard Potion of Haste | 6,000 ✦ | — | **Haste II for 24 hours** when drunk (a portable beacon) | **24 h real time** |
+
+Area breaking details (all configurable):
+- Silk Touch / Fortune are applied to **every** broken block, not just the centre one.
+- Vanilla-style **ore XP** is dropped for extra blocks (`behavior.ore-xp`).
+- Containers, bedrock and a configurable protected-materials list are never hit.
+- The 3×3 plane follows your **look direction** (mine a floor or a wall naturally).
+- Radius configurable (`behavior.area-radius`: 1 = 3×3, 2 = 5×5). Tree felling caps at
+  `behavior.tree.max-blocks` (default 256) with same-log-type chaining.
+
+### Shard Shop & netherite gear (DonutSMP prices)
+The full enchanted-netherite catalog from the DonutSMP shard shop is included and never expires:
+
+| Item | Price | Enchants |
+|---|---|---|
+| Netherite Pickaxe (Silk / Fortune) | 1,000 ✦ | Eff V, Unb III, Mending + Silk Touch / Fortune III |
+| Netherite Shovel | 800 ✦ | Efficiency V, Unbreaking III, Mending |
+| Netherite Axe | 600 ✦ | Efficiency V, Unbreaking III, Mending |
+| Netherite Hoe | 500 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch |
+| Netherite Helmet | 1,500 ✦ | Protection IV, Respiration III, Aqua Affinity, Unbreaking III |
+| Netherite Chestplate | 1,500 ✦ | Protection IV, Unbreaking III, Mending |
+| Netherite Leggings | 1,500 ✦ | Swift Sneak III, Protection IV, Unbreaking III, Mending |
+| Netherite Boots | 1,500 ✦ | Prot IV, Feather Falling IV, Soul Speed III, Depth Strider III, Unb III, Mending |
+| Netherite Sword | 1,500 ✦ | Sharp V, Sweeping Edge III, Fire Aspect II, Knockback II, Looting III, Unb III, Mending |
+| Mace | 2,000 ✦ | Wind Burst III, Density V, Fire Aspect II, Unbreaking III, Mending |
+| Crossbow | 500 ✦ | Piercing IV, Quick Charge III, Unbreaking III, Mending |
+| Bow | 500 ✦ | Power V, Flame, Punch II, Unbreaking III, Mending |
+
+*(DonutSMP's "Netherite Spear" is a custom server-side item with a non-vanilla "Lunge"
+enchant, so it cannot be replicated with vanilla mechanics.)*
+
+### Real-time self-destruct (works offline!)
+Each shard item stores an **absolute real-world timestamp** (`created + lifetime`) in its
+persistent data — not a tick counter. Consequences:
+
+- The countdown keeps running while the player is **offline**.
+- It keeps running while the **server is stopped** for hours or days.
+- On expiry the item crumbles (removed from inventory / chest / ground) with a sound and
+  a message; warnings are sent at 60 / 10 / 1 minutes before self-destruct.
+- The live countdown is shown in the item lore and refreshed automatically.
+
+### Protection
+Shard items cannot be renamed or merged in **anvils** or disenchanted in **grindstones**
+(both toggleable), so the tag and lifetime can't be wiped.
+
+---
+
+## Commands
+
+Main command `/shardtools` with aliases **`/shard`** and **`/st`** — every subcommand has a
+short form. Console works for all admin commands.
+
+| Command | Short | Description | Permission |
+|---|---|---|---|
+| `/st help` | `h`, `?` | Command overview | — |
+| `/st shop` | `s` | Open the shard shop GUI | `shardtools.shop` |
+| `/st balance [player]` | `bal`, `b` | Check your (or another player's) balance | `shardtools.balance` / `.others` |
+| `/st pay <player> <amount>` | `p` | Send shards (supports `2.5k`, `1m`, …) | `shardtools.pay` |
+| `/st top [n]` | `t` | Shard leaderboard (default top 10, max 25) | `shardtools.top` |
+| `/st info` | `i` | Inspect the held shard item (remaining lifetime) | `shardtools.info` |
+| `/st give <player> <item> [amount]` | `g` | Give any shop item *(op)* | `shardtools.give` |
+| `/st items` | `l` | List all item ids + prices *(op)* | `shardtools.items` |
+| `/st setprice <item> <price>` | `sp` | Change a price at runtime *(op)* | `shardtools.setprice` |
+| `/st shards <player> <give\|take\|set> <amount>` | `sh` | Edit balances *(op)* | `shardtools.economy` |
+| `/st interval <minutes>` | `iv` | Set the income interval *(op)* | `shardtools.settings` |
+| `/st amount <shards>` | `am` | Set the income amount *(op)* | `shardtools.settings` |
+| `/st award <on\|off>` | `aw` | Toggle automatic income *(op)* | `shardtools.settings` |
+| `/st reload` | `rl` | Reload config, messages & shop *(op)* | `shardtools.reload` |
+
+Tab completion covers every subcommand, player names, item ids, and sensible amounts.
+Runtime changes (`/st setprice`, `/st interval`, `/st amount`, `/st award`) persist in
+`plugins/ShardTools/runtime.yml` and survive restarts *and* `/st reload`.
+
+## Permissions
+
+| Node | Default | Description |
+|---|---|---|
+| `shardtools.use` | everyone | Use shard tool powers (3×3, tree fell, haste potion) |
+| `shardtools.shop` | everyone | Open/buy from the shard shop |
+| `shardtools.balance` | everyone | Check own balance |
+| `shardtools.balance.others` | op | Check other players' balances |
+| `shardtools.pay` | everyone | Send shards |
+| `shardtools.top` | everyone | Leaderboard |
+| `shardtools.info` | everyone | Inspect held shard item |
+| `shardtools.give` | op | `/st give` |
+| `shardtools.items` | op | `/st items` |
+| `shardtools.economy` | op | `/st shards` |
+| `shardtools.setprice` | op | `/st setprice` |
+| `shardtools.settings` | op | `/st interval`, `/st amount`, `/st award` |
+| `shardtools.reload` | op | `/st reload` |
+| `shardtools.admin` | op | All admin nodes combined |
+| `shardtools.*` | op | Everything |
+
+## Configuration
+
+Everything is configurable — see `src/main/resources/config.yml`. Highlights:
+
+```yaml
+currency.symbol: "✦"          # shown everywhere
+award: {enabled: true, interval-minutes: 5, amount: 5, announce: true}
+items:                         # full catalog: material, name, price,
+                               # lifetime-hours, behavior, enchants, lore
+behavior:
+  require-sneak: false         # area breaking always on (DonutSMP style)
+  area-radius: 1               # 1 = 3x3, 2 = 5x5
+  protect-containers: true
+  protected-materials: [BEDROCK, ...]
+  tree: {max-blocks: 256, same-material-only: true, replant: false}
+expiry:
+  sweep-seconds: 30            # removal + lore countdown refresh cadence
+  warn-minutes: [60, 10, 1]
+haste-potion: {duration-hours: 24, amplifier: 1}
+shop: {confirm: false, rows: 6}
+```
+
+All messages live in `messages.yml` (MiniMessage format) with `%placeholders%`.
+Shard balances are stored in `shards.yml`, runtime overrides in `runtime.yml`.
+
+## Folia, Purpur & cross-platform notes
+
+- **Folia:** `folia-supported: true`; all scheduling goes through a
+  `PlatformScheduler` that uses Folia's regionized **global/async/entity**
+  schedulers (via reflection) and falls back to the Bukkit scheduler on
+  Paper/Purpur. Inventory work always runs on the owning entity's region thread.
+- **Purpur:** Purpur 26.2 is Paper-compatible — the plugin runs unchanged.
+- **OS:** pure Java + `java.nio`/`java.io` file handling with explicit UTF-8 — no
+  native code, no OS-specific paths. Works on Linux, Windows and macOS (x64 & ARM64)
+  wherever a Java 25 VM runs.
+
+## Building
+
+### Canonical build — Maven + JDK 25
+
+```bash
+cd ShardTools
+mvn -B clean package        # requires JDK 25 (Temurin 25 recommended)
+# → target/ShardTools-1.0.0.jar
+```
+
+`pom.xml` compiles with `release 25` against `paper-api 26.2.build.115-stable`
+(https://repo.papermc.io). The CI workflow in `.github/workflows/build.yml` runs this
+Maven build on Temurin 25 and additionally **boots a real Paper 26.2 server** with the
+plugin and exercises `st help`, `st interval`, `st setprice`, `st rl`, … (copy it to the
+repo root `.github/workflows/` to activate it).
+
+### Offline build (no Maven Central access)
+
+`./build.sh` compiles the full source against the compile-only API stubs in `stub-api/`
+(generated by `stub-api/generate.py`) with the Eclipse compiler (ECJ) on a Java 25
+runtime (e.g. `pip install jdk4py`), runs the 56 pure-logic smoke tests, and packages an
+equivalent `target/ShardTools-1.0.0.jar`. The stubs are **never** packaged into the jar.
+Note: the available offline ECJ is 3.25, so the source is kept Java-15-syntax compatible;
+the canonical Maven build compiles the same sources with `release 25`.
+
+## Installation
+
+1. Drop `ShardTools-1.0.0.jar` into your server's `plugins/` folder
+   (Paper / Purpur / Folia 26.2, Java 25).
+2. Start the server — `config.yml` and `messages.yml` are generated in
+   `plugins/ShardTools/`.
+3. Optional: tweak prices, income interval/amount, lifetimes and messages, then `/st rl`.
+
+## Item ids (for `/st give`, `/st setprice`)
+
+`shard_pickaxe_fortune`, `shard_pickaxe_silk`, `shard_axe_fortune`, `shard_axe_silk`,
+`shard_shovel_fortune`, `shard_shovel_silk`, `haste_potion`, `netherite_pickaxe_fortune`,
+`netherite_pickaxe_silk`, `netherite_shovel`, `netherite_axe`, `netherite_hoe`,
+`netherite_helmet`, `netherite_chestplate`, `netherite_leggings`, `netherite_boots`,
+`netherite_sword`, `mace`, `crossbow`, `bow` — or run `/st items`.
+
+## Version verification (2026-08-24)
+
+- Minecraft **26.2 "Chaos Cubed"** — current stable (released 2026-06-16); year-based
+  versioning since 2026; **Java 25 required** for ≥ 26.1.
+- **Paper 26.2** stable builds via fill.papermc.io; `paper-api 26.2.build.115-stable`
+  (latest: 116) verified on repo.papermc.io.
+- **Purpur 26.2** builds available since June 2026.
+- **Folia 26.2** first builds published late July 2026 (ver/26.2.x branch).
+- DonutSMP shard prices per donutsmp.wiki / donut.today (June–July 2026).

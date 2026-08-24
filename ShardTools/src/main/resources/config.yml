@@ -1,0 +1,382 @@
+# ============================================================
+#  ShardTools — DonutSMP-style shards, tools, armor and shop
+#  Minecraft 26.2 (Paper / Purpur / Folia), Java 25
+#
+#  Every value below can be changed at runtime with commands or
+#  by editing this file and running /st reload.
+# ============================================================
+
+# ---------- Currency ----------
+currency:
+  # Symbol shown next to shard amounts in chat and GUIs.
+  symbol: "\u2726"
+  # Balance brand-new players start with.
+  start-balance: 0
+
+# ---------- Shard income ----------
+# Awards shards to every player on the server on a fixed interval.
+award:
+  enabled: true
+  interval-minutes: 5
+  amount: 5
+  # Send a chat/action-bar message every time shards are awarded.
+  announce: true
+
+# ---------- Shop catalog ----------
+# Every entry can be bought in /st shop and handed out with /st give.
+#   material      vanilla material of the item
+#   name          MiniMessage display name
+#   price         shard price (0 = free); override at runtime: /st setprice
+#   lifetime-hours  real-time lifetime before the item self-destructs
+#                   (0 = never expires). Works while the player is offline
+#                   and even while the server is stopped.
+#   behavior      AREA_PICKAXE | AREA_SHOVEL | TREE_AXE | HASTE_POTION | NONE
+#   enchants      list of "enchant:level" (vanilla ids, e.g. efficiency:5)
+#   lore          MiniMessage lore lines; %time% = remaining lifetime,
+#                 %price% = current price
+#
+# Default prices mirror the DonutSMP shard shop (June-July 2026).
+items:
+  shard_pickaxe_fortune:
+    material: NETHERITE_PICKAXE
+    name: "<gradient:#7df9ff:#b388ff>Shard Pickaxe</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: AREA_PICKAXE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    lore:
+      - "<gray>Mines a 3x3 area with every swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  shard_pickaxe_silk:
+    material: NETHERITE_PICKAXE
+    name: "<gradient:#7df9ff:#b388ff>Shard Pickaxe</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: AREA_PICKAXE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    lore:
+      - "<gray>Mines a 3x3 area with every swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  shard_axe_fortune:
+    material: NETHERITE_AXE
+    name: "<gradient:#ffd98a:#ff9e6d>Shard Axe</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: TREE_AXE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    lore:
+      - "<gray>Fells an entire tree with one swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  shard_axe_silk:
+    material: NETHERITE_AXE
+    name: "<gradient:#ffd98a:#ff9e6d>Shard Axe</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: TREE_AXE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    lore:
+      - "<gray>Fells an entire tree with one swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  shard_shovel_fortune:
+    material: NETHERITE_SHOVEL
+    name: "<gradient:#a8ff9e:#59d9c5>Shard Shovel</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: AREA_SHOVEL
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    lore:
+      - "<gray>Digs a 3x3 area with every swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  shard_shovel_silk:
+    material: NETHERITE_SHOVEL
+    name: "<gradient:#a8ff9e:#59d9c5>Shard Shovel</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    price: 3000
+    lifetime-hours: 24
+    behavior: AREA_SHOVEL
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    lore:
+      - "<gray>Digs a 3x3 area with every swing.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  haste_potion:
+    material: POTION
+    name: "<gradient:#f7ff8a:#8affc1>Shard Potion of Haste</gradient>"
+    price: 6000
+    lifetime-hours: 24
+    behavior: HASTE_POTION
+    enchants: []
+    lore:
+      - "<gray>Grants <yellow>Haste II for 24 hours</yellow> when drunk.</gray>"
+      - "<gray>A portable beacon.</gray>"
+      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  netherite_pickaxe_fortune:
+    material: NETHERITE_PICKAXE
+    name: "<aqua>Netherite Pickaxe</aqua> <dark_gray>(Fortune III)</dark_gray>"
+    price: 1000
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_pickaxe_silk:
+    material: NETHERITE_PICKAXE
+    name: "<aqua>Netherite Pickaxe</aqua> <dark_gray>(Silk Touch)</dark_gray>"
+    price: 1000
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_shovel:
+    material: NETHERITE_SHOVEL
+    name: "<aqua>Netherite Shovel</aqua>"
+    price: 800
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_axe:
+    material: NETHERITE_AXE
+    name: "<aqua>Netherite Axe</aqua>"
+    price: 600
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_hoe:
+    material: NETHERITE_HOE
+    name: "<aqua>Netherite Hoe</aqua>"
+    price: 500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_helmet:
+    material: NETHERITE_HELMET
+    name: "<aqua>Netherite Helmet</aqua>"
+    price: 1500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["protection:4", "respiration:3", "aqua_affinity:1", "unbreaking:3"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_chestplate:
+    material: NETHERITE_CHESTPLATE
+    name: "<aqua>Netherite Chestplate</aqua>"
+    price: 1500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["protection:4", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_leggings:
+    material: NETHERITE_LEGGINGS
+    name: "<aqua>Netherite Leggings</aqua>"
+    price: 1500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["swift_sneak:3", "protection:4", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_boots:
+    material: NETHERITE_BOOTS
+    name: "<aqua>Netherite Boots</aqua>"
+    price: 1500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["protection:4", "feather_falling:4", "soul_speed:3", "depth_strider:3", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_sword:
+    material: NETHERITE_SWORD
+    name: "<aqua>Netherite Sword</aqua>"
+    price: 1500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["sharpness:5", "sweeping_edge:3", "fire_aspect:2", "knockback:2", "looting:3", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  mace:
+    material: MACE
+    name: "<aqua>Mace</aqua>"
+    price: 2000
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["wind_burst:3", "density:5", "fire_aspect:2", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  crossbow:
+    material: CROSSBOW
+    name: "<aqua>Crossbow</aqua>"
+    price: 500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["piercing:4", "quick_charge:3", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  bow:
+    material: BOW
+    name: "<aqua>Bow</aqua>"
+    price: 500
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: ["power:5", "flame:1", "punch:2", "unbreaking:3", "mending:1"]
+    lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+
+# ---------- Shard tool behaviour ----------
+behavior:
+  # Area breaking works for everyone holding the tool (DonutSMP style).
+  # If true, the 3x3 / tree-fell only triggers while sneaking instead.
+  require-sneak: false
+  # Allow the area breaking in creative mode.
+  allow-in-creative: false
+  # Radius of the mined area. 1 = 3x3, 2 = 5x5.
+  area-radius: 1
+  # Vanilla-style XP for extra ore blocks broken by area mining.
+  ore-xp: true
+  # Never break these materials with area mining (edit freely).
+  protected-materials:
+    - BEDROCK
+    - BARRIER
+    - COMMAND_BLOCK
+    - CHAIN_COMMAND_BLOCK
+    - REPEATING_COMMAND_BLOCK
+    - STRUCTURE_BLOCK
+    - STRUCTURE_VOID
+    - JIGSAW
+    - END_PORTAL_FRAME
+    - END_PORTAL
+    - REINFORCED_DEEPSLATE
+    - SPAWNER
+  # Protect chests, barrels, shulkers, hoppers, furnaces... from 3x3 mining.
+  protect-containers: true
+  # Blocks a shard pickaxe may break in 3x3 mode (besides every *_ore).
+  pickaxe-materials:
+    - STONE
+    - COBBLESTONE
+    - DEEPSLATE
+    - COBBLED_DEEPSLATE
+    - GRANITE
+    - DIORITE
+    - ANDESITE
+    - TUFF
+    - CALCITE
+    - NETHERRACK
+    - BLACKSTONE
+    - BASALT
+    - END_STONE
+    - OBSIDIAN
+    - crying_obsidian
+    - SANDSTONE
+    - RED_SANDSTONE
+    - STONE_BRICKS
+    - DEEPSLATE_BRICKS
+    - POLISHED_BLACKSTONE_BRICKS
+    - PURPUR_BLOCK
+    - NETHER_BRICKS
+    - QUARTZ_BLOCK
+    - AMETHYST_BLOCK
+    - BUDDING_AMETHYST
+    - DRIPSTONE_BLOCK
+    - MOSS_BLOCK
+    - SCULK
+    - INFESTED_STONE
+    - CONCRETE
+    - GLOWSTONE
+    - NETHER_QUARTZ_ORE
+    - NETHER_GOLD_ORE
+    - ANCIENT_DEBRIS
+  # Blocks a shard shovel may break in 3x3 mode.
+  shovel-materials:
+    - DIRT
+    - GRASS_BLOCK
+    - COARSE_DIRT
+    - ROOTED_DIRT
+    - PODZOL
+    - MYCELIUM
+    - SAND
+    - RED_SAND
+    - GRAVEL
+    - CLAY
+    - MUD
+    - SOUL_SAND
+    - SOUL_SOIL
+    - SNOW_BLOCK
+    - TERRACOTTA
+    - WHITE_TERRACOTTA
+  # Vanilla XP ranges per ore for area mining ("min-max").
+  ore-xp-values:
+    coal_ore: "0-2"
+    deepslate_coal_ore: "0-2"
+    diamond_ore: "3-7"
+    deepslate_diamond_ore: "3-7"
+    emerald_ore: "3-7"
+    deepslate_emerald_ore: "3-7"
+    lapis_ore: "2-5"
+    deepslate_lapis_ore: "2-5"
+    redstone_ore: "1-5"
+    deepslate_redstone_ore: "1-5"
+    nether_gold_ore: "0-1"
+    nether_quartz_ore: "2-5"
+
+  # Tree feller (Shard Axe).
+  tree:
+    # Maximum logs broken per swing.
+    max-blocks: 256
+    # Only chain through the same log type (prevents clear-cutting forests).
+    same-material-only: true
+    # Replant a sapling after the tree is felled (if one fits the tree type).
+    replant: false
+
+# ---------- Self-destruct ----------
+expiry:
+  # How often expired items are removed / lore countdowns refreshed.
+  sweep-seconds: 30
+  # Update the "%time%" lore countdown while items are held.
+  lore-refresh: true
+  # Warn the holder when less than these minutes remain (largest first).
+  warn-minutes: [60, 10, 1]
+  # Also remove expired items from chests/shulkers when opened.
+  scan-opened-inventories: true
+
+# ---------- Shard Potion of Haste ----------
+haste-potion:
+  # Effect duration in hours (DonutSMP: 24).
+  duration-hours: 24
+  # 0 = Haste I, 1 = Haste II, ...
+  amplifier: 1
+  # Potion bottle color (RGB).
+  color: "#f7ff8a"
+
+# ---------- Shop GUI ----------
+shop:
+  # Ask for a confirmation click before buying.
+  confirm: false
+  # GUI size in rows (max 6). Items flow into more pages automatically.
+  rows: 6
+  # Filler material for the border.
+  filler: GRAY_STAINED_GLASS_PANE
+
+# ---------- Item protection ----------
+protection:
+  # Block renaming/combining shard items in anvils.
+  anvil: true
+  # Block disenchanting shard items in grindstones.
+  grindstone: true
+
+# ---------- Sounds ----------
+# Vanilla sound ids (without the minecraft: prefix).
+sounds:
+  award: entity.experience_orb.pickup
+  purchase: entity.player.levelup
+  deny: entity.villager.no
+  expire: entity.item.break
+  warn: block.note_block.pling
+
+# ---------- Worlds ----------
+worlds:
+  # World names where shard tool area breaking is disabled.
+  disabled: []

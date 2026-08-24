@@ -120,3 +120,23 @@ Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):
 Zero commands, zero permissions, configurable sounds. See
 [AtTag/README.md](AtTag/README.md) for the full documentation. Build with
 `mvn -B clean package` in `AtTag/` (or use the offline `AtTag/build.sh`).
+
+## ShardTools ✦
+
+DonutSMP-style **Shards** currency and **Shard Tools** for Minecraft **26.2** (Paper /
+Purpur / Folia). Every player earns **5 Shards every 5 minutes** (configurable); the
+Shard Shop GUI sells the **Shard Pickaxe / Axe / Shovel** (3×3 mining, whole-tree
+felling, Silk Touch & Fortune III variants, Eff 5 / Unb 3 / Mending, 3,000 shards
+each), the **Shard Potion of Haste** (24 h Haste II, 6,000) and DonutSMP's full
+enchanted-netherite catalog. Tools **self-destruct after 24 h of real time** — the
+countdown is wall-clock based, so it keeps ticking while players are offline and even
+while the server is stopped.
+
+- `/st shop (s)` · `/st balance (b)` · `/st pay (p)` · `/st top (t)` · `/st info (i)`
+- Admin: `/st give (g)` · `/st setprice (sp)` · `/st shards (sh)` · `/st interval (iv)`
+  · `/st amount (am)` · `/st award (aw)` · `/st reload (rl)`
+- Permissions `shardtools.*`, full TabCompleter, everything configurable
+
+See [ShardTools/README.md](ShardTools/README.md) for the full documentation. Build with
+`mvn -B clean package` in `ShardTools/` (JDK 25 required), or the offline
+`ShardTools/build.sh`.

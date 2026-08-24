@@ -1,0 +1,78 @@
+name: ShardTools
+version: '${project.version}'
+main: dev.superseller.shardtools.ShardToolsPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: DonutSMP-style Shard currency, self-destructing Shard Tools, armor and Shard Shop. Paper / Purpur / Folia 26.2.
+
+commands:
+  shardtools:
+    description: Shard currency, shard shop and shard tool management.
+    usage: /<command> <help|shop|balance|pay|top|info|give|items|setprice|shards|interval|amount|award|reload>
+    aliases: [shard, st]
+
+permissions:
+  shardtools.use:
+    description: Use Shard Tools (3x3 mining, tree felling, haste potion).
+    default: true
+  shardtools.shop:
+    description: Open the shard shop GUI and buy items with shards.
+    default: true
+  shardtools.balance:
+    description: Check your own shard balance.
+    default: true
+  shardtools.balance.others:
+    description: Check the shard balance of other players.
+    default: op
+  shardtools.pay:
+    description: Send shards to other players.
+    default: true
+  shardtools.top:
+    description: View the shard leaderboard.
+    default: true
+  shardtools.info:
+    description: Inspect the held shard item (remaining lifetime).
+    default: true
+  shardtools.give:
+    description: Give any shop item to a player.
+    default: op
+  shardtools.items:
+    description: List all shop items with ids and prices.
+    default: op
+  shardtools.economy:
+    description: Give, take or set shard balances.
+    default: op
+  shardtools.setprice:
+    description: Change shop prices at runtime.
+    default: op
+  shardtools.settings:
+    description: Change award interval/amount and toggle auto-awards.
+    default: op
+  shardtools.reload:
+    description: Reload configuration, messages and shop catalog.
+    default: op
+  shardtools.admin:
+    description: All administrative ShardTools permissions.
+    default: op
+    children:
+      shardtools.give: true
+      shardtools.items: true
+      shardtools.economy: true
+      shardtools.setprice: true
+      shardtools.settings: true
+      shardtools.reload: true
+      shardtools.balance.others: true
+  shardtools.*:
+    description: Every ShardTools permission, including use.
+    default: op
+    children:
+      shardtools.use: true
+      shardtools.shop: true
+      shardtools.balance: true
+      shardtools.balance.others: true
+      shardtools.pay: true
+      shardtools.top: true
+      shardtools.info: true
+      shardtools.admin: true
