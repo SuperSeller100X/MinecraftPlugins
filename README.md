@@ -142,5 +142,4 @@ supported via configurable command items.
 - Permissions `shardtools.*`, full TabCompleter, everything configurable
 
 See [ShardTools/README.md](ShardTools/README.md) for the full documentation. Build with
-`mvn -B clean package` in `ShardTools/` (JDK 25 required), or the offline
-`ShardTools/build.sh`.
+`mvn -B clean package` in `ShardTools/` (JDK 25 required).
