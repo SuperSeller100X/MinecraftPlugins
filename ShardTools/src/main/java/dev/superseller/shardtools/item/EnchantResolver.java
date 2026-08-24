@@ -1,7 +1,9 @@
 package dev.superseller.shardtools.item;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import io.papermc.paper.registry.RegistryAccess;
@@ -19,6 +21,7 @@ public final class EnchantResolver {
 
     private final Logger logger;
     private final Map<String, Enchantment> cache = new HashMap<>();
+    private final Set<String> warned = new HashSet<>();
 
     public EnchantResolver(Logger logger) {
         this.logger = logger;
@@ -44,7 +47,9 @@ public final class EnchantResolver {
             logger.warning("Could not access enchantment registry: " + error.getMessage());
             return null;
         }
-        logger.warning("Unknown enchantment '" + key + "' (skipped)");
+        if (warned.add(key)) {
+            logger.warning("Unknown enchantment '" + key + "' (skipped)");
+        }
         return null;
     }
 }

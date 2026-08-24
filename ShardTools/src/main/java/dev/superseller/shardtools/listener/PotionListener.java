@@ -12,7 +12,7 @@ import dev.superseller.shardtools.util.TimeWords;
 
 /**
  * Shard Potion of Haste - DonutSMP's "portable beacon":
- * 24 hours of Haste II when drunk.
+ * grants Haste for the configured duration (default 1 hour) when drunk.
  */
 public final class PotionListener implements Listener {
 

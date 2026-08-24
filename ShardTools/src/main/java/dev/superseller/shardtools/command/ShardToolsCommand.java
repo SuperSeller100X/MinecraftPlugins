@@ -310,14 +310,23 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
             }
             amount = (int) Math.min(64L * 27L, parsed);
         }
-        int remaining = amount;
-        while (remaining > 0) {
-            ItemStack stack = plugin.items().create(entry, remaining);
-            HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(stack);
-            for (ItemStack rest : leftover.values()) {
-                target.getWorld().dropItem(target.getLocation(), rest);
+        if (entry.isCommandItem()) {
+            // Command items (spawners, crate keys...) run their console command
+            // instead of handing out a physical icon.
+            for (int i = 0; i < amount; i++) {
+                String command = entry.command().replace("%player%", target.getName());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
             }
-            remaining -= stack.getAmount();
+        } else {
+            int remaining = amount;
+            while (remaining > 0) {
+                ItemStack stack = plugin.items().create(entry, remaining);
+                HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(stack);
+                for (ItemStack rest : leftover.values()) {
+                    target.getWorld().dropItem(target.getLocation(), rest);
+                }
+                remaining -= stack.getAmount();
+            }
         }
         plugin.messages().send(sender, "give.given", "%player%", target.getName(),
                 "%item%", entry.displayName(), "%amount%", Numbers.format(amount));

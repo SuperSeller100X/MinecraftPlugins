@@ -186,7 +186,9 @@ public final class ShopGui {
         lore.add(plugin.messages().bare("shop.balance-lore",
                 "%balance%", Numbers.format(balance),
                 "%symbol%", plugin.settings().symbol()));
-        lore.add(Component.text("Page " + (page + 1) + " / " + pages));
+        lore.add(plugin.messages().bare("shop.page",
+                "%page%", Integer.toString(page + 1),
+                "%pages%", Integer.toString(pages)));
         stack.editMeta(meta -> {
             meta.displayName(plugin.messages().bare("shop.balance-item",
                     "%balance%", Numbers.format(balance),

@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 
 import dev.superseller.shardtools.ShardToolsPlugin;
 import dev.superseller.shardtools.item.ShardCatalog;
+import dev.superseller.shardtools.item.ShardItems;
 import dev.superseller.shardtools.util.TimeWords;
 
 /**
@@ -62,14 +63,13 @@ public final class ExpirySweep {
                 destroy(player, entry);
                 changed = true;
             } else {
-                boolean expired = plugin.items().tick(stack, entry, now, player);
-                if (expired) {
+                ShardItems.TickResult result = plugin.items().tick(stack, entry, now, player);
+                if (result == ShardItems.TickResult.EXPIRED) {
                     player.getInventory().setItem(i, null);
                     destroy(player, entry);
                     changed = true;
-                } else if (stack.getItemMeta() != null
-                        && plugin.items().itemId(stack) != null
-                        && !stack.equals(contents[i])) {
+                } else if (result == ShardItems.TickResult.UPDATED) {
+                    // Countdown lore/warning state changed - resync the client.
                     changed = true;
                 }
             }

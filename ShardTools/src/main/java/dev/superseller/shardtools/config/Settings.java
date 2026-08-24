@@ -62,7 +62,7 @@ public final class Settings {
     private long[] warnMinutes = {60, 10, 1};
     private boolean scanOpenedInventories = true;
 
-    private long hasteDurationHours = 24;
+    private long hasteDurationHours = 1;
     private int hasteAmplifier = 1;
     private int hasteColorRgb = 0xF7FF8A;
 
@@ -161,7 +161,7 @@ public final class Settings {
         }
         scanOpenedInventories = config.getBoolean("expiry.scan-opened-inventories", true);
 
-        hasteDurationHours = Math.max(1L, config.getLong("haste-potion.duration-hours", 24L));
+        hasteDurationHours = Math.max(1L, config.getLong("haste-potion.duration-hours", 1L));
         hasteAmplifier = Math.max(0, config.getInt("haste-potion.amplifier", 1));
         hasteColorRgb = parseColor(config.getString("haste-potion.color", "#f7ff8a"), 0xF7FF8A);
 

@@ -84,14 +84,18 @@ public final class ShardAccounts {
 
     public long set(UUID uuid, String name, long value) {
         Account account = account(uuid, name, startBalance());
-        account.balance = Math.max(0L, value);
+        synchronized (account) {
+            account.balance = Math.max(0L, value);
+        }
         dirty = true;
         return account.balance;
     }
 
     public long add(UUID uuid, String name, long delta) {
         Account account = account(uuid, name, startBalance());
-        account.balance = Math.max(0L, account.balance + delta);
+        synchronized (account) {
+            account.balance = Math.max(0L, account.balance + delta);
+        }
         dirty = true;
         return account.balance;
     }

@@ -39,6 +39,7 @@ shop:
   click-to-buy: "<yellow>Click to purchase</yellow>"
   click-to-confirm: "<green>Click to confirm</green>"
   click-to-cancel: "<red>Click to cancel</red>"
+  page: "<dark_gray>Page %page% / %pages%</dark_gray>"
 
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"

@@ -164,23 +164,31 @@ public final class ShardItems {
         return lore;
     }
 
+    /** Outcome of {@link #tick}: nothing changed, lore/meta updated, or expired. */
+    public enum TickResult {
+        NONE,
+        UPDATED,
+        EXPIRED
+    }
+
     /**
      * Updates the countdown lore and warning state of a held item.
-     * Returns true when the item expired and should be removed.
+     * Returns EXPIRED when the item should be removed, UPDATED when the
+     * lore/meta changed (caller should refresh the inventory view).
      */
-    public boolean tick(ItemStack stack, ShardCatalog.Entry entry, long nowMs, Player holder) {
+    public TickResult tick(ItemStack stack, ShardCatalog.Entry entry, long nowMs, Player holder) {
         Long created = created(stack);
         Long lifetime = lifetime(stack);
         if (created == null || lifetime == null || lifetime <= 0L) {
-            return false;
+            return TickResult.NONE;
         }
         if (nowMs >= created + lifetime) {
-            return true;
+            return TickResult.EXPIRED;
         }
         long remaining = created + lifetime - nowMs;
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
-            return false;
+            return TickResult.NONE;
         }
         boolean metaChanged = false;
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
@@ -205,8 +213,9 @@ public final class ShardItems {
         }
         if (metaChanged) {
             stack.setItemMeta(meta);
+            return TickResult.UPDATED;
         }
-        return false;
+        return TickResult.NONE;
     }
 
     private void play(Player holder, String soundId) {
