@@ -45,10 +45,10 @@ Area breaking details (all configurable):
 ### DonutSMP amethyst sounds & particles — purple star included
 The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
 
-- **Mining** — the **amethyst block step** sound (`block.amethyst_block.step`)
-  for every broken block, plus a **purple portal particle** burst. The list is
-  a random pick per block, so you can add e.g. `block.amethyst_cluster.step`
-  (crunchier) or more for variety.
+- **Mining** — **ONE amethyst block step** sound (`block.amethyst_block.step`)
+  per **use** of the tool — a 3×3 break plays it once, not nine times — plus a
+  **purple portal particle** burst at each broken block. The list is a random
+  pick per use; add e.g. `block.amethyst_cluster.step` (crunchier) for variety.
 - **On equip** — the **amethyst resonate** sound (`block.amethyst_block.resonate`)
   plus a purple particle ring: triggers when you pull a shard tool **into your
   hand** (hotbar switch), put shard **armor** on, or drink a shard potion.
@@ -57,7 +57,6 @@ The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
   "<light_purple>✦</light_purple>"`); shard tool names render in light purple
   (`&d` on DonutSMP); the shop shows your balance on an amethyst shard icon.
 - Every sound entry supports its own volume/pitch: `"sound-id volume pitch"`.
-- Optional per-swing sound (`entity.player.attack_sweep`) — off by default.
 
 ## Protection
 Shard items cannot be renamed or merged in **anvils** or disenchanted in **grindstones**
@@ -132,8 +131,7 @@ expiry:
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}
 effects:                      # DonutSMP amethyst sounds
-  mine-block-sounds: {enabled: true, sounds: ["block.amethyst_block.step 1.0 1.0"]}
-  mine-swing-sound: {enabled: false, sound: "entity.player.attack_sweep 0.7 1.5"}
+  mine-sound: {enabled: true, sounds: ["block.amethyst_block.step 1.0 1.0"]}   # ONCE per use
   mine-particles: {enabled: true, id: PORTAL, count: 3}
   equip-sound: {enabled: true, sound: "block.amethyst_block.resonate 1.0 1.0"}
   equip-particles: {enabled: true, id: PORTAL, count: 20}

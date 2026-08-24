@@ -396,18 +396,15 @@ protection:
   grindstone: true
 
 # ---------- DonutSMP amethyst sounds & particles ----------
-# Mining plays the amethyst block step sound per broken block; equipping a
-# shard item (hand, armor or potion) plays the amethyst resonate sound.
-# Format: "sound-id [volume] [pitch]". List = random pick per broken block
-# (add more if you like); block.amethyst_cluster.step is a crunchier option.
+# ONE amethyst step sound plays per USE of a shard tool (a 3x3 break = one
+# sound, not nine); equipping a shard item (hand, armor or potion) plays the
+# amethyst resonate sound. Format: "sound-id [volume] [pitch]". List = random
+# pick per use; block.amethyst_cluster.step is a crunchier alternative.
 effects:
-  mine-block-sounds:
+  mine-sound:
     enabled: true
     sounds:
       - "block.amethyst_block.step 1.0 1.0"
-  mine-swing-sound:
-    enabled: false     # DonutSMP plays the per-block sound only
-    sound: "entity.player.attack_sweep 0.7 1.5"
   mine-particles:
     enabled: true
     id: PORTAL

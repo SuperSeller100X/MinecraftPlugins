@@ -45,10 +45,8 @@ public final class Settings {
     private boolean treeReplant;
     private boolean treeBreakLeaves = true;
 
-    private boolean mineBlockSoundsEnabled = true;
-    private List<SoundSpec> mineBlockSounds = new ArrayList<>();
-    private boolean mineSwingSoundEnabled = true;
-    private SoundSpec mineSwingSound;
+    private boolean mineSoundEnabled = true;
+    private List<SoundSpec> mineSounds = new ArrayList<>();
     private boolean mineParticlesEnabled = true;
     private String mineParticleId = "PORTAL";
     private int mineParticleCount = 3;
@@ -122,19 +120,15 @@ public final class Settings {
         treeReplant = config.getBoolean("behavior.tree.replant", false);
         treeBreakLeaves = config.getBoolean("behavior.tree.break-leaves", true);
 
-        // DonutSMP amethyst sounds: amethyst step per broken block,
-        // amethyst resonate when a shard item is equipped.
-        mineBlockSoundsEnabled = config.getBoolean("effects.mine-block-sounds.enabled", true);
-        List<SoundSpec> breakSounds = SoundSpec.parseAll(
-                config.getStringList("effects.mine-block-sounds.sounds"));
-        if (breakSounds.isEmpty()) {
-            breakSounds.add(SoundSpec.parse("block.amethyst_block.step 1.0 1.0"));
+        // DonutSMP amethyst sounds: ONE amethyst step sound per USE of a
+        // tool (not per broken block), amethyst resonate when equipped.
+        mineSoundEnabled = config.getBoolean("effects.mine-sound.enabled", true);
+        List<SoundSpec> useSounds = SoundSpec.parseAll(
+                config.getStringList("effects.mine-sound.sounds"));
+        if (useSounds.isEmpty()) {
+            useSounds.add(SoundSpec.parse("block.amethyst_block.step 1.0 1.0"));
         }
-        mineBlockSounds = breakSounds;
-
-        mineSwingSoundEnabled = config.getBoolean("effects.mine-swing-sound.enabled", false);
-        String swing = config.getString("effects.mine-swing-sound.sound", "entity.player.attack_sweep 0.7 1.5");
-        mineSwingSound = SoundSpec.parse(swing);
+        mineSounds = useSounds;
 
         mineParticlesEnabled = config.getBoolean("effects.mine-particles.enabled", true);
         mineParticleId = config.getString("effects.mine-particles.id", "PORTAL");
@@ -332,20 +326,12 @@ public final class Settings {
         return treeBreakLeaves;
     }
 
-    public boolean mineBlockSoundsEnabled() {
-        return mineBlockSoundsEnabled;
+    public boolean mineSoundEnabled() {
+        return mineSoundEnabled;
     }
 
-    public List<SoundSpec> mineBlockSounds() {
-        return mineBlockSounds;
-    }
-
-    public boolean mineSwingSoundEnabled() {
-        return mineSwingSoundEnabled;
-    }
-
-    public SoundSpec mineSwingSound() {
-        return mineSwingSound;
+    public List<SoundSpec> mineSounds() {
+        return mineSounds;
     }
 
     public boolean mineParticlesEnabled() {

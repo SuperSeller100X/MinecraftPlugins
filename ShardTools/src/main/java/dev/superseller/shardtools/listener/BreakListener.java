@@ -67,6 +67,7 @@ public final class BreakListener implements Listener {
     }
 
     private void breakArea(Player player, ItemStack tool, Block origin, Behavior behavior) {
+        plugin.effects().mineUse(player);   // ONE sound per use, not per block
         World world = origin.getWorld();
         var direction = player.getLocation().getDirection();
         List<int[]> offsets = AreaPlane.offsets(direction.getX(), direction.getY(), direction.getZ(),
@@ -95,10 +96,9 @@ public final class BreakListener implements Listener {
             }
             block.breakNaturally(tool, true);
             plugin.sweep().dropOreXp(block, type);
-            plugin.effects().mineBlock(player, block.getLocation());
+            plugin.effects().mineBlockParticles(block.getLocation());
             any = true;
         }
-        plugin.effects().mineSwing(player);
         if (!any) {
             plugin.effects().mineBlockParticles(origin.getLocation());
         }
@@ -109,6 +109,7 @@ public final class BreakListener implements Listener {
         if (!Tag.LOGS.isTagged(originType)) {
             return;
         }
+        plugin.effects().mineUse(player);   // ONE sound per use, not per block
         World world = origin.getWorld();
         TreeFeller.Grid grid = (x, y, z) -> {
             if (!world.isChunkLoaded(x >> 4, z >> 4)) {
@@ -123,7 +124,7 @@ public final class BreakListener implements Listener {
         for (int[] log : logs) {
             Block block = world.getBlockAt(log[0], log[1], log[2]);
             block.breakNaturally(tool, true);
-            plugin.effects().mineBlock(player, block.getLocation());
+            plugin.effects().mineBlockParticles(block.getLocation());
         }
         if (plugin.settings().treeBreakLeaves()) {
             // DonutSMP: the axe mines all logs AND leaves connected to the tree.
@@ -133,7 +134,6 @@ public final class BreakListener implements Listener {
                 world.getBlockAt(leaf[0], leaf[1], leaf[2]).breakNaturally(tool, true);
             }
         }
-        plugin.effects().mineSwing(player);
         if (plugin.settings().treeReplant() && !logs.isEmpty()) {
             replant(world, origin, originType);
         }

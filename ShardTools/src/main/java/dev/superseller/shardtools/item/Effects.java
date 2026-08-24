@@ -14,10 +14,11 @@ import org.bukkit.entity.Player;
 import dev.superseller.shardtools.ShardToolsPlugin;
 
 /**
- * DonutSMP sound & particle flavour. Mining plays the amethyst block step
- * sound for every block broken; equipping a shard item plays the amethyst
- * resonate sound - plus purple portal particle bursts. Everything is
- * configurable under "effects:" (sound lists = random pick per block).
+ * DonutSMP sound & particle flavour. ONE amethyst step sound plays per USE
+ * of a shard tool (a 3x3 break = one sound, not nine); equipping a shard
+ * item plays the amethyst resonate sound. Purple portal particles burst per
+ * broken block. Everything is configurable under "effects:" (sound lists =
+ * random pick per use).
  */
 public final class Effects {
 
@@ -29,28 +30,20 @@ public final class Effects {
         this.logger = plugin.getLogger();
     }
 
-    /** One attack-sweep sound per swing (DonutSMP "on-swing"). */
-    public void mineSwing(Player player) {
-        SoundSpec spec = plugin.settings().mineSwingSound();
-        if (plugin.settings().mineSwingSoundEnabled() && spec != null) {
-            play(player, spec);
-        }
-    }
-
     /**
-     * Per broken block ("on-break"): the amethyst step sound (or a random
-     * pick from the configured list) plus a purple particle burst.
+     * ONE amethyst sound per USE of the tool (a 3x3 break plays it once,
+     * not once per block) - the amethyst step sound, or a random pick from
+     * the configured list.
      */
-    public void mineBlock(Player player, Location blockLocation) {
-        if (plugin.settings().mineBlockSoundsEnabled()) {
-            List<SoundSpec> sounds = plugin.settings().mineBlockSounds();
+    public void mineUse(Player player) {
+        if (plugin.settings().mineSoundEnabled()) {
+            List<SoundSpec> sounds = plugin.settings().mineSounds();
             if (!sounds.isEmpty()) {
                 SoundSpec spec = sounds.get(
                         ThreadLocalRandom.current().nextInt(sounds.size()));
                 play(player, spec);
             }
         }
-        mineBlockParticles(blockLocation);
     }
 
     /** Purple portal particle burst at a broken block. */
