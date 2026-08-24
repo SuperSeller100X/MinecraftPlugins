@@ -59,14 +59,16 @@ public final class BreakListener implements Listener {
             return;
         }
         Block origin = event.getBlock();
-        if (entry.behavior() == Behavior.TREE_AXE) {
+        if (entry.behavior() == Behavior.TREE_AXE && Tag.LOGS.isTagged(origin.getType())) {
+            // Breaking a log with the axe fells the whole tree.
             fellTree(player, tool, origin);
         } else {
-            breakArea(player, tool, origin, entry.behavior());
+            // Pickaxe, shovel AND axe all 3x3 the same shared block list.
+            breakArea(player, tool, origin);
         }
     }
 
-    private void breakArea(Player player, ItemStack tool, Block origin, Behavior behavior) {
+    private void breakArea(Player player, ItemStack tool, Block origin) {
         plugin.effects().mineUse(player);   // ONE sound per use, not per block
         World world = origin.getWorld();
         var direction = player.getLocation().getDirection();
@@ -88,10 +90,7 @@ public final class BreakListener implements Listener {
             if (plugin.settings().protectContainers() && plugin.settings().isContainer(type)) {
                 continue;
             }
-            boolean allowed = behavior == Behavior.AREA_PICKAXE
-                    ? plugin.settings().isPickaxeAllowed(type)
-                    : plugin.settings().isShovelAllowed(type);
-            if (!allowed) {
+            if (!plugin.settings().isAreaAllowed(type)) {
                 continue;
             }
             block.breakNaturally(tool, true);

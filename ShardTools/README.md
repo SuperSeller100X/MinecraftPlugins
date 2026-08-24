@@ -25,12 +25,12 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 ### Shard Tools — like DonutSMP
 | Item | Price | Enchants (pre-applied) | Effect | Lifetime |
 |---|---|---|---|---|
-| Shard Pickaxe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Mines a **3×3 plane** (perpendicular to your view) | **24 h real time** |
+| Shard Pickaxe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Mines a **3×3 plane** — same shared block list as axe & shovel | **24 h real time** |
 | Shard Pickaxe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Mines a **3×3 plane** | **24 h real time** |
-| Shard Axe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | **Fells an entire tree** with one swing | **24 h real time** |
-| Shard Axe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Fells an entire tree | **24 h real time** |
-| Shard Shovel (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Digs a **3×3 plane** | **24 h real time** |
-| Shard Shovel (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Digs a **3×3 plane** | **24 h real time** |
+| Shard Axe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | **Fells whole trees** (log = whole tree) + **3×3 on everything else** | **24 h real time** |
+| Shard Axe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Fells whole trees + 3×3 on everything else | **24 h real time** |
+| Shard Shovel (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
+| Shard Shovel (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
 | Shard Potion of Haste | 6,000 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
 
 Area breaking details (all configurable):
@@ -38,6 +38,9 @@ Area breaking details (all configurable):
 - Vanilla-style **ore XP** is dropped for extra blocks (`behavior.ore-xp`).
 - Containers, bedrock and a configurable protected-materials list are never hit.
 - The 3×3 plane follows your **look direction** (mine a floor or a wall naturally).
+- **Pickaxe, axe and shovel 3×3 the same blocks** — one shared `behavior.area-materials`
+  list (plus every `*_ORE` and every log). The axe fells a whole tree when you break
+  a log, and 3×3s like the others on any other block.
 - Radius configurable (`behavior.area-radius`: 1 = 3×3, 2 = 5×5). Tree felling caps at
   `behavior.tree.max-blocks` (default 256) with same-log-type chaining **and breaks the
   tree's leaves too** (`behavior.tree.break-leaves`), exactly like DonutSMP's amethyst axe.
@@ -124,6 +127,7 @@ behavior:
   area-radius: 1               # 1 = 3x3, 2 = 5x5
   protect-containers: true
   protected-materials: [BEDROCK, ...]
+  area-materials: [STONE, DIRT, SAND, ...]   # shared 3x3 list for all tools
   tree: {max-blocks: 256, same-material-only: true, replant: false}
 expiry:
   sweep-seconds: 30            # removal + lore countdown refresh cadence

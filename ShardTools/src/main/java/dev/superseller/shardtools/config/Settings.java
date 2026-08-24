@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,8 +38,7 @@ public final class Settings {
     private boolean oreXp = true;
     private Set<String> protectedMaterials = new HashSet<>();
     private boolean protectContainers = true;
-    private final Set<String> pickaxeMaterials = new HashSet<>();
-    private final Set<String> shovelMaterials = new HashSet<>();
+    private final Set<String> areaMaterials = new HashSet<>();
     private final Map<String, int[]> oreXpValues = new HashMap<>();
     private int treeMaxBlocks = 256;
     private boolean treeSameMaterialOnly = true;
@@ -101,10 +101,15 @@ public final class Settings {
         oreXp = config.getBoolean("behavior.ore-xp", true);
         protectedMaterials = upperCaseAll(config.getStringList("behavior.protected-materials"));
         protectContainers = config.getBoolean("behavior.protect-containers", true);
-        pickaxeMaterials.clear();
-        pickaxeMaterials.addAll(upperCaseAll(config.getStringList("behavior.pickaxe-materials")));
-        shovelMaterials.clear();
-        shovelMaterials.addAll(upperCaseAll(config.getStringList("behavior.shovel-materials")));
+        // One shared 3x3 block list for pickaxe, axe and shovel.
+        areaMaterials.clear();
+        areaMaterials.addAll(upperCaseAll(config.getStringList("behavior.area-materials")));
+        if (areaMaterials.isEmpty()) {
+            // Older configs listed blocks per tool: fall back to the union so
+            // every shard tool keeps working (and now shares the same blocks).
+            areaMaterials.addAll(upperCaseAll(config.getStringList("behavior.pickaxe-materials")));
+            areaMaterials.addAll(upperCaseAll(config.getStringList("behavior.shovel-materials")));
+        }
         oreXpValues.clear();
         ConfigurationSection xpSection = config.getConfigurationSection("behavior.ore-xp-values");
         if (xpSection != null) {
@@ -222,13 +227,15 @@ public final class Settings {
         return fallback;
     }
 
-    public boolean isPickaxeAllowed(Material material) {
+    /**
+     * One shared 3x3 list: pickaxe, axe and shovel all break the same blocks
+     * (plus every *_ORE and every log - the axe fells whole trees when the
+     * broken block itself is a log).
+     */
+    public boolean isAreaAllowed(Material material) {
         String name = material.name();
-        return pickaxeMaterials.contains(name) || name.endsWith("_ORE");
-    }
-
-    public boolean isShovelAllowed(Material material) {
-        return shovelMaterials.contains(material.name());
+        return areaMaterials.contains(name) || name.endsWith("_ORE")
+                || Tag.LOGS.isTagged(material);
     }
 
     public boolean isProtected(Material material) {
