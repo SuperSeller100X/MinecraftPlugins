@@ -76,7 +76,7 @@ public final class Effects {
             Particle particle = resolveParticle(plugin.settings().equipParticleId());
             if (particle != null) {
                 world.spawnParticle(particle, location,
-                        plugin.settings().equipParticleCount(), 0.5, 0.5, 0.5, 0.02);
+                        plugin.settings().equipParticleCount(), 0.35, 0.35, 0.35, 0.01);
             }
         }
     }
@@ -91,7 +91,7 @@ public final class Effects {
     private void burst(World world, Location location, String particleId, int count) {
         Particle particle = resolveParticle(particleId);
         if (particle != null && world != null && location != null) {
-            world.spawnParticle(particle, location, Math.max(1, count), 0.25, 0.25, 0.25, 0.01);
+            world.spawnParticle(particle, location, Math.max(1, count), 0.2, 0.2, 0.2, 0.01);
         }
     }
 

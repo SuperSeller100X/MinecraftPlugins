@@ -50,7 +50,7 @@ The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
 
 - **Mining** — **ONE amethyst block step** sound (`block.amethyst_block.step`)
   per **use** of the tool — a 3×3 break plays it once, not nine times — plus a
-  **purple portal particle** burst at each broken block. The list is a random
+  subtle **purple portal particle** at each broken block. The list is a random
   pick per use; add e.g. `block.amethyst_cluster.step` (crunchier) for variety.
 - **On equip** — the **amethyst resonate** sound (`block.amethyst_block.resonate`)
   plus a purple particle ring: triggers when you pull a shard tool **into your
@@ -136,9 +136,9 @@ haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs af
 shop: {confirm: false, rows: 6}
 effects:                      # DonutSMP amethyst sounds
   mine-sound: {enabled: true, sounds: ["block.amethyst_block.step 1.0 1.0"]}   # ONCE per use
-  mine-particles: {enabled: true, id: PORTAL, count: 3}
+  mine-particles: {enabled: true, id: PORTAL, count: 1}   # subtle
   equip-sound: {enabled: true, sound: "block.amethyst_block.resonate 1.0 1.0"}
-  equip-particles: {enabled: true, id: PORTAL, count: 20}
+  equip-particles: {enabled: true, id: PORTAL, count: 10}
 ```
 
 All messages live in `messages.yml` (MiniMessage format) with `%placeholders%`.

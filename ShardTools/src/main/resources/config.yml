@@ -409,15 +409,15 @@ effects:
       - "block.amethyst_block.step 1.0 1.0"
   mine-particles:
     enabled: true
-    id: PORTAL
-    count: 3          # purple portal particles per broken block
+    id: PORTAL        # the purple portal particle
+    count: 1          # per broken block - keep it subtle
   equip-sound:
     enabled: true
     sound: "block.amethyst_block.resonate 1.0 1.0"
   equip-particles:
     enabled: true
-    id: PORTAL
-    count: 20         # purple ring around the player
+    id: PORTAL        # the purple portal particle
+    count: 10         # small purple ring around the player
 
 # ---------- Sounds ----------
 # Vanilla sound ids (without the minecraft: prefix).

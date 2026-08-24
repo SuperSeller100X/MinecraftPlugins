@@ -137,14 +137,14 @@ public final class Settings {
 
         mineParticlesEnabled = config.getBoolean("effects.mine-particles.enabled", true);
         mineParticleId = config.getString("effects.mine-particles.id", "PORTAL");
-        mineParticleCount = Math.max(1, config.getInt("effects.mine-particles.count", 3));
+        mineParticleCount = Math.max(1, config.getInt("effects.mine-particles.count", 1));
 
         equipSoundEnabled = config.getBoolean("effects.equip-sound.enabled", true);
         String equip = config.getString("effects.equip-sound.sound", "block.amethyst_block.resonate 1.0 1.0");
         equipSound = SoundSpec.parse(equip);
         equipParticlesEnabled = config.getBoolean("effects.equip-particles.enabled", true);
         equipParticleId = config.getString("effects.equip-particles.id", "PORTAL");
-        equipParticleCount = Math.max(1, config.getInt("effects.equip-particles.count", 20));
+        equipParticleCount = Math.max(1, config.getInt("effects.equip-particles.count", 10));
 
         sweepSeconds = Math.max(5L, config.getLong("expiry.sweep-seconds", 30L));
         loreRefresh = config.getBoolean("expiry.lore-refresh", true);
