@@ -9,6 +9,8 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+// Block.getLocation() provides the world at runtime.
+
 import dev.superseller.shardtools.ShardToolsPlugin;
 
 /**
@@ -26,15 +28,22 @@ public final class Effects {
         this.logger = plugin.getLogger();
     }
 
-    /** Amethyst chime + purple particle burst for each block a shard tool broke. */
-    public void mineEffect(Player player, Location blockLocation) {
+    /**
+     * One amethyst chime per swing (DonutSMP plays a single satisfying chime,
+     * not one per broken block).
+     */
+    public void mineSwing(Player player) {
         if (plugin.settings().mineSoundEnabled()) {
             play(player, plugin.settings().mineSoundId(),
                     plugin.settings().mineSoundVolume(), plugin.settings().mineSoundPitch());
         }
-        if (plugin.settings().mineParticlesEnabled()) {
-            burst(player.getWorld(), blockLocation, plugin.settings().mineParticleId(),
-                    plugin.settings().mineParticleCount());
+    }
+
+    /** Purple portal particle burst at each block a shard tool broke. */
+    public void mineBlockParticles(Location blockLocation) {
+        if (plugin.settings().mineParticlesEnabled() && blockLocation != null) {
+            burst(blockLocation.getWorld(), blockLocation,
+                    plugin.settings().mineParticleId(), plugin.settings().mineParticleCount());
         }
     }
 

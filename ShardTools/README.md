@@ -46,10 +46,13 @@ Area breaking details (all configurable):
 Like DonutSMP (whose shard tools *were* the "Amethyst" items):
 - The currency icon is a **purple star** (`currency.symbol: "<light_purple>✦</light_purple>"`).
 - Shard tool names render in **light purple** (`&d` on DonutSMP).
-- Every area-mine/tree-fell swing plays the **amethyst chime**
-  (`block.amethyst_block.chime`) and bursts **purple portal particles** at each
-  broken block; equipping shard armor (or buying anything) chimes with a purple
-  particle ring. All sounds/particles/toggles live under `effects:` in config.yml.
+- Every area-mine/tree-fell swing plays one satisfying **amethyst chime**
+  (`block.amethyst_block.chime` — vanilla's actual amethyst sound) and bursts
+  **purple portal particles** at each broken block.
+- **Equipping** a shard item — pulling a shard tool **into your hand** (hotbar
+  switch), putting shard armor on, or buying/drinking a shard item — chimes with
+  a **purple particle ring** around you.
+- All sounds/particles/toggles live under `effects:` in config.yml.
 - The shop shows your balance on an **amethyst shard** icon.
 
 ### Shard Shop & netherite gear (DonutSMP prices)

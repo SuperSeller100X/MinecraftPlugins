@@ -40,5 +40,6 @@ public final class PotionListener implements Listener {
         player.addPotionEffect(haste);
         plugin.messages().send(player, "potion.haste",
                 "%time%", TimeWords.format(plugin.settings().hasteDurationHours() * 3_600_000L));
+        plugin.effects().equipEffect(player);
     }
 }
