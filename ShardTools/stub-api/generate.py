@@ -674,6 +674,7 @@ public interface ConfigurationSection {
     default ConfigurationSection getConfigurationSection(String path) { return null; }
     default Set<String> getKeys(boolean deep) { return Set.of(); }
     default void set(String path, Object value) {}
+    default void setDefaults(ConfigurationSection defaults) {}
 }
 """)
 
@@ -689,6 +690,7 @@ import java.io.File;
 import java.io.IOException;
 public class YamlConfiguration implements FileConfiguration {
     public static YamlConfiguration loadConfiguration(File file) { return new YamlConfiguration(); }
+    public static YamlConfiguration loadConfiguration(java.io.Reader reader) { return new YamlConfiguration(); }
     public void load(File file) throws IOException, org.bukkit.configuration.InvalidConfigurationException {}
     public void save(File file) throws IOException {}
 }
@@ -740,6 +742,7 @@ public class JavaPlugin implements Plugin {
     public void reloadConfig() {}
     public void saveDefaultConfig() {}
     public void saveResource(String resourcePath, boolean replace) {}
+    public java.io.InputStream getResource(String resourcePath) { return null; }
     public File getDataFolder() { return null; }
     public Logger getLogger() { return Logger.getLogger("ShardTools"); }
     public Server getServer() { return null; }

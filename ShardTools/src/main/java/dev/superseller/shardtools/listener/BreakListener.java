@@ -95,7 +95,7 @@ public final class BreakListener implements Listener {
             }
             block.breakNaturally(tool, true);
             plugin.sweep().dropOreXp(block, type);
-            plugin.effects().mineBlockParticles(block.getLocation());
+            plugin.effects().mineBlock(player, block.getLocation());
             any = true;
         }
         plugin.effects().mineSwing(player);
@@ -123,7 +123,7 @@ public final class BreakListener implements Listener {
         for (int[] log : logs) {
             Block block = world.getBlockAt(log[0], log[1], log[2]);
             block.breakNaturally(tool, true);
-            plugin.effects().mineBlockParticles(block.getLocation());
+            plugin.effects().mineBlock(player, block.getLocation());
         }
         if (plugin.settings().treeBreakLeaves()) {
             // DonutSMP: the axe mines all logs AND leaves connected to the tree.

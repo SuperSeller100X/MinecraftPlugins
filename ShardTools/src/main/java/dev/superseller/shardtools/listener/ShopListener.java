@@ -145,9 +145,9 @@ public final class ShopListener implements Listener {
                 "%symbol%", plugin.settings().symbol());
         Sound sound = plugin.soundResolver().resolve(plugin.settings().soundPurchase());
         if (sound != null) {
-            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+            player.playSound(player.getLocation(), sound, 1.0f, 1.8f);
         }
-        plugin.effects().equipEffect(player);
+        plugin.effects().equipRing(player);
         plugin.accounts().saveAsync();
         plugin.gui().open(player, backPage);
     }

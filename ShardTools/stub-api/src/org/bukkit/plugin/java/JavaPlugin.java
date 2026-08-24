@@ -15,6 +15,7 @@ public class JavaPlugin implements Plugin {
     public void reloadConfig() {}
     public void saveDefaultConfig() {}
     public void saveResource(String resourcePath, boolean replace) {}
+    public java.io.InputStream getResource(String resourcePath) { return null; }
     public File getDataFolder() { return null; }
     public Logger getLogger() { return Logger.getLogger("ShardTools"); }
     public Server getServer() { return null; }

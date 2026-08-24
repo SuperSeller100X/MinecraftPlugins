@@ -395,33 +395,38 @@ protection:
   # Block disenchanting shard items in grindstones.
   grindstone: true
 
-# ---------- Amethyst effects (DonutSMP feel) ----------
-# Purple portal particle bursts + amethyst chime, like DonutSMP shard tools.
+# ---------- DonutSMP drill sounds & particles ----------
+# Per broken block ("on-break") ONE of these shiny sounds plays at random,
+# exactly like the DonutSMP drill; every swing gets an attack-sweep and
+# equipping a shard item (hand or armor) plays the netherite equip sound.
+# Format: "sound-id [volume] [pitch]".
 effects:
-  mine-sound:
+  mine-block-sounds:
     enabled: true
-    id: block.amethyst_block.chime
-    volume: 0.7
-    pitch: 1.2
+    sounds:
+      - "entity.enderman_teleport 1.0 1.3"
+      - "block.beacon_activate 0.8 1.8"
+      - "entity.ender_dragon_flap 0.5 1.0"
+  mine-swing-sound:
+    enabled: true
+    sound: "entity.player.attack_sweep 0.7 1.5"
   mine-particles:
     enabled: true
     id: PORTAL
-    count: 3          # particles per broken block
+    count: 3          # purple portal particles per broken block
   equip-sound:
     enabled: true
-    id: block.amethyst_block.chime
-    volume: 1.0
-    pitch: 1.0
+    sound: "item.armor.equip_netherite 1.0 1.2"
   equip-particles:
     enabled: true
     id: PORTAL
-    count: 20
+    count: 20         # purple ring around the player
 
 # ---------- Sounds ----------
 # Vanilla sound ids (without the minecraft: prefix).
 sounds:
   award: entity.experience_orb.pickup
-  purchase: block.amethyst_block.chime
+  purchase: block.beacon_activate
   deny: entity.villager.no
   expire: entity.item.break
   warn: block.note_block.pling

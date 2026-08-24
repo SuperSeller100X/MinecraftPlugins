@@ -13,6 +13,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import dev.superseller.shardtools.item.SoundSpec;
+
 /**
  * Typed snapshot of config.yml. Everything in the plugin is configurable;
  * call {@link #load()} again after /st reload.
@@ -43,18 +45,16 @@ public final class Settings {
     private boolean treeReplant;
     private boolean treeBreakLeaves = true;
 
-    private boolean mineSoundEnabled = true;
-    private String mineSoundId = "block.amethyst_block.chime";
-    private float mineSoundVolume = 0.7f;
-    private float mineSoundPitch = 1.2f;
+    private boolean mineBlockSoundsEnabled = true;
+    private List<SoundSpec> mineBlockSounds = new ArrayList<>();
+    private boolean mineSwingSoundEnabled = true;
+    private SoundSpec mineSwingSound;
     private boolean mineParticlesEnabled = true;
     private String mineParticleId = "PORTAL";
     private int mineParticleCount = 3;
 
     private boolean equipSoundEnabled = true;
-    private String equipSoundId = "block.amethyst_block.chime";
-    private float equipSoundVolume = 1.0f;
-    private float equipSoundPitch = 1.0f;
+    private SoundSpec equipSound;
     private boolean equipParticlesEnabled = true;
     private String equipParticleId = "PORTAL";
     private int equipParticleCount = 20;
@@ -122,18 +122,29 @@ public final class Settings {
         treeReplant = config.getBoolean("behavior.tree.replant", false);
         treeBreakLeaves = config.getBoolean("behavior.tree.break-leaves", true);
 
-        mineSoundEnabled = config.getBoolean("effects.mine-sound.enabled", true);
-        mineSoundId = config.getString("effects.mine-sound.id", "block.amethyst_block.chime");
-        mineSoundVolume = (float) config.getDouble("effects.mine-sound.volume", 0.7D);
-        mineSoundPitch = (float) config.getDouble("effects.mine-sound.pitch", 1.2D);
+        // DonutSMP drill sound scheme: random shiny sound per broken block,
+        // attack sweep per swing, netherite equip sound when equipped.
+        mineBlockSoundsEnabled = config.getBoolean("effects.mine-block-sounds.enabled", true);
+        List<SoundSpec> breakSounds = SoundSpec.parseAll(
+                config.getStringList("effects.mine-block-sounds.sounds"));
+        if (breakSounds.isEmpty()) {
+            breakSounds.add(SoundSpec.parse("entity.enderman_teleport 1.0 1.3"));
+            breakSounds.add(SoundSpec.parse("block.beacon_activate 0.8 1.8"));
+            breakSounds.add(SoundSpec.parse("entity.ender_dragon_flap 0.5 1.0"));
+        }
+        mineBlockSounds = breakSounds;
+
+        mineSwingSoundEnabled = config.getBoolean("effects.mine-swing-sound.enabled", true);
+        String swing = config.getString("effects.mine-swing-sound.sound", "entity.player.attack_sweep 0.7 1.5");
+        mineSwingSound = SoundSpec.parse(swing);
+
         mineParticlesEnabled = config.getBoolean("effects.mine-particles.enabled", true);
         mineParticleId = config.getString("effects.mine-particles.id", "PORTAL");
         mineParticleCount = Math.max(1, config.getInt("effects.mine-particles.count", 3));
 
         equipSoundEnabled = config.getBoolean("effects.equip-sound.enabled", true);
-        equipSoundId = config.getString("effects.equip-sound.id", "block.amethyst_block.chime");
-        equipSoundVolume = (float) config.getDouble("effects.equip-sound.volume", 1.0D);
-        equipSoundPitch = (float) config.getDouble("effects.equip-sound.pitch", 1.0D);
+        String equip = config.getString("effects.equip-sound.sound", "item.armor.equip_netherite 1.0 1.2");
+        equipSound = SoundSpec.parse(equip);
         equipParticlesEnabled = config.getBoolean("effects.equip-particles.enabled", true);
         equipParticleId = config.getString("effects.equip-particles.id", "PORTAL");
         equipParticleCount = Math.max(1, config.getInt("effects.equip-particles.count", 20));
@@ -323,20 +334,20 @@ public final class Settings {
         return treeBreakLeaves;
     }
 
-    public boolean mineSoundEnabled() {
-        return mineSoundEnabled;
+    public boolean mineBlockSoundsEnabled() {
+        return mineBlockSoundsEnabled;
     }
 
-    public String mineSoundId() {
-        return mineSoundId;
+    public List<SoundSpec> mineBlockSounds() {
+        return mineBlockSounds;
     }
 
-    public float mineSoundVolume() {
-        return mineSoundVolume;
+    public boolean mineSwingSoundEnabled() {
+        return mineSwingSoundEnabled;
     }
 
-    public float mineSoundPitch() {
-        return mineSoundPitch;
+    public SoundSpec mineSwingSound() {
+        return mineSwingSound;
     }
 
     public boolean mineParticlesEnabled() {
@@ -355,16 +366,8 @@ public final class Settings {
         return equipSoundEnabled;
     }
 
-    public String equipSoundId() {
-        return equipSoundId;
-    }
-
-    public float equipSoundVolume() {
-        return equipSoundVolume;
-    }
-
-    public float equipSoundPitch() {
-        return equipSoundPitch;
+    public SoundSpec equipSound() {
+        return equipSound;
     }
 
     public boolean equipParticlesEnabled() {

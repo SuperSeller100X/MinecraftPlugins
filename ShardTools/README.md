@@ -42,57 +42,25 @@ Area breaking details (all configurable):
   `behavior.tree.max-blocks` (default 256) with same-log-type chaining **and breaks the
   tree's leaves too** (`behavior.tree.break-leaves`), exactly like DonutSMP's amethyst axe.
 
-### Amethyst feel — purple star, chime & portal particles
-Like DonutSMP (whose shard tools *were* the "Amethyst" items):
-- The currency icon is a **purple star** (`currency.symbol: "<light_purple>✦</light_purple>"`).
-- Shard tool names render in **light purple** (`&d` on DonutSMP).
-- Every area-mine/tree-fell swing plays one satisfying **amethyst chime**
-  (`block.amethyst_block.chime` — vanilla's actual amethyst sound) and bursts
-  **purple portal particles** at each broken block.
-- **Equipping** a shard item — pulling a shard tool **into your hand** (hotbar
-  switch), putting shard armor on, or buying/drinking a shard item — chimes with
-  a **purple particle ring** around you.
-- All sounds/particles/toggles live under `effects:` in config.yml.
-- The shop shows your balance on an **amethyst shard** icon.
+### DonutSMP sounds & particles — purple star included
+Exactly the DonutSMP drill sound scheme (per the community sound spec), all
+under `effects:` in config.yml:
 
-### Shard Shop & netherite gear (DonutSMP prices)
-The full enchanted-netherite catalog from the DonutSMP shard shop is included and never expires:
+- **Per broken block ("on-break")** — ONE random shiny sound from
+  `entity.enderman_teleport` (pitch 1.3) · `block.beacon_activate` (pitch 1.8) ·
+  `entity.ender_dragon_flap`, plus a **purple portal particle** burst at each
+  broken block.
+- **Per swing ("on-swing")** — `entity.player.attack_sweep`.
+- **On equip** — `item.armor.equip_netherite` plus a purple particle ring:
+  triggers when you pull a shard tool **into your hand** (hotbar switch), put
+  shard **armor** on, or drink a shard potion.
+- **On purchase** — `block.beacon_activate` + purple ring.
+- The currency icon is a **purple star** (`currency.symbol:
+  "<light_purple>✦</light_purple>"`); shard tool names render in light purple
+  (`&d` on DonutSMP); the shop shows your balance on an amethyst shard icon.
+- Every sound entry supports its own volume/pitch: `"sound-id volume pitch"`.
 
-| Item | Price | Enchants |
-|---|---|---|
-| Netherite Pickaxe (Silk / Fortune) | 1,000 ✦ | Eff V, Unb III, Mending + Silk Touch / Fortune III |
-| Netherite Shovel | 800 ✦ | Efficiency V, Unbreaking III, Mending |
-| Netherite Axe | 600 ✦ | Efficiency V, Unbreaking III, Mending |
-| Netherite Hoe | 500 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch |
-| Netherite Helmet | 1,500 ✦ | Protection IV, Respiration III, Aqua Affinity, Unbreaking III |
-| Netherite Chestplate | 1,500 ✦ | Protection IV, Unbreaking III, Mending |
-| Netherite Leggings | 1,500 ✦ | Swift Sneak III, Protection IV, Unbreaking III, Mending |
-| Netherite Boots | 1,500 ✦ | Prot IV, Feather Falling IV, Soul Speed III, Depth Strider III, Unb III, Mending |
-| Netherite Sword | 1,500 ✦ | Sharp V, Sweeping Edge III, Fire Aspect II, Knockback II, Looting III, Unb III, Mending |
-| Mace | 2,000 ✦ | Wind Burst III, Density V, Fire Aspect II, Unbreaking III, Mending |
-| Crossbow | 500 ✦ | Piercing IV, Quick Charge III, Unbreaking III, Mending |
-| Bow | 500 ✦ | Power V, Flame, Punch II, Unbreaking III, Mending |
-
-*(DonutSMP's "Netherite Spear" is a custom server-side item with a non-vanilla "Lunge"
-enchant, so it cannot be replicated with vanilla mechanics.)*
-
-DonutSMP's shard shop also sells **spawners (1,500)** and **crate keys (Prime 2,500 /
-Crimson 2,000)** — those depend on spawner/crates plugins, so ShardTools supports
-**command items**: a catalog entry with a `command: "..."` line runs that console
-command (with `%player%`) on purchase instead of giving a vanilla item. Ready-made
-commented examples are included in config.yml (`pig_spawner`, `prime_key`).
-
-### Real-time self-destruct (works offline!)
-Each shard item stores an **absolute real-world timestamp** (`created + lifetime`) in its
-persistent data — not a tick counter. Consequences:
-
-- The countdown keeps running while the player is **offline**.
-- It keeps running while the **server is stopped** for hours or days.
-- On expiry the item crumbles (removed from inventory / chest / ground) with a sound and
-  a message; warnings are sent at 60 / 10 / 1 minutes before self-destruct.
-- The live countdown is shown in the item lore and refreshed automatically.
-
-### Protection
+## Protection
 Shard items cannot be renamed or merged in **anvils** or disenchanted in **grindstones**
 (both toggleable), so the tag and lifetime can't be wiped.
 
@@ -164,15 +132,19 @@ expiry:
   warn-minutes: [60, 10, 1]
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}
-effects:                      # DonutSMP amethyst theme
-  mine-sound: {enabled: true, id: block.amethyst_block.chime, volume: 0.7, pitch: 1.2}
+effects:                      # DonutSMP drill sound scheme
+  mine-block-sounds: {enabled: true, sounds: ["entity.enderman_teleport 1.0 1.3",
+                          "block.beacon_activate 0.8 1.8", "entity.ender_dragon_flap 0.5 1.0"]}
+  mine-swing-sound: {enabled: true, sound: "entity.player.attack_sweep 0.7 1.5"}
   mine-particles: {enabled: true, id: PORTAL, count: 3}
-  equip-sound: {enabled: true, id: block.amethyst_block.chime}
+  equip-sound: {enabled: true, sound: "item.armor.equip_netherite 1.0 1.2"}
   equip-particles: {enabled: true, id: PORTAL, count: 20}
 ```
 
 All messages live in `messages.yml` (MiniMessage format) with `%placeholders%`.
-Shard balances are stored in `shards.yml`, runtime overrides in `runtime.yml`.
+Missing message keys are **auto-merged** from the packaged defaults on load, so
+an outdated messages.yml can never display raw keys. Shard balances are stored
+in `shards.yml`, runtime overrides in `runtime.yml`.
 
 ## Folia, Purpur & cross-platform notes
 
@@ -238,5 +210,5 @@ Maven build compiles the same sources with `release 25`.
 - **Folia 26.2** first builds published late July 2026 (ver/26.2.x branch).
 - DonutSMP shard prices per donutsmp.wiki / donut.today (June–July 2026).
 - "Amethyst Items" = DonutSMP's shard tools (the Shard Pickaxe was formerly the
-  Amethyst Pickaxe; amethyst theme: purple portal particles + chime; shard axe
+  Amethyst Pickaxe; DonutSMP drill sounds + purple portal particles; shard axe
   fells logs *and* leaves) — per donutsmp.wiki / dsmp.fandom.com.

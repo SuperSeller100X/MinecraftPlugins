@@ -1,6 +1,8 @@
 package dev.superseller.shardtools.item;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import org.bukkit.Location;
@@ -9,14 +11,14 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-// Block.getLocation() provides the world at runtime.
-
 import dev.superseller.shardtools.ShardToolsPlugin;
 
 /**
- * DonutSMP amethyst flavour: purple portal particle bursts and amethyst
- * chime sounds when shard items mine, get equipped or get purchased.
- * Every sound, particle and toggle is configurable in config.yml.
+ * DonutSMP sound & particle flavour. Per the DonutSMP drill sound scheme:
+ * a random shiny sound (enderman teleport / beacon activate / dragon flap)
+ * for every block broken, an attack-sweep per swing, and the netherite
+ * armor equip sound when a shard item is equipped - plus purple portal
+ * particle bursts. Everything is configurable under "effects:".
  */
 public final class Effects {
 
@@ -28,18 +30,31 @@ public final class Effects {
         this.logger = plugin.getLogger();
     }
 
-    /**
-     * One amethyst chime per swing (DonutSMP plays a single satisfying chime,
-     * not one per broken block).
-     */
+    /** One attack-sweep sound per swing (DonutSMP "on-swing"). */
     public void mineSwing(Player player) {
-        if (plugin.settings().mineSoundEnabled()) {
-            play(player, plugin.settings().mineSoundId(),
-                    plugin.settings().mineSoundVolume(), plugin.settings().mineSoundPitch());
+        SoundSpec spec = plugin.settings().mineSwingSound();
+        if (plugin.settings().mineSwingSoundEnabled() && spec != null) {
+            play(player, spec);
         }
     }
 
-    /** Purple portal particle burst at each block a shard tool broke. */
+    /**
+     * Per broken block ("on-break"): a random sound from the configured
+     * shiny-sound list plus a purple particle burst.
+     */
+    public void mineBlock(Player player, Location blockLocation) {
+        if (plugin.settings().mineBlockSoundsEnabled()) {
+            List<SoundSpec> sounds = plugin.settings().mineBlockSounds();
+            if (!sounds.isEmpty()) {
+                SoundSpec spec = sounds.get(
+                        ThreadLocalRandom.current().nextInt(sounds.size()));
+                play(player, spec);
+            }
+        }
+        mineBlockParticles(blockLocation);
+    }
+
+    /** Purple portal particle burst at a broken block. */
     public void mineBlockParticles(Location blockLocation) {
         if (plugin.settings().mineParticlesEnabled() && blockLocation != null) {
             burst(blockLocation.getWorld(), blockLocation,
@@ -47,12 +62,22 @@ public final class Effects {
         }
     }
 
-    /** Amethyst chime + particle ring when shard armor is equipped. */
+    /** Netherite armor equip sound + purple particle ring when equipped. */
     public void equipEffect(Player player) {
-        if (plugin.settings().equipSoundEnabled()) {
-            play(player, plugin.settings().equipSoundId(),
-                    plugin.settings().equipSoundVolume(), plugin.settings().equipSoundPitch());
+        equipSound(player);
+        equipRing(player);
+    }
+
+    /** Only the equip sound (used where particles would double up). */
+    public void equipSound(Player player) {
+        SoundSpec spec = plugin.settings().equipSound();
+        if (plugin.settings().equipSoundEnabled() && spec != null) {
+            play(player, spec);
         }
+    }
+
+    /** Only the purple particle ring (used for purchases). */
+    public void equipRing(Player player) {
         if (plugin.settings().equipParticlesEnabled()) {
             Location location = player.getLocation().add(0, 1, 0);
             World world = player.getWorld();
@@ -64,10 +89,10 @@ public final class Effects {
         }
     }
 
-    private void play(Player player, String soundId, float volume, float pitch) {
-        Sound sound = plugin.soundResolver().resolve(soundId);
+    private void play(Player player, SoundSpec spec) {
+        Sound sound = plugin.soundResolver().resolve(spec.id());
         if (sound != null) {
-            player.playSound(player.getLocation(), sound, volume, pitch);
+            player.playSound(player.getLocation(), sound, spec.volume(), spec.pitch());
         }
     }
 

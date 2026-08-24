@@ -18,4 +18,5 @@ public interface ConfigurationSection {
     default ConfigurationSection getConfigurationSection(String path) { return null; }
     default Set<String> getKeys(boolean deep) { return Set.of(); }
     default void set(String path, Object value) {}
+    default void setDefaults(ConfigurationSection defaults) {}
 }
