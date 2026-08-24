@@ -93,4 +93,46 @@ public final class TreeFeller {
     private static String key(int x, int y, int z) {
         return x + "," + y + "," + z;
     }
+
+    /**
+     * Collects leaves directly adjacent to the given log positions - the
+     * "whole tree" DonutSMP behaviour (mines all logs and leaves connected
+     * to the mined log). Does not chain through leaves so neighbouring
+     * trees stay intact.
+     *
+     * @param logs   already collected log positions
+     * @param grid   world view
+     * @param isLeaf decides whether a material name counts as a leaf
+     * @param cap    maximum leaves returned
+     * @return leaf positions (never contains log positions)
+     */
+    public static List<int[]> collectLeaves(List<int[]> logs, Grid grid,
+                                            Predicate<String> isLeaf, int cap) {
+        List<int[]> leaves = new ArrayList<>();
+        if (logs == null || logs.isEmpty() || cap <= 0) {
+            return leaves;
+        }
+        Set<String> leafKeys = new HashSet<>();
+        for (int[] log : logs) {
+            for (int[] offset : NEIGHBOURS) {
+                if (leaves.size() >= cap) {
+                    return leaves;
+                }
+                int x = log[0] + offset[0];
+                int y = log[1] + offset[1];
+                int z = log[2] + offset[2];
+                String key = key(x, y, z);
+                if (leafKeys.contains(key)) {
+                    continue;
+                }
+                String material = grid.materialNameAt(x, y, z);
+                if (material == null || !isLeaf.test(material)) {
+                    continue;
+                }
+                leafKeys.add(key);
+                leaves.add(new int[]{x, y, z});
+            }
+        }
+        return leaves;
+    }
 }

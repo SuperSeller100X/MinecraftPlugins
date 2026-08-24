@@ -84,6 +84,11 @@ public class NamespacedKey {
 }
 """)
 
+write("org/bukkit/Particle.java", """
+package org.bukkit;
+public enum Particle { PORTAL, END_ROD, WITCH, DUST, TOTEM }
+""")
+
 write("org/bukkit/Color.java", """
 package org.bukkit;
 public class Color {
@@ -114,6 +119,7 @@ public class Location {
     public double getY() { return 0; }
     public double getZ() { return 0; }
     public Vector getDirection() { return new Vector(); }
+    public Location add(double x, double y, double z) { return this; }
 }
 """)
 
@@ -122,6 +128,7 @@ package org.bukkit;
 public interface Tag<T> {
     boolean isTagged(T item);
     Tag<Material> LOGS = null;
+    Tag<Material> LEAVES = null;
 }
 """)
 
@@ -166,6 +173,8 @@ public interface World {
     boolean isChunkLoaded(int chunkX, int chunkZ);
     <T extends Entity> T spawn(Location location, Class<T> type, Consumer<T> consumer);
     Item dropItem(Location location, ItemStack stack);
+    void spawnParticle(Particle particle, Location location, int count,
+                       double offsetX, double offsetY, double offsetZ, double extra);
 }
 """)
 
@@ -219,6 +228,8 @@ public final class Bukkit {
     public static OfflinePlayer getOfflinePlayerIfCached(String name) { return null; }
     public static PluginManager getPluginManager() { return null; }
     public static Inventory createInventory(InventoryHolder owner, int size, Component title) { return null; }
+    public static org.bukkit.command.CommandSender getConsoleSender() { return null; }
+    public static boolean dispatchCommand(org.bukkit.command.CommandSender sender, String command) { return true; }
 }
 """)
 
@@ -464,6 +475,18 @@ package org.bukkit.event;
 public enum EventPriority { LOWEST, LOW, NORMAL, HIGH, HIGHEST, MONITOR }
 """)
 
+write("com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java", """
+package com.destroystokyo.paper.event.player;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.inventory.ItemStack;
+public class PlayerArmorChangeEvent extends Event {
+    public Player getPlayer() { return null; }
+    public ItemStack getNewItem() { return null; }
+    public ItemStack getPreviousItem() { return null; }
+}
+""")
+
 write("org/bukkit/event/block/BlockBreakEvent.java", """
 package org.bukkit.event.block;
 import org.bukkit.block.Block;
@@ -629,6 +652,7 @@ public interface ConfigurationSection {
     default long getLong(String path) { return 0L; }
     default boolean getBoolean(String path) { return false; }
     default double getDouble(String path) { return 0D; }
+    default double getDouble(String path, double def) { return def; }
     default String getString(String path, String def) { return def; }
     default List<String> getStringList(String path) { return List.of(); }
     default List<Long> getLongList(String path) { return List.of(); }

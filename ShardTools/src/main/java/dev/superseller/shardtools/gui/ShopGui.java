@@ -147,7 +147,7 @@ public final class ShopGui {
             inventory.setItem(bottomStart + 6, navItem("ARROW",
                     Component.text("Next page"), "__next__", holder, bottomStart + 6));
         }
-        inventory.setItem(bottomStart + 4, infoItem(safePage, pages));
+        inventory.setItem(bottomStart + 4, infoItem(player, safePage, pages));
 
         player.openInventory(inventory);
     }
@@ -178,11 +178,21 @@ public final class ShopGui {
         player.openInventory(inventory);
     }
 
-    private ItemStack infoItem(int page, int pages) {
-        ItemStack stack = new ItemStack(Material.matchMaterial("BOOK"), 1);
-        stack.editMeta(meta -> meta.displayName(Component.text(
-                "Page " + (page + 1) + " / " + pages + " - "
-                        + plugin.settings().symbol() + " = shards")));
+    private ItemStack infoItem(Player player, int page, int pages) {
+        // DonutSMP-style purple amethyst shard icon showing the balance.
+        ItemStack stack = new ItemStack(Material.matchMaterial("AMETHYST_SHARD"), 1);
+        long balance = plugin.accounts().balance(player.getUniqueId(), player.getName());
+        List<Component> lore = new ArrayList<>();
+        lore.add(plugin.messages().bare("shop.balance-lore",
+                "%balance%", Numbers.format(balance),
+                "%symbol%", plugin.settings().symbol()));
+        lore.add(Component.text("Page " + (page + 1) + " / " + pages));
+        stack.editMeta(meta -> {
+            meta.displayName(plugin.messages().bare("shop.balance-item",
+                    "%balance%", Numbers.format(balance),
+                    "%symbol%", plugin.settings().symbol()));
+            meta.lore(lore);
+        });
         return stack;
     }
 

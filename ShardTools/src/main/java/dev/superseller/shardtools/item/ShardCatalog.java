@@ -29,9 +29,16 @@ public final class ShardCatalog {
         private final Behavior behavior;
         private final List<EnchantSpec> enchants;
         private final List<String> lore;
+        private final String command;
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore) {
+            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, null);
+        }
+
+        public Entry(String id, String material, String displayName, long defaultPrice,
+                     long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
+                     String command) {
             this.id = id;
             this.material = material;
             this.displayName = displayName;
@@ -40,6 +47,7 @@ public final class ShardCatalog {
             this.behavior = behavior;
             this.enchants = enchants;
             this.lore = lore;
+            this.command = command;
         }
 
         public String id() {
@@ -77,6 +85,15 @@ public final class ShardCatalog {
         public boolean expires() {
             return lifetimeMs > 0L;
         }
+
+        /** Console command executed on purchase instead of giving an item (%player%). */
+        public String command() {
+            return command;
+        }
+
+        public boolean isCommandItem() {
+            return command != null && !command.isBlank();
+        }
     }
 
     private final Map<String, Entry> byId = new LinkedHashMap<>();
@@ -107,8 +124,12 @@ public final class ShardCatalog {
                 }
             }
             List<String> lore = new ArrayList<>(section.getStringList("lore"));
+            String command = section.getString("command");
+            if (command != null && command.isBlank()) {
+                command = null;
+            }
             Entry entry = new Entry(id.toLowerCase(Locale.ROOT), material.toUpperCase(Locale.ROOT),
-                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore);
+                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command);
             catalog.byId.put(entry.id(), entry);
             catalog.ordered.add(entry);
         }

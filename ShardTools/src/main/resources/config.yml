@@ -9,7 +9,9 @@
 # ---------- Currency ----------
 currency:
   # Symbol shown next to shard amounts in chat and GUIs.
-  symbol: "\u2726"
+  # DonutSMP uses a purple star - tags work because every message is
+  # rendered through MiniMessage.
+  symbol: "<light_purple>\u2726</light_purple>"
   # Balance brand-new players start with.
   start-balance: 0
 
@@ -39,7 +41,7 @@ award:
 items:
   shard_pickaxe_fortune:
     material: NETHERITE_PICKAXE
-    name: "<gradient:#7df9ff:#b388ff>Shard Pickaxe</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<light_purple>Shard Pickaxe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
@@ -49,7 +51,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_pickaxe_silk:
     material: NETHERITE_PICKAXE
-    name: "<gradient:#7df9ff:#b388ff>Shard Pickaxe</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<light_purple>Shard Pickaxe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
@@ -59,7 +61,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_axe_fortune:
     material: NETHERITE_AXE
-    name: "<gradient:#ffd98a:#ff9e6d>Shard Axe</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<light_purple>Shard Axe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
@@ -69,7 +71,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_axe_silk:
     material: NETHERITE_AXE
-    name: "<gradient:#ffd98a:#ff9e6d>Shard Axe</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<light_purple>Shard Axe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
@@ -79,7 +81,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_shovel_fortune:
     material: NETHERITE_SHOVEL
-    name: "<gradient:#a8ff9e:#59d9c5>Shard Shovel</gradient> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<light_purple>Shard Shovel</light_purple> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
@@ -89,7 +91,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_shovel_silk:
     material: NETHERITE_SHOVEL
-    name: "<gradient:#a8ff9e:#59d9c5>Shard Shovel</gradient> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<light_purple>Shard Shovel</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
@@ -99,18 +101,18 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   haste_potion:
     material: POTION
-    name: "<gradient:#f7ff8a:#8affc1>Shard Potion of Haste</gradient>"
+    name: "<light_purple>Shard Potion of Haste</light_purple>"
     price: 6000
     lifetime-hours: 24
+    # The effect lasts 1 hour; the item itself self-destructs after 24 real hours.
     behavior: HASTE_POTION
     enchants: []
     lore:
-      - "<gray>Grants <yellow>Haste II for 24 hours</yellow> when drunk.</gray>"
-      - "<gray>A portable beacon.</gray>"
+      - "<gray>Grants <yellow>Haste II for 1 hour</yellow> when drunk.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   netherite_pickaxe_fortune:
     material: NETHERITE_PICKAXE
-    name: "<aqua>Netherite Pickaxe</aqua> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<light_purple>Netherite Pickaxe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -119,7 +121,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_pickaxe_silk:
     material: NETHERITE_PICKAXE
-    name: "<aqua>Netherite Pickaxe</aqua> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<light_purple>Netherite Pickaxe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -128,7 +130,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_shovel:
     material: NETHERITE_SHOVEL
-    name: "<aqua>Netherite Shovel</aqua>"
+    name: "<light_purple>Netherite Shovel</light_purple>"
     price: 800
     lifetime-hours: 0
     behavior: NONE
@@ -137,7 +139,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_axe:
     material: NETHERITE_AXE
-    name: "<aqua>Netherite Axe</aqua>"
+    name: "<light_purple>Netherite Axe</light_purple>"
     price: 600
     lifetime-hours: 0
     behavior: NONE
@@ -146,7 +148,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_hoe:
     material: NETHERITE_HOE
-    name: "<aqua>Netherite Hoe</aqua>"
+    name: "<light_purple>Netherite Hoe</light_purple>"
     price: 500
     lifetime-hours: 0
     behavior: NONE
@@ -155,7 +157,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_helmet:
     material: NETHERITE_HELMET
-    name: "<aqua>Netherite Helmet</aqua>"
+    name: "<light_purple>Netherite Helmet</light_purple>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -164,7 +166,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_chestplate:
     material: NETHERITE_CHESTPLATE
-    name: "<aqua>Netherite Chestplate</aqua>"
+    name: "<light_purple>Netherite Chestplate</light_purple>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -173,7 +175,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_leggings:
     material: NETHERITE_LEGGINGS
-    name: "<aqua>Netherite Leggings</aqua>"
+    name: "<light_purple>Netherite Leggings</light_purple>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -182,7 +184,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_boots:
     material: NETHERITE_BOOTS
-    name: "<aqua>Netherite Boots</aqua>"
+    name: "<light_purple>Netherite Boots</light_purple>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -191,7 +193,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_sword:
     material: NETHERITE_SWORD
-    name: "<aqua>Netherite Sword</aqua>"
+    name: "<light_purple>Netherite Sword</light_purple>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -200,7 +202,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   mace:
     material: MACE
-    name: "<aqua>Mace</aqua>"
+    name: "<light_purple>Mace</light_purple>"
     price: 2000
     lifetime-hours: 0
     behavior: NONE
@@ -209,7 +211,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   crossbow:
     material: CROSSBOW
-    name: "<aqua>Crossbow</aqua>"
+    name: "<light_purple>Crossbow</light_purple>"
     price: 500
     lifetime-hours: 0
     behavior: NONE
@@ -218,13 +220,37 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   bow:
     material: BOW
-    name: "<aqua>Bow</aqua>"
+    name: "<light_purple>Bow</light_purple>"
     price: 500
     lifetime-hours: 0
     behavior: NONE
     enchants: ["power:5", "flame:1", "punch:2", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+
+  # DonutSMP's shard shop also sells spawners (1,500) and crate keys
+  # (Prime 2,500 / Crimson 2,000). Those need a spawner or crates plugin -
+  # add entries like these and the purchase runs the console command
+  # instead of giving a vanilla item:
+  #
+  # pig_spawner:
+  #   material: SPAWNER
+  #   name: "<light_purple>Pig Spawner</light_purple>"
+  #   price: 1500
+  #   lifetime-hours: 0
+  #   behavior: NONE
+  #   enchants: []
+  #   lore: ["<gray>Pig spawner delivered by your spawner plugin.</gray>"]
+  #   command: "ss give %player% pig 1"
+  # prime_key:
+  #   material: TRIPWIRE_HOOK
+  #   name: "<light_purple>Prime Crate Key</light_purple>"
+  #   price: 2500
+  #   lifetime-hours: 0
+  #   behavior: NONE
+  #   enchants: []
+  #   lore: ["<gray>One Prime crate key.</gray>"]
+  #   command: "crates key %player% prime 1"
 
 # ---------- Shard tool behaviour ----------
 behavior:
@@ -324,6 +350,8 @@ behavior:
 
   # Tree feller (Shard Axe).
   tree:
+    # DonutSMP: the axe mines all logs AND leaves connected to the tree.
+    break-leaves: true
     # Maximum logs broken per swing.
     max-blocks: 256
     # Only chain through the same log type (prevents clear-cutting forests).
@@ -344,8 +372,8 @@ expiry:
 
 # ---------- Shard Potion of Haste ----------
 haste-potion:
-  # Effect duration in hours (DonutSMP: 24).
-  duration-hours: 24
+  # Effect duration in hours (1 by default on this server).
+  duration-hours: 1
   # 0 = Haste I, 1 = Haste II, ...
   amplifier: 1
   # Potion bottle color (RGB).
@@ -367,11 +395,33 @@ protection:
   # Block disenchanting shard items in grindstones.
   grindstone: true
 
+# ---------- Amethyst effects (DonutSMP feel) ----------
+# Purple portal particle bursts + amethyst chime, like DonutSMP shard tools.
+effects:
+  mine-sound:
+    enabled: true
+    id: block.amethyst_block.chime
+    volume: 0.7
+    pitch: 1.2
+  mine-particles:
+    enabled: true
+    id: PORTAL
+    count: 3          # particles per broken block
+  equip-sound:
+    enabled: true
+    id: block.amethyst_block.chime
+    volume: 1.0
+    pitch: 1.0
+  equip-particles:
+    enabled: true
+    id: PORTAL
+    count: 20
+
 # ---------- Sounds ----------
 # Vanilla sound ids (without the minecraft: prefix).
 sounds:
   award: entity.experience_orb.pickup
-  purchase: entity.player.levelup
+  purchase: block.amethyst_block.chime
   deny: entity.villager.no
   expire: entity.item.break
   warn: block.note_block.pling

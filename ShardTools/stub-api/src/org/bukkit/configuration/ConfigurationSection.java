@@ -7,6 +7,7 @@ public interface ConfigurationSection {
     default long getLong(String path) { return 0L; }
     default boolean getBoolean(String path) { return false; }
     default double getDouble(String path) { return 0D; }
+    default double getDouble(String path, double def) { return def; }
     default String getString(String path, String def) { return def; }
     default List<String> getStringList(String path) { return List.of(); }
     default List<Long> getLongList(String path) { return List.of(); }

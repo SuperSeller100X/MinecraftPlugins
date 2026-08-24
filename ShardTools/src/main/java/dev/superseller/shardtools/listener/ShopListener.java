@@ -132,7 +132,12 @@ public final class ShopListener implements Listener {
             denySound(player);
             return;
         }
-        give(player, plugin.items().create(entry, 1));
+        if (entry.isCommandItem()) {
+            String command = entry.command().replace("%player%", player.getName());
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
+        } else {
+            give(player, plugin.items().create(entry, 1));
+        }
         plugin.messages().send(player, "shop.purchased",
                 "%item%", entry.displayName(),
                 "%price%", Numbers.format(price),
@@ -142,6 +147,7 @@ public final class ShopListener implements Listener {
         if (sound != null) {
             player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
         }
+        plugin.effects().equipEffect(player);
         plugin.accounts().saveAsync();
         plugin.gui().open(player, backPage);
     }

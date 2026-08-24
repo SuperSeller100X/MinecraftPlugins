@@ -14,11 +14,13 @@ import dev.superseller.shardtools.economy.AwardService;
 import dev.superseller.shardtools.economy.ShardAccounts;
 import dev.superseller.shardtools.expiry.ExpirySweep;
 import dev.superseller.shardtools.gui.ShopGui;
+import dev.superseller.shardtools.item.Effects;
 import dev.superseller.shardtools.item.EnchantResolver;
 import dev.superseller.shardtools.item.ShardCatalog;
 import dev.superseller.shardtools.item.ShardItems;
 import dev.superseller.shardtools.item.SoundResolver;
 import dev.superseller.shardtools.listener.AnvilListener;
+import dev.superseller.shardtools.listener.EquipListener;
 import dev.superseller.shardtools.listener.BreakListener;
 import dev.superseller.shardtools.listener.ExpiryListener;
 import dev.superseller.shardtools.listener.PotionListener;
@@ -43,6 +45,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
     private ShardItems items;
     private ExpirySweep sweep;
     private ShopGui gui;
+    private Effects effects;
     private EnchantResolver enchantResolver;
     private SoundResolver soundResolver;
     private AwardService awardService;
@@ -59,6 +62,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
         priceBook = new PriceBook(catalog.defaultPrices(), runtimeStore.priceOverrides());
         accounts = new ShardAccounts(this);
         accounts.load();
+        effects = new Effects(this);
         enchantResolver = new EnchantResolver(getLogger());
         soundResolver = new SoundResolver(getLogger());
         items = new ShardItems(this);
@@ -72,6 +76,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
         manager.registerEvents(new PotionListener(this), this);
         manager.registerEvents(new ExpiryListener(this), this);
         manager.registerEvents(new AnvilListener(this), this);
+        manager.registerEvents(new EquipListener(this), this);
 
         ShardToolsCommand command = new ShardToolsCommand(this);
         PluginCommand shardtools = getCommand("shardtools");
@@ -178,6 +183,10 @@ public final class ShardToolsPlugin extends JavaPlugin {
 
     public EnchantResolver enchantResolver() {
         return enchantResolver;
+    }
+
+    public Effects effects() {
+        return effects;
     }
 
     public SoundResolver soundResolver() {

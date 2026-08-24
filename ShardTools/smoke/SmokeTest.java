@@ -175,6 +175,26 @@ public final class SmokeTest {
                 (x, y, z) -> leavesOnly.get(x + "," + y + "," + z),
                 logNames::contains, false, 256);
         checkEquals("leaves not logs", 0, fromLeaves.size());
+
+        // Whole-tree behaviour: leaves adjacent to felled logs are collected.
+        Map<String, String> withLeaves = new java.util.HashMap<>();
+        for (int y = 64; y <= 66; y++) {
+            withLeaves.put("0," + y + ",0", "OAK_LOG");
+        }
+        withLeaves.put("1,66,0", "OAK_LEAVES");
+        withLeaves.put("-1,65,0", "OAK_LEAVES");
+        withLeaves.put("4,64,4", "OAK_LEAVES"); // isolated, not adjacent
+        java.util.function.Predicate<String> leafCheck = n -> n.endsWith("_LEAVES");
+        List<int[]> trunk = List.of(new int[]{0, 64, 0}, new int[]{0, 65, 0}, new int[]{0, 66, 0});
+        List<int[]> treeLeaves = TreeFeller.collectLeaves(trunk,
+                (x, y, z) -> withLeaves.get(x + "," + y + "," + z), leafCheck::test, 64);
+        checkEquals("adjacent leaves collected", 2, treeLeaves.size());
+        List<int[]> cappedLeaves = TreeFeller.collectLeaves(trunk,
+                (x, y, z) -> withLeaves.get(x + "," + y + "," + z), leafCheck::test, 1);
+        checkEquals("leaf cap respected", 1, cappedLeaves.size());
+        List<int[]> noLeaves = TreeFeller.collectLeaves(List.of(),
+                (x, y, z) -> withLeaves.get(x + "," + y + "," + z), leafCheck::test, 64);
+        checkEquals("no logs no leaves", 0, noLeaves.size());
     }
 
     private static void testPriceBook() {

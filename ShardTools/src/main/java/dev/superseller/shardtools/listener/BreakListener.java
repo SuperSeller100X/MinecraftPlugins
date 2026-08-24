@@ -71,6 +71,7 @@ public final class BreakListener implements Listener {
         var direction = player.getLocation().getDirection();
         List<int[]> offsets = AreaPlane.offsets(direction.getX(), direction.getY(), direction.getZ(),
                 plugin.settings().areaRadius());
+        boolean any = false;
         for (int[] offset : offsets) {
             int x = origin.getX() + offset[0];
             int y = origin.getY() + offset[1];
@@ -94,6 +95,11 @@ public final class BreakListener implements Listener {
             }
             block.breakNaturally(tool, true);
             plugin.sweep().dropOreXp(block, type);
+            plugin.effects().mineEffect(player, block.getLocation());
+            any = true;
+        }
+        if (!any) {
+            plugin.effects().mineEffect(player, origin.getLocation());
         }
     }
 
@@ -116,10 +122,25 @@ public final class BreakListener implements Listener {
         for (int[] log : logs) {
             Block block = world.getBlockAt(log[0], log[1], log[2]);
             block.breakNaturally(tool, true);
+            plugin.effects().mineEffect(player, block.getLocation());
         }
+        if (plugin.settings().treeBreakLeaves()) {
+            // DonutSMP: the axe mines all logs AND leaves connected to the tree.
+            List<int[]> leaves = TreeFeller.collectLeaves(logs, grid,
+                    name -> isLeaf(name), plugin.settings().treeMaxBlocks());
+            for (int[] leaf : leaves) {
+                world.getBlockAt(leaf[0], leaf[1], leaf[2]).breakNaturally(tool, true);
+            }
+        }
+        plugin.effects().mineEffect(player, origin.getLocation());
         if (plugin.settings().treeReplant() && !logs.isEmpty()) {
             replant(world, origin, originType);
         }
+    }
+
+    private boolean isLeaf(String materialName) {
+        Material material = Material.matchMaterial(materialName);
+        return material != null && Tag.LEAVES.isTagged(material);
     }
 
     private boolean isLog(String materialName) {

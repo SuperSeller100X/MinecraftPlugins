@@ -11,4 +11,6 @@ public interface World {
     boolean isChunkLoaded(int chunkX, int chunkZ);
     <T extends Entity> T spawn(Location location, Class<T> type, Consumer<T> consumer);
     Item dropItem(Location location, ItemStack stack);
+    void spawnParticle(Particle particle, Location location, int count,
+                       double offsetX, double offsetY, double offsetZ, double extra);
 }

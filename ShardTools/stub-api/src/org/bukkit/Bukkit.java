@@ -14,4 +14,6 @@ public final class Bukkit {
     public static OfflinePlayer getOfflinePlayerIfCached(String name) { return null; }
     public static PluginManager getPluginManager() { return null; }
     public static Inventory createInventory(InventoryHolder owner, int size, Component title) { return null; }
+    public static org.bukkit.command.CommandSender getConsoleSender() { return null; }
+    public static boolean dispatchCommand(org.bukkit.command.CommandSender sender, String command) { return true; }
 }

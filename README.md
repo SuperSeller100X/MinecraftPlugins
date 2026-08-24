@@ -128,9 +128,13 @@ Purpur / Folia). Every player earns **5 Shards every 5 minutes** (configurable);
 Shard Shop GUI sells the **Shard Pickaxe / Axe / Shovel** (3×3 mining, whole-tree
 felling, Silk Touch & Fortune III variants, Eff 5 / Unb 3 / Mending, 3,000 shards
 each), the **Shard Potion of Haste** (24 h Haste II, 6,000) and DonutSMP's full
-enchanted-netherite catalog. Tools **self-destruct after 24 h of real time** — the
-countdown is wall-clock based, so it keeps ticking while players are offline and even
-while the server is stopped.
+enchanted-netherite catalog, styled exactly like DonutSMP's **amethyst** items:
+**purple star** currency icon, light-purple names, **amethyst chime + purple portal
+particles** when mining/equipping, and a tree-felling axe that clears logs *and*
+leaves. The haste potion grants **1 h of Haste II**; tools **self-destruct after
+24 h of real time** — wall-clock based, so it keeps ticking while players are
+offline and even while the server is stopped. Spawner/crate-key purchases are
+supported via configurable command items.
 
 - `/st shop (s)` · `/st balance (b)` · `/st pay (p)` · `/st top (t)` · `/st info (i)`
 - Admin: `/st give (g)` · `/st setprice (sp)` · `/st shards (sh)` · `/st interval (iv)`

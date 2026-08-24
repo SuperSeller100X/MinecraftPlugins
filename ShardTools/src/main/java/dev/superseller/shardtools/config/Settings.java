@@ -41,6 +41,23 @@ public final class Settings {
     private int treeMaxBlocks = 256;
     private boolean treeSameMaterialOnly = true;
     private boolean treeReplant;
+    private boolean treeBreakLeaves = true;
+
+    private boolean mineSoundEnabled = true;
+    private String mineSoundId = "block.amethyst_block.chime";
+    private float mineSoundVolume = 0.7f;
+    private float mineSoundPitch = 1.2f;
+    private boolean mineParticlesEnabled = true;
+    private String mineParticleId = "PORTAL";
+    private int mineParticleCount = 3;
+
+    private boolean equipSoundEnabled = true;
+    private String equipSoundId = "block.amethyst_block.chime";
+    private float equipSoundVolume = 1.0f;
+    private float equipSoundPitch = 1.0f;
+    private boolean equipParticlesEnabled = true;
+    private String equipParticleId = "PORTAL";
+    private int equipParticleCount = 20;
 
     private long sweepSeconds = 30;
     private boolean loreRefresh = true;
@@ -103,6 +120,23 @@ public final class Settings {
         treeMaxBlocks = Math.max(1, config.getInt("behavior.tree.max-blocks", 256));
         treeSameMaterialOnly = config.getBoolean("behavior.tree.same-material-only", true);
         treeReplant = config.getBoolean("behavior.tree.replant", false);
+        treeBreakLeaves = config.getBoolean("behavior.tree.break-leaves", true);
+
+        mineSoundEnabled = config.getBoolean("effects.mine-sound.enabled", true);
+        mineSoundId = config.getString("effects.mine-sound.id", "block.amethyst_block.chime");
+        mineSoundVolume = (float) config.getDouble("effects.mine-sound.volume", 0.7D);
+        mineSoundPitch = (float) config.getDouble("effects.mine-sound.pitch", 1.2D);
+        mineParticlesEnabled = config.getBoolean("effects.mine-particles.enabled", true);
+        mineParticleId = config.getString("effects.mine-particles.id", "PORTAL");
+        mineParticleCount = Math.max(1, config.getInt("effects.mine-particles.count", 3));
+
+        equipSoundEnabled = config.getBoolean("effects.equip-sound.enabled", true);
+        equipSoundId = config.getString("effects.equip-sound.id", "block.amethyst_block.chime");
+        equipSoundVolume = (float) config.getDouble("effects.equip-sound.volume", 1.0D);
+        equipSoundPitch = (float) config.getDouble("effects.equip-sound.pitch", 1.0D);
+        equipParticlesEnabled = config.getBoolean("effects.equip-particles.enabled", true);
+        equipParticleId = config.getString("effects.equip-particles.id", "PORTAL");
+        equipParticleCount = Math.max(1, config.getInt("effects.equip-particles.count", 20));
 
         sweepSeconds = Math.max(5L, config.getLong("expiry.sweep-seconds", 30L));
         loreRefresh = config.getBoolean("expiry.lore-refresh", true);
@@ -283,6 +317,66 @@ public final class Settings {
 
     public boolean treeReplant() {
         return treeReplant;
+    }
+
+    public boolean treeBreakLeaves() {
+        return treeBreakLeaves;
+    }
+
+    public boolean mineSoundEnabled() {
+        return mineSoundEnabled;
+    }
+
+    public String mineSoundId() {
+        return mineSoundId;
+    }
+
+    public float mineSoundVolume() {
+        return mineSoundVolume;
+    }
+
+    public float mineSoundPitch() {
+        return mineSoundPitch;
+    }
+
+    public boolean mineParticlesEnabled() {
+        return mineParticlesEnabled;
+    }
+
+    public String mineParticleId() {
+        return mineParticleId;
+    }
+
+    public int mineParticleCount() {
+        return mineParticleCount;
+    }
+
+    public boolean equipSoundEnabled() {
+        return equipSoundEnabled;
+    }
+
+    public String equipSoundId() {
+        return equipSoundId;
+    }
+
+    public float equipSoundVolume() {
+        return equipSoundVolume;
+    }
+
+    public float equipSoundPitch() {
+        return equipSoundPitch;
+    }
+
+    public boolean equipParticlesEnabled() {
+        return equipParticlesEnabled;
+    }
+
+    public String equipParticleId() {
+        return equipParticleId;
+    }
+
+    public int equipParticleCount() {
+        return equipParticleCount;
     }
 
     public long sweepSeconds() {

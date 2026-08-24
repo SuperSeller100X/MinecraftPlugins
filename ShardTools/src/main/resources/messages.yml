@@ -3,7 +3,7 @@
 #  Placeholders: %player%, %amount%, %balance%, %item%, %price%,
 #                %time%, %minutes%, %rank%, %symbol%
 # ============================================================
-prefix: "<gray>[</gray><aqua>ShardTools</aqua><gray>]</gray> "
+prefix: "<gray>[</gray><light_purple>ShardTools</light_purple><gray>]</gray> "
 
 no-permission: "<red>You don't have permission to do that.</red>"
 player-only: "<red>Only players can use this command.</red>"
@@ -13,27 +13,29 @@ invalid-item: "<red>Unknown item id <white>%item%</white>. Use /st items.</red>"
 unknown-command: "<red>Unknown subcommand. Try /st help.</red>"
 
 balance:
-  self: "<gray>Your balance: <aqua>%symbol%%balance%</aqua></gray>"
-  other: "<gray>Balance of <white>%player%</white>: <aqua>%symbol%%balance%</aqua></gray>"
+  self: "<gray>Your balance: <light_purple>%symbol%%balance%</light_purple></gray>"
+  other: "<gray>Balance of <white>%player%</white>: <light_purple>%symbol%%balance%</light_purple></gray>"
 
 pay:
-  sent: "<gray>Sent <aqua>%symbol%%amount%</aqua> to <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
-  received: "<gray>Received <aqua>%symbol%%amount%</aqua> from <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
+  sent: "<gray>Sent <light_purple>%symbol%%amount%</light_purple> to <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
+  received: "<gray>Received <light_purple>%symbol%%amount%</light_purple> from <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
   self: "<red>You cannot pay yourself.</red>"
-  insufficient: "<red>You only have <aqua>%symbol%%balance%</aqua>.</red>"
+  insufficient: "<red>You only have <light_purple>%symbol%%balance%</light_purple>.</red>"
 
 award:
-  received: "<gray>Shard income: <aqua>+%symbol%%amount%</aqua> <dark_gray>(every %minutes% min)</dark_gray></gray>"
+  received: "<gray>Shard income: <light_purple>+%symbol%%amount%</light_purple> <dark_gray>(every %minutes% min)</dark_gray></gray>"
   enabled: "<gray>Automatic shard income is now <green>%state%</green>.</gray>"
   interval-set: "<gray>Shard income interval set to <yellow>%minutes% minutes</yellow>.</gray>"
   amount-set: "<gray>Shard income amount set to <yellow>%symbol%%amount%</yellow>.</gray>"
 
 shop:
-  purchased: "<gray>Purchased <white>%item%</white> for <aqua>%symbol%%price%</aqua>. Remaining: <aqua>%symbol%%balance%</aqua></gray>"
-  insufficient: "<red>This costs <aqua>%symbol%%price%</aqua> but you only have <aqua>%symbol%%balance%</aqua>.</red>"
-  title: "<dark_gray>Shard Shop</dark_gray> <gray>-</gray> <aqua>%symbol%%balance%</aqua>"
+  purchased: "<gray>Purchased <white>%item%</white> for <light_purple>%symbol%%price%</light_purple>. Remaining: <light_purple>%symbol%%balance%</light_purple></gray>"
+  insufficient: "<red>This costs <light_purple>%symbol%%price%</light_purple> but you only have <light_purple>%symbol%%balance%</light_purple>.</red>"
+  title: "<dark_gray>Shard Shop</dark_gray> <gray>-</gray> <light_purple>%symbol%%balance%</light_purple>"
   confirm-title: "<dark_gray>Buy</dark_gray> <white>%item%</white><dark_gray>?</dark_gray>"
-  price-line: "<dark_gray>Price: <aqua>%symbol%%price%</aqua></dark_gray>"
+  price-line: "<dark_gray>Price: <light_purple>%symbol%%price%</light_purple></dark_gray>"
+  balance-item: "<light_purple>Shard balance</light_purple>"
+  balance-lore: "<gray>You have %symbol%%balance%</gray>"
   click-to-buy: "<yellow>Click to purchase</yellow>"
   click-to-confirm: "<green>Click to confirm</green>"
   click-to-cancel: "<red>Click to cancel</red>"
@@ -47,13 +49,13 @@ items:
   entry: "<dark_gray>-</dark_gray> <white>%item%</white> <dark_gray>%symbol%%price%</dark_gray> <gray>%time%</gray>"
 
 price:
-  set: "<gray>Price of <white>%item%</white> set to <aqua>%symbol%%price%</aqua>.</gray>"
+  set: "<gray>Price of <white>%item%</white> set to <light_purple>%symbol%%price%</light_purple>.</gray>"
 
 shards:
-  given: "<gray>Gave <aqua>%symbol%%amount%</aqua> to <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
-  taken: "<gray>Took <aqua>%symbol%%amount%</aqua> from <white>%player%</white>. New balance: <aqua>%symbol%%balance%</aqua></gray>"
-  set: "<gray>Balance of <white>%player%</white> set to <aqua>%symbol%%balance%</aqua>.</gray>"
-  insufficient: "<red><white>%player%</white> only has <aqua>%symbol%%balance%</aqua>.</red>"
+  given: "<gray>Gave <light_purple>%symbol%%amount%</light_purple> to <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
+  taken: "<gray>Took <light_purple>%symbol%%amount%</light_purple> from <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
+  set: "<gray>Balance of <white>%player%</white> set to <light_purple>%symbol%%balance%</light_purple>.</gray>"
+  insufficient: "<red><white>%player%</white> only has <light_purple>%symbol%%balance%</light_purple>.</red>"
 
 info:
   holding: "<gray>Holding <white>%item%</white> <dark_gray>(%symbol%%price%)</dark_gray> - <yellow>%time%</yellow> remaining.</gray>"
@@ -62,7 +64,7 @@ info:
 
 top:
   header: "<gray>Shard leaderboard:</gray>"
-  entry: "<yellow>#%rank%</yellow> <white>%player%</white> <dark_gray>-</dark_gray> <aqua>%symbol%%balance%</aqua>"
+  entry: "<yellow>#%rank%</yellow> <white>%player%</white> <dark_gray>-</dark_gray> <light_purple>%symbol%%balance%</light_purple>"
   empty: "<gray>Nobody has any shards yet.</gray>"
 
 expire:
@@ -79,7 +81,7 @@ reload:
   done: "<gray>Configuration, messages and shop catalog reloaded.</gray>"
 
 help:
-  header: "<gray>=== </gray><aqua>ShardTools</aqua><gray> ===</gray>"
+  header: "<gray>=== </gray><light_purple>ShardTools</light_purple><gray> ===</gray>"
   line-shop: "<yellow>/st shop</yellow> <dark_gray>(s)</dark_gray> <gray>- open the shard shop</gray>"
   line-balance: "<yellow>/st balance [player]</yellow> <dark_gray>(b)</dark_gray> <gray>- check shard balance</gray>"
   line-pay: "<yellow>/st pay <player> <amount></yellow> <dark_gray>(p)</dark_gray> <gray>- send shards</gray>"
