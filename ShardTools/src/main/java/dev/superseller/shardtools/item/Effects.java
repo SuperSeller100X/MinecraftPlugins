@@ -14,11 +14,10 @@ import org.bukkit.entity.Player;
 import dev.superseller.shardtools.ShardToolsPlugin;
 
 /**
- * DonutSMP sound & particle flavour. Per the DonutSMP drill sound scheme:
- * a random shiny sound (enderman teleport / beacon activate / dragon flap)
- * for every block broken, an attack-sweep per swing, and the netherite
- * armor equip sound when a shard item is equipped - plus purple portal
- * particle bursts. Everything is configurable under "effects:".
+ * DonutSMP sound & particle flavour. Mining plays the amethyst block step
+ * sound for every block broken; equipping a shard item plays the amethyst
+ * resonate sound - plus purple portal particle bursts. Everything is
+ * configurable under "effects:" (sound lists = random pick per block).
  */
 public final class Effects {
 
@@ -39,8 +38,8 @@ public final class Effects {
     }
 
     /**
-     * Per broken block ("on-break"): a random sound from the configured
-     * shiny-sound list plus a purple particle burst.
+     * Per broken block ("on-break"): the amethyst step sound (or a random
+     * pick from the configured list) plus a purple particle burst.
      */
     public void mineBlock(Player player, Location blockLocation) {
         if (plugin.settings().mineBlockSoundsEnabled()) {

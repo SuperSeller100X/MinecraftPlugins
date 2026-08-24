@@ -42,23 +42,22 @@ Area breaking details (all configurable):
   `behavior.tree.max-blocks` (default 256) with same-log-type chaining **and breaks the
   tree's leaves too** (`behavior.tree.break-leaves`), exactly like DonutSMP's amethyst axe.
 
-### DonutSMP sounds & particles — purple star included
-Exactly the DonutSMP drill sound scheme (per the community sound spec), all
-under `effects:` in config.yml:
+### DonutSMP amethyst sounds & particles — purple star included
+The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
 
-- **Per broken block ("on-break")** — ONE random shiny sound from
-  `entity.enderman_teleport` (pitch 1.3) · `block.beacon_activate` (pitch 1.8) ·
-  `entity.ender_dragon_flap`, plus a **purple portal particle** burst at each
-  broken block.
-- **Per swing ("on-swing")** — `entity.player.attack_sweep`.
-- **On equip** — `item.armor.equip_netherite` plus a purple particle ring:
-  triggers when you pull a shard tool **into your hand** (hotbar switch), put
-  shard **armor** on, or drink a shard potion.
-- **On purchase** — `block.beacon_activate` + purple ring.
+- **Mining** — the **amethyst block step** sound (`block.amethyst_block.step`)
+  for every broken block, plus a **purple portal particle** burst. The list is
+  a random pick per block, so you can add e.g. `block.amethyst_cluster.step`
+  (crunchier) or more for variety.
+- **On equip** — the **amethyst resonate** sound (`block.amethyst_block.resonate`)
+  plus a purple particle ring: triggers when you pull a shard tool **into your
+  hand** (hotbar switch), put shard **armor** on, or drink a shard potion.
+- **On purchase** — resonate + purple ring.
 - The currency icon is a **purple star** (`currency.symbol:
   "<light_purple>✦</light_purple>"`); shard tool names render in light purple
   (`&d` on DonutSMP); the shop shows your balance on an amethyst shard icon.
 - Every sound entry supports its own volume/pitch: `"sound-id volume pitch"`.
+- Optional per-swing sound (`entity.player.attack_sweep`) — off by default.
 
 ## Protection
 Shard items cannot be renamed or merged in **anvils** or disenchanted in **grindstones**
@@ -132,12 +131,11 @@ expiry:
   warn-minutes: [60, 10, 1]
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}
-effects:                      # DonutSMP drill sound scheme
-  mine-block-sounds: {enabled: true, sounds: ["entity.enderman_teleport 1.0 1.3",
-                          "block.beacon_activate 0.8 1.8", "entity.ender_dragon_flap 0.5 1.0"]}
-  mine-swing-sound: {enabled: true, sound: "entity.player.attack_sweep 0.7 1.5"}
+effects:                      # DonutSMP amethyst sounds
+  mine-block-sounds: {enabled: true, sounds: ["block.amethyst_block.step 1.0 1.0"]}
+  mine-swing-sound: {enabled: false, sound: "entity.player.attack_sweep 0.7 1.5"}
   mine-particles: {enabled: true, id: PORTAL, count: 3}
-  equip-sound: {enabled: true, sound: "item.armor.equip_netherite 1.0 1.2"}
+  equip-sound: {enabled: true, sound: "block.amethyst_block.resonate 1.0 1.0"}
   equip-particles: {enabled: true, id: PORTAL, count: 20}
 ```
 

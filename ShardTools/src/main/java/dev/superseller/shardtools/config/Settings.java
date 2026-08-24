@@ -76,7 +76,7 @@ public final class Settings {
     private boolean grindstoneProtect = true;
 
     private String soundAward = "entity.experience_orb.pickup";
-    private String soundPurchase = "entity.player.levelup";
+    private String soundPurchase = "block.amethyst_block.resonate";
     private String soundDeny = "entity.villager.no";
     private String soundExpire = "entity.item.break";
     private String soundWarn = "block.note_block.pling";
@@ -122,19 +122,17 @@ public final class Settings {
         treeReplant = config.getBoolean("behavior.tree.replant", false);
         treeBreakLeaves = config.getBoolean("behavior.tree.break-leaves", true);
 
-        // DonutSMP drill sound scheme: random shiny sound per broken block,
-        // attack sweep per swing, netherite equip sound when equipped.
+        // DonutSMP amethyst sounds: amethyst step per broken block,
+        // amethyst resonate when a shard item is equipped.
         mineBlockSoundsEnabled = config.getBoolean("effects.mine-block-sounds.enabled", true);
         List<SoundSpec> breakSounds = SoundSpec.parseAll(
                 config.getStringList("effects.mine-block-sounds.sounds"));
         if (breakSounds.isEmpty()) {
-            breakSounds.add(SoundSpec.parse("entity.enderman_teleport 1.0 1.3"));
-            breakSounds.add(SoundSpec.parse("block.beacon_activate 0.8 1.8"));
-            breakSounds.add(SoundSpec.parse("entity.ender_dragon_flap 0.5 1.0"));
+            breakSounds.add(SoundSpec.parse("block.amethyst_block.step 1.0 1.0"));
         }
         mineBlockSounds = breakSounds;
 
-        mineSwingSoundEnabled = config.getBoolean("effects.mine-swing-sound.enabled", true);
+        mineSwingSoundEnabled = config.getBoolean("effects.mine-swing-sound.enabled", false);
         String swing = config.getString("effects.mine-swing-sound.sound", "entity.player.attack_sweep 0.7 1.5");
         mineSwingSound = SoundSpec.parse(swing);
 
@@ -143,7 +141,7 @@ public final class Settings {
         mineParticleCount = Math.max(1, config.getInt("effects.mine-particles.count", 3));
 
         equipSoundEnabled = config.getBoolean("effects.equip-sound.enabled", true);
-        String equip = config.getString("effects.equip-sound.sound", "item.armor.equip_netherite 1.0 1.2");
+        String equip = config.getString("effects.equip-sound.sound", "block.amethyst_block.resonate 1.0 1.0");
         equipSound = SoundSpec.parse(equip);
         equipParticlesEnabled = config.getBoolean("effects.equip-particles.enabled", true);
         equipParticleId = config.getString("effects.equip-particles.id", "PORTAL");
@@ -176,7 +174,7 @@ public final class Settings {
         grindstoneProtect = config.getBoolean("protection.grindstone", true);
 
         soundAward = config.getString("sounds.award", "entity.experience_orb.pickup");
-        soundPurchase = config.getString("sounds.purchase", "entity.player.levelup");
+        soundPurchase = config.getString("sounds.purchase", "block.amethyst_block.resonate");
         soundDeny = config.getString("sounds.deny", "entity.villager.no");
         soundExpire = config.getString("sounds.expire", "entity.item.break");
         soundWarn = config.getString("sounds.warn", "block.note_block.pling");
