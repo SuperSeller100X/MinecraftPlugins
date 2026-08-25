@@ -93,7 +93,9 @@ public final class BreakListener implements Listener {
             if (!plugin.settings().isAreaAllowed(type)) {
                 continue;
             }
-            block.breakNaturally(tool, true);
+            // triggerEffect=false: no vanilla break particles/sound on the extra
+            // blocks - the purple portal particles + amethyst sound stay clean.
+            block.breakNaturally(tool, false);
             plugin.sweep().dropOreXp(block, type);
             plugin.effects().mineBlockParticles(block.getLocation());
             any = true;
@@ -122,7 +124,7 @@ public final class BreakListener implements Listener {
                 plugin.settings().treeSameMaterialOnly(), plugin.settings().treeMaxBlocks());
         for (int[] log : logs) {
             Block block = world.getBlockAt(log[0], log[1], log[2]);
-            block.breakNaturally(tool, true);
+            block.breakNaturally(tool, false);
             plugin.effects().mineBlockParticles(block.getLocation());
         }
         if (plugin.settings().treeBreakLeaves()) {
@@ -130,7 +132,7 @@ public final class BreakListener implements Listener {
             List<int[]> leaves = TreeFeller.collectLeaves(logs, grid,
                     name -> isLeaf(name), plugin.settings().treeMaxBlocks());
             for (int[] leaf : leaves) {
-                world.getBlockAt(leaf[0], leaf[1], leaf[2]).breakNaturally(tool, true);
+                world.getBlockAt(leaf[0], leaf[1], leaf[2]).breakNaturally(tool, false);
             }
         }
         if (plugin.settings().treeReplant() && !logs.isEmpty()) {

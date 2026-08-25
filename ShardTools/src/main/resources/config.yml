@@ -104,7 +104,7 @@ items:
   haste_potion:
     material: POTION
     name: "<light_purple>Shard Potion of Haste</light_purple>"
-    price: 6000
+    price: 500
     lifetime-hours: 24
     # The effect lasts 1 hour; the item itself self-destructs after 24 real hours.
     behavior: HASTE_POTION
@@ -214,7 +214,7 @@ items:
   crossbow:
     material: CROSSBOW
     name: "<light_purple>Crossbow</light_purple>"
-    price: 500
+    price: 1000
     lifetime-hours: 0
     behavior: NONE
     enchants: ["piercing:4", "quick_charge:3", "unbreaking:3", "mending:1"]
@@ -223,7 +223,7 @@ items:
   bow:
     material: BOW
     name: "<light_purple>Bow</light_purple>"
-    price: 500
+    price: 1000
     lifetime-hours: 0
     behavior: NONE
     enchants: ["power:5", "flame:1", "punch:2", "unbreaking:3", "mending:1"]

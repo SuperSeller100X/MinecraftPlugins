@@ -31,7 +31,7 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 | Shard Axe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Fells whole trees + 3×3 on everything else | **24 h real time** |
 | Shard Shovel (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
 | Shard Shovel (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
-| Shard Potion of Haste | 6,000 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
+| Shard Potion of Haste | 500 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
 
 Area breaking details (all configurable):
 - Silk Touch / Fortune are applied to **every** broken block, not just the centre one.
