@@ -8,8 +8,10 @@ import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -34,7 +36,9 @@ public final class BreakListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(ignoreCancelled = true)
+    // HIGHEST + ignoreCancelled: run after protection plugins have made their
+    // cancel decision, so a cancelled break never triggers the area break.
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
@@ -71,6 +75,10 @@ public final class BreakListener implements Listener {
     private void breakArea(Player player, ItemStack tool, Block origin) {
         plugin.effects().mineUse(player);   // ONE sound per use, not per block
         World world = origin.getWorld();
+        boolean creative = player.getGameMode() == GameMode.CREATIVE;
+        // Vanilla rule: silk touch drops the ore block but NO experience -
+        // without this check a silk shard pickaxe would farm infinite XP.
+        boolean silkTouch = tool.getEnchantmentLevel(Enchantment.SILK_TOUCH) > 0;
         var direction = player.getLocation().getDirection();
         List<int[]> offsets = AreaPlane.offsets(direction.getX(), direction.getY(), direction.getZ(),
                 plugin.settings().areaRadius());
@@ -93,10 +101,17 @@ public final class BreakListener implements Listener {
             if (!plugin.settings().isAreaAllowed(type)) {
                 continue;
             }
-            // triggerEffect=false: no vanilla break particles/sound on the extra
-            // blocks - the purple portal particles + amethyst sound stay clean.
-            block.breakNaturally(tool, false);
-            plugin.sweep().dropOreXp(block, type);
+            if (creative) {
+                // Vanilla creative parity: no drops, no XP for area blocks.
+                block.setType(Material.AIR);
+            } else {
+                // triggerEffect=false: no vanilla break particles/sound on the
+                // extra blocks - portal particles + amethyst sound stay clean.
+                block.breakNaturally(tool, false);
+                if (!silkTouch) {
+                    plugin.sweep().dropOreXp(block, type);
+                }
+            }
             plugin.effects().mineBlockParticles(block.getLocation());
             any = true;
         }
@@ -122,17 +137,28 @@ public final class BreakListener implements Listener {
         List<int[]> logs = TreeFeller.collect(origin.getX(), origin.getY(), origin.getZ(),
                 originType.name(), grid, name -> isLog(name),
                 plugin.settings().treeSameMaterialOnly(), plugin.settings().treeMaxBlocks());
+        boolean creative = player.getGameMode() == GameMode.CREATIVE;
         for (int[] log : logs) {
             Block block = world.getBlockAt(log[0], log[1], log[2]);
-            block.breakNaturally(tool, false);
+            if (creative) {
+                block.setType(Material.AIR);   // vanilla creative: no drops
+            } else {
+                block.breakNaturally(tool, false);
+            }
             plugin.effects().mineBlockParticles(block.getLocation());
         }
         if (plugin.settings().treeBreakLeaves()) {
             // DonutSMP: the axe mines all logs AND leaves connected to the tree.
             List<int[]> leaves = TreeFeller.collectLeaves(logs, grid,
                     name -> isLeaf(name), plugin.settings().treeMaxBlocks());
+            // Empty-hand break: a silk touch axe must not drop leaf blocks.
             for (int[] leaf : leaves) {
-                world.getBlockAt(leaf[0], leaf[1], leaf[2]).breakNaturally(tool, false);
+                Block leafBlock = world.getBlockAt(leaf[0], leaf[1], leaf[2]);
+                if (creative) {
+                    leafBlock.setType(Material.AIR);
+                } else {
+                    leafBlock.breakNaturally(null, false);
+                }
             }
         }
         if (plugin.settings().treeReplant() && !logs.isEmpty()) {

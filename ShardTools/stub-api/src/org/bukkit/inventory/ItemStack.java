@@ -9,5 +9,6 @@ public class ItemStack {
     public void setAmount(int amount) {}
     public ItemMeta getItemMeta() { return null; }
     public boolean setItemMeta(ItemMeta meta) { return true; }
+    public int getEnchantmentLevel(org.bukkit.enchantments.Enchantment enchantment) { return 0; }
     public <M extends ItemMeta> boolean editMeta(Consumer<M> consumer) { return true; }
 }

@@ -270,6 +270,7 @@ public class ItemStack {
     public void setAmount(int amount) {}
     public ItemMeta getItemMeta() { return null; }
     public boolean setItemMeta(ItemMeta meta) { return true; }
+    public int getEnchantmentLevel(org.bukkit.enchantments.Enchantment enchantment) { return 0; }
     public <M extends ItemMeta> boolean editMeta(Consumer<M> consumer) { return true; }
 }
 """)
@@ -405,7 +406,14 @@ public interface ExperienceOrb extends Entity {
 write("org/bukkit/enchantments/Enchantment.java", """
 package org.bukkit.enchantments;
 import org.bukkit.Keyed;
-public abstract class Enchantment implements Keyed {}
+public abstract class Enchantment implements Keyed {
+    public static final Enchantment SILK_TOUCH = new Enchantment() {
+        @Override
+        public org.bukkit.NamespacedKey getKey() {
+            throw new UnsupportedOperationException();
+        }
+    };
+}
 """)
 
 write("org/bukkit/potion/PotionEffectType.java", """
