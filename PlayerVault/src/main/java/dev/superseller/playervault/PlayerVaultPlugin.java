@@ -157,7 +157,8 @@ public final class PlayerVaultPlugin extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
             return;
         }
-        String version = getClass().getPackage().getImplementationVersion();
+        Package owner = getClass().getPackage();
+        String version = owner == null ? null : owner.getImplementationVersion();
         VaultPlaceholders expansion =
                 new VaultPlaceholders(service, () -> settings, AUTHOR, version == null ? "1.0.0" : version);
         if (expansion.register()) {

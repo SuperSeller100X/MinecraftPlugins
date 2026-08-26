@@ -69,7 +69,11 @@ public final class SqliteVaultStore implements VaultStore {
     /** Opens the database and creates the schema when needed. */
     public void open() throws IOException {
         synchronized (lock) {
-            connect();
+            try {
+                connect();
+            } catch (SQLException ex) {
+                throw new IOException("Could not open the vault database", ex);
+            }
         }
     }
 

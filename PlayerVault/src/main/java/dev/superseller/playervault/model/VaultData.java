@@ -249,7 +249,7 @@ public final class VaultData {
         }
         merged.sort(Comparator
                 .comparing((ItemStack stack) -> stack.getType().name())
-                .thenComparing(ItemStack::getAmount, Comparator.reverseOrder()));
+                .thenComparing(ItemStack::getAmount, Comparator.<Integer>reverseOrder()));
         Arrays.fill(items, null);
         for (int i = 0; i < merged.size() && i < items.length; i++) {
             items[i] = merged.get(i);
