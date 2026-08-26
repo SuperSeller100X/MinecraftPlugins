@@ -395,7 +395,7 @@ public final class VaultService {
         int before = data.rows();
         int next = Math.max(1, rows);
         List<ItemStack> evicted = data.resize(next);
-        refundIfShrunk(target, data, before, next, settings);
+        refundIfShrunk(target, data, before, next, config);
         saveAsync(data);
         messages.send(actor, "admin-messages.rows-set",
                 "%player%", String.valueOf(target.getName()),
@@ -436,7 +436,7 @@ public final class VaultService {
         int next = Math.max(1, config.vault().startingRows());
         List<ItemStack> evicted = data.resize(next);
         data.purchasedRows(0);
-        refundIfShrunk(target, data, before, next, settings);
+        refundIfShrunk(target, data, before, next, config);
         saveAsync(data);
         messages.send(actor, "admin-messages.reset",
                 "%player%", String.valueOf(target.getName()),
