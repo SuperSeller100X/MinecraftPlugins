@@ -1,0 +1,98 @@
+# ─────────────────────────────────────────────────────────────
+#  PlayerVault — configuration
+#  All money values accept suffixes: k (thousand), m (million),
+#  b (billion), t (trillion). Example: 10k == 10000
+#  Every text string lives in messages.yml and uses MiniMessage.
+# ─────────────────────────────────────────────────────────────
+
+# Where vault contents are persisted.
+#   YAML   -> plugins/PlayerVault/vaults/<uuid>.yml  (human readable, no driver needed)
+#   SQLITE -> plugins/PlayerVault/vaults.db          (better for large servers)
+storage:
+  type: YAML
+  # Periodically write cached vaults to disk, in seconds. 0 disables.
+  auto-save-seconds: 300
+  # Write a player's vault when they disconnect.
+  save-on-quit: true
+  # SQLITE only: journal mode. WAL is the recommended default.
+  sqlite:
+    journal-mode: WAL
+    busy-timeout-ms: 5000
+
+vault:
+  # Rows every player starts with. 1 row = 9 slots. 3 rows = 27 slots.
+  starting-rows: 3
+  # Hard ceiling for purchased rows. -1 means unlimited.
+  max-rows: -1
+  # Extra rows granted to holders of playervault.rows.<n>.
+  #   HIGHEST -> the largest matching permission wins (default)
+  #   ADD     -> the largest matching permission is added to starting-rows
+  #   OFF     -> ignore row permissions entirely
+  bonus-rows: HIGHEST
+
+upgrade:
+  # Price of the FIRST purchased row.
+  base-price: 10k
+  # Each further row costs this multiple of the previous one.
+  # 1.5 gives 10k, 15k, 22.5k, 33.75k, 50.63k ...
+  multiplier: 1.5
+  # Round prices to this many decimals.
+  round-decimals: 2
+  # How many rows a single /pv upgrade <n> may buy at once.
+  max-rows-per-purchase: 25
+  # Ask for confirmation when buying this many rows in one go. 0 disables.
+  confirm-threshold: 5
+
+economy:
+  # false -> upgrades are free for everyone.
+  enabled: true
+  # Refund a percentage of what a player paid when an admin removes rows.
+  refund-percent: 0
+  # Announce purchases to the console.
+  log-transactions: true
+
+gui:
+  # %page% and %pages% are replaced. MiniMessage formatting.
+  title: "<dark_aqua><bold>PlayerVault</bold> <dark_gray>» <gray>Page <white>%page%<gray>/<white>%pages%"
+  # Storage rows shown per page (the utility bar is added on top).
+  page-rows: 5
+  # Remember the last page a player was on between openings.
+  remember-page: true
+  # Play click sounds in the GUI.
+  sounds: true
+  # Namespaced sound id used for button clicks.
+  sound: "ui.button.click"
+  buttons:
+    upgrade:
+      material: NETHER_STAR
+      slot: 7
+    sort:
+      material: STRUCTURE_VOID
+      slot: 1
+    deposit-all:
+      material: HOPPER
+      slot: 2
+    withdraw-all:
+      material: DROPPER
+      slot: 5
+    info:
+      material: BOOK
+      slot: 3
+    page-indicator:
+      material: PAPER
+      slot: 4
+    previous-page:
+      material: ARROW
+      slot: 0
+    next-page:
+      material: ARROW
+      slot: 8
+    filler:
+      material: GRAY_STAINED_GLASS_PANE
+      slot: 6
+
+placeholders:
+  # Register %playervault_*% placeholders when PlaceholderAPI is present.
+  enabled: true
+
+debug: false

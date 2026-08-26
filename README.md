@@ -2,6 +2,24 @@
 
 A collection of Minecraft plugins.
 
+## PlayerVault 🗄️
+
+A personal, expandable vault for every player on Minecraft **26.2** (Paper / Purpur /
+Folia). Everyone starts with **27 slots (3 rows)** and buys extra rows of 9 slots with
+server money — **10k, 15k, 22.5k, 33.75k**, each row 1.5× the last. No row limit by
+default; vaults that outgrow one chest page are paginated.
+
+- `/pv` — open your vault · `/pv u` upgrade · `/pv p` price · `/pv i` info · `/pv s` sort · `/pv rl` reload
+- `/pva o|r|ar|x|c|i|p|rl` — open, set rows, grant rows, reset, clear, inspect, price, reload (works offline)
+- Vault / VaultUnlocked (any economy plugin), PlaceholderAPI, YAML **or** SQLite storage,
+  permission bonus rows (`playervault.rows.<n>`), full permissions and tab completion
+
+See [PlayerVault/README.md](PlayerVault/README.md). Build with `mvn -B clean package` in
+`PlayerVault/` (JDK 25 required). A CI workflow that runs the consistency checks, the
+unit tests and `mvn clean verify` on Temurin 25 is included at
+`PlayerVault/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/`
+to activate it).
+
 ## TeleportSigns 🪧
 
 Look at a written sign, bind a destination with `/ts [world] x y z [yaw] [pitch]`, and right-click to teleport. Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Operators create signs; every player can use them. Folia-safe `teleportAsync`, safety checks, cooldown/warmup, optional Vault cost, tab completion, and short aliases (`/ts s`, `/ts r`, `/ts i`, `/ts l`, `/ts c`, `/ts rl`).
