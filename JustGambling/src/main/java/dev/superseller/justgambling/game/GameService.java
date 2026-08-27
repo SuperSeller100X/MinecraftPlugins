@@ -1,6 +1,5 @@
 package dev.superseller.justgambling.game;
 
-import dev.superseller.justgambling.JustGamblingPlugin;
 import dev.superseller.justgambling.config.Messages;
 import dev.superseller.justgambling.config.PluginSettings;
 import dev.superseller.justgambling.economy.EconomyService;
@@ -17,8 +16,6 @@ import dev.superseller.justgambling.util.Sounds;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +45,7 @@ public final class GameService {
     private final EconomyService economy;
     private final GamblingStore store;
     private final Sounds sounds;
-    private final Random random;
+    private volatile Random random;
     private final ConcurrentHashMap<UUID, Long> lastWager = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, MinesSession> activeMines = new ConcurrentHashMap<>();
     private volatile GamblingGui gui;
@@ -66,6 +63,10 @@ public final class GameService {
 
     public void setGui(GamblingGui gui) {
         this.gui = gui;
+    }
+
+    public void reload() {
+        random = settings.useSecureRandom() ? new SecureRandom() : new Random();
     }
 
     public boolean hasActiveMines(UUID playerId) {
@@ -113,7 +114,7 @@ public final class GameService {
 
         double estimatedPayout = payoutFor(stake, outcome.multiplier,
                 outcome.jackpotPool ? store.jackpotPool() : 0.0);
-        if (!validPayout(estimatedPayout)) {
+        if (!validPayout(estimatedPayout) || (!outcome.win && !validContribution(stake, game))) {
             messages.send(player, "payout-too-large");
             return;
         }
@@ -144,7 +145,7 @@ public final class GameService {
                 return;
             }
         } else {
-            double contribution = stake * contributionPercent(game) / 100.0;
+            double contribution = stake * (contributionPercent(game) / 100.0);
             if (Double.isFinite(contribution) && contribution > 0.0) {
                 store.addToJackpot(contribution);
             }
@@ -173,12 +174,18 @@ public final class GameService {
             return;
         }
         RiskTier selectedRisk = risk == null ? RiskTier.BALANCED : risk;
+        int mineCount = Math.min(MINES_SIZE - 1, settings.mineCount(selectedRisk));
+        double maximumMultiplier = 1.0 + (MINES_SIZE - mineCount) * settings.mineStep(selectedRisk);
+        if (!validPayout(payoutFor(stake, maximumMultiplier, 0.0))
+                || !validContribution(stake, GameType.MINES)) {
+            messages.send(player, "payout-too-large");
+            return;
+        }
         if (!economy.withdraw(player, stake)) {
             messages.send(player, "not-enough-money", Map.of("balance", economy.format(economy.balance(player))));
             return;
         }
         boolean[] mines = new boolean[MINES_SIZE];
-        int mineCount = Math.min(MINES_SIZE - 1, settings.mineCount(selectedRisk));
         int placed = 0;
         while (placed < mineCount) {
             int index = nextInt(MINES_SIZE);
@@ -218,7 +225,7 @@ public final class GameService {
             if (session.isMine(index)) {
                 session.markResolved();
                 activeMines.remove(player.getUniqueId(), session);
-                double contribution = session.stake() * contributionPercent(GameType.MINES) / 100.0;
+                double contribution = session.stake() * (contributionPercent(GameType.MINES) / 100.0);
                 if (Double.isFinite(contribution) && contribution > 0.0) {
                     store.addToJackpot(contribution);
                 }
@@ -380,6 +387,14 @@ public final class GameService {
             return false;
         }
         return settings.maximumPayout() <= 0.0 || payout <= settings.maximumPayout();
+    }
+
+    private boolean validContribution(double stake, GameType game) {
+        double contribution = stake * (contributionPercent(game) / 100.0);
+        if (!Double.isFinite(contribution) || contribution < 0.0) {
+            return false;
+        }
+        return contribution <= Double.MAX_VALUE - store.jackpotPool();
     }
 
     private double payoutFor(double stake, double multiplier, double jackpotPool) {

@@ -129,6 +129,10 @@ public final class EconomyService implements Listener {
         return player != null && deposit(player.getUniqueId(), player, amount);
     }
 
+    public boolean deposit(OfflinePlayer player, double amount) {
+        return player != null && deposit(player.getUniqueId(), player, amount);
+    }
+
     public boolean deposit(UUID uuid, double amount) {
         return uuid != null && deposit(uuid, Bukkit.getOfflinePlayer(uuid), amount);
     }

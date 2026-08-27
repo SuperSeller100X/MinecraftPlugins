@@ -167,14 +167,17 @@ Each operation has a separate permission node.
 
 | Command | Description |
 |---|---|
-| `/jga status` / `/jga st` | Show economy provider, scheduler detection, jackpot pool, and active Mines boards. |
+| `/jga status` / `/jga st` / `/jga diag` | Show economy provider, scheduler detection, jackpot pool, and active Mines boards. |
 | `/jga reload` / `/jga rl` | Reload all configuration and messages. |
+| `/jga rules` / `/jga limits` | Show configured stake/payout limits, cooldown, and risk rules. |
 | `/jga enable <game>` / `/jga on <game>` | Enable a game and persist the setting. |
 | `/jga disable <game>` / `/jga off <game>` | Disable a game and persist the setting. |
 | `/jga set <player> <amount>` | Set an isolated fallback balance. |
 | `/jga give <player> <amount>` / `/jga add ...` | Give fallback currency. |
 | `/jga take <player> <amount>` / `/jga remove ...` | Take fallback currency. |
+| `/jga refund <player> <amount>` / `/jga recover ...` | Issue a recovery refund through the active economy. |
 | `/jga history <player> [page]` / `/jga h ...` | Open another player's history GUI. |
+| `/jga stats <player>` / `/jga stat ...` | Inspect another player's aggregate statistics. |
 | `/jga reset <player>` / `/jga clear ...` | Reset fallback balance, statistics, and history. |
 | `/jga pool info` / `/jga jp info` | Inspect the persisted house jackpot pool. |
 | `/jga pool set <amount>` / `/jga pool add <amount>` | Set or add to the house pool. |
@@ -197,9 +200,13 @@ wallet. They are useful when testing without an economy provider.
 | `justgambling.reload` | op | Use `/jg reload`. |
 | `justgambling.admin` | op | Parent for all admin permissions. |
 | `justgambling.admin.reload` | op | Admin reload. |
+| `justgambling.admin.diagnostics` | op | View admin status and diagnostics. |
+| `justgambling.admin.rules` | op | View limits and payout rules. |
 | `justgambling.admin.games` | op | Enable/disable games. |
 | `justgambling.admin.balance` | op | Edit fallback balances. |
+| `justgambling.admin.refund` | op | Issue recovery refunds. |
 | `justgambling.admin.history` | op | Open another player's history. |
+| `justgambling.admin.stats` | op | Inspect another player's statistics. |
 | `justgambling.admin.reset` | op | Reset an account. |
 | `justgambling.admin.pool` | op | Manage the jackpot pool. |
 | `justgambling.*` | op | All JustGambling permissions. |

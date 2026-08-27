@@ -74,6 +74,9 @@ public final class JustGamblingPlugin extends JavaPlugin {
         reloadConfig();
         settings.load();
         messages.load();
+        if (games != null) {
+            games.reload();
+        }
         if (economy != null) {
             economy.hook();
         }

@@ -256,11 +256,8 @@ public final class GamblingStore {
 
     /** Writes a complete, atomically replaced snapshot. Safe on shutdown. */
     public void saveNow() {
-        if (closed && !writer.isShutdown()) {
-            // A final save is still intentionally allowed during close().
-        }
-        Snapshot snapshot = snapshot();
         synchronized (saveLock) {
+            Snapshot snapshot = snapshot();
             try {
                 File parent = dataFile.getParentFile();
                 if (parent != null && !parent.exists() && !parent.mkdirs() && !parent.isDirectory()) {

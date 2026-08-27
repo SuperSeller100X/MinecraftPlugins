@@ -10,6 +10,7 @@ import dev.superseller.justgambling.model.MinesSession;
 import dev.superseller.justgambling.model.RiskProfile;
 import dev.superseller.justgambling.model.RiskTier;
 import dev.superseller.justgambling.model.Transaction;
+import dev.superseller.justgambling.scheduler.PlatformScheduler;
 import dev.superseller.justgambling.storage.GamblingStore;
 import dev.superseller.justgambling.util.ItemBuilder;
 import dev.superseller.justgambling.util.Numbers;
@@ -17,14 +18,11 @@ import dev.superseller.justgambling.util.Text;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-
-import net.kyori.adventure.text.Component;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -398,8 +396,11 @@ public final class GamblingGui {
             messages.send(player, "invalid-amount");
             return;
         }
-        player.closeInventory();
-        games.play(player, holder.game(), parsed.get(), holder.risk(), holder.option());
+        double amount = parsed.get();
+        PlatformScheduler.runEntity(player, () -> {
+            player.closeInventory();
+            games.play(player, holder.game(), amount, holder.risk(), holder.option());
+        });
     }
 
     private void historyClick(Player player, GamblingHolder holder, int slot) {
