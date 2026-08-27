@@ -1,0 +1,134 @@
+name: JustGambling
+version: '${project.version}'
+main: dev.superseller.justgambling.JustGamblingPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Configurable house gambling with money games, GUIs, sounds and Folia-safe scheduling.
+softdepend: [Vault, Essentials]
+
+commands:
+  justgambling:
+    description: Open JustGambling, play a house game, or view your history.
+    usage: /<command> [menu|play|games|balance|history|stats|cashout|help|reload]
+    aliases: [jg, gamble, casino]
+  justgamblingadmin:
+    description: Manage JustGambling games, balances, jackpot and audit history.
+    usage: /<command> [reload|status|enable|disable|set|give|take|history|reset|pool]
+    aliases: [jga, jgadmin]
+
+permissions:
+  justgambling.use:
+    description: Open the JustGambling menu.
+    default: true
+  justgambling.games:
+    description: List available JustGambling games.
+    default: true
+  justgambling.balance:
+    description: View the active gambling balance.
+    default: true
+  justgambling.play:
+    description: Play JustGambling house games.
+    default: true
+  justgambling.play.coinflip:
+    description: Play Coin Flip.
+    default: true
+  justgambling.play.dice:
+    description: Play Dice.
+    default: true
+  justgambling.play.roulette:
+    description: Play Roulette.
+    default: true
+  justgambling.play.wheel:
+    description: Play Lucky Wheel.
+    default: true
+  justgambling.play.highlow:
+    description: Play High / Low.
+    default: true
+  justgambling.play.slots:
+    description: Play Slots.
+    default: true
+  justgambling.play.scratch:
+    description: Play Scratch Card.
+    default: true
+  justgambling.play.mines:
+    description: Play Mines.
+    default: true
+  justgambling.play.crash:
+    description: Play Crash.
+    default: true
+  justgambling.play.jackpot:
+    description: Play Jackpot.
+    default: true
+  justgambling.play.lottery:
+    description: Play Lucky Number.
+    default: true
+  justgambling.play.double:
+    description: Play Double or Nothing.
+    default: true
+  justgambling.history:
+    description: View your own gambling history.
+    default: true
+  justgambling.stats:
+    description: View your own gambling statistics.
+    default: true
+  justgambling.stats.others:
+    description: View another player's statistics.
+    default: op
+  justgambling.reload:
+    description: Reload JustGambling configuration.
+    default: op
+  justgambling.admin:
+    description: All JustGambling administrative permissions.
+    default: op
+    children:
+      justgambling.admin.reload: true
+      justgambling.admin.games: true
+      justgambling.admin.balance: true
+      justgambling.admin.history: true
+      justgambling.admin.reset: true
+      justgambling.admin.pool: true
+  justgambling.admin.reload:
+    description: Reload configuration and messages.
+    default: op
+  justgambling.admin.games:
+    description: Enable or disable individual games.
+    default: op
+  justgambling.admin.balance:
+    description: Edit internal fallback balances.
+    default: op
+  justgambling.admin.history:
+    description: Browse another player's gambling history.
+    default: op
+  justgambling.admin.reset:
+    description: Reset a player's fallback balance and statistics.
+    default: op
+  justgambling.admin.pool:
+    description: Inspect or edit the house jackpot pool.
+    default: op
+  justgambling.*:
+    description: Every JustGambling permission.
+    default: op
+    children:
+      justgambling.use: true
+      justgambling.games: true
+      justgambling.balance: true
+      justgambling.play: true
+      justgambling.play.coinflip: true
+      justgambling.play.dice: true
+      justgambling.play.roulette: true
+      justgambling.play.wheel: true
+      justgambling.play.highlow: true
+      justgambling.play.slots: true
+      justgambling.play.scratch: true
+      justgambling.play.mines: true
+      justgambling.play.crash: true
+      justgambling.play.jackpot: true
+      justgambling.play.lottery: true
+      justgambling.play.double: true
+      justgambling.history: true
+      justgambling.stats: true
+      justgambling.stats.others: true
+      justgambling.reload: true
+      justgambling.admin: true

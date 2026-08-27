@@ -1,0 +1,29 @@
+name: JustGambling Maven build
+
+on:
+  push:
+    paths:
+      - 'JustGambling/**'
+      - '.github/workflows/justgambling.yml'
+  pull_request:
+    paths:
+      - 'JustGambling/**'
+      - '.github/workflows/justgambling.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: JustGambling
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Verify with Maven
+        run: mvn -B clean verify

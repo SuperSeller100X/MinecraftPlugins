@@ -109,6 +109,12 @@ A random vanilla-structure challenge for Minecraft **26.2** (Paper / Purpur / Fo
 
 See [RandomStructureChallenge/README.md](RandomStructureChallenge/README.md). Build with `mvn -B clean package` in `RandomStructureChallenge/` (JDK 25 required).
 
+## JustGambling 🎰
+
+A configurable, house-only casino for Minecraft **26.2** (Paper / Purpur / Folia) and Java 25. `/jg` opens the GUI; players can use money for coin flip, dice, roulette, wheel, high/low, slots, scratch cards, Mines, Crash, Jackpot, Lucky Number, and Double or Nothing. Higher-risk tiers trade lower chance for higher payouts. Vault/EssentialsX is preferred, with an isolated YAML fallback currency, configurable sounds, limits, permissions, audit history, admin tools, and Folia-safe scheduling.
+
+See [JustGambling/README.md](JustGambling/README.md). Build with `mvn -B clean package` in `JustGambling/` (JDK 25 required).
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):

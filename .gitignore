@@ -41,6 +41,10 @@ PlayerBank/target/
 # Subscriptions
 Subscriptions/target/
 Subscriptions/data/
+
+# JustGambling runtime data
+JustGambling/data.yml
+JustGambling/data.yml.tmp
 =======
 # ChunkVoter
 ChunkVoter/target/
