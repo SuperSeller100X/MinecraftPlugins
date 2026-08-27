@@ -1,4 +1,3 @@
-```
 # Compiled and build artifacts
 *.class
 *.o
@@ -30,7 +29,7 @@ htmlcov/
 # System files
 .DS_Store
 Thumbs.db
-```
+
 # Gifty build output & runtime data
 Gifty/target/
 Gifty/data/
@@ -41,9 +40,14 @@ PlayerBank/target/
 # Subscriptions
 Subscriptions/target/
 Subscriptions/data/
-=======
+
 # ChunkVoter
 ChunkVoter/target/
 
 # PlayerHeads smoke classes
 smoke-classes/
+
+# XPBank build output & runtime data
+XPBank/target/
+XPBank/data/
+XPBank/smoke-out/

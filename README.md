@@ -44,6 +44,18 @@ Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via 
 
 See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/`.
 
+## XPBank 🏦✨
+
+Store and withdraw **experience points** (total XP, **not** levels) in a personal bank on Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Bank your XP before a risky dive, transfer savings to a friend, climb the leaderboard, and manage it all from commands or a GUI. Folia-safe XP handling, configurable **YAML or SQLite** storage, sound effects, permissions and admin tools.
+
+- `/xpbank` / `/xp` / `/bank` — deposit, withdraw, balance, pay, top, gui
+- `/xp deposit (d)` · `/xp withdraw (w)` · `/xp balance (bal)` · `/xp pay (p)` · `/xp top (lb)` · `/xp gui (g)`
+- `/xpbankadmin` / `/xpba` — set / add / take / reset / info / stats / reload
+- Amounts accept `all`, `half` and `k/m/b/t` suffixes; full tab completion
+- Permissions: `xpbank.*` (deposit/withdraw/pay/top/gui default-on, admin op)
+
+See [XPBank/README.md](XPBank/README.md). Build with `mvn -B clean verify` in `XPBank/` (JDK 25 required).
+
 ## Gifty 🍩
 
 A sweet gift & delivery system with a DonutSMP-style GUI for Minecraft

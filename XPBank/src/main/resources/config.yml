@@ -1,0 +1,57 @@
+# =====================================================================
+#  XPBank — Minecraft 26.2 (Paper / Purpur / Folia), Java 25
+#  Store total experience POINTS (not levels) in a personal bank.
+#  Reload with /xpbank reload  (permission: xpbank.admin.reload)
+# =====================================================================
+
+storage:
+  # Where balances are stored: "yaml" (simple flat file) or "sqlite"
+  # (single-file database, better for large servers). Both work identically
+  # on Linux, Windows and macOS.
+  type: yaml
+
+  autosave:
+    # Periodically flush balances to disk (YAML backend). SQLite writes
+    # through on every change, so this is mainly a safety net.
+    enabled: true
+    # Minimum 30 seconds.
+    interval-seconds: 300
+
+features:
+  # Allow players to transfer banked XP to each other with /xp pay.
+  transfers: true
+  # Enable the /xp top leaderboard.
+  leaderboard: true
+  # How many players to show on the leaderboard.
+  leaderboard-size: 10
+  # Reserved for future behaviour tweaks; currently informational.
+  keep-xp-bar-on-deposit-all: false
+
+limits:
+  # Smallest allowed explicit amount for each action (keywords all/half bypass).
+  min-deposit: 1
+  min-withdraw: 1
+  min-transfer: 1
+
+sounds:
+  # Master switch for all sound effects.
+  enabled: true
+  # Any valid Bukkit Sound name (https://jd.papermc.io -> org.bukkit.Sound).
+  # Leave blank to disable an individual sound.
+  deposit: ENTITY_EXPERIENCE_ORB_PICKUP
+  withdraw: ENTITY_PLAYER_LEVELUP
+  transfer: ENTITY_ARROW_HIT_PLAYER
+  error: ENTITY_VILLAGER_NO
+  gui-open: BLOCK_CHEST_OPEN
+  gui-click: UI_BUTTON_CLICK
+
+gui:
+  # MiniMessage title (https://docs.advntr.dev/minimessage/).
+  title: "<dark_aqua><bold>XP Bank</bold></dark_aqua>"
+  # Number of rows (1-6). The action buttons use the default 3-row layout.
+  rows: 3
+  icons:
+    balance: EXPERIENCE_BOTTLE
+    deposit: LIME_DYE
+    withdraw: RED_DYE
+    filler: GRAY_STAINED_GLASS_PANE
