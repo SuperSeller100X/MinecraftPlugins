@@ -1,0 +1,93 @@
+# =====================================================================
+#  XPBank messages — MiniMessage format
+#  https://docs.advntr.dev/minimessage/format.html
+#  Placeholders use {name}: {amount} {amount_short} {banked} {banked_short}
+#  {onhand} {onhand_short} {player} {input} {rank} {count} {uuid}
+#  {accounts} {total} {total_short} {storage}
+# =====================================================================
+
+prefix: "<gradient:#22d3ee:#a3e635><bold>XPBank</bold></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+players-only: "<red>Only players can use this command.</red>"
+reloaded: "<green>Configuration and messages reloaded.</green>"
+unknown-subcommand: "<red>Unknown sub-command <white>{input}</white>. Try <white>/xp help</white>.</red>"
+invalid-amount: "<red><white>{input}</white> is not a valid amount. Use a number, <white>all</white> or <white>half</white>.</red>"
+player-not-found: "<red>Could not find a player named <white>{input}</white>.</red>"
+usage-pay: "<red>Usage: <white>/xp pay <player> <amount></white></red>"
+
+balance-self: "<gray>Banked XP:</gray> <aqua>{banked}</aqua> <dark_gray>|</dark_gray> <gray>On hand:</gray> <green>{onhand}</green>"
+balance-other: "<gray>{player}'s banked XP:</gray> <aqua>{banked}</aqua>"
+
+deposit-success: "<green>Deposited <white>{amount}</white> XP.</green> <gray>Banked:</gray> <aqua>{banked}</aqua> <dark_gray>|</dark_gray> <gray>On hand:</gray> <green>{onhand}</green>"
+withdraw-success: "<green>Withdrew <white>{amount}</white> XP.</green> <gray>Banked:</gray> <aqua>{banked}</aqua> <dark_gray>|</dark_gray> <gray>On hand:</gray> <green>{onhand}</green>"
+
+pay-sent: "<green>Sent <white>{amount}</white> XP to <white>{player}</white>.</green> <gray>Banked:</gray> <aqua>{banked}</aqua>"
+pay-received: "<green>Received <white>{amount}</white> XP from <white>{player}</white>.</green> <gray>Banked:</gray> <aqua>{banked}</aqua>"
+
+top-header: "<gray>——— <aqua>XP Bank — Top {count}</aqua> ———</gray>"
+top-empty: "<gray>No accounts have any banked XP yet.</gray>"
+top-line: "<gray>#{rank}</gray> <white>{player}</white> <dark_gray>—</dark_gray> <aqua>{banked}</aqua> <gray>XP</gray>"
+
+error:
+  not_enough_xp: "<red>You don't have <white>{amount}</white> XP to deposit.</red>"
+  not_enough_bank: "<red>You don't have <white>{amount}</white> XP banked.</red>"
+  below_minimum: "<red>The minimum amount is <white>{amount}</white> XP.</red>"
+  zero: "<red>There is nothing to move.</red>"
+  disabled: "<red>That feature is disabled on this server.</red>"
+  self: "<red>You can't pay yourself.</red>"
+  target_unknown: "<red>That player could not be found.</red>"
+
+gui:
+  balance-name: "<aqua><bold>Your XP Bank</bold></aqua>"
+  balance-lore:
+    - "<gray>Banked:</gray> <aqua>{banked}</aqua> <gray>XP</gray>"
+    - "<gray>On hand:</gray> <green>{onhand}</green> <gray>XP</gray>"
+    - ""
+    - "<dark_gray>Click a button to move XP.</dark_gray>"
+  deposit-name: "<green><bold>Deposit {amount}</bold></green>"
+  deposit-lore:
+    - "<gray>Store <white>{amount}</white> XP into the bank.</gray>"
+  deposit-all-name: "<green><bold>Deposit ALL</bold></green>"
+  deposit-all-lore:
+    - "<gray>Store all of your XP into the bank.</gray>"
+  withdraw-name: "<red><bold>Withdraw {amount}</bold></red>"
+  withdraw-lore:
+    - "<gray>Take <white>{amount}</white> XP out of the bank.</gray>"
+  withdraw-all-name: "<red><bold>Withdraw ALL</bold></red>"
+  withdraw-all-lore:
+    - "<gray>Take all of your banked XP.</gray>"
+
+admin:
+  stats: "<gray>Accounts:</gray> <white>{accounts}</white> <dark_gray>|</dark_gray> <gray>Total banked:</gray> <aqua>{total}</aqua> <dark_gray>|</dark_gray> <gray>Storage:</gray> <white>{storage}</white>"
+  info: "<gray>{player}</gray> <dark_gray>(</dark_gray><white>{uuid}</white><dark_gray>)</dark_gray> <gray>banked:</gray> <aqua>{banked}</aqua>"
+  set-done: "<green>Set <white>{player}</white>'s bank to <white>{banked}</white> XP.</green>"
+  add-done: "<green>Added <white>{amount}</white> XP to <white>{player}</white>. New balance: <aqua>{banked}</aqua>.</green>"
+  take-done: "<green>Took <white>{amount}</white> XP from <white>{player}</white>. New balance: <aqua>{banked}</aqua>.</green>"
+  reset-done: "<green>Reset <white>{player}</white>'s bank to 0.</green>"
+  usage-info: "<red>Usage: <white>/xpba info <player></white></red>"
+  usage-set: "<red>Usage: <white>/xpba set <player> <amount></white></red>"
+  usage-add: "<red>Usage: <white>/xpba add <player> <amount></white></red>"
+  usage-take: "<red>Usage: <white>/xpba take <player> <amount></white></red>"
+  usage-reset: "<red>Usage: <white>/xpba reset <player></white></red>"
+
+help:
+  player:
+    - "<gray>——— <gradient:#22d3ee:#a3e635><bold>XPBank</bold></gradient> <gray>———</gray>"
+    - "<yellow>/xp</yellow> <gray>— open the bank GUI</gray>"
+    - "<yellow>/xp balance|bal|b [player]</yellow> <gray>— check banked XP</gray>"
+    - "<yellow>/xp deposit|dep|d [amount|all|half]</yellow> <gray>— store XP</gray>"
+    - "<yellow>/xp withdraw|with|w [amount|all|half]</yellow> <gray>— take XP</gray>"
+    - "<yellow>/xp pay|send|p <player> <amount></yellow> <gray>— transfer banked XP</gray>"
+    - "<yellow>/xp top|lb</yellow> <gray>— leaderboard</gray>"
+    - "<yellow>/xp gui|menu|g</yellow> <gray>— open the GUI</gray>"
+    - "<gray>Aliases:</gray> <yellow>/xpbank</yellow> <yellow>/bank</yellow> <yellow>/xpb</yellow>"
+  admin:
+    - "<gray>——— <aqua><bold>XPBank Admin</bold></aqua> <gray>———</gray>"
+    - "<yellow>/xpba info <player></yellow> <gray>— view a player's bank</gray>"
+    - "<yellow>/xpba set <player> <amount></yellow>"
+    - "<yellow>/xpba add <player> <amount></yellow>"
+    - "<yellow>/xpba take <player> <amount></yellow>"
+    - "<yellow>/xpba reset <player></yellow>"
+    - "<yellow>/xpba stats</yellow> <gray>— totals & storage backend</gray>"
+    - "<yellow>/xpba reload</yellow> <gray>— reload config</gray>"
