@@ -101,6 +101,10 @@ public final class GameService {
         }
         RiskTier selectedRisk = risk == null ? RiskTier.BALANCED : risk;
         String selectedOption = option == null ? "" : option.trim().toLowerCase(Locale.ROOT);
+        if (!validOption(game, selectedOption)) {
+            messages.send(player, "invalid-option", Map.of("game", game.displayName()));
+            return;
+        }
         Outcome outcome = resolve(game, stake, selectedRisk, selectedOption);
         if (outcome == null) {
             messages.send(player, "invalid-option", Map.of("game", game.displayName()));
@@ -489,6 +493,19 @@ public final class GameService {
         int drawn = nextInt(10) + 1;
         boolean win = picked == drawn;
         return new Outcome(win, settings.lotteryMultiplier(), "Lucky number drew " + drawn + "; picked " + picked, false);
+    }
+
+    private boolean validOption(GameType game, String option) {
+        if (!game.needsChoice() || option.isBlank()) {
+            return true;
+        }
+        return switch (game) {
+            case ROULETTE -> option.equals("red") || option.equals("black") || option.equals("green");
+            case HIGHLOW -> option.equals("high") || option.equals("low");
+            case CRASH -> Numbers.parseDouble(option, 1.01, 1000.0).isPresent();
+            case LOTTERY -> Numbers.parseInt(option, 1, 10).isPresent();
+            default -> true;
+        };
     }
 
     private double contributionPercent(GameType game) {
