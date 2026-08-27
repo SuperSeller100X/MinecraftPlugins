@@ -231,6 +231,9 @@ public final class GameService {
             sounds.play(player, "reveal", "BLOCK_GLASS_BREAK");
             if (session.allSafeRevealed()) {
                 cashOutInternal(player, session, false);
+                if (gui != null) {
+                    gui.closeAfterResult(player);
+                }
             } else if (gui != null) {
                 gui.updateMines(player, session);
             }

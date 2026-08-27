@@ -247,7 +247,11 @@ public final class GamblingStore {
         if (closed || writer.isShutdown()) {
             return;
         }
-        writer.submit(this::saveNow);
+        try {
+            writer.submit(this::saveNow);
+        } catch (java.util.concurrent.RejectedExecutionException ignored) {
+            // Shutdown won the race; the synchronous final save covers it.
+        }
     }
 
     /** Writes a complete, atomically replaced snapshot. Safe on shutdown. */

@@ -172,7 +172,8 @@ public final class EconomyService implements Listener {
     @EventHandler
     public void onPluginEnable(PluginEnableEvent event) {
         String name = event.getPlugin().getName();
-        if (name.equalsIgnoreCase("Vault") || name.equalsIgnoreCase("Essentials") || name.equalsIgnoreCase("EssentialsX")) {
+        if (name.equalsIgnoreCase("Vault") || name.equalsIgnoreCase("VaultUnlocked")
+                || name.equalsIgnoreCase("Essentials") || name.equalsIgnoreCase("EssentialsX")) {
             hook();
         }
     }
@@ -187,6 +188,9 @@ public final class EconomyService implements Listener {
     private boolean hookVault() {
         try {
             Plugin vaultPlugin = Bukkit.getPluginManager().getPlugin("Vault");
+            if (vaultPlugin == null) {
+                vaultPlugin = Bukkit.getPluginManager().getPlugin("VaultUnlocked");
+            }
             if (vaultPlugin == null || !vaultPlugin.isEnabled()) {
                 return false;
             }

@@ -6,7 +6,7 @@ folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPlugins
 description: Configurable house gambling with money games, GUIs, sounds and Folia-safe scheduling.
-softdepend: [Vault, Essentials]
+softdepend: [Vault, VaultUnlocked, Essentials]
 
 commands:
   justgambling:
