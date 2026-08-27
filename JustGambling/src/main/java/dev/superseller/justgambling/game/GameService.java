@@ -107,7 +107,8 @@ public final class GameService {
             return;
         }
 
-        double estimatedPayout = payoutFor(stake, outcome.multiplier, outcome.jackpotPool);
+        double estimatedPayout = payoutFor(stake, outcome.multiplier,
+                outcome.jackpotPool ? store.jackpotPool() : 0.0);
         if (!validPayout(estimatedPayout)) {
             messages.send(player, "payout-too-large");
             return;
