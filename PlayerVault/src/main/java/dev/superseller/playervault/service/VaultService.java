@@ -317,9 +317,10 @@ public final class VaultService {
             }
         }
 
-        boolean free = !config.economy().enabled() || player.hasPermission("playervault.bypass.cost");
+        boolean bypass = config.economy().enabled() && player.hasPermission("playervault.bypass.cost");
+        boolean free = !config.economy().enabled() || bypass;
         if (free) {
-            return grantRows(player, data, count, 0.0d, true);
+            return grantRows(player, data, count, 0.0d, true, bypass);
         }
 
         if (!economy.isEnabled()) {
@@ -353,7 +354,7 @@ public final class VaultService {
         if (config.economy().logTransactions()) {
             plugin.getLogger().info(player.getName() + " bought " + count + " vault row(s) for " + money(price));
         }
-        return grantRows(player, data, count, price, false);
+        return grantRows(player, data, count, price, false, false);
     }
 
     /** Replays a pending bulk purchase confirmation. */
@@ -372,14 +373,21 @@ public final class VaultService {
         return request != null && request.expiresAt() >= System.currentTimeMillis();
     }
 
-    private boolean grantRows(Player player, VaultData data, int count, double price, boolean free) {
+    private boolean grantRows(Player player, VaultData data, int count, double price, boolean free,
+                              boolean bypass) {
         data.resize(data.rows() + count);
+        // The ladder always advances, even for an upgrade that cost nothing. The price
+        // is indexed by purchasedRows, so skipping this froze every later row at the
+        // base price -- and a player who later lost the bypass could re-buy rows they
+        // already owned at row-one prices.
+        data.addPurchasedRows(count);
         if (!free) {
-            data.addPurchasedRows(count);
             data.totalSpent(data.totalSpent() + price);
         }
         saveAsync(data);
-        messages.send(player, free ? "upgrade.success-free" : "upgrade.success",
+        String resultKey = bypass ? "upgrade.success-bypass"
+                : free ? "upgrade.success-free" : "upgrade.success";
+        messages.send(player, resultKey,
                 "%count%", String.valueOf(count),
                 "%price%", money(price),
                 "%rows%", String.valueOf(data.rows()),

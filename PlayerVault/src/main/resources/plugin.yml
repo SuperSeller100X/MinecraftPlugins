@@ -55,11 +55,11 @@ permissions:
     description: Reload PlayerVault configuration and messages.
     default: op
   playervault.bypass.cost:
-    description: Upgrade your vault without paying.
-    default: op
+    description: Upgrade your vault without paying. A perk, not an admin function - never granted by default, because it makes every upgrade free.
+    default: false
   playervault.bypass.limit:
-    description: Ignore the configured maximum row count.
-    default: op
+    description: Ignore the configured maximum row count. A perk - never granted by default.
+    default: false
   playervault.admin.open:
     description: Open another player's vault.
     default: op
@@ -86,7 +86,7 @@ permissions:
       playervault.admin.info: true
       playervault.reload: true
   playervault.*:
-    description: Every PlayerVault permission, including use.
+    description: Every PlayerVault permission except the bypass perks, which must be granted explicitly.
     default: op
     children:
       playervault.use: true
@@ -95,5 +95,3 @@ permissions:
       playervault.info: true
       playervault.sort: true
       playervault.admin: true
-      playervault.bypass.cost: true
-      playervault.bypass.limit: true

@@ -159,15 +159,15 @@ that no longer fit are **dropped at their feet** rather than deleted.
 | `playervault.info` | everyone | View your vault statistics |
 | `playervault.sort` | everyone | Compact your vault |
 | `playervault.reload` | op | Reload configuration and messages |
-| `playervault.bypass.cost` | op | Upgrade without paying |
-| `playervault.bypass.limit` | op | Ignore the `max-rows` limit |
+| `playervault.bypass.cost` | nobody | Upgrade without paying. A perk: it is never granted by default and never by `playervault.*` |
+| `playervault.bypass.limit` | nobody | Ignore the `max-rows` limit. A perk, same rule |
 | `playervault.admin.open` | op | Open another player's vault |
 | `playervault.admin.rows` | op | Set or grant rows |
 | `playervault.admin.reset` | op | Reset a vault to the starting size |
 | `playervault.admin.clear` | op | Empty a vault |
 | `playervault.admin.info` | op | Inspect a vault |
 | `playervault.admin` | op | All administrative permissions |
-| `playervault.*` | op | Everything |
+| `playervault.*` | op | Everything **except** the two bypass perks |
 
 ### Bonus rows
 
@@ -518,7 +518,19 @@ The bundled driver could not open `vaults.db`. Check file permissions on
 `plugins/PlayerVault/`. The plugin keeps running on YAML.
 
 **Upgrades are free**
-Either `economy.enabled` is `false`, or the player has `playervault.bypass.cost`.
+Either `economy.enabled` is `false`, or the player has `playervault.bypass.cost`. The
+message says which: *"Received N row(s) without paying (you have
+playervault.bypass.cost)"* means the permission is the cause. That permission is not
+granted to operators by default any more — if a rank grants `playervault.bypass.cost`,
+or an older build of this plugin granted it, remove it there.
+
+**The price never increases past 10,000**
+That was a bug in builds before `acdc0da`: a free upgrade did not advance the price
+ladder, so every later row was priced as if it were the first. Fixed — the ladder now
+advances even when a row costs nothing. Vaults that accumulated rows while affected
+have a `purchased` count that is too low; `/pva rows <player> set <rows>` re-syncs the
+row count, and editing `purchased` in `vaults/<uuid>.yml` (YAML) or the `purchased`
+column of `player_vaults` (SQLite) re-syncs the ladder.
 
 **A player's vault is smaller than their rank**
 `vault.bonus-rows` may be `OFF`. Bonus rows only grow a vault, so after fixing the

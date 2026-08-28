@@ -41,6 +41,7 @@ admin:
 upgrade:
   success: "<green>Bought <white>%count%</white> row(s) for <white>%price%</white>. Your vault now has <white>%rows%</white> rows (<white>%slots%</white> slots)."
   success-free: "<green>Received <white>%count%</white> free row(s). Your vault now has <white>%rows%</white> rows."
+  success-bypass: "<green>Received <white>%count%</white> row(s) without paying <gray>(you have <white>playervault.bypass.cost</white>)</gray>. Your vault now has <white>%rows%</white> rows."
   not-enough-money: "<red>You need <white>%price%</white> but only have <white>%balance%</white>."
   no-economy: "<red>No economy provider is installed, vault upgrades are unavailable."
   already-max: "<red>Your vault is already at the maximum of <white>%rows%</white> rows."
