@@ -267,8 +267,8 @@ public final class GamblingGui {
                         "<gray>Stake: <white>settling</white></gray>")));
 
         switch (game) {
-            case WHEEL -> renderWheel(inventory, frame, resultFrame);
-            case ROULETTE -> renderRoulette(inventory, frame, resultFrame);
+            case WHEEL -> renderWheel(inventory, settings.risk(risk), details, frame, resultFrame);
+            case ROULETTE -> renderRoulette(inventory, details, frame, resultFrame);
             case SLOTS -> renderSlots(inventory, frame, resultFrame, win);
             case SCRATCH -> renderScratch(inventory, frame, totalFrames, resultFrame, win);
             case COINFLIP -> renderCoinFlip(inventory, details, frame, resultFrame);
@@ -284,29 +284,37 @@ public final class GamblingGui {
         }
     }
 
-    private void renderWheel(Inventory inventory, int frame, boolean resultFrame) {
+    private void renderWheel(Inventory inventory, RiskProfile profile, String details, int frame, boolean resultFrame) {
         // Eight slices rotate around a fixed pointer so this reads as a wheel,
         // rather than another horizontal result line.
         int[] slots = {20, 21, 22, 29, 31, 38, 39, 40};
-        String[] labels = {"x0.5", "x1.2", "x1.5", "x2.0", "x3.0", "x0.8", "x5.0", "x10.0"};
-        Material[] materials = {Material.RED_WOOL, Material.BLACK_WOOL, Material.LIME_WOOL, Material.GOLD_BLOCK,
-                Material.PURPLE_WOOL, Material.BLUE_WOOL, Material.DIAMOND_BLOCK, Material.ORANGE_WOOL};
+        int winningSlices = Math.max(1, Math.min(7, (int) Math.round(profile.chance() * 8.0)));
+        String[] labels = new String[slots.length];
+        for (int index = 0; index < labels.length; index++) {
+            labels[index] = index < winningSlices ? "WIN x" + Numbers.format(profile.multiplier(), 2) : "MISS";
+        }
+        Material[] materials = {Material.LIME_WOOL, Material.LIME_WOOL, Material.GOLD_BLOCK, Material.GOLD_BLOCK,
+                Material.RED_WOOL, Material.RED_WOOL, Material.BLACK_WOOL, Material.BLACK_WOOL};
+        int landed = resultFrame ? extractInt(details, "slice ", -1) - 1 : -1;
         for (int index = 0; index < slots.length; index++) {
-            int labelIndex = Math.floorMod(frame + index, labels.length);
+            int labelIndex = landed >= 0 ? Math.floorMod(landed + index, labels.length)
+                    : Math.floorMod(frame + index, labels.length);
             boolean selected = index == 0;
-            inventory.setItem(slots[index], ItemBuilder.item(selected ? Material.GOLD_BLOCK : materials[labelIndex],
-                    (selected ? "<gold>▶ " : "<gray>") + labels[labelIndex] + (selected ? " ◀</gold>" : "</gray>"),
+            inventory.setItem(slots[index], ItemBuilder.item(selected ? Material.NETHER_STAR : materials[labelIndex],
+                    (selected ? "<gold>▶ " : labels[labelIndex].startsWith("WIN") ? "<green>" : "<red>")
+                            + labels[labelIndex] + (selected ? " ◀</gold>" : labels[labelIndex].startsWith("WIN") ? "</green>" : "</red>"),
                     List.of(selected ? "<yellow>Pointer</yellow>" : "<dark_gray>Spinning slice</dark_gray>")));
         }
         inventory.setItem(30, ItemBuilder.item(resultFrame ? Material.NETHER_STAR : Material.COMPASS,
                 resultFrame ? "<gold>Wheel stopped</gold>" : "<aqua>Wheel spinning…</aqua>",
-                List.of("<gray>The pointer settles on one slice.</gray>")));
+                List.of("<gray>Winning slices: <white>" + winningSlices + "/8</white></gray>")));
     }
 
-    private void renderRoulette(Inventory inventory, int frame, boolean resultFrame) {
+    private void renderRoulette(Inventory inventory, String details, int frame, boolean resultFrame) {
         int[] slots = {20, 21, 22, 23, 24, 25, 26, 27, 28};
+        int landed = resultFrame ? extractInt(details, "Roulette: ", -1) : -1;
         for (int index = 0; index < slots.length; index++) {
-            int number = Math.floorMod(frame + index, 37);
+            int number = landed >= 0 ? Math.floorMod(landed + index - 4, 37) : Math.floorMod(frame + index, 37);
             boolean red = RED_NUMBERS.contains(number);
             Material material = number == 0 ? Material.LIME_WOOL : red ? Material.RED_WOOL : Material.BLACK_WOOL;
             boolean selected = index == slots.length / 2;

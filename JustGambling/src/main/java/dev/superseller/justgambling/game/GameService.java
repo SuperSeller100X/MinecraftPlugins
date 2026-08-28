@@ -427,7 +427,8 @@ public final class GameService {
     }
 
     private boolean deposit(UUID playerId, Player player, double amount) {
-        return player != null ? economy.deposit(player, amount) : economy.deposit(playerId, amount);
+        return player != null && player.isOnline()
+                ? economy.deposit(player, amount) : economy.deposit(playerId, amount);
     }
 
     private boolean validateWager(Player player, double stake) {
@@ -508,11 +509,7 @@ public final class GameService {
                         + Math.round(chance * 100.0) + " or lower)", false);
             }
             case ROULETTE -> resolveRoulette(profile, option);
-            case WHEEL -> {
-                int slice = nextInt(100) + 1;
-                boolean win = slice <= Math.round(chance * 100.0);
-                yield new Outcome(win, profile.multiplier(), "Wheel landed on slice " + slice, false);
-            }
+            case WHEEL -> resolveWheel(profile);
             case HIGHLOW -> resolveHighLow(profile, option);
             case SLOTS -> resolveSlots(profile);
             case SCRATCH -> {
@@ -534,6 +531,14 @@ public final class GameService {
             }
             case MINES -> null;
         };
+    }
+
+    private Outcome resolveWheel(RiskProfile profile) {
+        int winningSlices = Math.max(1, Math.min(7, (int) Math.round(profile.chance() * 8.0)));
+        int slice = nextInt(8);
+        boolean win = slice < winningSlices;
+        return new Outcome(win, profile.multiplier(), "Wheel landed on slice " + (slice + 1)
+                + " (" + (win ? "WIN" : "MISS") + ")", false);
     }
 
     private Outcome resolveRoulette(RiskProfile profile, String option) {
