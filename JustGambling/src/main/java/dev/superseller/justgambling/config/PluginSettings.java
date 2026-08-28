@@ -46,6 +46,7 @@ public final class PluginSettings {
     private double rouletteGreenPayout;
     private String guiMainTitle;
     private String guiGameTitle;
+    private String guiAnimationTitle;
     private String guiChoiceTitle;
     private String guiHistoryTitle;
     private String guiMinesTitle;
@@ -73,7 +74,7 @@ public final class PluginSettings {
         minimumStake = positiveFinite(c.getDouble("limits.minimum-stake", 0.01), 0.01);
         maximumStake = finiteNonNegative(c.getDouble("limits.maximum-stake", 0.0), 0.0);
         maximumPayout = finiteNonNegative(c.getDouble("limits.maximum-payout", 0.0), 0.0);
-        double cooldownSeconds = finiteNonNegative(c.getDouble("limits.cooldown-seconds", 0.0), 0.0);
+        double cooldownSeconds = finiteNonNegative(c.getDouble("limits.cooldown-seconds", 2.0), 2.0);
         cooldownMillis = Math.min(Long.MAX_VALUE, Math.round(cooldownSeconds * 1000.0));
         historySize = clamp(c.getInt("storage.max-history-per-player", 100), 10, 10_000);
 
@@ -122,6 +123,8 @@ public final class PluginSettings {
                 "<dark_gray>JustGambling <gold>Casino</gold>");
         guiGameTitle = nonBlank(c.getString("gui.titles.game", "<dark_gray>Play <gold>{game}</gold>"),
                 "<dark_gray>Play <gold>{game}</gold>");
+        guiAnimationTitle = nonBlank(c.getString("gui.titles.animation", "<dark_gray>Playing <gold>{game}</gold>"),
+                "<dark_gray>Playing <gold>{game}</gold>");
         guiChoiceTitle = nonBlank(c.getString("gui.titles.choice", "<dark_gray>Choose <gold>{game}</gold>"),
                 "<dark_gray>Choose <gold>{game}</gold>");
         guiHistoryTitle = nonBlank(c.getString("gui.titles.history", "<dark_gray>Gambling history <gray>({page})</gray>"),
@@ -238,6 +241,36 @@ public final class PluginSettings {
 
     public String guiGameTitle() {
         return guiGameTitle;
+    }
+
+    public String guiAnimationTitle() {
+        return guiAnimationTitle;
+    }
+
+    public boolean animationsEnabled() {
+        return plugin.getConfig().getBoolean("animations.enabled", true);
+    }
+
+    public int animationStepTicks() {
+        return clamp(plugin.getConfig().getInt("animations.step-ticks", 2), 1, 20);
+    }
+
+    public int animationFrames(GameType game) {
+        int frames = clamp(plugin.getConfig().getInt("animations.frames", 18), 6, 60);
+        if (game == GameType.WHEEL || game == GameType.ROULETTE) {
+            return frames;
+        }
+        if (game == GameType.SLOTS) {
+            return Math.max(10, frames - 2);
+        }
+        if (game == GameType.SCRATCH) {
+            return Math.max(9, frames - 4);
+        }
+        return Math.max(8, frames - 5);
+    }
+
+    public int animationResultPauseTicks() {
+        return clamp(plugin.getConfig().getInt("animations.result-pause-ticks", 8), 2, 40);
     }
 
     public String guiChoiceTitle() {

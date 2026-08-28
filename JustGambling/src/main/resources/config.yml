@@ -18,7 +18,15 @@ limits:
   minimum-stake: 0.01
   maximum-stake: 0
   maximum-payout: 0
-  cooldown-seconds: 0
+  # Default cooldown is deliberately short but prevents rapid-fire clicks.
+  cooldown-seconds: 2.0
+
+animations:
+  enabled: true
+  # Each frame is rendered in an inventory; lower values are faster.
+  step-ticks: 2
+  frames: 18
+  result-pause-ticks: 8
 
 # The chance/payout relationship is explicit: safer tiers win more often but
 # pay less; riskier tiers win less often but pay much more.
@@ -91,6 +99,7 @@ gui:
   titles:
     main: "<dark_gray>JustGambling <gold>Casino</gold>"
     game: "<dark_gray>Play <gold>{game}</gold>"
+    animation: "<dark_gray>Playing <gold>{game}</gold>"
     choice: "<dark_gray>Choose <gold>{game}</gold>"
     history: "<dark_gray>History <gray>({page})</gray>"
     mines: "<dark_gray>Mines <gold>•</gold> {risk}"

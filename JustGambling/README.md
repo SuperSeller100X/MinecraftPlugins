@@ -16,8 +16,12 @@ and Folia, uses Java 25, and is built with Maven.
 - Four configurable risk tiers. The defaults make the trade-off explicit:
   higher chance pays less, while lower chance pays more.
 - `/jg` casino GUI with game cards, risk selection, amount presets, chat input,
-  anvil-style custom input, choice screens, a Mines board, and paginated
-  history.
+  anvil-style custom input, choice screens, a Mines board, animated wheel,
+  roulette, slots, scratch, crash, jackpot and dice presentations, and
+  paginated history.
+- Every instant game resolves through a visible inventory animation before
+  settlement. Clicks are locked while it runs; a per-player pending-wager lock
+  and a short configurable cooldown prevent double-click and command spam.
 - Vault-first economy integration for EssentialsX and any other Vault provider,
   direct native EssentialsX fallback, and an isolated built-in YAML currency
   when no external provider is available.
@@ -28,8 +32,9 @@ and Folia, uses Java 25, and is built with Maven.
   limits, cooldowns, enabled games, payout tables, storage, announcements,
   and fallback currency.
 - Audit history and statistics for every resolved wager.
-- Administrative game toggles, reload, diagnostics, fallback balance editing,
-  history inspection, account reset, and jackpot-pool controls.
+- Administrative game toggles, reload, diagnostics, limits/rules inspection,
+  fallback balance editing, recovery refunds, history and statistics, account
+  reset, and jackpot-pool controls.
 - Folia-safe entity/global scheduling; no hard-coded localhost, OS-specific
   paths, or platform-specific file assumptions.
 
@@ -225,7 +230,13 @@ limits:
   minimum-stake: 0.01
   maximum-stake: 0       # 0 = unlimited
   maximum-payout: 0      # 0 = unlimited
-  cooldown-seconds: 0
+  cooldown-seconds: 2.0  # blocks rapid-fire wagers by default
+
+animations:
+  enabled: true
+  step-ticks: 2
+  frames: 18
+  result-pause-ticks: 8
 
 economy:
   fallback:
