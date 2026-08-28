@@ -1,0 +1,59 @@
+# ==============================================================================
+# EasyMending Language & Messages (MiniMessage syntax)
+# Supports MiniMessage: <green>, <gradient:#4facfe:#00f2fe>, <bold>, <click:...>, etc.
+# Placeholders: <prefix>, <item>, <repaired>, <cost>, <xp_spent>, <current_xp>, etc.
+# ==============================================================================
+
+prefix: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> "
+
+# Success messages
+repair-success-single: "<prefix><green>Repaired <yellow><item></yellow> by <aqua><repaired></aqua> durability for <gold><cost> XP</gold>!</green>"
+repair-success-multiple: "<prefix><green>Successfully repaired <yellow><count></yellow> items (<aqua><repaired></aqua> total durability) for <gold><cost> XP</gold>!</green>"
+repair-free-single: "<prefix><green>Repaired <yellow><item></yellow> by <aqua><repaired></aqua> durability for <gold>FREE</gold> (bypass)!</green>"
+repair-free-multiple: "<prefix><green>Repaired <yellow><count></yellow> items for <gold>FREE</gold> (bypass)!</green>"
+repair-partial-notice: "<prefix><yellow>Notice: You only had enough XP for a partial repair (<aqua>+<repaired> durability</aqua>).</yellow>"
+
+# Status & Failure messages
+no-damage-held: "<prefix><yellow>Your held item is already at maximum durability!</yellow>"
+no-damage-target: "<prefix><yellow>No damaged eligible items found to repair!</yellow>"
+no-mending: "<prefix><red>This item does not have the Mending enchantment!</red>"
+not-repairable: "<prefix><red>You must hold a damageable tool, weapon, or armor piece!</red>"
+insufficient-xp: "<prefix><red>You need <gold><cost> XP</gold> to repair this item, but you only have <gold><current_xp> XP</gold>!</red>"
+cooldown-active: "<prefix><red>Please wait <yellow><seconds>s</yellow> before repairing again!</red>"
+no-permission: "<prefix><red>You do not have permission to use this command.</red>"
+player-only: "<prefix><red>This command can only be executed by in-game players.</red>"
+player-not-found: "<prefix><red>Player <yellow><player></yellow> was not found or is offline.</red>"
+
+# Info & Cost commands
+info-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>Item Repair Status</b></gradient> <dark_gray>-------</dark_gray>"
+info-item: "<gray>Item: <yellow><item></yellow></gray>"
+info-durability: "<gray>Durability: <white><current></white>/<white><max></white> <gray>(<percent>% intact)</gray></gray>"
+info-damage-needed: "<gray>Missing Durability: <aqua><damage></aqua></gray>"
+info-has-mending: "<gray>Mending Enchantment: <green>✔ Yes</green></gray>"
+info-no-mending: "<gray>Mending Enchantment: <red>✘ No</red></gray>"
+info-cost: "<gray>Repair Cost: <gold><cost> XP points</gold> <dark_gray>(Your XP: <gold><current_xp></gold>)</dark_gray></gray>"
+info-footer: "<dark_gray>----------------------------------</dark_gray>"
+
+cost-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>Inventory Repair Cost Estimate</b></gradient> <dark_gray>-------</dark_gray>"
+cost-summary: "<gray>Damaged items: <yellow><count></yellow> | Total XP needed: <gold><total_cost> XP</gold> | You have: <gold><current_xp> XP</gold></gray>"
+cost-none-damaged: "<prefix><green>All your items are already at maximum durability!</green>"
+
+# Admin commands
+admin-reload-success: "<prefix><green>Configuration and language files reloaded successfully!</green>"
+admin-repair-success: "<prefix><green>Forced repair for <yellow><player></yellow> (<aqua><count></aqua> items repaired).</green>"
+admin-repair-target-notify: "<prefix><green>An administrator has repaired your equipment!</green>"
+admin-setratio-success: "<prefix><green>Durability per XP ratio updated from <yellow><old></yellow> to <aqua><new></aqua>.</green>"
+admin-setratio-invalid: "<prefix><red>Invalid ratio value. Please provide a positive number (e.g. 2.0).</red>"
+admin-bypass-enabled: "<prefix><green>Free repair bypass <aqua>ENABLED</aqua> for <yellow><player></yellow>.</green>"
+admin-bypass-disabled: "<prefix><yellow>Free repair bypass <red>DISABLED</red> for <yellow><player></yellow>.</yellow>"
+admin-stats: "<prefix><gray>Global stats: <yellow><total_repairs></yellow> repairs completed, <gold><total_xp></gold> XP consumed.</gray>"
+
+admin-inspect-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>Player Inspection: <yellow><player></yellow></b></gradient> <dark_gray>-------</dark_gray>"
+admin-inspect-level: "<gray>Level: <gold><level></gold> (<gold><total_xp> total XP</gold>)</gray>"
+admin-inspect-damaged-count: "<gray>Damaged repairable items: <yellow><count></yellow> (Total missing durability: <aqua><damage></aqua>)</gray>"
+admin-inspect-repair-cost: "<gray>XP needed for full repair: <gold><cost> XP</gold></gray>"
+
+# Help menu
+help-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>EasyMending Commands</b></gradient> <dark_gray>-------</dark_gray>"
+help-line: "<aqua>/<cmd></aqua> <gray>» <white><desc></white></gray>"
+help-footer: "<dark_gray>-------------------------------------</dark_gray>"

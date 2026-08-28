@@ -1,0 +1,103 @@
+name: EasyMending
+version: 1.0.0
+main: dev.superseller.easymending.EasyMendingPlugin
+api-version: '26.2'
+folia-supported: true
+load: STARTUP
+
+description: 'Repair tools, weapons, and armor that have Mending using your existing XP with commands, GUI, sounds, and permissions.'
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+
+commands:
+  easymending:
+    description: Main command for EasyMending to repair items using experience points.
+    aliases: [em, mend, easymend, mending]
+    permission: easymending.use
+    usage: /<command> [gui|hand|offhand|armor|hotbar|all|info|cost|help]
+  easymendingadmin:
+    description: Administrator commands for EasyMending.
+    aliases: [emadmin, ema, mendadmin]
+    permission: easymending.admin
+    usage: /<command> [reload|repair|inspect|setratio|bypass|stats|help]
+
+permissions:
+  easymending.use:
+    description: Allows accessing basic EasyMending commands and opening the GUI.
+    default: true
+  easymending.gui:
+    description: Allows opening the EasyMending repair GUI.
+    default: true
+  easymending.hand:
+    description: Allows repairing the held item in main hand with /em hand.
+    default: true
+  easymending.offhand:
+    description: Allows repairing the offhand item with /em offhand.
+    default: true
+  easymending.armor:
+    description: Allows repairing equipped armor pieces with /em armor.
+    default: true
+  easymending.hotbar:
+    description: Allows repairing all damaged items in hotbar with /em hotbar.
+    default: true
+  easymending.all:
+    description: Allows repairing all damaged items in inventory with /em all.
+    default: true
+  easymending.info:
+    description: Allows viewing item durability and estimated repair cost with /em info.
+    default: true
+  easymending.cost:
+    description: Allows viewing total inventory repair cost with /em cost.
+    default: true
+  easymending.admin:
+    description: Full access to all administrator commands.
+    default: op
+    children:
+      easymending.admin.reload: true
+      easymending.admin.repair: true
+      easymending.admin.inspect: true
+      easymending.admin.setratio: true
+      easymending.admin.bypass: true
+      easymending.admin.stats: true
+  easymending.admin.reload:
+    description: Allows reloading the configuration and language files.
+    default: op
+  easymending.admin.repair:
+    description: Allows repairing another player's items.
+    default: op
+  easymending.admin.inspect:
+    description: Allows inspecting another player's items and experience.
+    default: op
+  easymending.admin.setratio:
+    description: Allows live changing of the durability-per-XP ratio.
+    default: op
+  easymending.admin.bypass:
+    description: Allows toggling repair bypass status for players.
+    default: op
+  easymending.admin.stats:
+    description: Allows viewing global repair statistics.
+    default: op
+  easymending.bypass.cost:
+    description: Bypasses the experience cost, allowing free repairs.
+    default: false
+  easymending.bypass.mending:
+    description: Allows repairing items that do not have the Mending enchantment.
+    default: false
+  easymending.bypass.cooldown:
+    description: Bypasses command cooldowns.
+    default: false
+  easymending.*:
+    description: Grants all EasyMending permissions.
+    default: op
+    children:
+      easymending.use: true
+      easymending.gui: true
+      easymending.hand: true
+      easymending.offhand: true
+      easymending.armor: true
+      easymending.hotbar: true
+      easymending.all: true
+      easymending.info: true
+      easymending.cost: true
+      easymending.admin: true
+      easymending.bypass.cooldown: true

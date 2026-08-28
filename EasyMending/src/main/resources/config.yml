@@ -1,0 +1,82 @@
+# ==============================================================================
+# EasyMending Configuration
+# Target: Minecraft 26.2 (Paper, Purpur, Folia) | Java 25
+# ==============================================================================
+
+# Core repair mechanics
+repair:
+  # Durability restored per 1 point of experience.
+  # Vanilla Mending ratio is 2.0 (1 XP restores 2 durability).
+  durability-per-xp: 2.0
+
+  # If true, only items with the Mending enchantment can be repaired.
+  require-mending: true
+
+  # If require-mending is false, or if player has 'easymending.bypass.mending',
+  # this multiplier is applied to the XP cost for items without Mending.
+  non-mending-cost-multiplier: 1.5
+
+  # If true, and a player does not have enough XP to fully repair an item,
+  # the plugin will spend all available XP to repair as much durability as possible.
+  # If false, the repair requires 100% of the calculated XP cost or it fails.
+  allow-partial-repair: true
+
+  # Minimum XP cost for any single repair transaction (must be >= 1).
+  min-xp-per-repair: 1
+
+  # Cooldown in seconds between repair commands. 0 to disable.
+  # Bypass permission: 'easymending.bypass.cooldown'
+  cooldown-seconds: 0
+
+  # Whether sneaking and right-clicking in the air with a damaged Mending tool
+  # triggers an instant quick-repair.
+  sneak-click-to-repair: false
+
+# Sound effects configuration
+sounds:
+  enabled: true
+  repair-success:
+    sound: "BLOCK_ANVIL_USE"
+    volume: 1.0
+    pitch: 1.2
+  repair-all:
+    sound: "UI_TOAST_CHALLENGE_COMPLETE"
+    volume: 0.8
+    pitch: 1.0
+  no-damage:
+    sound: "BLOCK_NOTE_BLOCK_DIDGERIDOO"
+    volume: 0.8
+    pitch: 0.8
+  no-mending:
+    sound: "ENTITY_VILLAGER_NO"
+    volume: 0.9
+    pitch: 0.9
+  insufficient-xp:
+    sound: "BLOCK_NOTE_BLOCK_BASS"
+    volume: 1.0
+    pitch: 0.6
+  gui-click:
+    sound: "UI_BUTTON_CLICK"
+    volume: 0.7
+    pitch: 1.2
+  gui-open:
+    sound: "BLOCK_CHEST_OPEN"
+    volume: 0.7
+    pitch: 1.0
+
+# Particle effects played at player location upon successful repair
+particles:
+  enabled: true
+  type: "HAPPY_VILLAGER"
+  count: 15
+
+# GUI Settings
+gui:
+  title: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Menu</gray>"
+  fill-empty-slots: true
+  fill-material: "GRAY_STAINED_GLASS_PANE"
+  border-material: "CYAN_STAINED_GLASS_PANE"
+
+# Statistics and logging
+stats:
+  enabled: true
