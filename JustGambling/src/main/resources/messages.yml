@@ -18,6 +18,7 @@ payout-too-large: "<red>This wager would create an unsafe or over-sized payout a
 not-enough-money: "<red>You cannot afford that wager. Available: <white>{balance}</white>.</red>"
 cooldown: "<yellow>Please wait <white>{seconds}s</white> before wagering again.</yellow>"
 payout-failed: "<red>The payout provider failed. Your original stake was refunded; an administrator should inspect the console.</red>"
+wager-pending: "<yellow>Your previous wager is still resolving. Please wait for the animation to finish.</yellow>"
 active-mines: "<yellow>You already have an active Mines board. Reveal a tile or use <white>/jg cashout</white>.</yellow>"
 no-active-mines: "<yellow>You do not have an active Mines board.</yellow>"
 amount-prompt: "<aqua>Type a stake for <white>{game}</white> in chat, or type <white>cancel</white>.</aqua>"
@@ -40,7 +41,7 @@ stats: "<gold>Stats for <white>{player}</white>:</gold> <gray>games {games} • 
 reloaded: "<green>Configuration and messages reloaded.</green>"
 reload-from-admin: "<yellow>Use <white>/jga reload</white> for administrative reloads.</yellow>"
 
-admin-status: "<gold>JustGambling status:</gold> <gray>economy <white>{provider}</white> • Folia scheduler <white>{folia}</white> • jackpot <white>{jackpot}</white> • active Mines <white>{active}</white></gray>"
+admin-status: "<gold>JustGambling status:</gold> <gray>economy <white>{provider}</white> • Folia scheduler <white>{folia}</white> • jackpot <white>{jackpot}</white> • active Mines <white>{active}</white> • pending animations <white>{pending}</white></gray>"
 admin-rules: "<gold>Rules:</gold> <gray>minimum stake <white>{minimum}</white> • maximum stake <white>{maximum}</white> • maximum payout <white>{payout}</white> • cooldown <white>{cooldown}s</white></gray>"
 admin-risk: "<gray>Risk <white>{risk}</white>: chance <white>{chance}%</white>, payout <white>{multiplier}x</white>.</gray>"
 admin-refund-usage: "<yellow>Usage: <white>/jga refund|recover <player> <amount></white></yellow>"

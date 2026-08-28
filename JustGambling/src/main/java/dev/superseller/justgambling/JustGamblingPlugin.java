@@ -46,7 +46,7 @@ public final class JustGamblingPlugin extends JavaPlugin {
         Sounds sounds = new Sounds(settings);
         games = new GameService(this, settings, messages, economy, store, sounds);
         input = new InputManager(games, economy, messages);
-        gui = new GamblingGui(settings, messages, economy, store, games, input);
+        gui = new GamblingGui(settings, messages, economy, store, games, input, sounds);
         games.setGui(gui);
 
         registerCommands();

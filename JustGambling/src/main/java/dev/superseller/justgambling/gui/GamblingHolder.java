@@ -11,7 +11,7 @@ import org.bukkit.inventory.InventoryHolder;
 
 /** Metadata attached to every JustGambling inventory. */
 public final class GamblingHolder implements InventoryHolder {
-    public enum Kind { MAIN, GAME, CHOICE, AMOUNT, ANVIL, HISTORY, MINES }
+    public enum Kind { MAIN, GAME, CHOICE, AMOUNT, ANVIL, HISTORY, MINES, ANIMATION }
 
     private final Kind kind;
     private final UUID viewer;

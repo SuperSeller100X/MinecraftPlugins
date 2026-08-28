@@ -47,6 +47,7 @@ public final class GameService {
     private final Sounds sounds;
     private volatile Random random;
     private final ConcurrentHashMap<UUID, Long> lastWager = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, PendingWager> pendingWagers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, MinesSession> activeMines = new ConcurrentHashMap<>();
     private volatile GamblingGui gui;
 
@@ -77,8 +78,31 @@ public final class GameService {
         return activeMines.size();
     }
 
+    public boolean hasPendingWager(UUID playerId) {
+        return playerId != null && pendingWagers.containsKey(playerId);
+    }
+
+    public int pendingWagerCount() {
+        return pendingWagers.size();
+    }
+
+    /** Called by the animation GUI once its result has been shown. */
+    public void finishAnimated(Player player) {
+        if (player == null) {
+            return;
+        }
+        PendingWager pending = pendingWagers.remove(player.getUniqueId());
+        if (pending != null) {
+            settlePending(player, pending, true);
+        }
+    }
+
     public void play(Player player, GameType game, double stake, RiskTier risk, String option) {
         if (player == null || game == null) {
+            return;
+        }
+        if (hasPendingWager(player.getUniqueId())) {
+            messages.send(player, "wager-pending");
             return;
         }
         if (!player.hasPermission("justgambling.play") || !player.hasPermission("justgambling.play." + game.id())) {
@@ -122,40 +146,27 @@ public final class GameService {
             messages.send(player, "not-enough-money", Map.of("balance", economy.format(economy.balance(player))));
             return;
         }
+
+        PendingWager pending = new PendingWager(player.getUniqueId(), player.getName(), game, stake, outcome);
+        if (pendingWagers.putIfAbsent(player.getUniqueId(), pending) != null) {
+            // The entity scheduler normally serializes this already, but keep the
+            // settlement boundary safe if another integration calls play directly.
+            economy.deposit(player, stake);
+            messages.send(player, "wager-pending");
+            return;
+        }
         lastWager.put(player.getUniqueId(), System.currentTimeMillis());
 
-        double payout = 0.0;
-        double claimedJackpot = 0.0;
-        if (outcome.win) {
-            if (outcome.jackpotPool) {
-                claimedJackpot = store.claimJackpot(settings.jackpotSeed());
-                payout = payoutFor(stake, outcome.multiplier, claimedJackpot);
-            } else {
-                payout = payoutFor(stake, outcome.multiplier, 0.0);
-            }
-            if (payout > 0.0 && !economy.deposit(player, payout)) {
-                // A failed external deposit must never turn into a player loss.
-                economy.deposit(player, stake);
-                if (claimedJackpot > 0.0) {
-                    store.restoreJackpot(claimedJackpot);
-                }
-                plugin.getLogger().severe("Could not deposit a JustGambling payout for " + player.getName()
-                        + "; the original stake was refunded.");
-                messages.send(player, "payout-failed");
-                return;
+        if (gui != null && settings.animationsEnabled()) {
+            try {
+                gui.animate(player, game, selectedRisk, selectedOption, outcome.details(), outcome.win());
+            } catch (RuntimeException exception) {
+                plugin.getLogger().warning("JustGambling animation could not start: " + exception.getMessage());
+                finishAnimated(player);
             }
         } else {
-            double contribution = stake * (contributionPercent(game) / 100.0);
-            if (Double.isFinite(contribution) && contribution > 0.0) {
-                store.addToJackpot(contribution);
-            }
+            finishAnimated(player);
         }
-
-        Transaction transaction = new Transaction(UUID.randomUUID(), player.getUniqueId(), player.getName(), game,
-                stake, payout, outcome.win, outcome.details, Instant.now());
-        store.record(transaction);
-        store.saveAsync();
-        sendOutcome(player, transaction, outcome);
     }
 
     public void startMines(Player player, double stake, RiskTier risk) {
@@ -195,7 +206,11 @@ public final class GameService {
             }
         }
         MinesSession session = new MinesSession(player.getUniqueId(), stake, selectedRisk, mines);
-        activeMines.put(player.getUniqueId(), session);
+        if (activeMines.putIfAbsent(player.getUniqueId(), session) != null) {
+            economy.deposit(player, stake);
+            messages.send(player, "active-mines");
+            return;
+        }
         lastWager.put(player.getUniqueId(), System.currentTimeMillis());
         messages.send(player, "mines-start", Map.of("stake", economy.format(stake), "risk", selectedRisk.displayName(),
                 "mines", mineCount));
@@ -289,6 +304,10 @@ public final class GameService {
         if (player == null) {
             return;
         }
+        // Resolve a wager that is mid-animation rather than letting a quit
+        // become a free retry or a lost stake.
+        finishPending(player.getUniqueId(), player, false);
+
         MinesSession session = activeMines.get(player.getUniqueId());
         if (session != null) {
             synchronized (session) {
@@ -300,6 +319,11 @@ public final class GameService {
     }
 
     public void shutdown() {
+        for (PendingWager pending : new ArrayList<>(pendingWagers.values())) {
+            if (pendingWagers.remove(pending.playerId(), pending)) {
+                settlePending(null, pending, false);
+            }
+        }
         for (MinesSession session : new ArrayList<>(activeMines.values())) {
             if (!session.resolved()) {
                 session.markResolved();
@@ -353,7 +377,64 @@ public final class GameService {
         }
     }
 
+    private void finishPending(UUID playerId, Player player, boolean notify) {
+        PendingWager pending = pendingWagers.remove(playerId);
+        if (pending != null) {
+            settlePending(player, pending, notify);
+        }
+    }
+
+    private void settlePending(Player player, PendingWager pending, boolean notify) {
+        Outcome outcome = pending.outcome();
+        double payout = 0.0;
+        double claimedJackpot = 0.0;
+        if (outcome.win()) {
+            if (outcome.jackpotPool()) {
+                claimedJackpot = store.claimJackpot(settings.jackpotSeed());
+                payout = payoutFor(pending.stake(), outcome.multiplier(), claimedJackpot);
+            } else {
+                payout = payoutFor(pending.stake(), outcome.multiplier(), 0.0);
+            }
+            if (!validPayout(payout) || (payout > 0.0 && !deposit(pending.playerId(), player, payout))) {
+                boolean refunded = deposit(pending.playerId(), player, pending.stake());
+                if (claimedJackpot > 0.0) {
+                    store.restoreJackpot(claimedJackpot);
+                }
+                plugin.getLogger().severe("Could not settle a JustGambling payout for " + pending.playerName()
+                        + "; stake refund success: " + refunded + ".");
+                if (notify && player != null && player.isOnline()) {
+                    messages.send(player, "payout-failed");
+                }
+                return;
+            }
+        } else {
+            double contribution = pending.stake() * (contributionPercent(pending.game()) / 100.0);
+            if (Double.isFinite(contribution) && contribution > 0.0) {
+                store.addToJackpot(contribution);
+            }
+        }
+
+        Transaction transaction = new Transaction(UUID.randomUUID(), pending.playerId(), pending.playerName(),
+                pending.game(), pending.stake(), payout, outcome.win(), outcome.details(), Instant.now());
+        store.record(transaction);
+        store.saveAsync();
+        if (notify && player != null && player.isOnline()) {
+            sendOutcome(player, transaction, outcome);
+            if (gui != null) {
+                gui.closeAfterResult(player);
+            }
+        }
+    }
+
+    private boolean deposit(UUID playerId, Player player, double amount) {
+        return player != null ? economy.deposit(player, amount) : economy.deposit(playerId, amount);
+    }
+
     private boolean validateWager(Player player, double stake) {
+        if (hasPendingWager(player.getUniqueId())) {
+            messages.send(player, "wager-pending");
+            return false;
+        }
         if (!economy.available()) {
             messages.send(player, "economy-unavailable");
             return false;
@@ -548,6 +629,9 @@ public final class GameService {
 
     private int nextInt(int bound) {
         return random.nextInt(bound);
+    }
+
+    private record PendingWager(UUID playerId, String playerName, GameType game, double stake, Outcome outcome) {
     }
 
     private record Outcome(boolean win, double multiplier, String details, boolean jackpotPool) {

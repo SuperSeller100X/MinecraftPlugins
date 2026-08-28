@@ -3,6 +3,10 @@ package dev.superseller.justgambling.config;
 import dev.superseller.justgambling.util.Text;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +32,16 @@ public final class Messages {
             plugin.saveResource("messages.yml", false);
         }
         yaml = YamlConfiguration.loadConfiguration(file);
+        InputStream resource = plugin.getResource("messages.yml");
+        if (resource != null) {
+            try (InputStream stream = resource;
+                 InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                yaml.setDefaults(YamlConfiguration.loadConfiguration(reader));
+            } catch (IOException exception) {
+                plugin.getLogger().warning("Could not load bundled JustGambling message defaults: "
+                        + exception.getMessage());
+            }
+        }
     }
 
     public Component component(String key, Map<String, ?> placeholders) {

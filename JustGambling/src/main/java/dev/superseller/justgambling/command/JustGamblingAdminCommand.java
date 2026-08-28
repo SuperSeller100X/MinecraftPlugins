@@ -95,7 +95,8 @@ public final class JustGamblingAdminCommand implements CommandExecutor, TabCompl
                 "provider", economy.providerName(),
                 "folia", dev.superseller.justgambling.scheduler.PlatformScheduler.isFoliaSchedulerAvailable(),
                 "jackpot", economy.format(store.jackpotPool()),
-                "active", games.activeMinesCount()));
+                "active", games.activeMinesCount(),
+                "pending", games.pendingWagerCount()));
         return true;
     }
 
