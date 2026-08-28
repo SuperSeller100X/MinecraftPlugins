@@ -24,6 +24,7 @@ import org.bukkit.inventory.PlayerInventory;
 /**
  * Core business service handling repair evaluations, durability restoration,
  * XP calculations, and cooldown tracking.
+ * All bypass mechanisms are OFF by default.
  */
 public final class RepairService {
 
@@ -37,6 +38,59 @@ public final class RepairService {
 
     public RepairService(PluginConfig config) {
         this.config = config;
+    }
+
+    /**
+     * Determines whether a player has an active Mending enchantment check bypass.
+     * Strictly false by default unless bypasses are enabled in config or granted by admin.
+     */
+    public boolean hasMendingBypass(Player player) {
+        if (player == null) return false;
+        if (adminBypassUsers.contains(player.getUniqueId())) {
+            return true;
+        }
+        if (!config.isBypassEnabled()) {
+            return false;
+        }
+        if (config.isOpBypassesMending() && player.isOp()) {
+            return true;
+        }
+        return player.hasPermission("easymending.bypass.mending");
+    }
+
+    /**
+     * Determines whether a player has an active XP cost bypass (free repairs).
+     * Strictly false by default unless bypasses are enabled in config or granted by admin.
+     */
+    public boolean hasCostBypass(Player player) {
+        if (player == null) return false;
+        if (adminBypassUsers.contains(player.getUniqueId())) {
+            return true;
+        }
+        if (!config.isBypassEnabled()) {
+            return false;
+        }
+        if (config.isOpBypassesCost() && player.isOp()) {
+            return true;
+        }
+        return player.hasPermission("easymending.bypass.cost");
+    }
+
+    /**
+     * Determines whether a player bypasses repair command cooldowns.
+     */
+    public boolean hasCooldownBypass(Player player) {
+        if (player == null) return false;
+        if (adminBypassUsers.contains(player.getUniqueId())) {
+            return true;
+        }
+        if (!config.isBypassEnabled()) {
+            return false;
+        }
+        if (config.isOpBypassesCooldown() && player.isOp()) {
+            return true;
+        }
+        return player.hasPermission("easymending.bypass.cooldown");
     }
 
     /**
@@ -122,7 +176,7 @@ public final class RepairService {
      */
     public RepairEstimate estimate(Player player, RepairScope scope) {
         List<ItemStack> items = getItemsForScope(player, scope);
-        boolean mendingBypass = player.hasPermission("easymending.bypass.mending") || hasAdminBypass(player.getUniqueId());
+        boolean mendingBypass = hasMendingBypass(player);
         int count = 0;
         int totalDamage = 0;
         int totalXpCost = 0;
@@ -152,6 +206,82 @@ public final class RepairService {
     }
 
     /**
+     * Repairs a single specific ItemStack in place using the player's experience.
+     *
+     * @param player player performing the repair
+     * @param item item to repair
+     * @param forceFree whether to bypass XP cost
+     * @return RepairResult indicating outcome
+     */
+    public RepairResult repairSingleItem(Player player, ItemStack item, boolean forceFree) {
+        if (player == null || !player.isOnline()) {
+            return RepairResult.failure("player-only");
+        }
+        if (!ItemUtil.isRepairable(item)) {
+            return RepairResult.failure("not-repairable");
+        }
+        int damage = ItemUtil.getDamage(item);
+        if (damage <= 0) {
+            return RepairResult.failure("no-damage-held");
+        }
+
+        boolean mendingBypass = hasMendingBypass(player);
+        boolean hasMending = ItemUtil.hasMending(item);
+        if (config.isRequireMending() && !hasMending && !mendingBypass) {
+            return RepairResult.failure("no-mending");
+        }
+
+        boolean costBypass = forceFree || hasCostBypass(player);
+        int cost = calculateItemCost(item, mendingBypass);
+        int currentXp = ExperienceUtil.getPlayerTotalExperience(player);
+        String name = ItemUtil.getFriendlyName(item);
+
+        if (costBypass) {
+            int restored = ItemUtil.repair(item, damage);
+            totalRepairs.incrementAndGet();
+            return RepairResult.successful(1, restored, 0, currentXp, true, name);
+        }
+
+        if (currentXp >= cost) {
+            ExperienceUtil.deductExperience(player, cost);
+            int restored = ItemUtil.repair(item, damage);
+            totalRepairs.incrementAndGet();
+            totalXpSpent.addAndGet(cost);
+            int remaining = ExperienceUtil.getPlayerTotalExperience(player);
+            return RepairResult.successful(1, restored, cost, remaining, false, name);
+        }
+
+        if (!config.isAllowPartialRepair() || currentXp < config.getMinXpPerRepair()) {
+            return RepairResult.failure("insufficient-xp");
+        }
+
+        // Partial repair
+        double multiplier = hasMending ? 1.0 : config.getNonMendingMultiplier();
+        int affordableDurability = ExperienceCalculator.calculateAffordableDurability(
+                currentXp,
+                config.getDurabilityPerXp(),
+                multiplier
+        );
+
+        if (affordableDurability > 0) {
+            int restored = ItemUtil.repair(item, affordableDurability);
+            int actualSpent = ExperienceCalculator.calculateSpentXp(
+                    restored,
+                    config.getDurabilityPerXp(),
+                    multiplier
+            );
+            actualSpent = Math.min(actualSpent, currentXp);
+            ExperienceUtil.deductExperience(player, actualSpent);
+            totalRepairs.incrementAndGet();
+            totalXpSpent.addAndGet(actualSpent);
+            int remaining = ExperienceUtil.getPlayerTotalExperience(player);
+            return RepairResult.partiallySuccessful(1, restored, actualSpent, remaining, false, name);
+        }
+
+        return RepairResult.failure("insufficient-xp");
+    }
+
+    /**
      * Executes the repair operation for the target scope.
      *
      * @param player player performing the repair
@@ -165,8 +295,8 @@ public final class RepairService {
             return RepairResult.failure("player-only");
         }
 
-        // Cooldown check
-        boolean bypassCooldown = adminForce || player.hasPermission("easymending.bypass.cooldown");
+        // Cooldown check (bypass is off by default)
+        boolean bypassCooldown = adminForce || hasCooldownBypass(player);
         if (!bypassCooldown && config.getCooldownSeconds() > 0) {
             long now = System.currentTimeMillis();
             Long last = cooldowns.get(player.getUniqueId());
@@ -186,8 +316,8 @@ public final class RepairService {
             return RepairResult.failure("no-damage-target");
         }
 
-        boolean mendingBypass = player.hasPermission("easymending.bypass.mending") || hasAdminBypass(player.getUniqueId());
-        boolean costBypass = forceFree || player.hasPermission("easymending.bypass.cost") || hasAdminBypass(player.getUniqueId());
+        boolean mendingBypass = hasMendingBypass(player);
+        boolean costBypass = forceFree || hasCostBypass(player);
 
         // Check specific single item errors for HAND / OFFHAND scope
         if (scope == RepairScope.HAND || scope == RepairScope.OFFHAND) {
@@ -226,7 +356,7 @@ public final class RepairService {
         int currentXp = ExperienceUtil.getPlayerTotalExperience(player);
         String primaryName = targets.size() == 1 ? ItemUtil.getFriendlyName(targets.get(0).item) : (targets.size() + " items");
 
-        // Free repair path
+        // Free repair path (only if explicitly enabled/flagged)
         if (costBypass) {
             int restoredDurability = 0;
             for (RepairTarget target : targets) {

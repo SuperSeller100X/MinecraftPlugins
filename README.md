@@ -123,9 +123,9 @@ Zero commands, zero permissions, configurable sounds. See
 
 ## EasyMending 🛠️
 
-Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive chest GUI, instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
+Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive drop-in anvil repair station GUI (`/em`), instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Bypass is strictly off by default for all players and OPs. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
 
-- `/easymending` / `/em` — open the interactive repair GUI
+- `/easymending` / `/em` — open the interactive repair station GUI (drop in any item to repair)
 - `/em hand` (`/em h`) — repair main hand item
 - `/em offhand` (`/em oh`) — repair offhand item
 - `/em armor` (`/em a`) — repair equipped armor
@@ -133,7 +133,7 @@ Repair tools, weapons, and armor that have Mending using your existing XP for Mi
 - `/em all` (`/em *`) — repair entire inventory
 - `/em info` (`/em i`) · `/em cost` (`/em c`) — inspect durability & costs
 - `/emadmin` / `/ema` — reload, force-repair, inspect, live ratio adjustment, bypass, stats
-- Permissions: `easymending.*` (use/gui/hand/armor default-on, admin/bypass op)
+- Permissions: `easymending.*` (use/gui/hand/armor default-on, bypass permissions strictly off by default)
 
 See [EasyMending/README.md](EasyMending/README.md). Build with `mvn -B clean package` in `EasyMending/` (JDK 25 required).
 

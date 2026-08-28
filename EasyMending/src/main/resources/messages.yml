@@ -1,7 +1,8 @@
 # ==============================================================================
-# EasyMending Language & Messages (MiniMessage syntax)
-# Supports MiniMessage: <green>, <gradient:#4facfe:#00f2fe>, <bold>, <click:...>, etc.
-# Placeholders: <prefix>, <item>, <repaired>, <cost>, <xp_spent>, <current_xp>, etc.
+# EasyMending Language & Messages (MiniMessage & Legacy syntax supported)
+# Supports MiniMessage: <green>, <gradient:#4facfe:#00f2fe>, <bold>, etc.
+# Also supports legacy color codes: &a, &b, &c, &e, etc.
+# Placeholders: <prefix>, <item>, <repaired>, <cost>, <current_xp>, etc.
 # ==============================================================================
 
 prefix: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> "
@@ -11,18 +12,24 @@ repair-success-single: "<prefix><green>Repaired <yellow><item></yellow> by <aqua
 repair-success-multiple: "<prefix><green>Successfully repaired <yellow><count></yellow> items (<aqua><repaired></aqua> total durability) for <gold><cost> XP</gold>!</green>"
 repair-free-single: "<prefix><green>Repaired <yellow><item></yellow> by <aqua><repaired></aqua> durability for <gold>FREE</gold> (bypass)!</green>"
 repair-free-multiple: "<prefix><green>Repaired <yellow><count></yellow> items for <gold>FREE</gold> (bypass)!</green>"
-repair-partial-notice: "<prefix><yellow>Notice: You only had enough XP for a partial repair (<aqua>+<repaired> durability</aqua>).</yellow>"
+repair-partial-notice: "<prefix><yellow>Notice: Spent available XP for a partial repair (<aqua>+<repaired> durability</aqua>).</yellow>"
 
 # Status & Failure messages
 no-damage-held: "<prefix><yellow>Your held item is already at maximum durability!</yellow>"
 no-damage-target: "<prefix><yellow>No damaged eligible items found to repair!</yellow>"
 no-mending: "<prefix><red>This item does not have the Mending enchantment!</red>"
-not-repairable: "<prefix><red>You must hold a damageable tool, weapon, or armor piece!</red>"
+not-repairable: "<prefix><red>You must provide a damageable tool, weapon, or armor piece!</red>"
 insufficient-xp: "<prefix><red>You need <gold><cost> XP</gold> to repair this item, but you only have <gold><current_xp> XP</gold>!</red>"
 cooldown-active: "<prefix><red>Please wait <yellow><seconds>s</yellow> before repairing again!</red>"
 no-permission: "<prefix><red>You do not have permission to use this command.</red>"
 player-only: "<prefix><red>This command can only be executed by in-game players.</red>"
 player-not-found: "<prefix><red>Player <yellow><player></yellow> was not found or is offline.</red>"
+
+# GUI specific messages
+gui-item-repaired: "<prefix><green>Repaired <yellow><item></yellow> (+<aqua><repaired></aqua> durability) for <gold><cost> XP</gold>!</green>"
+gui-item-returned: "<prefix><gray>Returned your <yellow><item></yellow> to your inventory.</gray>"
+gui-no-item-in-slot: "<prefix><yellow>Place a damaged tool or armor piece into the repair slot first!</yellow>"
+gui-refreshed: "<prefix><green>Repair menu refreshed.</green>"
 
 # Info & Cost commands
 info-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>Item Repair Status</b></gradient> <dark_gray>-------</dark_gray>"

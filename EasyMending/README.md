@@ -1,41 +1,41 @@
 # EasyMending 🛠️
 
-**EasyMending** is a high-performance, configurable Minecraft plugin for **Minecraft 26.2 (Paper / Purpur / Folia)** built with **Java 25** and **Maven**. It allows players to repair damaged tools, weapons, and armor that have the **Mending** enchantment directly using their existing experience points (XP).
+**EasyMending** is a high-performance, fully configurable Minecraft plugin for **Minecraft 26.2 (Paper / Purpur / Folia)** built with **Java 25** and **Maven**. It allows players to repair damaged tools, weapons, and armor that have the **Mending** enchantment directly using their existing experience points (XP).
 
-Instead of waiting at XP grinders holding damaged gear in your offhand, EasyMending provides immediate, seamless durability restoration through fast chat commands, short aliases, or a sleek interactive chest GUI.
+Instead of waiting at XP grinders holding damaged gear in your offhand, EasyMending provides immediate, seamless durability restoration through fast chat commands, short aliases, or a feature-packed interactive repair station GUI.
 
 ---
 
 ## ✨ Features
 
 - ⚡ **Instant Mending with XP**: Restores durability using player experience at the vanilla rate (1 raw XP point restores 2 durability points).
-- 🛡️ **Flexible Repair Scopes**:
-  - **Hand**: Repair the held tool or weapon.
-  - **Offhand**: Repair the offhand shield, totem, or item.
-  - **Armor**: Repair all equipped armor pieces in a single action.
-  - **Hotbar**: Repair all damaged items across the player's hotbar.
-  - **All**: Repair all eligible damaged items in the entire inventory.
-- 📦 **Interactive Chest GUI (`/em gui`)**:
-  - Real-time durability inspection and XP cost previews.
-  - One-click buttons to repair hand, offhand, armor, or all items.
-  - Player XP profile overview displaying current level, total XP, and missing durability.
-  - Instant live refresh without having to re-open the menu.
+- 🛡️ **Interactive Anvil Repair Station (`/em gui` / `/em`)**:
+  - **Interactive Drop-In Slot**: Place ANY damaged tool, weapon, elytra, or armor piece directly into the station.
+  - **Dynamic Cost & Status Evaluation**: Live real-time inspection showing item durability, missing durability, exact XP required, and player XP.
+  - **One-Click Anvil Repair**: Click the glowing anvil to restore the placed item instantly with sound and particle effects!
+  - **Safe Item Return**: Any item left in the station is safely returned upon closing the menu (or dropped naturally if inventory is full).
+  - **Quick Repair Actions**: Dedicated buttons to repair Held Item, Offhand, Equipped Armor, Hotbar, or All Inventory Items in a single click.
+  - **Player XP Profile**: Displays level, total points, repair rate, and missing durability.
+- 🔒 **Bypass Off by Default**:
+  - All bypass mechanisms (free repair, mending requirement bypass, cooldown bypass) are **strictly disabled by default** for all players, including server operators (OPs).
+  - Admins can explicitly flag individual commands (e.g. `/ema repair <player> all --free`) or toggle temporary bypass (`/ema bypass <player>`).
 - 🧩 **Configurable Mending Enforcement & Fallback**:
   - By default, strictly requires the Mending enchantment on tools.
   - Configurable option to allow non-mending repairs with an optional XP penalty multiplier (e.g. 1.5x).
-  - Admin bypass permission (`easymending.bypass.mending`) for staff or VIPs.
 - 💡 **Intelligent Partial Repair Support**:
   - If a player lacks sufficient XP for a 100% full repair, the plugin can spend all available XP to repair as much durability as possible.
   - Can be toggled on/off in `config.yml`.
+- 💬 **Modern MiniMessage & Legacy Formatting**:
+  - Full support for MiniMessage gradients and tags, plus automatic conversion and fallback for legacy ampersand (`&`) color codes without formatting errors.
 - 🌐 **True Folia & Threading Safety**:
   - Folia-safe entity and region scheduling via `PlatformScheduler`. All inventory and XP modifications execute on the appropriate player entity thread.
 - 💻 **Cross-Platform**:
   - Guaranteed compatibility across Linux, Windows, and macOS with UTF-8 character encoding and portable path management.
 - 🔊 **Rich Sound & Particle Effects**:
   - Customizable sound effects for repair success, all-item repair, insufficient XP, no-damage, and GUI navigation.
-  - Happy villager / enchantment table particle bursts on successful repairs.
+  - Happy villager particle bursts on successful repairs.
 - ⌨️ **Short Aliases & Context-Sensitive Tab Completion**:
-  - Every command and sub-command has a convenient 1-2 letter short alias (e.g., `/em h`, `/em a`, `/em *`, `/ema rl`).
+  - Every command and sub-command has a convenient 1-2 letter short alias (e.g., `/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`, `/ema rl`).
   - Intelligent tab completion with permission filtering.
 - 👑 **Comprehensive Admin Tools**:
   - Inspect any online player's inventory, damaged gear, and total XP.
@@ -55,8 +55,8 @@ Admin command: `/easymendingadmin` (Aliases: `/emadmin`, `/ema`, `/mendadmin`)
 
 | Command | Short Alias | Description | Permission |
 |---|---|---|---|
-| `/easymending` | `/em` | Opens the interactive repair GUI | `easymending.gui` |
-| `/easymending gui` | `/em g` / `/em menu` | Opens the interactive repair GUI | `easymending.gui` |
+| `/easymending` | `/em` | Opens the interactive repair station GUI | `easymending.gui` |
+| `/easymending gui` | `/em g` / `/em menu` | Opens the interactive repair station GUI | `easymending.gui` |
 | `/easymending hand` | `/em h` / `/em main` | Repairs the item in your main hand | `easymending.hand` |
 | `/easymending offhand` | `/em oh` / `/em off` | Repairs the item in your offhand | `easymending.offhand` |
 | `/easymending armor` | `/em a` | Repairs all equipped armor pieces | `easymending.armor` |
@@ -100,10 +100,10 @@ Admin command: `/easymendingadmin` (Aliases: `/emadmin`, `/ema`, `/mendadmin`)
 | `easymending.admin.setratio` | `op` | Permission to dynamically modify ratio |
 | `easymending.admin.bypass` | `op` | Permission to toggle bypass for players |
 | `easymending.admin.stats` | `op` | Permission to view global statistics |
-| `easymending.bypass.cost` | `false` | Repair items for free without deducting XP |
-| `easymending.bypass.mending`| `false` | Repair items that do not have Mending |
-| `easymending.bypass.cooldown`| `false` | Bypass command cooldowns |
-| `easymending.*` | `op` | Wildcard grant for all EasyMending permissions |
+| `easymending.bypass.cost` | `false` | Repair items for free without deducting XP (off by default) |
+| `easymending.bypass.mending`| `false` | Repair items without Mending (off by default) |
+| `easymending.bypass.cooldown`| `false` | Bypass command cooldowns (off by default) |
+| `easymending.*` | `op` | Wildcard grant for standard player and admin permissions (bypass remains off) |
 
 ---
 
@@ -138,6 +138,16 @@ repair:
 
   # Whether sneak-right clicking with a damaged tool triggers quick repair.
   sneak-click-to-repair: false
+
+bypass:
+  # Master toggle for free repair bypass (strictly false by default).
+  enabled: false
+  # Whether server operators (OPs) automatically bypass XP cost (default: false).
+  op-bypasses-cost: false
+  # Whether server operators (OPs) automatically bypass Mending requirement (default: false).
+  op-bypasses-mending: false
+  # Whether server operators (OPs) automatically bypass command cooldowns (default: false).
+  op-bypasses-cooldown: false
 
 sounds:
   enabled: true
@@ -176,7 +186,7 @@ particles:
   count: 15
 
 gui:
-  title: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Menu</gray>"
+  title: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Station</gray>"
   fill-empty-slots: true
   fill-material: "GRAY_STAINED_GLASS_PANE"
   border-material: "CYAN_STAINED_GLASS_PANE"

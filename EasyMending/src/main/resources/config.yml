@@ -32,6 +32,21 @@ repair:
   # triggers an instant quick-repair.
   sneak-click-to-repair: false
 
+# Bypass settings (OFF by default for everyone, including OPs)
+bypass:
+  # Master toggle for free-repair bypass.
+  # When false, nobody (not even OPs) gets free repairs without explicit admin command flag.
+  enabled: false
+
+  # Whether server operators (OPs) automatically bypass XP cost (default: false).
+  op-bypasses-cost: false
+
+  # Whether server operators (OPs) automatically bypass Mending requirement (default: false).
+  op-bypasses-mending: false
+
+  # Whether server operators (OPs) automatically bypass command cooldowns (default: false).
+  op-bypasses-cooldown: false
+
 # Sound effects configuration
 sounds:
   enabled: true
@@ -72,7 +87,7 @@ particles:
 
 # GUI Settings
 gui:
-  title: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Menu</gray>"
+  title: "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Station</gray>"
   fill-empty-slots: true
   fill-material: "GRAY_STAINED_GLASS_PANE"
   border-material: "CYAN_STAINED_GLASS_PANE"

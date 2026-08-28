@@ -24,6 +24,12 @@ public final class PluginConfig {
     private int cooldownSeconds = 0;
     private boolean sneakClickToRepair = false;
 
+    // Bypass options (strictly false by default)
+    private boolean bypassEnabled = false;
+    private boolean opBypassesCost = false;
+    private boolean opBypassesMending = false;
+    private boolean opBypassesCooldown = false;
+
     // Sounds
     private boolean soundsEnabled = true;
     private Sound soundRepairSuccess = Sound.BLOCK_ANVIL_USE;
@@ -60,7 +66,7 @@ public final class PluginConfig {
     private int particleCount = 15;
 
     // GUI
-    private String guiTitle = "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Menu</gray>";
+    private String guiTitle = "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Station</gray>";
     private boolean guiFillEmptySlots = true;
     private Material guiFillMaterial = Material.GRAY_STAINED_GLASS_PANE;
     private Material guiBorderMaterial = Material.CYAN_STAINED_GLASS_PANE;
@@ -81,6 +87,12 @@ public final class PluginConfig {
         this.minXpPerRepair = Math.max(1, cfg.getInt("repair.min-xp-per-repair", 1));
         this.cooldownSeconds = Math.max(0, cfg.getInt("repair.cooldown-seconds", 0));
         this.sneakClickToRepair = cfg.getBoolean("repair.sneak-click-to-repair", false);
+
+        // Bypass settings (off by default)
+        this.bypassEnabled = cfg.getBoolean("bypass.enabled", false);
+        this.opBypassesCost = cfg.getBoolean("bypass.op-bypasses-cost", false);
+        this.opBypassesMending = cfg.getBoolean("bypass.op-bypasses-mending", false);
+        this.opBypassesCooldown = cfg.getBoolean("bypass.op-bypasses-cooldown", false);
 
         // Sounds
         this.soundsEnabled = cfg.getBoolean("sounds.enabled", true);
@@ -118,7 +130,7 @@ public final class PluginConfig {
         this.particleCount = Math.max(1, cfg.getInt("particles.count", 15));
 
         // GUI
-        this.guiTitle = cfg.getString("gui.title", "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Menu</gray>");
+        this.guiTitle = cfg.getString("gui.title", "<gradient:#4facfe:#00f2fe><b>EasyMending</b></gradient> <dark_gray>»</dark_gray> <gray>Repair Station</gray>");
         this.guiFillEmptySlots = cfg.getBoolean("gui.fill-empty-slots", true);
         this.guiFillMaterial = parseMaterial(cfg.getString("gui.fill-material"), Material.GRAY_STAINED_GLASS_PANE);
         this.guiBorderMaterial = parseMaterial(cfg.getString("gui.border-material"), Material.CYAN_STAINED_GLASS_PANE);
@@ -182,6 +194,22 @@ public final class PluginConfig {
 
     public boolean isSneakClickToRepair() {
         return sneakClickToRepair;
+    }
+
+    public boolean isBypassEnabled() {
+        return bypassEnabled;
+    }
+
+    public boolean isOpBypassesCost() {
+        return opBypassesCost;
+    }
+
+    public boolean isOpBypassesMending() {
+        return opBypassesMending;
+    }
+
+    public boolean isOpBypassesCooldown() {
+        return opBypassesCooldown;
     }
 
     public boolean isSoundsEnabled() {

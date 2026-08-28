@@ -78,16 +78,16 @@ permissions:
     description: Allows viewing global repair statistics.
     default: op
   easymending.bypass.cost:
-    description: Bypasses the experience cost, allowing free repairs.
+    description: Bypasses experience cost, allowing free repairs (off by default).
     default: false
   easymending.bypass.mending:
-    description: Allows repairing items that do not have the Mending enchantment.
+    description: Allows repairing items without Mending (off by default).
     default: false
   easymending.bypass.cooldown:
-    description: Bypasses command cooldowns.
+    description: Bypasses command cooldowns (off by default).
     default: false
   easymending.*:
-    description: Grants all EasyMending permissions.
+    description: Grants all standard EasyMending player and admin permissions (bypass permissions remain off by default).
     default: op
     children:
       easymending.use: true
@@ -100,4 +100,3 @@ permissions:
       easymending.info: true
       easymending.cost: true
       easymending.admin: true
-      easymending.bypass.cooldown: true

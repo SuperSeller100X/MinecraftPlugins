@@ -7,18 +7,25 @@ import dev.superseller.easymending.gui.EasyMendingHolder;
 import dev.superseller.easymending.model.RepairEstimate;
 import dev.superseller.easymending.model.RepairResult;
 import dev.superseller.easymending.model.RepairScope;
+import dev.superseller.easymending.scheduler.PlatformScheduler;
 import dev.superseller.easymending.service.RepairService;
 import dev.superseller.easymending.util.ExperienceUtil;
+import dev.superseller.easymending.util.ItemUtil;
 import dev.superseller.easymending.util.SoundUtil;
+import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 /**
- * Handles inventory interaction events inside the EasyMending GUI.
+ * Handles inventory interaction events inside the EasyMending repair station GUI.
  */
 public final class GuiListener implements Listener {
 
@@ -40,41 +47,115 @@ public final class GuiListener implements Listener {
             return;
         }
 
-        event.setCancelled(true);
-
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
 
-        int slot = event.getRawSlot();
-        if (slot < 0 || slot >= event.getInventory().getSize()) {
+        int rawSlot = event.getRawSlot();
+        Inventory topInv = event.getView().getTopInventory();
+
+        // 1. Handle shift-clicking from player's inventory into the repair slot
+        if (rawSlot >= topInv.getSize()) {
+            if (event.isShiftClick()) {
+                ItemStack clicked = event.getCurrentItem();
+                if (clicked != null && ItemUtil.isRepairable(clicked)) {
+                    ItemStack currentInSlot = topInv.getItem(EasyMendingGui.SLOT_ITEM_INPUT);
+                    if (currentInSlot == null || currentInSlot.getType().isAir()) {
+                        event.setCancelled(true);
+                        topInv.setItem(EasyMendingGui.SLOT_ITEM_INPUT, clicked.clone());
+                        event.setCurrentItem(null);
+                        SoundUtil.playGuiClick(player, config);
+                        PlatformScheduler.runEntitySync(player, () -> gui.updateAnvilButton(player, topInv));
+                        return;
+                    }
+                }
+            }
             return;
         }
 
-        switch (slot) {
+        // 2. Handle interaction inside top inventory
+        if (rawSlot == EasyMendingGui.SLOT_ITEM_INPUT) {
+            // Interactive drop-in slot: allow placing/taking items freely!
+            PlatformScheduler.runEntitySync(player, () -> gui.updateAnvilButton(player, topInv));
+            return;
+        }
+
+        // All other top inventory slots are protected buttons
+        event.setCancelled(true);
+
+        switch (rawSlot) {
+            case EasyMendingGui.SLOT_ANVIL_BUTTON -> handleAnvilSlotRepair(player, topInv);
+            case EasyMendingGui.SLOT_HAND -> handleRepairClick(player, RepairScope.HAND, "easymending.hand", topInv);
+            case EasyMendingGui.SLOT_OFFHAND -> handleRepairClick(player, RepairScope.OFFHAND, "easymending.offhand", topInv);
+            case EasyMendingGui.SLOT_ARMOR -> handleRepairClick(player, RepairScope.ARMOR, "easymending.armor", topInv);
+            case EasyMendingGui.SLOT_HOTBAR -> handleRepairClick(player, RepairScope.HOTBAR, "easymending.hotbar", topInv);
+            case EasyMendingGui.SLOT_ALL -> handleRepairClick(player, RepairScope.ALL, "easymending.all", topInv);
             case EasyMendingGui.SLOT_CLOSE -> {
                 SoundUtil.playGuiClick(player, config);
                 player.closeInventory();
             }
-            case EasyMendingGui.SLOT_INFO, EasyMendingGui.SLOT_PROFILE -> {
+            case EasyMendingGui.SLOT_REFRESH -> {
                 SoundUtil.playGuiClick(player, config);
+                gui.refresh(player, topInv);
+                messages.send(player, "gui-refreshed");
             }
-            case EasyMendingGui.SLOT_HAND -> handleRepairClick(player, RepairScope.HAND, "easymending.hand", event);
-            case EasyMendingGui.SLOT_OFFHAND -> handleRepairClick(player, RepairScope.OFFHAND, "easymending.offhand", event);
-            case EasyMendingGui.SLOT_ARMOR -> handleRepairClick(player, RepairScope.ARMOR, "easymending.armor", event);
-            case EasyMendingGui.SLOT_ALL -> handleRepairClick(player, RepairScope.ALL, "easymending.all", event);
             default -> SoundUtil.playGuiClick(player, config);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder() instanceof EasyMendingHolder) {
-            event.setCancelled(true);
+    private void handleAnvilSlotRepair(Player player, Inventory inv) {
+        ItemStack item = inv.getItem(EasyMendingGui.SLOT_ITEM_INPUT);
+
+        if (item == null || item.getType().isAir()) {
+            messages.send(player, "gui-no-item-in-slot");
+            SoundUtil.playNoDamage(player, config);
+            return;
+        }
+
+        if (!ItemUtil.isRepairable(item)) {
+            messages.send(player, "not-repairable");
+            SoundUtil.playNoDamage(player, config);
+            return;
+        }
+
+        if (ItemUtil.getDamage(item) <= 0) {
+            messages.send(player, "no-damage-held");
+            SoundUtil.playNoDamage(player, config);
+            return;
+        }
+
+        boolean mendingBypass = repairService.hasMendingBypass(player);
+        if (config.isRequireMending() && !ItemUtil.hasMending(item) && !mendingBypass) {
+            messages.send(player, "no-mending");
+            SoundUtil.playNoMending(player, config);
+            return;
+        }
+
+        RepairResult result = repairService.repairSingleItem(player, item, false);
+        if (result.success()) {
+            if (result.bypassCost()) {
+                messages.send(player, "repair-free-single",
+                        "item", result.primaryItemName(),
+                        "repaired", String.valueOf(result.totalDurabilityRestored()));
+            } else {
+                messages.send(player, "gui-item-repaired",
+                        "item", result.primaryItemName(),
+                        "repaired", String.valueOf(result.totalDurabilityRestored()),
+                        "cost", String.valueOf(result.xpSpent()));
+            }
+
+            if (result.partial()) {
+                messages.send(player, "repair-partial-notice", "repaired", String.valueOf(result.totalDurabilityRestored()));
+            }
+
+            SoundUtil.playRepairSuccess(player, config);
+            gui.refresh(player, inv);
+        } else {
+            handleFailure(player, RepairScope.HAND, result.failureReasonKey());
         }
     }
 
-    private void handleRepairClick(Player player, RepairScope scope, String permission, InventoryClickEvent event) {
+    private void handleRepairClick(Player player, RepairScope scope, String permission, Inventory inv) {
         if (!player.hasPermission(permission) && !player.hasPermission("easymending.use")) {
             messages.send(player, "no-permission");
             SoundUtil.playNoDamage(player, config);
@@ -115,9 +196,53 @@ public final class GuiListener implements Listener {
                 SoundUtil.playRepairSuccess(player, config);
             }
 
-            gui.refresh(player, event.getInventory());
+            gui.refresh(player, inv);
         } else {
             handleFailure(player, scope, result.failureReasonKey());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getInventory().getHolder() instanceof EasyMendingHolder)) {
+            return;
+        }
+
+        int topSize = event.getView().getTopInventory().getSize();
+        for (int slot : event.getRawSlots()) {
+            if (slot < topSize && slot != EasyMendingGui.SLOT_ITEM_INPUT) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        if (event.getRawSlots().contains(EasyMendingGui.SLOT_ITEM_INPUT)) {
+            if (event.getWhoClicked() instanceof Player player) {
+                PlatformScheduler.runEntitySync(player, () -> gui.updateAnvilButton(player, event.getView().getTopInventory()));
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!(event.getInventory().getHolder() instanceof EasyMendingHolder)) {
+            return;
+        }
+
+        if (!(event.getPlayer() instanceof Player player)) {
+            return;
+        }
+
+        Inventory inv = event.getInventory();
+        ItemStack leftover = inv.getItem(EasyMendingGui.SLOT_ITEM_INPUT);
+
+        if (leftover != null && !leftover.getType().isAir()) {
+            inv.setItem(EasyMendingGui.SLOT_ITEM_INPUT, null);
+            Map<Integer, ItemStack> overflow = player.getInventory().addItem(leftover);
+            for (ItemStack drop : overflow.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), drop);
+            }
+            messages.send(player, "gui-item-returned", "item", ItemUtil.getFriendlyName(leftover));
         }
     }
 
