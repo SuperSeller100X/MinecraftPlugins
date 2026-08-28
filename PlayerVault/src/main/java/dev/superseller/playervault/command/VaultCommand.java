@@ -91,20 +91,24 @@ public final class VaultCommand implements CommandExecutor {
             messages.send(player, "no-permission");
             return;
         }
+        if (args.length >= 2 && CONFIRM_WORDS.contains(args[1].toLowerCase(Locale.ROOT))) {
+            service.confirm(player);
+            return;
+        }
         int count = 1;
+        boolean explicitCount = false;
         if (args.length >= 2) {
-            if (CONFIRM_WORDS.contains(args[1].toLowerCase(Locale.ROOT))) {
-                service.confirm(player);
-                return;
-            }
             if (!Numbers.isPositiveInt(args[1])) {
                 messages.send(player, "invalid-number", "%arg%", args[1]);
                 return;
             }
             count = Integer.parseInt(args[1]);
+            explicitCount = true;
         }
         boolean confirmed = args.length >= 3 && CONFIRM_WORDS.contains(args[2].toLowerCase(Locale.ROOT));
-        if (!confirmed && service.hasPending(player)) {
+        // A bare `/pv upgrade` repeats whatever is pending. Naming a different row
+        // count must re-price instead of quietly charging for the old one.
+        if (!confirmed && !explicitCount && service.hasPending(player)) {
             service.confirm(player);
             return;
         }

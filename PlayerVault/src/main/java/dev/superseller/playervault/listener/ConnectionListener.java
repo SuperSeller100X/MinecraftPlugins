@@ -3,6 +3,7 @@ package dev.superseller.playervault.listener;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -67,6 +68,13 @@ public final class ConnectionListener implements Listener {
             VaultData data = service.vaultById(owner);
             service.saveAsync(data);
         }
-        scheduler.runGlobalLater(() -> service.forget(owner), EVICT_DELAY_TICKS);
+        scheduler.runGlobalLater(() -> {
+            // Only evict if they are still gone. Evicting a player who reconnected
+            // inside the delay would drop the live cache entry while the save above
+            // is still in flight, and a second VaultData could then be loaded.
+            if (Bukkit.getPlayer(owner) == null) {
+                service.forget(owner);
+            }
+        }, EVICT_DELAY_TICKS);
     }
 }

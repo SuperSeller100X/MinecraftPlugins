@@ -74,7 +74,9 @@ admin-messages:
   cleared: "<green>Emptied the vault of <white>%player%</white>."
   refund: "<gray>Refunded <white>%amount%</white> to <white>%player%</white>."
   info-header: "<aqua><bold>Vault of %player%</bold>"
-  target-upgraded: "<green>%player%</green> expanded your vault to <white>%rows%</white> rows."
+  target-upgraded: "<green>Your vault was expanded to <white>%rows%</white> rows."
+  target-shrunk: "<yellow>A staff member reduced your vault to <white>%rows%</white> rows."
+  target-updated: "<gray>A staff member changed your vault. It has <white>%rows%</white> rows."
   items-dropped: "<yellow><white>%count%</white> item(s) did not fit and were dropped at your feet."
 
 gui:

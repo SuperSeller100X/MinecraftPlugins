@@ -47,6 +47,7 @@ public final class PlayerVaultPlugin extends JavaPlugin {
     private VaultService service;
     private VaultGui gui;
     private GuiListener guiListener;
+    private Runnable autoSaveCancel;
 
     @Override
     public void onEnable() {
@@ -172,7 +173,11 @@ public final class PlayerVaultPlugin extends JavaPlugin {
             getLogger().info("Auto-save is disabled.");
             return;
         }
-        scheduler.runTimerAsync(() -> {
+        if (autoSaveCancel != null) {
+            autoSaveCancel.run();
+            autoSaveCancel = null;
+        }
+        autoSaveCancel = scheduler.runTimerAsync(() -> {
             int written = service.saveAll();
             if (settings.debug()) {
                 getLogger().info("Auto-saved " + written + " vault(s).");
@@ -194,8 +199,8 @@ public final class PlayerVaultPlugin extends JavaPlugin {
     /**
      * Moves to a different storage backend when the config asks for one.
      *
-     * <p>Everything cached is flushed to the old backend first and kept in memory,
-     * so a reload never loses items even when the file format changes.
+     * <p>The in-memory cache is what carries the vaults across: it is written to the
+     * new backend immediately, so a reload never loses items when the format changes.
      */
     private void switchStoreIfNeeded() {
         VaultStore next = createStore();
@@ -203,10 +208,15 @@ public final class PlayerVaultPlugin extends JavaPlugin {
             next.close();
             return;
         }
-        service.saveAll();
-        store.close();
+        VaultStore previous = store;
         store = next;
         service.store(store);
-        getLogger().info("Storage backend switched to " + store.name() + ".");
+        // Write to the NEW backend: the cache stays in memory, so this is what
+        // actually carries the vaults across. Flushing to the old one would leave
+        // the new backend empty and orphan everything just written.
+        int written = service.saveAll();
+        previous.close();
+        getLogger().info("Storage backend switched to " + store.name()
+                + "; carried " + written + " vault(s) over.");
     }
 }

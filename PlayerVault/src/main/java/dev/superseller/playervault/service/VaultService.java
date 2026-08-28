@@ -124,8 +124,10 @@ public final class VaultService {
             }
         }
         if (loaded == null) {
-            OfflinePlayer offline = plugin.getServer().getOfflinePlayer(owner);
-            loaded = new VaultData(owner, offline.getName(), settings.get().vault().startingRows());
+            // No name lookup here: OfflinePlayer.getName() can block on a profile
+            // lookup, and this path is reachable from any thread. The display name is
+            // filled in by vault(OfflinePlayer) whenever the player is resolvable.
+            loaded = new VaultData(owner, null, settings.get().vault().startingRows());
         }
         VaultData previous = cache.putIfAbsent(owner, loaded);
         return previous == null ? loaded : previous;
@@ -400,12 +402,13 @@ public final class VaultService {
         messages.send(actor, "admin-messages.rows-set",
                 "%player%", String.valueOf(target.getName()),
                 "%rows%", String.valueOf(next));
-        afterRemoteChange(target, evicted);
+        afterRemoteChange(target, evicted, before);
     }
 
     /** Grants or removes rows without charging, and without moving the price ladder. */
     public void addRows(OfflinePlayer target, int count, CommandSender actor) {
         VaultData data = vault(target);
+        int before = data.rows();
         if (count >= 0) {
             data.resize(data.rows() + count);
             saveAsync(data);
@@ -413,10 +416,9 @@ public final class VaultService {
                     "%player%", String.valueOf(target.getName()),
                     "%count%", String.valueOf(count),
                     "%rows%", String.valueOf(data.rows()));
-            afterRemoteChange(target, List.of());
+            afterRemoteChange(target, List.of(), before);
             return;
         }
-        int before = data.rows();
         int next = Math.max(1, before + count);
         List<ItemStack> evicted = data.resize(next);
         refundIfShrunk(target, data, before, next, settings.get());
@@ -425,7 +427,7 @@ public final class VaultService {
                 "%player%", String.valueOf(target.getName()),
                 "%count%", String.valueOf(-count),
                 "%rows%", String.valueOf(next));
-        afterRemoteChange(target, evicted);
+        afterRemoteChange(target, evicted, before);
     }
 
     /** Back to the configured starting size, keeping the items that still fit. */
@@ -441,7 +443,7 @@ public final class VaultService {
         messages.send(actor, "admin-messages.reset",
                 "%player%", String.valueOf(target.getName()),
                 "%rows%", String.valueOf(next));
-        afterRemoteChange(target, evicted);
+        afterRemoteChange(target, evicted, before);
     }
 
     /** Empties a vault without touching its size. */
@@ -450,7 +452,7 @@ public final class VaultService {
         data.clear();
         saveAsync(data);
         messages.send(actor, "admin-messages.cleared", "%player%", String.valueOf(target.getName()));
-        afterRemoteChange(target, List.of());
+        afterRemoteChange(target, List.of(), data.rows());
     }
 
     private void refundIfShrunk(OfflinePlayer target, VaultData data, int before, int after, Settings settings) {
@@ -477,7 +479,7 @@ public final class VaultService {
      * Reacts to a change made by someone else: close a stale GUI and hand back any
      * evicted items on the region thread that owns the player.
      */
-    private void afterRemoteChange(OfflinePlayer target, List<ItemStack> evicted) {
+    private void afterRemoteChange(OfflinePlayer target, List<ItemStack> evicted, int rowsBefore) {
         Player online = target.getPlayer();
         if (online == null || !online.isOnline()) {
             return;
@@ -494,7 +496,13 @@ public final class VaultService {
             if (!returned.isEmpty()) {
                 messages.send(online, "admin-messages.items-dropped", "%count%", String.valueOf(returned.size()));
             }
-            messages.send(online, "admin-messages.target-upgraded", "%rows%", String.valueOf(vault(online).rows()));
+            int rowsNow = vault(online).rows();
+            String key = rowsNow > rowsBefore
+                    ? "admin-messages.target-upgraded"
+                    : rowsNow < rowsBefore
+                            ? "admin-messages.target-shrunk"
+                            : "admin-messages.target-updated";
+            messages.send(online, key, "%rows%", String.valueOf(rowsNow));
         });
     }
 }

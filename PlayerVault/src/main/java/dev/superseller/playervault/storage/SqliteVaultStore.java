@@ -92,8 +92,8 @@ public final class SqliteVaultStore implements VaultStore {
         }
         // Forward slashes are accepted by SQLite on every platform, including Windows.
         String url = "jdbc:sqlite:" + database.toAbsolutePath().toString().replace('\\', '/');
-        connection = DriverManager.getConnection(url);
-        try (Statement statement = connection.createStatement()) {
+        Connection opened = DriverManager.getConnection(url);
+        try (Statement statement = opened.createStatement()) {
             statement.execute("PRAGMA busy_timeout=" + busyTimeoutMs);
             statement.execute("PRAGMA journal_mode=" + journalMode);
             statement.execute("PRAGMA synchronous=NORMAL");
@@ -109,7 +109,17 @@ public final class SqliteVaultStore implements VaultStore {
                     )
                     """.formatted(TABLE));
             migrate(statement);
+        } catch (SQLException | RuntimeException ex) {
+            // Never keep a half-initialised connection: the next connect() would see
+            // a non-null connection, return early, and run against a schema-less db.
+            try {
+                opened.close();
+            } catch (SQLException ignored) {
+                // Already failing; nothing useful to add.
+            }
+            throw ex;
         }
+        connection = opened;
         logger.info("PlayerVault storage ready: " + name());
     }
 

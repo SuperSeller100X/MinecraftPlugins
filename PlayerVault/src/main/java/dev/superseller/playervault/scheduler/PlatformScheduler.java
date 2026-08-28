@@ -85,14 +85,23 @@ public final class PlatformScheduler {
         }
     }
 
-    /** Repeats off the region threads, for periodic disk writes. */
-    public void runTimerAsync(Runnable task, long periodTicks) {
+    /**
+     * Repeats off the region threads, for periodic disk writes.
+     *
+     * @return a handle that cancels this timer, so a reload can replace it instead
+     *         of stacking a second timer on top of the first
+     */
+    public Runnable runTimerAsync(Runnable task, long periodTicks) {
         long period = Math.max(1L, periodTicks);
         try {
-            plugin.getServer().getAsyncScheduler().runAtFixedRate(plugin, scheduled -> task.run(),
-                    period * 50L, period * 50L, java.util.concurrent.TimeUnit.MILLISECONDS);
+            io.papermc.paper.threadedregions.scheduler.ScheduledTask handle =
+                    plugin.getServer().getAsyncScheduler().runAtFixedRate(plugin, scheduled -> task.run(),
+                            period * 50L, period * 50L, java.util.concurrent.TimeUnit.MILLISECONDS);
+            return handle::cancel;
         } catch (Throwable ignored) {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, period, period);
+            org.bukkit.scheduler.BukkitTask handle =
+                    Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, period, period);
+            return handle::cancel;
         }
     }
 
