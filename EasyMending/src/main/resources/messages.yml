@@ -1,7 +1,7 @@
 # ==============================================================================
 # EasyMending Language & Messages (MiniMessage & Legacy syntax supported)
 # Supports MiniMessage: <green>, <gradient:#4facfe:#00f2fe>, <bold>, etc.
-# Also supports legacy color codes: &a, &b, &c, &e, etc.
+# Also supports legacy color codes: &a, &b, &c, &e, §a, §b, etc.
 # Placeholders: <prefix>, <item>, <repaired>, <cost>, <current_xp>, etc.
 # ==============================================================================
 
@@ -39,6 +39,7 @@ info-damage-needed: "<gray>Missing Durability: <aqua><damage></aqua></gray>"
 info-has-mending: "<gray>Mending Enchantment: <green>✔ Yes</green></gray>"
 info-no-mending: "<gray>Mending Enchantment: <red>✘ No</red></gray>"
 info-cost: "<gray>Repair Cost: <gold><cost> XP points</gold> <dark_gray>(Your XP: <gold><current_xp></gold>)</dark_gray></gray>"
+info-cost-no-mending: "<gray>Repair Cost: <red>N/A (Requires Mending enchantment)</red></gray>"
 info-footer: "<dark_gray>----------------------------------</dark_gray>"
 
 cost-header: "<dark_gray>-------</dark_gray> <gradient:#4facfe:#00f2fe><b>Inventory Repair Cost Estimate</b></gradient> <dark_gray>-------</dark_gray>"
@@ -47,10 +48,18 @@ cost-none-damaged: "<prefix><green>All your items are already at maximum durabil
 
 # Admin commands
 admin-reload-success: "<prefix><green>Configuration and language files reloaded successfully!</green>"
+admin-repair-usage: "<prefix><yellow>Usage: <aqua>/ema repair <player> [hand|offhand|armor|hotbar|all] [--free/-f]</aqua></yellow>"
 admin-repair-success: "<prefix><green>Forced repair for <yellow><player></yellow> (<aqua><count></aqua> items repaired).</green>"
 admin-repair-target-notify: "<prefix><green>An administrator has repaired your equipment!</green>"
+admin-repair-failed-no-damage: "<prefix><yellow>No damaged items found to repair for <player>.</yellow>"
+admin-repair-failed-xp: "<prefix><red><player> does not have enough XP to repair their items.</red>"
+admin-repair-failed-no-mending: "<prefix><red><player> has no damaged items with Mending to repair.</red>"
+admin-repair-failed: "<prefix><red>Repair failed for <yellow><player></yellow>: <reason></red>"
+admin-inspect-usage: "<prefix><yellow>Usage: <aqua>/ema inspect <player></aqua></yellow>"
+admin-setratio-usage: "<prefix><yellow>Usage: <aqua>/ema setratio <durabilityPerXp></aqua></yellow>"
 admin-setratio-success: "<prefix><green>Durability per XP ratio updated from <yellow><old></yellow> to <aqua><new></aqua>.</green>"
 admin-setratio-invalid: "<prefix><red>Invalid ratio value. Please provide a positive number (e.g. 2.0).</red>"
+admin-bypass-usage: "<prefix><yellow>Usage: <aqua>/ema bypass <player></aqua></yellow>"
 admin-bypass-enabled: "<prefix><green>Free repair bypass <aqua>ENABLED</aqua> for <yellow><player></yellow>.</green>"
 admin-bypass-disabled: "<prefix><yellow>Free repair bypass <red>DISABLED</red> for <yellow><player></yellow>.</yellow>"
 admin-stats: "<prefix><gray>Global stats: <yellow><total_repairs></yellow> repairs completed, <gold><total_xp></gold> XP consumed.</gray>"

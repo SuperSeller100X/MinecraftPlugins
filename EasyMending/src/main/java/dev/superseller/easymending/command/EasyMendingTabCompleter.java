@@ -15,31 +15,41 @@ import org.bukkit.entity.Player;
  */
 public final class EasyMendingTabCompleter implements TabCompleter {
 
-    private static final List<String> BASE_SUBS = List.of(
-            "gui", "hand", "offhand", "armor", "hotbar", "all", "info", "cost", "help"
-    );
-
-    private static final List<String> ADMIN_SUBS = List.of(
-            "reload", "repair", "inspect", "setratio", "bypass", "stats", "help"
-    );
-
     private static final List<String> SCOPES = List.of(
             "hand", "offhand", "armor", "hotbar", "all"
     );
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        String cmdName = command.getName().toLowerCase(Locale.ROOT);
+        if (sender == null || args == null || args.length == 0) {
+            return Collections.emptyList();
+        }
 
-        if (cmdName.equals("easymendingadmin") || alias.equalsIgnoreCase("ema") || alias.equalsIgnoreCase("emadmin")) {
+        String cmdName = command != null ? command.getName().toLowerCase(Locale.ROOT) : "";
+        String aliasLower = alias != null ? alias.toLowerCase(Locale.ROOT) : "";
+
+        boolean isAdminCommand = cmdName.equals("easymendingadmin")
+                || aliasLower.equals("ema")
+                || aliasLower.equals("emadmin")
+                || aliasLower.equals("mendadmin");
+
+        if (isAdminCommand) {
             return completeAdmin(sender, args, 0);
         }
 
         if (args.length == 1) {
-            List<String> options = new ArrayList<>(BASE_SUBS);
-            if (sender.hasPermission("easymending.admin")) {
-                options.add("admin");
-            }
+            List<String> options = new ArrayList<>();
+            if (sender.hasPermission("easymending.gui")) options.add("gui");
+            if (sender.hasPermission("easymending.hand")) options.add("hand");
+            if (sender.hasPermission("easymending.offhand")) options.add("offhand");
+            if (sender.hasPermission("easymending.armor")) options.add("armor");
+            if (sender.hasPermission("easymending.hotbar")) options.add("hotbar");
+            if (sender.hasPermission("easymending.all")) options.add("all");
+            if (sender.hasPermission("easymending.info")) options.add("info");
+            if (sender.hasPermission("easymending.cost")) options.add("cost");
+            if (sender.hasPermission("easymending.use")) options.add("help");
+            if (sender.hasPermission("easymending.admin")) options.add("admin");
+
             return filter(options, args[0]);
         }
 
@@ -58,7 +68,15 @@ public final class EasyMendingTabCompleter implements TabCompleter {
         int index = args.length - 1 - offset;
 
         if (index == 0) {
-            return filter(ADMIN_SUBS, args[offset]);
+            List<String> adminSubs = new ArrayList<>();
+            if (sender.hasPermission("easymending.admin.reload")) adminSubs.add("reload");
+            if (sender.hasPermission("easymending.admin.repair")) adminSubs.add("repair");
+            if (sender.hasPermission("easymending.admin.inspect")) adminSubs.add("inspect");
+            if (sender.hasPermission("easymending.admin.setratio")) adminSubs.add("setratio");
+            if (sender.hasPermission("easymending.admin.bypass")) adminSubs.add("bypass");
+            if (sender.hasPermission("easymending.admin.stats")) adminSubs.add("stats");
+            adminSubs.add("help");
+            return filter(adminSubs, args[offset]);
         }
 
         String sub = args[offset].toLowerCase(Locale.ROOT);
@@ -90,7 +108,9 @@ public final class EasyMendingTabCompleter implements TabCompleter {
     private List<String> getOnlinePlayerNames() {
         List<String> names = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            names.add(p.getName());
+            if (p != null && p.isOnline()) {
+                names.add(p.getName());
+            }
         }
         return names;
     }

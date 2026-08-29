@@ -56,7 +56,7 @@ public final class PlayerInteractListener implements Listener {
             return;
         }
 
-        if (!player.hasPermission("easymending.hand") && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission("easymending.hand") || !player.hasPermission("easymending.use")) {
             return;
         }
 

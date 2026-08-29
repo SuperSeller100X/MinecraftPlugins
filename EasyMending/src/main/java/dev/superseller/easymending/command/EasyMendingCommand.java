@@ -12,11 +12,14 @@ import dev.superseller.easymending.util.ItemUtil;
 import dev.superseller.easymending.util.SoundUtil;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Main command executor for /easymending and its player-facing subcommands.
@@ -39,54 +42,60 @@ public final class EasyMendingCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("easymending.use")) {
-            messages.send(sender, "no-permission");
-            return true;
-        }
-
-        // If no arguments provided: open GUI for player, or show help for console
-        if (args.length == 0) {
-            if (sender instanceof Player player) {
-                if (!player.hasPermission("easymending.gui") && !player.hasPermission("easymending.use")) {
-                    messages.send(player, "no-permission");
-                    return true;
-                }
-                SoundUtil.playGuiOpen(player, config);
-                gui.open(player);
-            } else {
-                sendHelp(sender, label);
+        try {
+            if (!sender.hasPermission("easymending.use")) {
+                messages.send(sender, "no-permission");
+                return true;
             }
-            return true;
-        }
 
-        String sub = args[0].toLowerCase(Locale.ROOT);
-
-        // Forward to admin command if "admin" is passed as first arg
-        if (sub.equals("admin") || sub.equals("adm")) {
-            String[] adminArgs = Arrays.copyOfRange(args, 1, args.length);
-            return adminCommand.onCommand(sender, command, label + " admin", adminArgs);
-        }
-
-        switch (sub) {
-            case "gui", "g", "menu" -> handleGui(sender);
-            case "hand", "h", "main" -> handleRepair(sender, RepairScope.HAND, "easymending.hand");
-            case "offhand", "oh", "off" -> handleRepair(sender, RepairScope.OFFHAND, "easymending.offhand");
-            case "armor", "a", "armour" -> handleRepair(sender, RepairScope.ARMOR, "easymending.armor");
-            case "hotbar", "hb", "hot" -> handleRepair(sender, RepairScope.HOTBAR, "easymending.hotbar");
-            case "all", "*", "inv" -> handleRepair(sender, RepairScope.ALL, "easymending.all");
-            case "info", "i" -> handleInfo(sender);
-            case "cost", "c" -> handleCost(sender);
-            case "help", "?", "hlp" -> sendHelp(sender, label);
-            default -> {
-                RepairScope scope = RepairScope.fromString(sub);
-                if (scope != null) {
-                    handleRepair(sender, scope, "easymending." + scope.name().toLowerCase(Locale.ROOT));
+            // If no arguments provided: open GUI for player, or show help for console
+            if (args.length == 0) {
+                if (sender instanceof Player player) {
+                    if (!player.hasPermission("easymending.gui")) {
+                        messages.send(player, "no-permission");
+                        return true;
+                    }
+                    SoundUtil.playGuiOpen(player, config);
+                    gui.open(player);
                 } else {
                     sendHelp(sender, label);
                 }
+                return true;
             }
+
+            String sub = args[0].toLowerCase(Locale.ROOT);
+
+            // Forward to admin command if "admin" is passed as first arg
+            if (sub.equals("admin") || sub.equals("adm")) {
+                String[] adminArgs = Arrays.copyOfRange(args, 1, args.length);
+                return adminCommand.onCommand(sender, command, label + " admin", adminArgs);
+            }
+
+            switch (sub) {
+                case "gui", "g", "menu" -> handleGui(sender);
+                case "hand", "h", "main" -> handleRepair(sender, RepairScope.HAND, "easymending.hand");
+                case "offhand", "oh", "off" -> handleRepair(sender, RepairScope.OFFHAND, "easymending.offhand");
+                case "armor", "a", "armour" -> handleRepair(sender, RepairScope.ARMOR, "easymending.armor");
+                case "hotbar", "hb", "hot" -> handleRepair(sender, RepairScope.HOTBAR, "easymending.hotbar");
+                case "all", "*", "inv" -> handleRepair(sender, RepairScope.ALL, "easymending.all");
+                case "info", "i" -> handleInfo(sender);
+                case "cost", "c" -> handleCost(sender);
+                case "help", "?", "hlp" -> sendHelp(sender, label);
+                default -> {
+                    RepairScope scope = RepairScope.fromString(sub);
+                    if (scope != null) {
+                        handleRepair(sender, scope, "easymending." + scope.name().toLowerCase(Locale.ROOT));
+                    } else {
+                        sendHelp(sender, label);
+                    }
+                }
+            }
+            return true;
+        } catch (Throwable t) {
+            sender.sendMessage(Component.text("§c[EasyMending] An error occurred while executing this command. Check console for details."));
+            JavaPlugin.getProvidingPlugin(getClass()).getLogger().log(Level.SEVERE, "Error executing /" + label + " " + String.join(" ", args), t);
+            return true;
         }
-        return true;
     }
 
     private void handleGui(CommandSender sender) {
@@ -94,7 +103,7 @@ public final class EasyMendingCommand implements CommandExecutor {
             messages.send(sender, "player-only");
             return;
         }
-        if (!player.hasPermission("easymending.gui") && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission("easymending.gui")) {
             messages.send(player, "no-permission");
             return;
         }
@@ -107,7 +116,7 @@ public final class EasyMendingCommand implements CommandExecutor {
             messages.send(sender, "player-only");
             return;
         }
-        if (!player.hasPermission(permission) && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission(permission)) {
             messages.send(player, "no-permission");
             return;
         }
@@ -155,7 +164,7 @@ public final class EasyMendingCommand implements CommandExecutor {
             messages.send(sender, "player-only");
             return;
         }
-        if (!player.hasPermission("easymending.info") && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission("easymending.info")) {
             messages.send(player, "no-permission");
             return;
         }
@@ -172,7 +181,7 @@ public final class EasyMendingCommand implements CommandExecutor {
         int remaining = max - damage;
         int percent = max > 0 ? (int) Math.round(((double) remaining / max) * 100.0) : 100;
         boolean mending = ItemUtil.hasMending(item);
-        boolean bypass = player.hasPermission("easymending.bypass.mending") || repairService.hasAdminBypass(player.getUniqueId());
+        boolean bypass = repairService.hasMendingBypass(player);
         int cost = repairService.calculateItemCost(item, bypass);
         int currentXp = ExperienceUtil.getPlayerTotalExperience(player);
 
@@ -188,9 +197,13 @@ public final class EasyMendingCommand implements CommandExecutor {
         } else {
             messages.send(player, "info-no-mending");
         }
-        messages.send(player, "info-cost",
-                "cost", String.valueOf(Math.max(0, cost)),
-                "current_xp", String.valueOf(currentXp));
+        if (cost < 0) {
+            messages.send(player, "info-cost-no-mending");
+        } else {
+            messages.send(player, "info-cost",
+                    "cost", String.valueOf(cost),
+                    "current_xp", String.valueOf(currentXp));
+        }
         messages.send(player, "info-footer");
         SoundUtil.playGuiClick(player, config);
     }
@@ -200,7 +213,7 @@ public final class EasyMendingCommand implements CommandExecutor {
             messages.send(sender, "player-only");
             return;
         }
-        if (!player.hasPermission("easymending.cost") && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission("easymending.cost")) {
             messages.send(player, "no-permission");
             return;
         }

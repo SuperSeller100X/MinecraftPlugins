@@ -5,15 +5,19 @@ import dev.superseller.easymending.config.PluginConfig;
 import dev.superseller.easymending.model.RepairEstimate;
 import dev.superseller.easymending.model.RepairResult;
 import dev.superseller.easymending.model.RepairScope;
+import dev.superseller.easymending.scheduler.PlatformScheduler;
 import dev.superseller.easymending.service.RepairService;
 import dev.superseller.easymending.util.ExperienceUtil;
 import dev.superseller.easymending.util.SoundUtil;
 import java.util.Locale;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Handles all administrator commands for EasyMending.
@@ -32,32 +36,38 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("easymending.admin")) {
-            messages.send(sender, "no-permission");
+        try {
+            if (!sender.hasPermission("easymending.admin")) {
+                messages.send(sender, "no-permission");
+                return true;
+            }
+
+            if (args.length == 0) {
+                sendAdminHelp(sender, label);
+                return true;
+            }
+
+            String sub = args[0].toLowerCase(Locale.ROOT);
+            switch (sub) {
+                case "reload", "rl" -> handleReload(sender);
+                case "repair", "r" -> handleRepair(sender, args);
+                case "inspect", "i" -> handleInspect(sender, args);
+                case "setratio", "sr" -> handleSetRatio(sender, args);
+                case "bypass", "bp" -> handleBypass(sender, args);
+                case "stats", "s" -> handleStats(sender);
+                case "help", "?" -> sendAdminHelp(sender, label);
+                default -> sendAdminHelp(sender, label);
+            }
+            return true;
+        } catch (Throwable t) {
+            sender.sendMessage(Component.text("§c[EasyMending] An error occurred while executing this admin command. Check console for details."));
+            JavaPlugin.getProvidingPlugin(getClass()).getLogger().log(Level.SEVERE, "Error executing admin command /" + label + " " + String.join(" ", args), t);
             return true;
         }
-
-        if (args.length == 0) {
-            sendAdminHelp(sender, label);
-            return true;
-        }
-
-        String sub = args[0].toLowerCase(Locale.ROOT);
-        switch (sub) {
-            case "reload", "rl" -> handleReload(sender);
-            case "repair", "r" -> handleRepair(sender, args);
-            case "inspect", "i" -> handleInspect(sender, args);
-            case "setratio", "sr" -> handleSetRatio(sender, args);
-            case "bypass", "bp" -> handleBypass(sender, args);
-            case "stats", "s" -> handleStats(sender);
-            case "help", "?" -> sendAdminHelp(sender, label);
-            default -> sendAdminHelp(sender, label);
-        }
-        return true;
     }
 
     private void handleReload(CommandSender sender) {
-        if (!sender.hasPermission("easymending.admin.reload") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.reload")) {
             messages.send(sender, "no-permission");
             return;
         }
@@ -67,13 +77,13 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
     }
 
     private void handleRepair(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("easymending.admin.repair") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.repair")) {
             messages.send(sender, "no-permission");
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /ema repair <player> [hand|offhand|armor|hotbar|all] [--free/-f]");
+            messages.send(sender, "admin-repair-usage");
             return;
         }
 
@@ -98,26 +108,40 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
             }
         }
 
-        RepairResult result = repairService.repair(target, scope, forceFree, true);
-        if (result.success()) {
-            messages.send(sender, "admin-repair-success",
-                    "player", target.getName(),
-                    "count", String.valueOf(result.itemsRepaired()));
-            messages.send(target, "admin-repair-target-notify");
-            SoundUtil.playRepairAll(target, config);
-        } else {
-            sender.sendMessage("§cRepair failed for " + target.getName() + ": " + result.failureReasonKey());
-        }
+        final RepairScope finalScope = scope;
+        final boolean finalForceFree = forceFree;
+
+        PlatformScheduler.runEntitySync(target, () -> {
+            RepairResult result = repairService.repair(target, finalScope, finalForceFree, true);
+            if (result.success()) {
+                messages.send(sender, "admin-repair-success",
+                        "player", target.getName(),
+                        "count", String.valueOf(result.itemsRepaired()));
+                messages.send(target, "admin-repair-target-notify");
+                SoundUtil.playRepairAll(target, config);
+            } else {
+                String reason = result.failureReasonKey();
+                if ("no-damage-target".equals(reason) || "no-damage-held".equals(reason)) {
+                    messages.send(sender, "admin-repair-failed-no-damage", "player", target.getName());
+                } else if ("insufficient-xp".equals(reason)) {
+                    messages.send(sender, "admin-repair-failed-xp", "player", target.getName());
+                } else if ("no-mending".equals(reason)) {
+                    messages.send(sender, "admin-repair-failed-no-mending", "player", target.getName());
+                } else {
+                    messages.send(sender, "admin-repair-failed", "player", target.getName(), "reason", reason != null ? reason : "Unknown error");
+                }
+            }
+        });
     }
 
     private void handleInspect(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("easymending.admin.inspect") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.inspect")) {
             messages.send(sender, "no-permission");
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /ema inspect <player>");
+            messages.send(sender, "admin-inspect-usage");
             return;
         }
 
@@ -127,28 +151,31 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
             return;
         }
 
-        RepairEstimate est = repairService.estimate(target, RepairScope.ALL);
-        int totalXp = ExperienceUtil.getPlayerTotalExperience(target);
+        PlatformScheduler.runEntitySync(target, () -> {
+            RepairEstimate est = repairService.estimate(target, RepairScope.ALL);
+            int totalXp = ExperienceUtil.getPlayerTotalExperience(target);
 
-        messages.send(sender, "admin-inspect-header", "player", target.getName());
-        messages.send(sender, "admin-inspect-level",
-                "level", String.valueOf(target.getLevel()),
-                "total_xp", String.valueOf(totalXp));
-        messages.send(sender, "admin-inspect-damaged-count",
-                "count", String.valueOf(est.eligibleItemsCount()),
-                "damage", String.valueOf(est.totalMissingDurability()));
-        messages.send(sender, "admin-inspect-repair-cost",
-                "cost", String.valueOf(est.totalXpCost()));
+            messages.send(sender, "admin-inspect-header", "player", target.getName());
+            messages.send(sender, "admin-inspect-level",
+                    "level", String.valueOf(target.getLevel()),
+                    "total_xp", String.valueOf(totalXp));
+            messages.send(sender, "admin-inspect-damaged-count",
+                    "count", String.valueOf(est.eligibleItemsCount()),
+                    "damage", String.valueOf(est.totalMissingDurability()));
+            messages.send(sender, "admin-inspect-repair-cost",
+                    "cost", String.valueOf(est.totalXpCost()));
+            messages.send(sender, "info-footer");
+        });
     }
 
     private void handleSetRatio(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("easymending.admin.setratio") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.setratio")) {
             messages.send(sender, "no-permission");
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /ema setratio <durabilityPerXp>");
+            messages.send(sender, "admin-setratio-usage");
             return;
         }
 
@@ -167,13 +194,13 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
     }
 
     private void handleBypass(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("easymending.admin.bypass") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.bypass")) {
             messages.send(sender, "no-permission");
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage("§cUsage: /ema bypass <player>");
+            messages.send(sender, "admin-bypass-usage");
             return;
         }
 
@@ -192,7 +219,7 @@ public final class EasyMendingAdminCommand implements CommandExecutor {
     }
 
     private void handleStats(CommandSender sender) {
-        if (!sender.hasPermission("easymending.admin.stats") && !sender.hasPermission("easymending.admin")) {
+        if (!sender.hasPermission("easymending.admin.stats")) {
             messages.send(sender, "no-permission");
             return;
         }

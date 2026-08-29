@@ -17,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -57,16 +56,15 @@ public final class GuiListener implements Listener {
         // 1. Handle shift-clicking from player's inventory into the repair slot
         if (rawSlot >= topInv.getSize()) {
             if (event.isShiftClick()) {
+                event.setCancelled(true);
                 ItemStack clicked = event.getCurrentItem();
                 if (clicked != null && ItemUtil.isRepairable(clicked)) {
                     ItemStack currentInSlot = topInv.getItem(EasyMendingGui.SLOT_ITEM_INPUT);
                     if (currentInSlot == null || currentInSlot.getType().isAir()) {
-                        event.setCancelled(true);
                         topInv.setItem(EasyMendingGui.SLOT_ITEM_INPUT, clicked.clone());
                         event.setCurrentItem(null);
                         SoundUtil.playGuiClick(player, config);
                         PlatformScheduler.runEntitySync(player, () -> gui.updateAnvilButton(player, topInv));
-                        return;
                     }
                 }
             }
@@ -92,7 +90,7 @@ public final class GuiListener implements Listener {
             case EasyMendingGui.SLOT_ALL -> handleRepairClick(player, RepairScope.ALL, "easymending.all", topInv);
             case EasyMendingGui.SLOT_CLOSE -> {
                 SoundUtil.playGuiClick(player, config);
-                player.closeInventory();
+                PlatformScheduler.runEntitySync(player, player::closeInventory);
             }
             case EasyMendingGui.SLOT_REFRESH -> {
                 SoundUtil.playGuiClick(player, config);
@@ -133,6 +131,8 @@ public final class GuiListener implements Listener {
 
         RepairResult result = repairService.repairSingleItem(player, item, false);
         if (result.success()) {
+            inv.setItem(EasyMendingGui.SLOT_ITEM_INPUT, item);
+
             if (result.bypassCost()) {
                 messages.send(player, "repair-free-single",
                         "item", result.primaryItemName(),
@@ -156,7 +156,7 @@ public final class GuiListener implements Listener {
     }
 
     private void handleRepairClick(Player player, RepairScope scope, String permission, Inventory inv) {
-        if (!player.hasPermission(permission) && !player.hasPermission("easymending.use")) {
+        if (!player.hasPermission(permission)) {
             messages.send(player, "no-permission");
             SoundUtil.playNoDamage(player, config);
             return;
@@ -240,9 +240,13 @@ public final class GuiListener implements Listener {
             inv.setItem(EasyMendingGui.SLOT_ITEM_INPUT, null);
             Map<Integer, ItemStack> overflow = player.getInventory().addItem(leftover);
             for (ItemStack drop : overflow.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                if (player.getWorld() != null) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                }
             }
-            messages.send(player, "gui-item-returned", "item", ItemUtil.getFriendlyName(leftover));
+            if (player.isOnline()) {
+                messages.send(player, "gui-item-returned", "item", ItemUtil.getFriendlyName(leftover));
+            }
         }
     }
 

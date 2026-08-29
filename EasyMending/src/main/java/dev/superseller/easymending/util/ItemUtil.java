@@ -1,6 +1,8 @@
 package dev.superseller.easymending.util;
 
 import java.util.Locale;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -133,7 +135,17 @@ public final class ItemUtil {
         }
         ItemMeta meta = item.getItemMeta();
         if (meta != null && meta.hasDisplayName()) {
-            return meta.getDisplayName();
+            Component displayName = meta.displayName();
+            if (displayName != null) {
+                String plain = PlainTextComponentSerializer.plainText().serialize(displayName);
+                if (!plain.isBlank()) {
+                    return plain;
+                }
+            }
+            String legacy = meta.getDisplayName();
+            if (legacy != null && !legacy.isBlank()) {
+                return legacy.replaceAll("§[0-9a-fk-orA-FK-OR]", "");
+            }
         }
         return formatMaterialName(item.getType());
     }

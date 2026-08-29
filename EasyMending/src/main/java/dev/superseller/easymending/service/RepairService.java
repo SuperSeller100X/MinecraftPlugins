@@ -310,7 +310,7 @@ public final class RepairService {
 
         List<ItemStack> rawItems = getItemsForScope(player, scope);
         if (rawItems.isEmpty()) {
-            if (scope == RepairScope.HAND) {
+            if (scope == RepairScope.HAND || scope == RepairScope.OFFHAND) {
                 return RepairResult.failure("not-repairable");
             }
             return RepairResult.failure("no-damage-target");

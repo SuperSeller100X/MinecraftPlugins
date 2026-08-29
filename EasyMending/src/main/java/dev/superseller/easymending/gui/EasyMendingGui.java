@@ -9,6 +9,7 @@ import dev.superseller.easymending.util.ItemUtil;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -358,12 +359,12 @@ public final class EasyMendingGui {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             if (name != null && !name.isEmpty()) {
-                meta.displayName(miniMessage.deserialize(name));
+                meta.displayName(miniMessage.deserialize(name).decoration(TextDecoration.ITALIC, false));
             }
             if (loreLines != null && !loreLines.isEmpty()) {
                 List<Component> compLore = new ArrayList<>();
                 for (String line : loreLines) {
-                    compLore.add(miniMessage.deserialize(line));
+                    compLore.add(miniMessage.deserialize(line).decoration(TextDecoration.ITALIC, false));
                 }
                 meta.lore(compLore);
             }
