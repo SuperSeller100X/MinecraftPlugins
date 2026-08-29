@@ -33,6 +33,29 @@ limits:
   min-withdraw: 1
   min-transfer: 1
 
+# Savings-account style interest on BANKED XP. OFF by default.
+# When enabled, every interval each qualifying account earns rate-percent of its
+# banked XP, added back to the balance (so it compounds). Interest only touches
+# stored balances, never a player's live XP bar, so it is Folia-safe and can pay
+# offline players too.
+interest:
+  enabled: false
+  # Percent of the banked balance paid each interval (e.g. 1.0 = 1%).
+  rate-percent: 1.0
+  # How often interest is paid. Total = hours + minutes + seconds (min 1s).
+  interval:
+    hours: 1
+    minutes: 0
+    seconds: 0
+  # Accounts below this banked amount earn nothing.
+  min-balance: 1
+  # Cap on XP paid per account per interval. 0 = no cap.
+  max-payout: 0
+  # Pay interest to players who are currently offline.
+  pay-offline-players: true
+  # Message + sound online players get when they earn interest.
+  notify-players: true
+
 sounds:
   # Master switch for all sound effects.
   enabled: true
@@ -44,6 +67,7 @@ sounds:
   error: ENTITY_VILLAGER_NO
   gui-open: BLOCK_CHEST_OPEN
   gui-click: UI_BUTTON_CLICK
+  interest: ENTITY_EXPERIENCE_ORB_PICKUP
 
 gui:
   # MiniMessage title (https://docs.advntr.dev/minimessage/).

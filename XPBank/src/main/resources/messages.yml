@@ -3,7 +3,7 @@
 #  https://docs.advntr.dev/minimessage/format.html
 #  Placeholders use {name}: {amount} {amount_short} {banked} {banked_short}
 #  {onhand} {onhand_short} {player} {input} {rank} {count} {uuid}
-#  {accounts} {total} {total_short} {storage}
+#  {accounts} {total} {total_short} {storage} {rate}
 # =====================================================================
 
 prefix: "<gradient:#22d3ee:#a3e635><bold>XPBank</bold></gradient> <dark_gray>»</dark_gray> "
@@ -24,6 +24,8 @@ withdraw-success: "<green>Withdrew <white>{amount}</white> XP.</green> <gray>Ban
 
 pay-sent: "<green>Sent <white>{amount}</white> XP to <white>{player}</white>.</green> <gray>Banked:</gray> <aqua>{banked}</aqua>"
 pay-received: "<green>Received <white>{amount}</white> XP from <white>{player}</white>.</green> <gray>Banked:</gray> <aqua>{banked}</aqua>"
+
+interest-received: "<green>You earned <white>{amount}</white> XP interest (<white>{rate}%</white>).</green> <gray>Banked:</gray> <aqua>{banked}</aqua>"
 
 top-header: "<gray>——— <aqua>XP Bank — Top {count}</aqua> ———</gray>"
 top-empty: "<gray>No accounts have any banked XP yet.</gray>"
@@ -70,6 +72,8 @@ admin:
   usage-add: "<red>Usage: <white>/xpba add <player> <amount></white></red>"
   usage-take: "<red>Usage: <white>/xpba take <player> <amount></white></red>"
   usage-reset: "<red>Usage: <white>/xpba reset <player></white></red>"
+  interest-disabled: "<red>Interest is disabled in the config. Enable it under <white>interest.enabled</white> and reload.</red>"
+  interest-done: "<green>Paid interest to <white>{count}</white> account(s).</green>"
 
 help:
   player:
@@ -90,4 +94,5 @@ help:
     - "<yellow>/xpba take <player> <amount></yellow>"
     - "<yellow>/xpba reset <player></yellow>"
     - "<yellow>/xpba stats</yellow> <gray>— totals & storage backend</gray>"
+    - "<yellow>/xpba interest</yellow> <gray>— pay interest now</gray>"
     - "<yellow>/xpba reload</yellow> <gray>— reload config</gray>"

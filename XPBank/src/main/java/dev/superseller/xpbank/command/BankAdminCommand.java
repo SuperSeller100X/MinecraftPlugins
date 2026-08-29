@@ -32,7 +32,8 @@ public final class BankAdminCommand implements CommandExecutor, TabCompleter {
     private final BankService bank;
     private final Messages messages;
 
-    private static final List<String> SUBS = List.of("set", "add", "take", "reset", "give", "info", "stats", "reload");
+    private static final List<String> SUBS =
+            List.of("set", "add", "take", "reset", "give", "info", "stats", "interest", "reload");
 
     public BankAdminCommand(XPBankPlugin plugin) {
         this.plugin = plugin;
@@ -58,6 +59,7 @@ public final class BankAdminCommand implements CommandExecutor, TabCompleter {
                 messages.send(sender, "reloaded");
             }
             case "stats" -> stats(sender);
+            case "interest" -> interest(sender);
             case "info", "check" -> info(sender, args);
             case "set" -> mutate(sender, args, Mode.SET);
             case "add", "give" -> mutate(sender, args, Mode.ADD);
@@ -77,6 +79,15 @@ public final class BankAdminCommand implements CommandExecutor, TabCompleter {
                 "total", Numbers.grouped(storage.totalStored()),
                 "total_short", Numbers.compact(storage.totalStored()),
                 "storage", plugin.bankConfig().storageType()));
+    }
+
+    private void interest(CommandSender sender) {
+        if (!plugin.bankConfig().interestEnabled()) {
+            messages.send(sender, "admin.interest-disabled");
+            return;
+        }
+        int paid = plugin.interest().tick();
+        messages.send(sender, "admin.interest-done", Map.of("count", String.valueOf(paid)));
     }
 
     private void info(CommandSender sender, String[] args) {
@@ -148,7 +159,7 @@ public final class BankAdminCommand implements CommandExecutor, TabCompleter {
             return filter(SUBS, args[0]);
         }
         String sub = args[0].toLowerCase(Locale.US);
-        if (args.length == 2 && !sub.equals("reload") && !sub.equals("stats")) {
+        if (args.length == 2 && !sub.equals("reload") && !sub.equals("stats") && !sub.equals("interest")) {
             return filter(onlinePlayerNames(), args[1]);
         }
         if (args.length == 3 && (sub.equals("set") || sub.equals("add") || sub.equals("give")

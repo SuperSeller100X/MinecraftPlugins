@@ -27,6 +27,17 @@ public final class XPBankConfig {
     private int autosaveIntervalSeconds;
     private boolean depositKeepXpBar;
 
+    private boolean interestEnabled;
+    private double interestRatePercent;
+    private int interestIntervalHours;
+    private int interestIntervalMinutes;
+    private int interestIntervalSeconds;
+    private long interestMinBalance;
+    private long interestMaxPayout;
+    private boolean interestOfflinePlayers;
+    private boolean interestNotify;
+    private String soundInterest;
+
     private boolean soundsEnabled;
     private String soundDeposit;
     private String soundWithdraw;
@@ -67,6 +78,22 @@ public final class XPBankConfig {
         autosaveIntervalSeconds = Math.max(30, c.getInt("storage.autosave.interval-seconds", 300));
         depositKeepXpBar = c.getBoolean("features.keep-xp-bar-on-deposit-all", false);
 
+        // Interest — off by default, fully configurable.
+        interestEnabled = c.getBoolean("interest.enabled", false);
+        interestRatePercent = Math.max(0.0, c.getDouble("interest.rate-percent", 1.0));
+        interestIntervalHours = Math.max(0, c.getInt("interest.interval.hours", 1));
+        interestIntervalMinutes = Math.max(0, c.getInt("interest.interval.minutes", 0));
+        interestIntervalSeconds = Math.max(0, c.getInt("interest.interval.seconds", 0));
+        if (interestIntervalHours == 0 && interestIntervalMinutes == 0 && interestIntervalSeconds == 0) {
+            plugin.getLogger().warning("interest.interval is zero; defaulting to 1 hour.");
+            interestIntervalHours = 1;
+        }
+        interestMinBalance = Math.max(0L, c.getLong("interest.min-balance", 1));
+        interestMaxPayout = Math.max(0L, c.getLong("interest.max-payout", 0));
+        interestOfflinePlayers = c.getBoolean("interest.pay-offline-players", true);
+        interestNotify = c.getBoolean("interest.notify-players", true);
+        soundInterest = c.getString("sounds.interest", "ENTITY_EXPERIENCE_ORB_PICKUP");
+
         soundsEnabled = c.getBoolean("sounds.enabled", true);
         soundDeposit = c.getString("sounds.deposit", "ENTITY_EXPERIENCE_ORB_PICKUP");
         soundWithdraw = c.getString("sounds.withdraw", "ENTITY_PLAYER_LEVELUP");
@@ -105,6 +132,7 @@ public final class XPBankConfig {
             case "error" -> soundError;
             case "gui-open" -> soundGuiOpen;
             case "gui-click" -> soundGuiClick;
+            case "interest" -> soundInterest;
             default -> null;
         };
         if (name == null || name.isBlank()) {
@@ -160,6 +188,59 @@ public final class XPBankConfig {
 
     public boolean soundsEnabled() {
         return soundsEnabled;
+    }
+
+    public boolean interestEnabled() {
+        return interestEnabled;
+    }
+
+    public double interestRatePercent() {
+        return interestRatePercent;
+    }
+
+    /** Interest interval expressed in server ticks (minimum 1 tick). */
+    public long interestIntervalTicks() {
+        return Math.max(1L, interestIntervalMillis() / 50L);
+    }
+
+    /** Interest interval in milliseconds. */
+    public long interestIntervalMillis() {
+        long seconds = interestIntervalHours * 3600L
+                + interestIntervalMinutes * 60L
+                + interestIntervalSeconds;
+        return Math.max(1000L, seconds * 1000L);
+    }
+
+    /** Human-readable description of the interest interval, e.g. "1h 30m". */
+    public String interestIntervalDescription() {
+        StringBuilder sb = new StringBuilder();
+        if (interestIntervalHours > 0) {
+            sb.append(interestIntervalHours).append("h ");
+        }
+        if (interestIntervalMinutes > 0) {
+            sb.append(interestIntervalMinutes).append("m ");
+        }
+        if (interestIntervalSeconds > 0) {
+            sb.append(interestIntervalSeconds).append("s");
+        }
+        String out = sb.toString().trim();
+        return out.isEmpty() ? "1h" : out;
+    }
+
+    public long interestMinBalance() {
+        return interestMinBalance;
+    }
+
+    public long interestMaxPayout() {
+        return interestMaxPayout;
+    }
+
+    public boolean interestOfflinePlayers() {
+        return interestOfflinePlayers;
+    }
+
+    public boolean interestNotify() {
+        return interestNotify;
     }
 
     public String guiTitle() {

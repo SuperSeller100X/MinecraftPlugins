@@ -137,6 +137,49 @@ public final class PlatformScheduler {
         }
     }
 
+    /** A handle to a running repeating task that can be cancelled. */
+    @FunctionalInterface
+    public interface Cancellable {
+        void cancel();
+    }
+
+    /**
+     * Starts a repeating task safe to run from the global thread and returns a
+     * handle that cancels it. Works on Paper, Purpur and Folia.
+     */
+    public static Cancellable runTimerCancellable(Runnable task, long periodTicks) {
+        long period = Math.max(1L, periodTicks);
+        if (globalRunAtFixedRate != null) {
+            try {
+                Object scheduler = globalSchedulerGet.invoke(null);
+                Object scheduledTask = globalRunAtFixedRate.invoke(scheduler, plugin,
+                        (Consumer<Object>) t -> task.run(), period, period);
+                if (scheduledTask != null) {
+                    Method cancel = scheduledTask.getClass().getMethod("cancel");
+                    cancel.setAccessible(true);
+                    return () -> {
+                        try {
+                            cancel.invoke(scheduledTask);
+                        } catch (Throwable e) {
+                            logger.warning("Failed to cancel Folia task: " + e.getMessage());
+                        }
+                    };
+                }
+            } catch (Throwable e) {
+                logger.warning("Global timer failed, using Bukkit scheduler: " + e.getMessage());
+            }
+        }
+        try {
+            org.bukkit.scheduler.BukkitTask bukkitTask =
+                    Bukkit.getScheduler().runTaskTimer(plugin, task, period, period);
+            return bukkitTask::cancel;
+        } catch (Throwable e) {
+            logger.warning("Bukkit scheduler unavailable: " + e.getMessage());
+            return () -> {
+            };
+        }
+    }
+
     /** Runs a task off the main thread (disk / database I/O). */
     public static void runAsync(Runnable task) {
         if (asyncRunNow != null) {

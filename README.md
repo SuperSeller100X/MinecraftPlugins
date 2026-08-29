@@ -46,11 +46,12 @@ See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean packa
 
 ## XPBank 🏦✨
 
-Store and withdraw **experience points** (total XP, **not** levels) in a personal bank on Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Bank your XP before a risky dive, transfer savings to a friend, climb the leaderboard, and manage it all from commands or a GUI. Folia-safe XP handling, configurable **YAML or SQLite** storage, sound effects, permissions and admin tools.
+Store and withdraw **experience points** (total XP, **not** levels) in a personal bank on Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Bank your XP before a risky dive, transfer savings to a friend, climb the leaderboard, and manage it all from commands or a GUI. Folia-safe XP handling, configurable **YAML or SQLite** storage, optional savings **interest** (off by default), sound effects, permissions and admin tools.
 
 - `/xpbank` / `/xp` / `/bank` — deposit, withdraw, balance, pay, top, gui
 - `/xp deposit (d)` · `/xp withdraw (w)` · `/xp balance (bal)` · `/xp pay (p)` · `/xp top (lb)` · `/xp gui (g)`
-- `/xpbankadmin` / `/xpba` — set / add / take / reset / info / stats / reload
+- `/xpbankadmin` / `/xpba` — set / add / take / reset / info / stats / interest / reload
+- Optional bank-style **interest** on banked XP — configurable rate/interval, off by default
 - Amounts accept `all`, `half` and `k/m/b/t` suffixes; full tab completion
 - Permissions: `xpbank.*` (deposit/withdraw/pay/top/gui default-on, admin op)
 

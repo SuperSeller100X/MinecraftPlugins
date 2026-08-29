@@ -15,6 +15,8 @@ backend is configurable.
   Linux, Windows and macOS.
 - **Pick your storage.** `yaml` (simple flat file) or `sqlite` (bundled driver,
   better for big servers) — switch in `config.yml` and reload.
+- **Optional interest.** A savings-account style interest payout on banked XP,
+  **off by default** and fully configurable (rate, interval, caps, offline pay).
 
 ---
 
@@ -73,6 +75,7 @@ Requires `xpbank.admin`.
 | `/xpba take <player> <amount>` | `remove` | Remove XP from a player's balance |
 | `/xpba reset <player>` | `clear` | Set a player's balance to 0 |
 | `/xpba stats` | | Account count, total banked XP, storage backend |
+| `/xpba interest` | | Pay one round of interest immediately (if enabled) |
 | `/xpba reload` | `rl` | Reload config & messages |
 
 Admin commands operate directly on storage, so they work for **offline** players too.
@@ -111,6 +114,29 @@ it never relies on chat input.
 
 ---
 
+## Interest (optional, off by default)
+
+Like a real bank, XPBank can pay **interest** on banked XP. It is **disabled by
+default** — enable it under `interest:` in `config.yml`.
+
+When enabled, every interval each account that meets the minimum balance earns
+`rate-percent` of its banked XP, added straight back to the balance (so it
+**compounds**). You control everything:
+
+- `rate-percent` — how much is paid each interval (e.g. `1.0` = 1%).
+- `interval` — `hours` + `minutes` + `seconds` between payouts.
+- `min-balance` — accounts below this earn nothing.
+- `max-payout` — cap on XP paid per account per interval (`0` = no cap).
+- `pay-offline-players` — pay accounts whose owner is offline.
+- `notify-players` — message + sound online players when they earn interest.
+
+Interest only ever touches **stored balances**, never a player's live XP bar, so
+it is Folia-safe and works for offline players. Admins can trigger a payout on
+demand with `/xpba interest`. Changing any interest setting and running
+`/xpbank reload` restarts the payout timer.
+
+---
+
 ## Configuration
 
 `config.yml` (excerpt — every option is documented in the file):
@@ -132,6 +158,18 @@ limits:
   min-withdraw: 1
   min-transfer: 1
 
+interest:                 # savings-account interest on banked XP (OFF by default)
+  enabled: false
+  rate-percent: 1.0       # % of the balance paid each interval
+  interval:
+    hours: 1
+    minutes: 0
+    seconds: 0
+  min-balance: 1          # accounts below this earn nothing
+  max-payout: 0           # cap per account per interval (0 = no cap)
+  pay-offline-players: true
+  notify-players: true
+
 sounds:
   enabled: true
   deposit: ENTITY_EXPERIENCE_ORB_PICKUP
@@ -140,6 +178,7 @@ sounds:
   error: ENTITY_VILLAGER_NO
   gui-open: BLOCK_CHEST_OPEN
   gui-click: UI_BUTTON_CLICK
+  interest: ENTITY_EXPERIENCE_ORB_PICKUP
 
 gui:
   title: "<dark_aqua><bold>XP Bank</bold></dark_aqua>"

@@ -1,6 +1,7 @@
 package dev.superseller.xpbank;
 
 import dev.superseller.xpbank.bank.BankService;
+import dev.superseller.xpbank.bank.InterestService;
 import dev.superseller.xpbank.command.BankAdminCommand;
 import dev.superseller.xpbank.command.BankCommand;
 import dev.superseller.xpbank.config.Messages;
@@ -32,6 +33,7 @@ public final class XPBankPlugin extends JavaPlugin {
     private BankStorage storage;
     private BankService bank;
     private BankGui gui;
+    private InterestService interest;
 
     @Override
     public void onEnable() {
@@ -51,17 +53,24 @@ public final class XPBankPlugin extends JavaPlugin {
         bank = new BankService(bankConfig, storage);
         gui = new BankGui(bankConfig, messages, bank);
 
+        interest = new InterestService(this);
+        interest.start();
+
         registerCommands();
         registerListeners();
         startAutosave();
 
         getLogger().info("XPBank enabled on " + (PlatformScheduler.isFolia() ? "Folia" : "Paper/Purpur")
                 + " using " + bankConfig.storageType() + " storage. Transfers: "
-                + (bankConfig.transfersEnabled() ? "on" : "off") + ".");
+                + (bankConfig.transfersEnabled() ? "on" : "off") + ", interest: "
+                + (bankConfig.interestEnabled() ? "on" : "off") + ".");
     }
 
     @Override
     public void onDisable() {
+        if (interest != null) {
+            interest.stop();
+        }
         if (storage != null) {
             storage.save();
             storage.close();
@@ -129,6 +138,11 @@ public final class XPBankPlugin extends JavaPlugin {
             gui = new BankGui(bankConfig, messages, bank);
             registerCommands();
         }
+
+        // Apply any interest changes (enable/disable, rate, interval).
+        if (interest != null) {
+            interest.restart();
+        }
     }
 
     public XPBankConfig bankConfig() {
@@ -149,5 +163,9 @@ public final class XPBankPlugin extends JavaPlugin {
 
     public BankGui gui() {
         return gui;
+    }
+
+    public InterestService interest() {
+        return interest;
     }
 }
