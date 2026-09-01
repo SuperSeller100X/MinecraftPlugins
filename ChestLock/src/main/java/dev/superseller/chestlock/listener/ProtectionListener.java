@@ -175,15 +175,30 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
-        if (event.getBlocks().stream().anyMatch(this::isSecured)) {
+        for (Block block : event.getBlocks()) {
+            if (isSecured(block)) {
+                event.setCancelled(true);
+                return;
+            }
+            Block target = block.getRelative(event.getDirection());
+            if (isSecured(target)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        Block front = event.getBlock().getRelative(event.getDirection());
+        if (isSecured(front)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        if (event.getBlocks().stream().anyMatch(this::isSecured)) {
-            event.setCancelled(true);
+        for (Block block : event.getBlocks()) {
+            if (isSecured(block)) {
+                event.setCancelled(true);
+                return;
+            }
         }
     }
 
@@ -214,13 +229,17 @@ public final class ProtectionListener implements Listener {
         Block destination = lockStore.blockForInventory(event.getDestination());
         if ((source != null && isSecured(source)) || (destination != null && isSecured(destination))) {
             event.setCancelled(true);
+            return;
+        }
+        if (isInventoryNearSecuredContainer(event.getSource()) || isInventoryNearSecuredContainer(event.getDestination())) {
+            event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryPickupItem(InventoryPickupItemEvent event) {
         Block block = lockStore.blockForInventory(event.getInventory());
-        if (block != null && isSecured(block)) {
+        if ((block != null && isSecured(block)) || isInventoryNearSecuredContainer(event.getInventory())) {
             event.setCancelled(true);
         }
     }
@@ -247,6 +266,83 @@ public final class ProtectionListener implements Listener {
         if (isSecured(event.getBlock())) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlace(BlockPlaceEvent event) {
+        Block placed = event.getBlockPlaced();
+        Player player = event.getPlayer();
+
+        if (lockStore.isContainer(placed.getType())) {
+            lockStore.clearCopiedMetadata(placed);
+            LockStore.Lookup lookup = lockStore.lookup(placed);
+            if (lookup.secured()) {
+                event.setCancelled(true);
+                feedback.locked(player);
+                return;
+            }
+        }
+
+        if (isContainerDevice(placed.getType())) {
+            if (!sessions.hasBypass(player.getUniqueId())) {
+                for (Block adjacent : getAdjacentOrTargetContainers(placed)) {
+                    LockStore.Lookup lookup = lockStore.lookup(adjacent);
+                    if (lookup.secured()) {
+                        LockData lock = lookup.data();
+                        if (lock == null || !sessions.isAuthorized(player.getUniqueId(), lock.lockId(), System.currentTimeMillis())) {
+                            event.setCancelled(true);
+                            feedback.locked(player);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isContainerDevice(org.bukkit.Material material) {
+        return material == org.bukkit.Material.HOPPER
+                || material == org.bukkit.Material.DROPPER
+                || material == org.bukkit.Material.DISPENSER;
+    }
+
+    private java.util.List<Block> getAdjacentOrTargetContainers(Block block) {
+        java.util.List<Block> containers = new java.util.ArrayList<>();
+        org.bukkit.block.BlockFace[] faces = {
+            org.bukkit.block.BlockFace.UP, org.bukkit.block.BlockFace.DOWN,
+            org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.SOUTH,
+            org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.WEST
+        };
+        for (org.bukkit.block.BlockFace face : faces) {
+            Block rel = block.getRelative(face);
+            if (lockStore.isContainer(rel.getType())) {
+                containers.add(rel);
+            }
+        }
+        if (block.getBlockData() instanceof org.bukkit.block.data.Directional directional) {
+            Block target = block.getRelative(directional.getFacing());
+            if (lockStore.isContainer(target.getType()) && !containers.contains(target)) {
+                containers.add(target);
+            }
+        }
+        return containers;
+    }
+
+    private boolean isInventoryNearSecuredContainer(Inventory inventory) {
+        if (inventory == null) return false;
+        Block block = lockStore.blockForInventory(inventory);
+        if (block != null) {
+            return isSecured(block);
+        }
+        org.bukkit.inventory.InventoryHolder holder = inventory.getHolder();
+        if (holder instanceof org.bukkit.entity.Entity entity) {
+            Block entBlock = entity.getLocation().getBlock();
+            if (isSecured(entBlock)) return true;
+            for (Block adj : getAdjacentOrTargetContainers(entBlock)) {
+                if (isSecured(adj)) return true;
+            }
+        }
+        return false;
     }
 
     @EventHandler
