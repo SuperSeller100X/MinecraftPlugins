@@ -50,7 +50,3 @@ ChunkVoter/target/
 
 # PlayerHeads smoke classes
 smoke-classes/
-
-# PlayerVault
-PlayerVault/target/
-PlayerVault/data/

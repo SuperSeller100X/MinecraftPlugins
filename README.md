@@ -158,6 +158,28 @@ Zero commands, zero permissions, configurable sounds. See
 [AtTag/README.md](AtTag/README.md) for the full documentation. Build with
 `mvn -B clean package` in `AtTag/` (or use the offline `AtTag/build.sh`).
 
+## ShardTools ✦
+
+DonutSMP-style **Shards** currency and **Shard Tools** for Minecraft **26.2** (Paper /
+Purpur / Folia). Every player earns **5 Shards every 5 minutes** (configurable); the
+Shard Shop GUI sells the **Shard Pickaxe / Axe / Shovel** (3×3 mining, whole-tree
+felling, Silk Touch & Fortune III variants, Eff 5 / Unb 3 / Mending, 3,000 shards
+each), the **Shard Potion of Haste** (24 h Haste II, 6,000) and DonutSMP's full
+enchanted-netherite catalog, styled exactly like DonutSMP's **amethyst** items:
+**purple star** currency icon, light-purple names, **amethyst chime + purple portal
+particles** when mining/equipping, and a tree-felling axe that clears logs *and*
+leaves. The haste potion grants **1 h of Haste II**; tools **self-destruct after
+24 h of real time** — wall-clock based, so it keeps ticking while players are
+offline and even while the server is stopped. Spawner/crate-key purchases are
+supported via configurable command items.
+
+- `/st shop (s)` · `/st balance (b)` · `/st pay (p)` · `/st top (t)` · `/st info (i)`
+- Admin: `/st give (g)` · `/st setprice (sp)` · `/st shards (sh)` · `/st interval (iv)`
+  · `/st amount (am)` · `/st award (aw)` · `/st reload (rl)`
+- Permissions `shardtools.*`, full TabCompleter, everything configurable
+
+See [ShardTools/README.md](ShardTools/README.md) for the full documentation. Build with
+`mvn -B clean package` in `ShardTools/` (JDK 25 required).
 ## EasyMending 🛠️
 
 Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive drop-in anvil repair station GUI (`/em`), instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Bypass is strictly off by default for all players and OPs. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
