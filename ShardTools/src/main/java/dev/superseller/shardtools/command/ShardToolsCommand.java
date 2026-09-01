@@ -24,7 +24,7 @@ import dev.superseller.shardtools.util.TimeWords;
 /**
  * /shardtools (/shard, /st) - every subcommand also has a short alias:
  *
- *   help h ? | shop s | balance bal b | pay p | top t | info i |
+ *   help h ? | shop s | balance bal b | pay p | buy | top t | info i |
  *   give g | items l | setprice sp | shards sh | interval iv |
  *   amount am | award aw | reload rl
  */
@@ -43,6 +43,7 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
         SUBS.put("b", "balance");
         SUBS.put("pay", "pay");
         SUBS.put("p", "pay");
+        SUBS.put("buy", "buy");
         SUBS.put("top", "top");
         SUBS.put("t", "top");
         SUBS.put("info", "info");
@@ -89,6 +90,8 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
                 return balance(sender, args);
             case "pay":
                 return pay(sender, args);
+            case "buy":
+                return buy(sender, args);
             case "top":
                 return top(sender, args);
             case "info":
@@ -116,7 +119,7 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
 
     private boolean help(CommandSender sender) {
         String[] lines = {"help.header", "help.line-shop", "help.line-balance", "help.line-pay",
-                "help.line-top", "help.line-info", "help.line-give", "help.line-items",
+                "help.line-buy", "help.line-top", "help.line-info", "help.line-give", "help.line-items",
                 "help.line-setprice", "help.line-shards", "help.line-interval", "help.line-amount",
                 "help.line-award", "help.line-reload"};
         for (String line : lines) {
@@ -213,6 +216,73 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
                 "%amount%", Numbers.format(amount), "%balance%", Numbers.format(targetBalance),
                 "%symbol%", plugin.settings().symbol());
         plugin.accounts().saveAsync();
+        return true;
+    }
+
+    /**
+     * /st buy <shards> - convert in-game money (Vault economy such as
+     * EssentialsX) into shards at the configured rate.
+     */
+    private boolean buy(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            plugin.messages().send(sender, "player-only");
+            return true;
+        }
+        Player player = (Player) sender;
+        if (!player.hasPermission(Permissions.BUY)) {
+            plugin.messages().send(player, "no-permission");
+            return true;
+        }
+        if (!plugin.settings().moneyShopEnabled()) {
+            plugin.messages().send(player, "buy.disabled");
+            return true;
+        }
+        if (!plugin.vault().available()) {
+            plugin.messages().send(player, "buy.no-vault");
+            return true;
+        }
+        if (args.length < 2) {
+            usage(sender, "/st buy <shards>");
+            return true;
+        }
+        Long shards = Numbers.parse(args[1]);
+        if (shards == null || shards < 1L) {
+            plugin.messages().send(player, "invalid-amount", "%amount%", args[1]);
+            return true;
+        }
+        if (shards < plugin.settings().moneyMinPurchase()) {
+            plugin.messages().send(player, "buy.below-min",
+                    "%min%", Numbers.format(plugin.settings().moneyMinPurchase()));
+            return true;
+        }
+        if (shards > plugin.settings().moneyMaxPurchase()) {
+            plugin.messages().send(player, "buy.above-max",
+                    "%max%", Numbers.format(plugin.settings().moneyMaxPurchase()));
+            return true;
+        }
+        double cost = shards * plugin.settings().moneyCostPerShard();
+        double money = plugin.vault().balance(player);
+        if (money < cost) {
+            plugin.messages().send(player, "buy.insufficient-money",
+                    "%cost%", plugin.vault().format(cost),
+                    "%balance%", plugin.vault().format(Math.max(0.0D, money)));
+            return true;
+        }
+        if (!plugin.vault().withdraw(player, cost)) {
+            plugin.messages().send(player, "buy.failed");
+            return true;
+        }
+        long newBalance = plugin.accounts().add(player.getUniqueId(), player.getName(), shards);
+        plugin.accounts().saveAsync();
+        plugin.messages().send(player, "buy.success",
+                "%amount%", Numbers.format(shards),
+                "%cost%", plugin.vault().format(cost),
+                "%balance%", Numbers.format(newBalance),
+                "%symbol%", plugin.settings().symbol());
+        org.bukkit.Sound sound = plugin.soundResolver().resolve(plugin.settings().soundPurchase());
+        if (sound != null) {
+            player.playSound(player.getLocation(), sound, 1.0f, 1.8f);
+        }
         return true;
     }
 
@@ -566,6 +636,9 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
                 case "pay":
                     out.addAll(List.of("100", "1000", "5000"));
                     break;
+                case "buy":
+                    out.addAll(List.of("10", "100", "1000"));
+                    break;
                 case "shards":
                     out.addAll(filter(List.of("give", "take", "set"), args[2]));
                     break;
@@ -584,7 +657,7 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
     }
 
     private List<String> visibleSubcommands(CommandSender sender) {
-        List<String> subs = new ArrayList<>(List.of("shop", "balance", "pay", "top", "info", "help"));
+        List<String> subs = new ArrayList<>(List.of("shop", "balance", "pay", "buy", "top", "info", "help"));
         if (sender.hasPermission(Permissions.GIVE)) {
             subs.add("give");
         }

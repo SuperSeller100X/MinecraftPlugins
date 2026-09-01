@@ -201,9 +201,11 @@ package org.bukkit;
 import java.util.Collection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.scheduler.BukkitScheduler;
 public interface Server {
     PluginManager getPluginManager();
+    ServicesManager getServicesManager();
     BukkitScheduler getScheduler();
     Collection<? extends Player> getOnlinePlayers();
     Player getPlayerExact(String name);
@@ -376,7 +378,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.inventory.InventoryView;
-public interface Player extends HumanEntity {
+public interface Player extends HumanEntity, org.bukkit.OfflinePlayer {
     UUID getUniqueId();
     void sendMessage(Component message);
     void sendActionBar(Component message);
@@ -439,7 +441,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffect;
-public interface Player extends HumanEntity {
+public interface Player extends HumanEntity, org.bukkit.OfflinePlayer {
     UUID getUniqueId();
     void sendMessage(Component message);
     void sendActionBar(Component message);
@@ -724,11 +726,19 @@ public interface Plugin {
 }
 """)
 
+write("org/bukkit/plugin/ServicesManager.java", """
+package org.bukkit.plugin;
+public interface ServicesManager {
+    Object getRegistration(Class<?> service);
+}
+""")
+
 write("org/bukkit/plugin/PluginManager.java", """
 package org.bukkit.plugin;
 import org.bukkit.event.Listener;
 public interface PluginManager {
     void registerEvents(Listener listener, Plugin plugin);
+    Plugin getPlugin(String name);
 }
 """)
 

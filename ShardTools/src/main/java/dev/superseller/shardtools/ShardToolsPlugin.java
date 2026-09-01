@@ -11,6 +11,7 @@ import dev.superseller.shardtools.config.Messages;
 import dev.superseller.shardtools.config.RuntimeStore;
 import dev.superseller.shardtools.config.Settings;
 import dev.superseller.shardtools.economy.AwardService;
+import dev.superseller.shardtools.economy.VaultBridge;
 import dev.superseller.shardtools.economy.ShardAccounts;
 import dev.superseller.shardtools.expiry.ExpirySweep;
 import dev.superseller.shardtools.gui.ShopGui;
@@ -49,6 +50,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
     private EnchantResolver enchantResolver;
     private SoundResolver soundResolver;
     private AwardService awardService;
+    private VaultBridge vault;
 
     @Override
     public void onEnable() {
@@ -62,6 +64,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
         priceBook = new PriceBook(catalog.defaultPrices(), runtimeStore.priceOverrides());
         accounts = new ShardAccounts(this);
         accounts.load();
+        vault = new VaultBridge(this);
         effects = new Effects(this);
         enchantResolver = new EnchantResolver(getLogger());
         soundResolver = new SoundResolver(getLogger());
@@ -127,6 +130,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
         runtimeStore.reload();
         catalog = ShardCatalog.load(getConfig(), getLogger());
         priceBook.reload(catalog.defaultPrices(), runtimeStore.priceOverrides());
+        vault.reconnect();
         restartTasks();
     }
 
@@ -195,5 +199,9 @@ public final class ShardToolsPlugin extends JavaPlugin {
 
     public AwardService awardService() {
         return awardService;
+    }
+
+    public VaultBridge vault() {
+        return vault;
     }
 }

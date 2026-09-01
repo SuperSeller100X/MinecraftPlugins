@@ -19,7 +19,10 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 - Every player on the server automatically earns **5 Shards every 5 minutes** (default,
   fully configurable — `/st interval`, `/st amount`, `/st award off`).
 - Balances persist in `plugins/ShardTools/shards.yml`, survive restarts, and are paid
-  between players with `/st pay`.
+  between players with `/st pay` — and can be **bought with in-game money**
+  (`/st buy 100`) through any Vault economy such as EssentialsX, at a
+  configurable rate (`money-shop:` in config.yml, `enabled: false` turns it
+  off completely).
 - Leaderboard with `/st top`.
 
 ### Shard Tools — like DonutSMP
@@ -78,6 +81,7 @@ short form. Console works for all admin commands.
 | `/st shop` | `s` | Open the shard shop GUI | `shardtools.shop` |
 | `/st balance [player]` | `bal`, `b` | Check your (or another player's) balance | `shardtools.balance` / `.others` |
 | `/st pay <player> <amount>` | `p` | Send shards (supports `2.5k`, `1m`, …) | `shardtools.pay` |
+| `/st buy <shards>` | — | **Buy shards with in-game money** (Vault economy, e.g. EssentialsX) | `shardtools.buy` |
 | `/st top [n]` | `t` | Shard leaderboard (default top 10, max 25) | `shardtools.top` |
 | `/st info` | `i` | Inspect the held shard item (remaining lifetime) | `shardtools.info` |
 | `/st give <player> <item> [amount]` | `g` | Give any shop item *(op)* | `shardtools.give` |
@@ -102,6 +106,7 @@ Runtime changes (`/st setprice`, `/st interval`, `/st amount`, `/st award`) pers
 | `shardtools.balance` | everyone | Check own balance |
 | `shardtools.balance.others` | op | Check other players' balances |
 | `shardtools.pay` | everyone | Send shards |
+| `shardtools.buy` | everyone | Buy shards with in-game money (needs Vault + economy on the server) |
 | `shardtools.top` | everyone | Leaderboard |
 | `shardtools.info` | everyone | Inspect held shard item |
 | `shardtools.give` | op | `/st give` |
@@ -134,6 +139,11 @@ expiry:
   warn-minutes: [60, 10, 1]
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}
+money-shop:                  # /st buy - shards for in-game money via Vault
+  enabled: true              # false = feature completely off
+  cost-per-shard: 10.0       # /st buy 100 costs 1,000 money
+  min-purchase: 1
+  max-purchase: 100000
 effects:                      # DonutSMP amethyst sounds
   mine-sound: {enabled: true, sounds: ["block.amethyst_block.step 1.0 1.0"]}   # ONCE per use
   mine-particles: {enabled: true, id: PORTAL, count: 1}   # subtle

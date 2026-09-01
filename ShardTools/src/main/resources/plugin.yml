@@ -29,6 +29,9 @@ permissions:
   shardtools.pay:
     description: Send shards to other players.
     default: true
+  shardtools.buy:
+    description: Buy shards with in-game money (Vault economy, e.g. EssentialsX).
+    default: true
   shardtools.top:
     description: View the shard leaderboard.
     default: true
@@ -73,6 +76,9 @@ permissions:
       shardtools.balance: true
       shardtools.balance.others: true
       shardtools.pay: true
-      shardtools.top: true
+      shardtools.buy:
+    description: Buy shards with in-game money (Vault economy, e.g. EssentialsX).
+    default: true
+  shardtools.top: true
       shardtools.info: true
       shardtools.admin: true

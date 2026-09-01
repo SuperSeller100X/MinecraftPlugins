@@ -52,6 +52,15 @@ items:
 price:
   set: "<gray>Price of <white>%item%</white> set to <light_purple>%symbol%%price%</light_purple>.</gray>"
 
+buy:
+  disabled: "<red>Buying shards with money is disabled on this server.</red>"
+  no-vault: "<red>No economy found. Ask an admin to install Vault + an economy plugin (e.g. EssentialsX).</red>"
+  below-min: "<red>The minimum purchase is <white>%min%</white> shards.</red>"
+  above-max: "<red>The maximum purchase is <white>%max%</white> shards.</red>"
+  insufficient-money: "<red>That costs <white>%cost%</white> but you only have <white>%balance%</white>.</red>"
+  failed: "<red>The money transaction failed. Nothing was charged.</red>"
+  success: "<gray>Bought <light_purple>%amount% shards</light_purple> for <white>%cost%</white>. Shard balance: <light_purple>%symbol%%balance%</light_purple></gray>"
+
 shards:
   given: "<gray>Gave <light_purple>%symbol%%amount%</light_purple> to <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
   taken: "<gray>Took <light_purple>%symbol%%amount%</light_purple> from <white>%player%</white>. New balance: <light_purple>%symbol%%balance%</light_purple></gray>"
@@ -86,6 +95,7 @@ help:
   line-shop: "<yellow>/st shop</yellow> <dark_gray>(s)</dark_gray> <gray>- open the shard shop</gray>"
   line-balance: "<yellow>/st balance [player]</yellow> <dark_gray>(b)</dark_gray> <gray>- check shard balance</gray>"
   line-pay: "<yellow>/st pay <player> <amount></yellow> <dark_gray>(p)</dark_gray> <gray>- send shards</gray>"
+  line-buy: "<yellow>/st buy &lt;shards&gt;</yellow> <gray>- buy shards with money</gray>"
   line-top: "<yellow>/st top [n]</yellow> <dark_gray>(t)</dark_gray> <gray>- shard leaderboard</gray>"
   line-info: "<yellow>/st info</yellow> <dark_gray>(i)</dark_gray> <gray>- inspect held shard item</gray>"
   line-give: "<yellow>/st give <player> <item> [amount]</yellow> <dark_gray>(g)</dark_gray> <gray>- give shop items <dark_gray>(op)</dark_gray></gray>"

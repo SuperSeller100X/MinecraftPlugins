@@ -10,6 +10,7 @@ public final class Permissions {
     public static final String BALANCE = "shardtools.balance";
     public static final String BALANCE_OTHERS = "shardtools.balance.others";
     public static final String PAY = "shardtools.pay";
+    public static final String BUY = "shardtools.buy";
     public static final String TOP = "shardtools.top";
     public static final String INFO = "shardtools.info";
     public static final String GIVE = "shardtools.give";

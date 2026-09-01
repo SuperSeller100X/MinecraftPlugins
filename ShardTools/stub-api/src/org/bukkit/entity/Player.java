@@ -5,7 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffect;
-public interface Player extends HumanEntity {
+public interface Player extends HumanEntity, org.bukkit.OfflinePlayer {
     UUID getUniqueId();
     void sendMessage(Component message);
     void sendActionBar(Component message);

@@ -70,6 +70,11 @@ public final class Settings {
     private int shopRows = 6;
     private String shopFiller = "GRAY_STAINED_GLASS_PANE";
 
+    private boolean moneyShopEnabled = true;
+    private double moneyCostPerShard = 10.0D;
+    private long moneyMin = 1L;
+    private long moneyMax = 100_000L;
+
     private boolean anvilProtect = true;
     private boolean grindstoneProtect = true;
 
@@ -168,6 +173,12 @@ public final class Settings {
         shopConfirm = config.getBoolean("shop.confirm", false);
         shopRows = Math.max(3, Math.min(6, config.getInt("shop.rows", 6)));
         shopFiller = config.getString("shop.filler", "GRAY_STAINED_GLASS_PANE");
+
+        // Buying shards with in-game money through Vault (EssentialsX etc.).
+        moneyShopEnabled = config.getBoolean("money-shop.enabled", true);
+        moneyCostPerShard = Math.max(0.01D, config.getDouble("money-shop.cost-per-shard", 10.0D));
+        moneyMin = Math.max(1L, config.getLong("money-shop.min-purchase", 1L));
+        moneyMax = Math.max(moneyMin, config.getLong("money-shop.max-purchase", 100_000L));
 
         anvilProtect = config.getBoolean("protection.anvil", true);
         grindstoneProtect = config.getBoolean("protection.grindstone", true);
@@ -407,6 +418,22 @@ public final class Settings {
 
     public int shopRows() {
         return shopRows;
+    }
+
+    public boolean moneyShopEnabled() {
+        return moneyShopEnabled;
+    }
+
+    public double moneyCostPerShard() {
+        return moneyCostPerShard;
+    }
+
+    public long moneyMinPurchase() {
+        return moneyMin;
+    }
+
+    public long moneyMaxPurchase() {
+        return moneyMax;
     }
 
     public String shopFiller() {
