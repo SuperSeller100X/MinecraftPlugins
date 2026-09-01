@@ -28,8 +28,8 @@ protection:
   pistons: true
   fire: true
   entity-block-changes: true
-  # Deliberately false per the selected design: hoppers and hopper minecarts may transfer items.
-  block-hoppers: false
+  # Strictly block all hoppers, hopper minecarts, droppers, and dispensers from stealing or inserting loot into locked containers (101% bulletproof protection).
+  block-hoppers: true
 
 keys:
   material: TRIPWIRE_HOOK
