@@ -2,6 +2,24 @@
 
 A collection of Minecraft plugins.
 
+## PlayerVault 🗄️
+
+A personal, expandable vault for every player on Minecraft **26.2** (Paper / Purpur /
+Folia). Everyone starts with **27 slots (3 rows)** and buys extra rows of 9 slots with
+server money — **10k, 15k, 22.5k, 33.75k**, each row 1.5× the last. No row limit by
+default; vaults that outgrow one chest page are paginated.
+
+- `/pv` — open your vault · `/pv u` upgrade · `/pv p` price · `/pv i` info · `/pv s` sort · `/pv rl` reload
+- `/pva o|r|ar|x|c|i|p|rl` — open, set rows, grant rows, reset, clear, inspect, price, reload (works offline)
+- Vault / VaultUnlocked (any economy plugin), PlaceholderAPI, YAML **or** SQLite storage,
+  permission bonus rows (`playervault.rows.<n>`), full permissions and tab completion
+
+See [PlayerVault/README.md](PlayerVault/README.md). Build with `mvn -B clean package` in
+`PlayerVault/` (JDK 25 required). A CI workflow that runs the consistency checks, the
+unit tests and `mvn clean verify` on Temurin 25 is included at
+`PlayerVault/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/`
+to activate it).
+
 ## TeleportSigns 🪧
 
 Look at a written sign, bind a destination with `/ts [world] x y z [yaw] [pitch]`, and right-click to teleport. Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Operators create signs; every player can use them. Folia-safe `teleportAsync`, safety checks, cooldown/warmup, optional Vault cost, tab completion, and short aliases (`/ts s`, `/ts r`, `/ts i`, `/ts l`, `/ts c`, `/ts rl`).
@@ -43,6 +61,19 @@ Build with `mvn -B clean package` in `ChunkVoter/` (JDK 25 required).
 Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via Vault, compound interest (default 2.5% every 10 real minutes). Bank money cannot be used by `/pay`, shops, or other plugins until withdrawn.
 
 See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/`.
+
+## XPBank 🏦✨
+
+Store and withdraw **experience points** (total XP, **not** levels) in a personal bank on Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Bank your XP before a risky dive, transfer savings to a friend, climb the leaderboard, and manage it all from commands or a GUI. Folia-safe XP handling, configurable **YAML or SQLite** storage, optional savings **interest** (off by default), sound effects, permissions and admin tools.
+
+- `/xpbank` / `/xp` / `/bank` — deposit, withdraw, balance, pay, top, gui
+- `/xp deposit (d)` · `/xp withdraw (w)` · `/xp balance (bal)` · `/xp pay (p)` · `/xp top (lb)` · `/xp gui (g)`
+- `/xpbankadmin` / `/xpba` — set / add / take / reset / info / stats / interest / reload
+- Optional bank-style **interest** on banked XP — configurable rate/interval, off by default
+- Amounts accept `all`, `half` and `k/m/b/t` suffixes; full tab completion
+- Permissions: `xpbank.*` (deposit/withdraw/pay/top/gui default-on, admin op)
+
+See [XPBank/README.md](XPBank/README.md). Build with `mvn -B clean verify` in `XPBank/` (JDK 25 required).
 
 ## Gifty 🍩
 
@@ -109,6 +140,12 @@ A random vanilla-structure challenge for Minecraft **26.2** (Paper / Purpur / Fo
 
 See [RandomStructureChallenge/README.md](RandomStructureChallenge/README.md). Build with `mvn -B clean package` in `RandomStructureChallenge/` (JDK 25 required).
 
+## JustGambling 🎰
+
+A configurable, house-only casino for Minecraft **26.2** (Paper / Purpur / Folia) and Java 25. `/jg` opens the GUI; players can use money for coin flip, dice, roulette, wheel, high/low, slots, scratch cards, Mines, Crash, Jackpot, Lucky Number, and Double or Nothing. Higher-risk tiers trade lower chance for higher payouts. Vault/EssentialsX is preferred, with an isolated YAML fallback currency, configurable sounds, limits, permissions, audit history, admin tools, and Folia-safe scheduling.
+
+See [JustGambling/README.md](JustGambling/README.md). Build with `mvn -B clean package` in `JustGambling/` (JDK 25 required).
+
 ## AtTag 🔔
 
 Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):
@@ -143,3 +180,19 @@ supported via configurable command items.
 
 See [ShardTools/README.md](ShardTools/README.md) for the full documentation. Build with
 `mvn -B clean package` in `ShardTools/` (JDK 25 required).
+## EasyMending 🛠️
+
+Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive drop-in anvil repair station GUI (`/em`), instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Bypass is strictly off by default for all players and OPs. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
+
+- `/easymending` / `/em` — open the interactive repair station GUI (drop in any item to repair)
+- `/em hand` (`/em h`) — repair main hand item
+- `/em offhand` (`/em oh`) — repair offhand item
+- `/em armor` (`/em a`) — repair equipped armor
+- `/em hotbar` (`/em hb`) — repair hotbar items
+- `/em all` (`/em *`) — repair entire inventory
+- `/em info` (`/em i`) · `/em cost` (`/em c`) — inspect durability & costs
+- `/emadmin` / `/ema` — reload, force-repair, inspect, live ratio adjustment, bypass, stats
+- Permissions: `easymending.*` (use/gui/hand/armor default-on, bypass permissions strictly off by default)
+
+See [EasyMending/README.md](EasyMending/README.md). Build with `mvn -B clean package` in `EasyMending/` (JDK 25 required).
+

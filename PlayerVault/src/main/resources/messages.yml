@@ -1,0 +1,129 @@
+# ─────────────────────────────────────────────────────────────
+#  PlayerVault — messages
+#  Format: MiniMessage (https://docs.advntr.dev/minimessage)
+#  Legacy &-codes and §-codes are converted automatically.
+#  Colour codes are stripped again for titles and action bars.
+# ─────────────────────────────────────────────────────────────
+
+prefix: "<dark_gray>[<aqua><bold>PlayerVault</bold></aqua><dark_gray>]</dark_gray> "
+
+no-permission: "<red>You are not allowed to do that."
+players-only: "<red>Only players can use this command."
+player-not-found: "<red>No vault data found for <white>%player%</white>."
+unknown-subcommand: "<red>Unknown sub-command <white>%arg%</white>. Try <white>/pv help</white>."
+invalid-number: "<red><white>%arg%</white> is not a valid number."
+negative-number: "<red>The number must be positive."
+reload: "<green>Configuration and messages reloaded."
+busy: "<red>Your vault is busy, try again in a moment."
+
+help:
+  header: "<aqua><bold>PlayerVault</bold> <dark_gray>— <gray>command overview"
+  open: "<gray>/<white>pv [page]</white> <dark_gray>» <gray>Open your vault"
+  upgrade: "<gray>/<white>pv upgrade [rows]</white> <dark_gray>» <gray>Buy rows"
+  price: "<gray>/<white>pv price [rows]</white> <dark_gray>» <gray>Preview a price"
+  info: "<gray>/<white>pv info</white> <dark_gray>» <gray>Your vault statistics"
+  sort: "<gray>/<white>pv sort</white> <dark_gray>» <gray>Compact your vault"
+  reload: "<gray>/<white>pv reload</white> <dark_gray>» <gray>Reload the configuration"
+  footer: "<gray>Short aliases work too: <white>/pv u</white>, <white>/pv p</white>, <white>/pv i</white>, <white>/pv s</white>, <white>/pv rl</white>"
+
+admin:
+  help:
+    header: "<aqua><bold>PlayerVault</bold> <dark_gray>— <gray>admin commands"
+    open: "<gray>/<white>pva open (o) (player)</white> <dark_gray>» <gray>Open a vault"
+    rows: "<gray>/<white>pva rows (r) (player) (rows)</white> <dark_gray>» <gray>Set rows"
+    addrows: "<gray>/<white>pva addrows (ar) (player) [rows]</white> <dark_gray>» <gray>Grant free rows"
+    reset: "<gray>/<white>pva reset (x) (player)</white> <dark_gray>» <gray>Reset to starting size"
+    clear: "<gray>/<white>pva clear (c) (player)</white> <dark_gray>» <gray>Empty a vault"
+    info: "<gray>/<white>pva info (i) (player)</white> <dark_gray>» <gray>Inspect a vault"
+    price: "<gray>/<white>pva price (p) [rows]</white> <dark_gray>» <gray>Preview a price"
+    reload: "<gray>/<white>pva reload (rl)</white> <dark_gray>» <gray>Reload configuration"
+
+upgrade:
+  success: "<green>Bought <white>%count%</white> row(s) for <white>%price%</white>. Your vault now has <white>%rows%</white> rows (<white>%slots%</white> slots)."
+  success-free: "<green>Received <white>%count%</white> free row(s). Your vault now has <white>%rows%</white> rows."
+  success-bypass: "<green>Received <white>%count%</white> row(s) without paying <gray>(you have <white>playervault.bypass.cost</white>)</gray>. Your vault now has <white>%rows%</white> rows."
+  not-enough-money: "<red>You need <white>%price%</white> but only have <white>%balance%</white>."
+  no-economy: "<red>No economy provider is installed, vault upgrades are unavailable."
+  already-max: "<red>Your vault is already at the maximum of <white>%rows%</white> rows."
+  would-exceed-max: "<red>You can only buy <white>%count%</white> more row(s) before hitting the <white>%max%</white> row limit."
+  too-many: "<red>You may buy at most <white>%max%</white> rows at once."
+  next-price: "<gray>Next row: <white>%price%</white>"
+  confirm-required: "<yellow>Buying <white>%count%</white> rows costs <white>%price%</white>. Run <white><click:run_command:'/pv upgrade %count% yes'>/pv upgrade %count% yes</click></white> to confirm."
+  confirm-expired: "<red>Nothing to confirm."
+
+price:
+  header: "<aqua><bold>Upgrade prices</bold> <dark_gray>(<gray>you have <white>%rows%</white> rows</gray><dark_gray>)"
+  line: "<dark_gray>• <gray>Row <white>%row%</white> <dark_gray>» <white>%price%</white>"
+  total: "<gray>Total for <white>%count%</white> row(s): <white>%total%</white>"
+  maxed: "<gray>You are at the row limit."
+
+info:
+  header: "<aqua><bold>Your vault</bold>"
+  rows: "<gray>Rows: <white>%rows%</white> <dark_gray>(<gray>slots <white>%slots%</white><dark_gray>)"
+  used: "<gray>Used: <white>%used%</white><gray>/<white>%slots%</white> <dark_gray>(<white>%free%</white> free</gray>)"
+  pages: "<gray>Pages: <white>%pages%</white>"
+  next: "<gray>Next row: <white>%price%</white>"
+  spent: "<gray>Total spent: <white>%spent%</white>"
+  economy: "<gray>Economy: <white>%provider%</white>"
+
+admin-messages:
+  opened: "<green>Opened the vault of <white>%player%</white>."
+  rows-set: "<green>Set <white>%player%</white> to <white>%rows%</white> rows."
+  rows-added: "<green>Gave <white>%player%</white> <white>%count%</white> row(s). They now have <white>%rows%</white>."
+  rows-removed: "<green>Removed <white>%count%</white> row(s) from <white>%player%</white>. They now have <white>%rows%</white>."
+  reset: "<green>Reset <white>%player%</white> to <white>%rows%</white> rows."
+  cleared: "<green>Emptied the vault of <white>%player%</white>."
+  refund: "<gray>Refunded <white>%amount%</white> to <white>%player%</white>."
+  info-header: "<aqua><bold>Vault of %player%</bold>"
+  target-upgraded: "<green>Your vault was expanded to <white>%rows%</white> rows."
+  target-shrunk: "<yellow>A staff member reduced your vault to <white>%rows%</white> rows."
+  target-updated: "<gray>A staff member changed your vault. It has <white>%rows%</white> rows."
+  items-dropped: "<yellow><white>%count%</white> item(s) did not fit and were dropped at your feet."
+
+gui:
+  upgrade-name: "<aqua><bold>Upgrade vault</bold>"
+  upgrade-lore:
+    - "<gray>Buy <white>1</white> more row (<white>9</white> slots)."
+    - ""
+    - "<gray>Cost: <white>%price%</white>"
+    - "<gray>Balance: <white>%balance%</white>"
+    - ""
+    - "<yellow>Click to purchase"
+  upgrade-maxed-name: "<green><bold>Vault fully expanded</bold>"
+  upgrade-maxed-lore:
+    - "<gray>You reached the maximum of <white>%rows%</white> rows."
+  sort-name: "<aqua><bold>Sort vault</bold>"
+  sort-lore:
+    - "<gray>Compact and stack the contents."
+    - ""
+    - "<yellow>Click to sort"
+  deposit-name: "<aqua><bold>Deposit everything</bold>"
+  deposit-lore:
+    - "<gray>Move your whole inventory into the vault."
+    - ""
+    - "<yellow>Click to deposit"
+  withdraw-name: "<aqua><bold>Withdraw everything</bold>"
+  withdraw-lore:
+    - "<gray>Move the vault contents into your inventory."
+    - ""
+    - "<yellow>Click to withdraw"
+  info-name: "<aqua><bold>Vault information</bold>"
+  info-lore:
+    - "<gray>Rows: <white>%rows%</white>"
+    - "<gray>Slots: <white>%slots%</white>"
+    - "<gray>Used: <white>%used%</white>"
+    - ""
+    - "<yellow>Click for details"
+  page-name: "<gray><bold>Page %page%/%pages%</bold>"
+  page-lore:
+    - "<gray>Rows <white>%from%</white>–<white>%to%</white> of <white>%rows%</white>"
+  previous-name: "<aqua><bold>Previous page</bold>"
+  next-name: "<aqua><bold>Next page</bold>"
+  page-lore-nav:
+    - "<yellow>Click to turn the page"
+  filler-name: " "
+
+sort:
+  done: "<green>Vault compacted — <white>%used%</white>/<white>%slots%</white> slots in use."
+
+no-economy-upgrade: "<red>Vault upgrades need an economy plugin (Vault or VaultUnlocked)."

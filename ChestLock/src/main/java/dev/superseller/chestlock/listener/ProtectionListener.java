@@ -17,8 +17,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -26,13 +31,14 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-/** Defense-in-depth protection for player, environmental, and optional automation access paths. */
+/** Unconditional, absolute defense-in-depth protection making locked containers literally impossible to destroy or open when not unlocked. */
 public final class ProtectionListener implements Listener {
     private final ChestLockPlugin plugin;
     private final LockStore lockStore;
@@ -119,25 +125,36 @@ public final class ProtectionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockDamage(BlockDamageEvent event) {
+        LockStore.Lookup lookup = lockStore.lookup(event.getBlock());
+        if (!lookup.secured()) return;
+        Player player = event.getPlayer();
+        if (sessions.hasBypass(player.getUniqueId())) return;
+        LockData lock = lookup.data();
+        if (lock != null && sessions.isAuthorized(player.getUniqueId(), lock.lockId(), System.currentTimeMillis())) {
+            return;
+        }
+        event.setCancelled(true);
+        if (lock != null) {
+            feedback.locked(player);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         Block placed = event.getBlockPlaced();
         if (!lockStore.isContainer(placed.getType())) return;
 
-        // Tile-state data may be copied into a shulker item (or a creative clone). A placed copy must
-        // never duplicate the original lock UUID. Clear only the new block before checking neighbours.
         lockStore.clearCopiedMetadata(placed);
         LockStore.Lookup lookup = lockStore.lookup(placed);
         if (!lookup.secured()) return;
 
-        // A new chest was placed beside a locked single chest and would merge into its protected inventory.
         event.setCancelled(true);
         feedback.locked(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockDrops(BlockDropItemEvent event) {
-        // Breaking a locked shulker is allowed after passcode authorization, but the dropped item must
-        // not carry a cloneable live lock. Container contents and all unrelated item metadata remain intact.
         event.getItems().forEach(item -> {
             ItemStack stack = item.getItemStack();
             if (lockStore.clearCopiedMetadata(stack)) {
@@ -148,52 +165,86 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplosion(BlockExplodeEvent event) {
-        if (plugin.runtimeConfig().protectExplosions()) {
-            event.blockList().removeIf(this::isSecured);
-        }
+        event.blockList().removeIf(this::isSecured);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
-        if (plugin.runtimeConfig().protectExplosions()) {
-            event.blockList().removeIf(this::isSecured);
-        }
+        event.blockList().removeIf(this::isSecured);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
-        if (plugin.runtimeConfig().protectPistons() && event.getBlocks().stream().anyMatch(this::isSecured)) {
+        if (event.getBlocks().stream().anyMatch(this::isSecured)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
-        if (plugin.runtimeConfig().protectPistons() && event.getBlocks().stream().anyMatch(this::isSecured)) {
+        if (event.getBlocks().stream().anyMatch(this::isSecured)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBurn(BlockBurnEvent event) {
-        if (plugin.runtimeConfig().protectFire() && isSecured(event.getBlock())) {
+        if (isSecured(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockIgnite(BlockIgniteEvent event) {
+        if (event.getBlock() != null && isSecured(event.getBlock())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
-        if (plugin.runtimeConfig().protectEntityChanges() && isSecured(event.getBlock())) {
+        if (isSecured(event.getBlock())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryMove(InventoryMoveItemEvent event) {
-        if (!plugin.runtimeConfig().blockHoppers()) return;
         Block source = lockStore.blockForInventory(event.getSource());
         Block destination = lockStore.blockForInventory(event.getDestination());
         if ((source != null && isSecured(source)) || (destination != null && isSecured(destination))) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onInventoryPickupItem(InventoryPickupItemEvent event) {
+        Block block = lockStore.blockForInventory(event.getInventory());
+        if (block != null && isSecured(block)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockDispense(BlockDispenseEvent event) {
+        if (event.getBlock().getBlockData() instanceof org.bukkit.block.data.type.Dispenser dispenser) {
+            Block target = event.getBlock().getRelative(dispenser.getFacing());
+            if (isSecured(target)) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        if (isSecured(event.getToBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockFade(BlockFadeEvent event) {
+        if (isSecured(event.getBlock())) {
             event.setCancelled(true);
         }
     }

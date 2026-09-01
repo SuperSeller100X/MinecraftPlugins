@@ -1,0 +1,129 @@
+# JustGambling 1.0.0 — Minecraft 26.2 / Java 25
+# All values can be changed and reloaded with /jg reload or /jga reload.
+# MiniMessage is used for GUI titles and messages.
+
+economy:
+  # auto is represented by Vault when available, then native EssentialsX,
+  # then the private fallback currency below. The fallback never touches
+  # EssentialsX/Vault balances and is intentionally isolated to this plugin.
+  mode: auto
+  decimal-places: 2
+  fallback:
+    enabled: true
+    currency-name: chips
+    starting-balance: 0.0
+
+limits:
+  # 0 means unlimited. Numeric and overflow validation is always active.
+  minimum-stake: 0.01
+  maximum-stake: 0
+  maximum-payout: 0
+  # Default cooldown is deliberately short but prevents rapid-fire clicks.
+  cooldown-seconds: 2.0
+
+animations:
+  enabled: true
+  # Each frame is rendered in an inventory; lower values are faster.
+  step-ticks: 2
+  frames: 18
+  result-pause-ticks: 8
+
+# The chance/payout relationship is explicit: safer tiers win more often but
+# pay less; riskier tiers win less often but pay much more.
+risk-tiers:
+  safe:
+    chance: 0.60
+    payout-multiplier: 1.45
+  balanced:
+    chance: 0.50
+    payout-multiplier: 1.90
+  risky:
+    chance: 0.25
+    payout-multiplier: 3.60
+  extreme:
+    chance: 0.10
+    payout-multiplier: 8.50
+
+games:
+  use-secure-random: true
+  coinflip:
+    enabled: true
+  dice:
+    enabled: true
+  roulette:
+    enabled: true
+    red-black-payout: 1.90
+    green-payout: 14.0
+  wheel:
+    enabled: true
+  highlow:
+    enabled: true
+  slots:
+    enabled: true
+  scratch:
+    enabled: true
+  mines:
+    enabled: true
+    safe:
+      mines: 3
+      multiplier-per-safe: 0.12
+    balanced:
+      mines: 5
+      multiplier-per-safe: 0.18
+    risky:
+      mines: 8
+      multiplier-per-safe: 0.30
+    extreme:
+      mines: 12
+      multiplier-per-safe: 0.55
+  crash:
+    enabled: true
+    house-edge-percent: 3.0
+  jackpot:
+    enabled: true
+    seed: 1000.0
+    chance: 0.02
+    minimum-multiplier: 25.0
+    loss-contribution-percent: 5.0
+  lottery:
+    enabled: true
+    payout-multiplier: 8.0
+    loss-contribution-percent: 2.0
+  double:
+    enabled: true
+
+# Four presets are shown in the game GUI; players can still use custom chat
+# and anvil-style input for any finite amount.
+gui:
+  amount-presets: [10, 50, 100, 500]
+  titles:
+    main: "<dark_gray>JustGambling <gold>Casino</gold>"
+    game: "<dark_gray>Play <gold>{game}</gold>"
+    animation: "<dark_gray>Playing <gold>{game}</gold>"
+    choice: "<dark_gray>Choose <gold>{game}</gold>"
+    history: "<dark_gray>History <gray>({page})</gray>"
+    mines: "<dark_gray>Mines <gold>•</gold> {risk}"
+    amount: "<dark_gray>Choose stake <gold>•</gold> {game}"
+    anvil: "Enter a stake"
+
+sounds:
+  volume: 1.0
+  pitch: 1.0
+  click: UI_BUTTON_CLICK
+  start: BLOCK_NOTE_BLOCK_PLING
+  reveal: BLOCK_GLASS_BREAK
+  win: ENTITY_PLAYER_LEVELUP
+  lose: ENTITY_VILLAGER_NO
+  jackpot: ENTITY_ENDER_DRAGON_DEATH
+  cashout: ENTITY_EXPERIENCE_ORB_PICKUP
+
+announcements:
+  broadcast-big-wins: true
+  minimum-broadcast-payout: 1000.0
+
+storage:
+  # YAML is used for portability on Linux, Windows and macOS. Writes are
+  # atomic and autosaved asynchronously; no database service is required.
+  data-file: data.yml
+  autosave-seconds: 30
+  max-history-per-player: 100

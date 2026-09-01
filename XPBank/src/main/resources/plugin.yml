@@ -1,0 +1,64 @@
+name: XPBank
+version: '${project.version}'
+main: dev.superseller.xpbank.XPBankPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Store and withdraw total experience points in a personal bank. GUI, transfers, leaderboard, sounds and admin tools. Paper / Purpur / Folia 26.2.
+
+commands:
+  xpbank:
+    description: Deposit, withdraw, check, pay or view your banked XP.
+    usage: /<command> [deposit|withdraw|balance|pay|top|gui|reload] [amount|player]
+    aliases: [xp, bank, xpb, expbank]
+  xpbankadmin:
+    description: Administrative XP bank management.
+    usage: /<command> [set|add|take|reset|info|stats|reload] <player> [amount]
+    aliases: [xpba, bankadmin, xpadmin]
+
+permissions:
+  xpbank.use:
+    description: Base access to XPBank player commands.
+    default: true
+  xpbank.balance:
+    description: Check your own banked XP.
+    default: true
+  xpbank.balance.others:
+    description: Check another player's banked XP.
+    default: op
+  xpbank.deposit:
+    description: Deposit XP into the bank.
+    default: true
+  xpbank.withdraw:
+    description: Withdraw XP from the bank.
+    default: true
+  xpbank.pay:
+    description: Transfer banked XP to another player.
+    default: true
+  xpbank.top:
+    description: View the XP bank leaderboard.
+    default: true
+  xpbank.gui:
+    description: Open the XP bank GUI.
+    default: true
+  xpbank.admin:
+    description: Use administrative XPBank commands.
+    default: op
+  xpbank.admin.reload:
+    description: Reload XPBank configuration and messages.
+    default: op
+  xpbank.*:
+    description: All XPBank permissions.
+    default: op
+    children:
+      xpbank.use: true
+      xpbank.balance: true
+      xpbank.balance.others: true
+      xpbank.deposit: true
+      xpbank.withdraw: true
+      xpbank.pay: true
+      xpbank.top: true
+      xpbank.gui: true
+      xpbank.admin: true
+      xpbank.admin.reload: true
