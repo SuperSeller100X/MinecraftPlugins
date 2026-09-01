@@ -50,8 +50,3 @@ ChunkVoter/target/
 
 # PlayerHeads smoke classes
 smoke-classes/
-
-# XPBank build output & runtime data
-XPBank/target/
-XPBank/data/
-XPBank/smoke-out/

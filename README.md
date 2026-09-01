@@ -139,3 +139,20 @@ Discord-style @-mentions for Minecraft **26.2** (Paper / Purpur / Folia):
 Zero commands, zero permissions, configurable sounds. See
 [AtTag/README.md](AtTag/README.md) for the full documentation. Build with
 `mvn -B clean package` in `AtTag/` (or use the offline `AtTag/build.sh`).
+
+## EasyMending 🛠️
+
+Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive drop-in anvil repair station GUI (`/em`), instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Bypass is strictly off by default for all players and OPs. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.
+
+- `/easymending` / `/em` — open the interactive repair station GUI (drop in any item to repair)
+- `/em hand` (`/em h`) — repair main hand item
+- `/em offhand` (`/em oh`) — repair offhand item
+- `/em armor` (`/em a`) — repair equipped armor
+- `/em hotbar` (`/em hb`) — repair hotbar items
+- `/em all` (`/em *`) — repair entire inventory
+- `/em info` (`/em i`) · `/em cost` (`/em c`) — inspect durability & costs
+- `/emadmin` / `/ema` — reload, force-repair, inspect, live ratio adjustment, bypass, stats
+- Permissions: `easymending.*` (use/gui/hand/armor default-on, bypass permissions strictly off by default)
+
+See [EasyMending/README.md](EasyMending/README.md). Build with `mvn -B clean package` in `EasyMending/` (JDK 25 required).
+
