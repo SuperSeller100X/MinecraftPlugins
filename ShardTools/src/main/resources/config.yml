@@ -387,6 +387,8 @@ shop:
   confirm: false
   # GUI size in rows (max 6). Items flow into more pages automatically.
   rows: 6
+  # Filler material for the border.
+  filler: GRAY_STAINED_GLASS_PANE
   # Buying shards with in-game money lives in money-shop: below.
 
 # ---------- Buy shards with in-game money ----------
@@ -399,8 +401,6 @@ money-shop:
   cost-per-shard: 10.0     # money per shard (/st buy 100 = 1,000 money)
   min-purchase: 1          # smallest /st buy amount
   max-purchase: 100000     # largest /st buy amount
-  # Filler material for the border.
-  filler: GRAY_STAINED_GLASS_PANE
 
 # ---------- Item protection ----------
 protection:

@@ -10,7 +10,7 @@ description: DonutSMP-style Shard currency, self-destructing Shard Tools, armor 
 commands:
   shardtools:
     description: Shard currency, shard shop and shard tool management.
-    usage: /<command> <help|shop|balance|pay|top|info|give|items|setprice|shards|interval|amount|award|reload>
+    usage: /<command> <help|shop|balance|pay|buy|top|info|give|items|setprice|shards|interval|amount|award|reload>
     aliases: [shard, st]
 
 permissions:
@@ -76,9 +76,7 @@ permissions:
       shardtools.balance: true
       shardtools.balance.others: true
       shardtools.pay: true
-      shardtools.buy:
-    description: Buy shards with in-game money (Vault economy, e.g. EssentialsX).
-    default: true
-  shardtools.top: true
+      shardtools.buy: true
+      shardtools.top: true
       shardtools.info: true
       shardtools.admin: true
