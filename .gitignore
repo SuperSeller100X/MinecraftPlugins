@@ -1,4 +1,3 @@
-```
 # Compiled and build artifacts
 *.class
 *.o
@@ -30,7 +29,7 @@ htmlcov/
 # System files
 .DS_Store
 Thumbs.db
-```
+
 # Gifty build output & runtime data
 Gifty/target/
 Gifty/data/
@@ -41,13 +40,13 @@ PlayerBank/target/
 # Subscriptions
 Subscriptions/target/
 Subscriptions/data/
-=======
+
+# JustGambling runtime data
+JustGambling/data.yml
+JustGambling/data.yml.tmp
+
 # ChunkVoter
 ChunkVoter/target/
 
 # PlayerHeads smoke classes
 smoke-classes/
-
-# EasyMending
-EasyMending/target/
-

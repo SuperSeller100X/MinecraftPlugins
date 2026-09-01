@@ -1,0 +1,75 @@
+package dev.superseller.justgambling.config;
+
+import dev.superseller.justgambling.util.Text;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+import net.kyori.adventure.text.Component;
+
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+/** Reloadable MiniMessage language file. */
+public final class Messages {
+    private final JavaPlugin plugin;
+    private FileConfiguration yaml;
+
+    public Messages(JavaPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    public void load() {
+        File file = new File(plugin.getDataFolder(), "messages.yml");
+        if (!file.exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
+        yaml = YamlConfiguration.loadConfiguration(file);
+        InputStream resource = plugin.getResource("messages.yml");
+        if (resource != null) {
+            try (InputStream stream = resource;
+                 InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                yaml.setDefaults(YamlConfiguration.loadConfiguration(reader));
+            } catch (IOException exception) {
+                plugin.getLogger().warning("Could not load bundled JustGambling message defaults: "
+                        + exception.getMessage());
+            }
+        }
+    }
+
+    public Component component(String key, Map<String, ?> placeholders) {
+        String prefix = yaml == null ? "" : yaml.getString("prefix", "");
+        String body = yaml == null ? key : yaml.getString(key, key);
+        return Text.parse(prefix + body, placeholders);
+    }
+
+    public Component rawComponent(String key, Map<String, ?> placeholders) {
+        String body = yaml == null ? key : yaml.getString(key, key);
+        return Text.parse(body, placeholders);
+    }
+
+    public void send(CommandSender sender, String key) {
+        send(sender, key, Map.of());
+    }
+
+    public void send(CommandSender sender, String key, Map<String, ?> placeholders) {
+        if (sender != null) {
+            sender.sendMessage(component(key, placeholders));
+        }
+    }
+
+    public String raw(String key, String fallback) {
+        return yaml == null ? fallback : yaml.getString(key, fallback);
+    }
+
+    public List<String> list(String key) {
+        return yaml == null ? List.of() : yaml.getStringList(key);
+    }
+}

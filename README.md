@@ -44,6 +44,19 @@ Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via 
 
 See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/`.
 
+## XPBank 🏦✨
+
+Store and withdraw **experience points** (total XP, **not** levels) in a personal bank on Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Bank your XP before a risky dive, transfer savings to a friend, climb the leaderboard, and manage it all from commands or a GUI. Folia-safe XP handling, configurable **YAML or SQLite** storage, optional savings **interest** (off by default), sound effects, permissions and admin tools.
+
+- `/xpbank` / `/xp` / `/bank` — deposit, withdraw, balance, pay, top, gui
+- `/xp deposit (d)` · `/xp withdraw (w)` · `/xp balance (bal)` · `/xp pay (p)` · `/xp top (lb)` · `/xp gui (g)`
+- `/xpbankadmin` / `/xpba` — set / add / take / reset / info / stats / interest / reload
+- Optional bank-style **interest** on banked XP — configurable rate/interval, off by default
+- Amounts accept `all`, `half` and `k/m/b/t` suffixes; full tab completion
+- Permissions: `xpbank.*` (deposit/withdraw/pay/top/gui default-on, admin op)
+
+See [XPBank/README.md](XPBank/README.md). Build with `mvn -B clean verify` in `XPBank/` (JDK 25 required).
+
 ## Gifty 🍩
 
 A sweet gift & delivery system with a DonutSMP-style GUI for Minecraft
@@ -108,6 +121,12 @@ A random vanilla-structure challenge for Minecraft **26.2** (Paper / Purpur / Fo
 - Permissions: `randomstructurechallenge.*` (status default-on, the rest op)
 
 See [RandomStructureChallenge/README.md](RandomStructureChallenge/README.md). Build with `mvn -B clean package` in `RandomStructureChallenge/` (JDK 25 required).
+
+## JustGambling 🎰
+
+A configurable, house-only casino for Minecraft **26.2** (Paper / Purpur / Folia) and Java 25. `/jg` opens the GUI; players can use money for coin flip, dice, roulette, wheel, high/low, slots, scratch cards, Mines, Crash, Jackpot, Lucky Number, and Double or Nothing. Higher-risk tiers trade lower chance for higher payouts. Vault/EssentialsX is preferred, with an isolated YAML fallback currency, configurable sounds, limits, permissions, audit history, admin tools, and Folia-safe scheduling.
+
+See [JustGambling/README.md](JustGambling/README.md). Build with `mvn -B clean package` in `JustGambling/` (JDK 25 required).
 
 ## AtTag 🔔
 
