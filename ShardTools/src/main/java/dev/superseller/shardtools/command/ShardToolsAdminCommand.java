@@ -74,7 +74,7 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
     }
 
     private static final List<String> EDIT_KEYS =
-            List.of("name", "material", "price", "lifetime", "behavior", "enchants", "lore");
+            List.of("name", "material", "price", "lifetime", "behavior", "enchants", "choices", "lore");
 
     private final ShardToolsPlugin plugin;
 
@@ -136,7 +136,7 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
             return true;
         }
         if (args.length < 3) {
-            usage(sender, "/sta give <player> <item> [amount]");
+            usage(sender, "/sta give <player> <item> [amount] [enchant]");
             return true;
         }
         Player target = Bukkit.getPlayerExact(args[1]);
@@ -158,6 +158,25 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
             }
             amount = (int) Math.min(64L * 27L, parsed);
         }
+        // Optional: pick one of the entry's enchant alternatives
+        // (e.g. "fortune" or "silk_touch"); defaults to the first one.
+        int choice = 0;
+        if (args.length >= 5 && !entry.enchantChoices().isEmpty()) {
+            String wanted = args[4].toLowerCase(Locale.ROOT);
+            int found = -1;
+            for (int i = 0; i < entry.enchantChoices().size(); i++) {
+                String name = entry.enchantChoices().get(i).enchant();
+                if (name.equals(wanted) || name.startsWith(wanted)) {
+                    found = i;
+                    break;
+                }
+            }
+            if (found < 0) {
+                plugin.messages().send(sender, "catalog.invalid-enchant", "%enchant%", args[4]);
+                return true;
+            }
+            choice = found;
+        }
         if (entry.isCommandItem()) {
             // Command items (spawners, crate keys...) run their console command
             // instead of handing out a physical icon.
@@ -168,7 +187,7 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
         } else {
             int remaining = amount;
             while (remaining > 0) {
-                ItemStack stack = plugin.items().create(entry, remaining);
+                ItemStack stack = plugin.items().create(entry, remaining, 0L, choice);
                 HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(stack);
                 for (ItemStack rest : leftover.values()) {
                     target.getWorld().dropItem(target.getLocation(), rest);
@@ -286,14 +305,14 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
         return true;
     }
 
-    /** /sta edit <id> <name|material|price|lifetime|behavior|enchants|lore> <value...> */
+    /** /sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|lore> <value...> */
     private boolean edit(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.MANAGE)) {
             plugin.messages().send(sender, "no-permission");
             return true;
         }
         if (args.length < 4) {
-            usage(sender, "/sta edit <id> <name|material|price|lifetime|behavior|enchants|lore> <value>");
+            usage(sender, "/sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|lore> <value>");
             return true;
         }
         String id = args[1].toLowerCase(Locale.ROOT);
@@ -370,6 +389,28 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
                     }
                 }
                 plugin.getConfig().set(path + ".enchants", specs);
+                value = specs.isEmpty() ? "none" : String.join(", ", specs);
+                break;
+            }
+            case "choices": {
+                // Enchant alternatives the buyer picks ONE of, comma-separated
+                // "enchant:level" specs; "none" removes the choice.
+                List<String> specs = new ArrayList<>();
+                if (!value.equalsIgnoreCase("none")) {
+                    for (String part : value.split(",")) {
+                        String spec = part.trim();
+                        if (spec.isEmpty()) {
+                            continue;
+                        }
+                        if (EnchantSpec.parse(spec) == null
+                                || plugin.enchantResolver().resolve(EnchantSpec.parse(spec).enchant()) == null) {
+                            plugin.messages().send(sender, "catalog.invalid-enchant", "%enchant%", spec);
+                            return true;
+                        }
+                        specs.add(spec.toLowerCase(Locale.ROOT));
+                    }
+                }
+                plugin.getConfig().set(path + ".enchant-choice", specs);
                 value = specs.isEmpty() ? "none" : String.join(", ", specs);
                 break;
             }
@@ -672,6 +713,15 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
             }
         } else if (args.length == 5 && "add".equals(SUBS.get(args[0].toLowerCase(Locale.ROOT)))) {
             out.addAll(filter(List.of("0", "24", "48"), args[4]));
+        } else if (args.length == 5 && "give".equals(SUBS.get(args[0].toLowerCase(Locale.ROOT)))) {
+            ShardCatalog.Entry entry = plugin.catalog().byId(args[2]);
+            if (entry != null) {
+                List<String> names = new ArrayList<>();
+                for (EnchantSpec spec : entry.enchantChoices()) {
+                    names.add(spec.enchant());
+                }
+                out.addAll(filter(names, args[4]));
+            }
         } else if (args.length == 6 && "add".equals(SUBS.get(args[0].toLowerCase(Locale.ROOT)))) {
             List<String> behaviors = new ArrayList<>();
             for (Behavior behavior : Behavior.values()) {

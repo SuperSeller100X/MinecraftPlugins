@@ -28,13 +28,16 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 ### Shard Tools — like DonutSMP
 | Item | Price | Enchants (pre-applied) | Effect | Lifetime |
 |---|---|---|---|---|
-| Shard Pickaxe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Mines a **3×3 plane** — same shared block list as axe & shovel | **24 h real time** |
-| Shard Pickaxe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Mines a **3×3 plane** | **24 h real time** |
-| Shard Axe (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | **Fells whole trees** (log = whole tree) + **3×3 on everything else** | **24 h real time** |
-| Shard Axe (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Fells whole trees + 3×3 on everything else | **24 h real time** |
-| Shard Shovel (Fortune III) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Fortune III | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
-| Shard Shovel (Silk Touch) | 3,000 ✦ | Efficiency V, Unbreaking III, Mending, Silk Touch | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
+| Shard Pickaxe | 3,000 ✦ | Efficiency V, Unbreaking III, Mending + **your pick of Fortune III or Silk Touch** | Mines a **3×3 plane** — same shared block list as axe & shovel | **24 h real time** |
+| Shard Axe | 3,000 ✦ | Efficiency V, Unbreaking III, Mending + **Fortune III or Silk Touch** | **Fells whole trees** (log = whole tree) + **3×3 on everything else** | **24 h real time** |
+| Shard Shovel | 3,000 ✦ | Efficiency V, Unbreaking III, Mending + **Fortune III or Silk Touch** | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
 | Shard Potion of Haste | 500 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
+
+Tools that support it (`enchant-choice:` in config.yml — shard pickaxe/axe/shovel and
+the netherite pickaxe by default) let the buyer **choose between Fortune III and Silk
+Touch** right in the purchase dialog: click the enchanted book to switch, then confirm.
+`/sta give` hands out the first alternative unless you pass the enchant name as the last
+argument (e.g. `/sta give Steve shard_pickaxe 1 silk_touch`).
 
 Area breaking details (all configurable):
 - Silk Touch / Fortune are applied to **every** broken block, not just the centre one.
@@ -124,11 +127,11 @@ subcommand has a short form. Console works for all admin commands.
 | Command | Short | Description | Permission |
 |---|---|---|---|
 | `/sta help` | `h`, `?` | Admin command overview | — |
-| `/sta give <player> <item> [amount]` | `g` | Give any shop item | `shardtools.give` |
+| `/sta give <player> <item> [amount] [enchant]` | `g` | Give any shop item (optional enchant picks a `choices` alternative, e.g. `silk_touch`) | `shardtools.give` |
 | `/sta items` | `list`, `l` | List all item ids + prices | `shardtools.items` |
 | `/sta add <id> <material> <price> [lifetimeHours] [behavior]` | `a`, `create` | **Add a new shop item** to config.yml and the live shop | `shardtools.manage` |
 | `/sta remove <id>` | `rm`, `delete`, `del` | **Remove a shop item** from config.yml and the live shop | `shardtools.manage` |
-| `/sta edit <id> <property> <value>` | `e` | **Edit a shop item**: `name`, `material`, `price`, `lifetime` (hours), `behavior`, `enchants` (comma list like `efficiency:5,mending:1`, or `none`) or `lore` (MiniMessage lines separated by `\|`, or `none`) | `shardtools.manage` |
+| `/sta edit <id> <property> <value>` | `e` | **Edit a shop item**: `name`, `material`, `price`, `lifetime` (hours), `behavior`, `enchants` (comma list like `efficiency:5,mending:1`, or `none`), `choices` (buyer-picked enchant alternatives, e.g. `fortune:3,silk_touch:1`, or `none`) or `lore` (MiniMessage lines separated by `\|`, or `none`) | `shardtools.manage` |
 | `/sta setprice <item> <price>` | `price`, `sp` | Change a price at runtime | `shardtools.setprice` |
 | `/sta shards <player> <give\|take\|set> <amount>` | `sh`, `eco` | Edit balances | `shardtools.economy` |
 | `/sta interval <minutes>` | `iv` | Set the income interval | `shardtools.settings` |
@@ -255,9 +258,8 @@ Maven build compiles the same sources with `release 25`.
 
 ## Item ids (for `/sta give`, `/sta setprice`, `/sta edit`)
 
-`shard_pickaxe_fortune`, `shard_pickaxe_silk`, `shard_axe_fortune`, `shard_axe_silk`,
-`shard_shovel_fortune`, `shard_shovel_silk`, `haste_potion`, `netherite_pickaxe_fortune`,
-`netherite_pickaxe_silk`, `netherite_shovel`, `netherite_axe`, `netherite_hoe`,
+`shard_pickaxe`, `shard_axe`, `shard_shovel`, `haste_potion`, `netherite_pickaxe`,
+`netherite_shovel`, `netherite_axe`, `netherite_hoe`,
 `netherite_helmet`, `netherite_chestplate`, `netherite_leggings`, `netherite_boots`,
 `netherite_sword`, `mace`, `crossbow`, `bow` — or run `/sta items` — or create your own with `/sta add`.
 

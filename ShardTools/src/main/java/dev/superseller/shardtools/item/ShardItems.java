@@ -146,15 +146,22 @@ public final class ShardItems {
 
     /** Creates the purchasable/giveable item with a fresh lifetime. */
     public ItemStack create(ShardCatalog.Entry entry, int amount) {
-        return create(entry, amount, 0L);
+        return create(entry, amount, 0L, 0);
+    }
+
+    /** Creates the item with purchased extra time (first enchant choice). */
+    public ItemStack create(ShardCatalog.Entry entry, int amount, long extraMinutes) {
+        return create(entry, amount, extraMinutes, 0);
     }
 
     /**
-     * Creates the item with purchased extra time on top: expiring shard
-     * items live {@code extraMinutes} longer before self-destructing; the
-     * haste potion instead grants its effect for that much longer.
+     * Creates the item with purchased extra time on top and the picked
+     * enchant alternative: expiring shard items live {@code extraMinutes}
+     * longer before self-destructing; the haste potion instead grants its
+     * effect for that much longer. {@code choiceIndex} selects one of the
+     * entry's enchant-choice alternatives (e.g. Fortune vs Silk Touch).
      */
-    public ItemStack create(ShardCatalog.Entry entry, int amount, long extraMinutes) {
+    public ItemStack create(ShardCatalog.Entry entry, int amount, long extraMinutes, int choiceIndex) {
         Material material = Material.matchMaterial(entry.material());
         if (material == null) {
             plugin.getLogger().warning("Unknown material '" + entry.material() + "' for item " + entry.id());
@@ -175,7 +182,8 @@ public final class ShardItems {
         }
         final long finalLifetime = lifetimeMs;
         final long finalEffect = effectMinutes;
-        stack.editMeta(meta -> apply(meta, entry, now, null, finalLifetime, finalEffect));
+        final EnchantSpec choice = entry.enchantChoice(choiceIndex);
+        stack.editMeta(meta -> apply(meta, entry, now, null, finalLifetime, finalEffect, choice));
         return stack;
     }
 
@@ -187,7 +195,7 @@ public final class ShardItems {
         }
         ItemStack stack = new ItemStack(material, 1);
         stack.editMeta(meta -> apply(meta, entry, System.currentTimeMillis(),
-                purchaseLore(entry, price), entry.lifetimeMs(), -1L));
+                purchaseLore(entry, price), entry.lifetimeMs(), -1L, null));
         return stack;
     }
 
@@ -198,6 +206,9 @@ public final class ShardItems {
                 "%price%", dev.superseller.shardtools.util.Numbers.format(price),
                 "%symbol%", settings.symbol()));
         extra.add(plugin.messages().itemLine("shop.click-to-buy"));
+        if (entry.hasEnchantChoice()) {
+            extra.add(plugin.messages().itemLine("choice.hint"));
+        }
         if (extendable(entry)) {
             extra.add(plugin.messages().itemLine("extend.hint"));
         }
@@ -205,7 +216,7 @@ public final class ShardItems {
     }
 
     private void apply(ItemMeta meta, ShardCatalog.Entry entry, long now, List<Component> extraLore,
-                       long lifetimeMs, long effectMinutes) {
+                       long lifetimeMs, long effectMinutes, EnchantSpec choice) {
         boolean shopIcon = extraLore != null;
         // Items without an ability stay plain vanilla when handed out: no
         // custom name, no rarity color, no lore - just the enchantments.
@@ -225,6 +236,12 @@ public final class ShardItems {
             org.bukkit.enchantments.Enchantment enchantment = plugin.enchantResolver().resolve(spec.enchant());
             if (enchantment != null) {
                 meta.addEnchant(enchantment, spec.level(), true);
+            }
+        }
+        if (choice != null) {
+            org.bukkit.enchantments.Enchantment enchantment = plugin.enchantResolver().resolve(choice.enchant());
+            if (enchantment != null) {
+                meta.addEnchant(enchantment, choice.level(), true);
             }
         }
         if (meta instanceof PotionMeta && entry.behavior() == Behavior.HASTE_POTION) {

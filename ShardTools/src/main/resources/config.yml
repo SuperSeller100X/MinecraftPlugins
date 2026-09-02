@@ -43,69 +43,47 @@ award:
 #                 shop icon). Players can pause a tool's ability with
 #                 /st toggle.
 #   enchants      list of "enchant:level" (vanilla ids, e.g. efficiency:5)
+#   enchant-choice  optional list of enchant ALTERNATIVES - the buyer picks
+#                 exactly ONE of them in the shop dialog (e.g. Fortune III
+#                 vs Silk Touch). /sta give uses the first one unless an
+#                 enchant name is passed as the last argument.
 #   lore          MiniMessage lore lines; %time% = remaining lifetime,
 #                 %price% = current price, %effect% = haste effect duration
 #                 (only meaningful on the haste potion)
 #
 # Default prices mirror the DonutSMP shard shop (June-July 2026).
 items:
-  shard_pickaxe_fortune:
+  shard_pickaxe:
     material: NETHERITE_PICKAXE
-    name: "Shard Pickaxe (Fortune III)"
+    name: "Shard Pickaxe"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    # Pick Fortune III or Silk Touch when buying.
+    enchant-choice: ["fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Mines a 3x3 area with every swing.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  shard_pickaxe_silk:
-    material: NETHERITE_PICKAXE
-    name: "Shard Pickaxe (Silk Touch)"
-    price: 3000
-    lifetime-hours: 24
-    behavior: AREA_PICKAXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
-    lore:
-      - "<gray>Mines a 3x3 area with every swing.</gray>"
-      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  shard_axe_fortune:
+  shard_axe:
     material: NETHERITE_AXE
-    name: "Shard Axe (Fortune III)"
+    name: "Shard Axe"
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    enchant-choice: ["fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Fells whole trees, breaks a 3x3 area.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  shard_axe_silk:
-    material: NETHERITE_AXE
-    name: "Shard Axe (Silk Touch)"
-    price: 3000
-    lifetime-hours: 24
-    behavior: TREE_AXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
-    lore:
-      - "<gray>Fells whole trees, breaks a 3x3 area.</gray>"
-      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  shard_shovel_fortune:
+  shard_shovel:
     material: NETHERITE_SHOVEL
-    name: "Shard Shovel (Fortune III)"
+    name: "Shard Shovel"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
-    lore:
-      - "<gray>Digs a 3x3 area with every swing.</gray>"
-      - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  shard_shovel_silk:
-    material: NETHERITE_SHOVEL
-    name: "Shard Shovel (Silk Touch)"
-    price: 3000
-    lifetime-hours: 24
-    behavior: AREA_SHOVEL
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    enchant-choice: ["fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Digs a 3x3 area with every swing.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
@@ -120,22 +98,14 @@ items:
     lore:
       - "<gray>Grants <yellow>Haste II for %effect%</yellow> when drunk.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
-  netherite_pickaxe_fortune:
+  netherite_pickaxe:
     material: NETHERITE_PICKAXE
-    name: "Netherite Pickaxe (Fortune III)"
+    name: "Netherite Pickaxe"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3"]
-    lore:
-      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
-  netherite_pickaxe_silk:
-    material: NETHERITE_PICKAXE
-    name: "Netherite Pickaxe (Silk Touch)"
-    price: 1000
-    lifetime-hours: 0
-    behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    enchant-choice: ["fortune:3", "silk_touch:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_shovel:

@@ -74,9 +74,10 @@ public final class ShopListener implements Listener {
             plugin.messages().send(player, "no-permission");
             return;
         }
-        if (plugin.items().extendable(entry)) {
-            // Expiring shard items and the haste potion open the extra-time
-            // dialog (it doubles as the purchase confirmation).
+        if (plugin.items().extendable(entry) || entry.hasEnchantChoice()) {
+            // Expiring shard items, the haste potion and items with an
+            // enchant choice open the purchase dialog (it doubles as the
+            // purchase confirmation).
             plugin.gui().openExtend(player, entry, holder.page(), 0);
             return;
         }
@@ -155,25 +156,33 @@ public final class ShopListener implements Listener {
                 }
                 return;
             }
+            case ShopGui.ExtendHolder.SLOT_CHOICE:
+                if (entry.hasEnchantChoice()) {
+                    holder.choice((holder.choice() + 1) % entry.enchantChoices().size());
+                    plugin.gui().renderExtend(holder, entry);
+                }
+                return;
             case ShopGui.ExtendHolder.SLOT_CANCEL:
                 plugin.gui().open(player, holder.backPage());
                 return;
             case ShopGui.ExtendHolder.SLOT_CONFIRM:
-                purchaseExtended(player, entry, holder.backPage(), holder.steps());
+                purchaseExtended(player, entry, holder.backPage(), holder.steps(), holder.choice());
                 return;
             default:
         }
     }
 
     private void purchase(Player player, ShardCatalog.Entry entry, int backPage) {
-        purchaseExtended(player, entry, backPage, 0);
+        purchaseExtended(player, entry, backPage, 0, 0);
     }
 
     /**
-     * Runs a purchase with {@code steps} extra-time steps on top: expiring
-     * shard items get extra lifetime, the haste potion a longer effect.
+     * Runs a purchase with {@code steps} extra-time steps on top (expiring
+     * shard items get extra lifetime, the haste potion a longer effect) and
+     * the picked enchant alternative (e.g. Fortune vs Silk Touch).
      */
-    private void purchaseExtended(Player player, ShardCatalog.Entry entry, int backPage, int steps) {
+    private void purchaseExtended(Player player, ShardCatalog.Entry entry, int backPage,
+                                  int steps, int choice) {
         Long base = plugin.priceBook().price(entry.id());
         long price = base == null ? 0L : base;
         long extraMinutes = 0L;
@@ -201,7 +210,7 @@ public final class ShopListener implements Listener {
             String command = entry.command().replace("%player%", player.getName());
             org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
         } else {
-            give(player, plugin.items().create(entry, 1, extraMinutes));
+            give(player, plugin.items().create(entry, 1, extraMinutes, choice));
         }
         plugin.messages().send(player, "shop.purchased",
                 "%item%", entry.displayName(),
