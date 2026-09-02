@@ -87,8 +87,9 @@ The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
   hand** (hotbar switch), put shard **armor** on, or drink a shard potion.
 - **On purchase** — resonate + purple ring.
 - The currency icon is a **purple star** (`currency.symbol:
-  "<light_purple>✦</light_purple>"`); shard tool names render in light purple
-  (`&d` on DonutSMP); the shop shows your balance on an amethyst shard icon.
+  "<light_purple>✦</light_purple>"`); item names render in their **normal (white)
+  color** — only the **Shard Potion of Haste is aqua** (name and bottle color);
+  the shop shows your balance on an amethyst shard icon.
 - Every sound entry supports its own volume/pitch: `"sound-id volume pitch"`.
 
 ## Protection

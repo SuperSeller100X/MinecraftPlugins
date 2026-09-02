@@ -50,7 +50,7 @@ award:
 items:
   shard_pickaxe_fortune:
     material: NETHERITE_PICKAXE
-    name: "<light_purple>Shard Pickaxe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<white>Shard Pickaxe</white> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
@@ -60,7 +60,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_pickaxe_silk:
     material: NETHERITE_PICKAXE
-    name: "<light_purple>Shard Pickaxe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<white>Shard Pickaxe</white> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
@@ -70,7 +70,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_axe_fortune:
     material: NETHERITE_AXE
-    name: "<light_purple>Shard Axe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<white>Shard Axe</white> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
@@ -80,7 +80,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_axe_silk:
     material: NETHERITE_AXE
-    name: "<light_purple>Shard Axe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<white>Shard Axe</white> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
@@ -90,7 +90,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_shovel_fortune:
     material: NETHERITE_SHOVEL
-    name: "<light_purple>Shard Shovel</light_purple> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<white>Shard Shovel</white> <dark_gray>(Fortune III)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
@@ -100,7 +100,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   shard_shovel_silk:
     material: NETHERITE_SHOVEL
-    name: "<light_purple>Shard Shovel</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<white>Shard Shovel</white> <dark_gray>(Silk Touch)</dark_gray>"
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
@@ -110,7 +110,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   haste_potion:
     material: POTION
-    name: "<light_purple>Shard Potion of Haste</light_purple>"
+    name: "<aqua>Shard Potion of Haste</aqua>"
     price: 500
     lifetime-hours: 24
     # The effect lasts 1 hour; the item itself self-destructs after 24 real hours.
@@ -121,7 +121,7 @@ items:
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   netherite_pickaxe_fortune:
     material: NETHERITE_PICKAXE
-    name: "<light_purple>Netherite Pickaxe</light_purple> <dark_gray>(Fortune III)</dark_gray>"
+    name: "<white>Netherite Pickaxe</white> <dark_gray>(Fortune III)</dark_gray>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -130,7 +130,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_pickaxe_silk:
     material: NETHERITE_PICKAXE
-    name: "<light_purple>Netherite Pickaxe</light_purple> <dark_gray>(Silk Touch)</dark_gray>"
+    name: "<white>Netherite Pickaxe</white> <dark_gray>(Silk Touch)</dark_gray>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -139,7 +139,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_shovel:
     material: NETHERITE_SHOVEL
-    name: "<light_purple>Netherite Shovel</light_purple>"
+    name: "<white>Netherite Shovel</white>"
     price: 800
     lifetime-hours: 0
     behavior: NONE
@@ -148,7 +148,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_axe:
     material: NETHERITE_AXE
-    name: "<light_purple>Netherite Axe</light_purple>"
+    name: "<white>Netherite Axe</white>"
     price: 600
     lifetime-hours: 0
     behavior: NONE
@@ -157,7 +157,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_hoe:
     material: NETHERITE_HOE
-    name: "<light_purple>Netherite Hoe</light_purple>"
+    name: "<white>Netherite Hoe</white>"
     price: 500
     lifetime-hours: 0
     behavior: NONE
@@ -166,7 +166,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_helmet:
     material: NETHERITE_HELMET
-    name: "<light_purple>Netherite Helmet</light_purple>"
+    name: "<white>Netherite Helmet</white>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -175,7 +175,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_chestplate:
     material: NETHERITE_CHESTPLATE
-    name: "<light_purple>Netherite Chestplate</light_purple>"
+    name: "<white>Netherite Chestplate</white>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -184,7 +184,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_leggings:
     material: NETHERITE_LEGGINGS
-    name: "<light_purple>Netherite Leggings</light_purple>"
+    name: "<white>Netherite Leggings</white>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -193,7 +193,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_boots:
     material: NETHERITE_BOOTS
-    name: "<light_purple>Netherite Boots</light_purple>"
+    name: "<white>Netherite Boots</white>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -202,7 +202,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_sword:
     material: NETHERITE_SWORD
-    name: "<light_purple>Netherite Sword</light_purple>"
+    name: "<white>Netherite Sword</white>"
     price: 1500
     lifetime-hours: 0
     behavior: NONE
@@ -211,7 +211,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   mace:
     material: MACE
-    name: "<light_purple>Mace</light_purple>"
+    name: "<white>Mace</white>"
     price: 2000
     lifetime-hours: 0
     behavior: NONE
@@ -220,7 +220,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   crossbow:
     material: CROSSBOW
-    name: "<light_purple>Crossbow</light_purple>"
+    name: "<white>Crossbow</white>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -229,7 +229,7 @@ items:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   bow:
     material: BOW
-    name: "<light_purple>Bow</light_purple>"
+    name: "<white>Bow</white>"
     price: 1000
     lifetime-hours: 0
     behavior: NONE
@@ -244,7 +244,7 @@ items:
   #
   # pig_spawner:
   #   material: SPAWNER
-  #   name: "<light_purple>Pig Spawner</light_purple>"
+  #   name: "<white>Pig Spawner</white>"
   #   price: 1500
   #   lifetime-hours: 0
   #   behavior: NONE
@@ -253,7 +253,7 @@ items:
   #   command: "ss give %player% pig 1"
   # prime_key:
   #   material: TRIPWIRE_HOOK
-  #   name: "<light_purple>Prime Crate Key</light_purple>"
+  #   name: "<white>Prime Crate Key</white>"
   #   price: 2500
   #   lifetime-hours: 0
   #   behavior: NONE
@@ -385,8 +385,8 @@ haste-potion:
   duration-hours: 1
   # 0 = Haste I, 1 = Haste II, ...
   amplifier: 1
-  # Potion bottle color (RGB).
-  color: "#f7ff8a"
+  # Potion bottle color (RGB) - aqua, matching the potion name.
+  color: "#55ffff"
 
 # ---------- Shop GUI ----------
 shop:

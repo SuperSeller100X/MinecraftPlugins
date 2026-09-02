@@ -64,7 +64,7 @@ public final class Settings {
 
     private long hasteDurationHours = 1;
     private int hasteAmplifier = 1;
-    private int hasteColorRgb = 0xF7FF8A;
+    private int hasteColorRgb = 0x55FFFF;
 
     private boolean shopConfirm;
     private int shopRows = 6;
@@ -176,7 +176,7 @@ public final class Settings {
 
         hasteDurationHours = Math.max(1L, config.getLong("haste-potion.duration-hours", 1L));
         hasteAmplifier = Math.max(0, config.getInt("haste-potion.amplifier", 1));
-        hasteColorRgb = parseColor(config.getString("haste-potion.color", "#f7ff8a"), 0xF7FF8A);
+        hasteColorRgb = parseColor(config.getString("haste-potion.color", "#55ffff"), 0x55FFFF);
 
         shopConfirm = config.getBoolean("shop.confirm", false);
         shopRows = Math.max(3, Math.min(6, config.getInt("shop.rows", 6)));
