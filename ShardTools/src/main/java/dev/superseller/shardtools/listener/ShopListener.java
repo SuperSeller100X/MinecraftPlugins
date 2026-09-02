@@ -146,13 +146,15 @@ public final class ShopListener implements Listener {
         int delta = event.isShiftClick() ? 5 : 1;   // shift-click = 5 steps at once
         switch (slot) {
             case ShopGui.ExtendHolder.SLOT_MINUS:
-                holder.steps(plugin.gui().clampSteps(entry, holder.steps() - delta));
-                plugin.gui().renderExtend(holder, entry);
+            case ShopGui.ExtendHolder.SLOT_PLUS: {
+                int change = slot == ShopGui.ExtendHolder.SLOT_PLUS ? delta : -delta;
+                int newSteps = plugin.gui().clampSteps(entry, holder.steps() + change);
+                if (newSteps != holder.steps()) {   // slot may hold filler at 0/max
+                    holder.steps(newSteps);
+                    plugin.gui().renderExtend(holder, entry);
+                }
                 return;
-            case ShopGui.ExtendHolder.SLOT_PLUS:
-                holder.steps(plugin.gui().clampSteps(entry, holder.steps() + delta));
-                plugin.gui().renderExtend(holder, entry);
-                return;
+            }
             case ShopGui.ExtendHolder.SLOT_CANCEL:
                 plugin.gui().open(player, holder.backPage());
                 return;

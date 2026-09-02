@@ -251,8 +251,7 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
         }
         String path = "items." + id;
         plugin.getConfig().set(path + ".material", material.name());
-        plugin.getConfig().set(path + ".name",
-                "<white>" + prettyName(material.name()) + "</white>");
+        plugin.getConfig().set(path + ".name", prettyName(material.name()));
         plugin.getConfig().set(path + ".price", price);
         plugin.getConfig().set(path + ".lifetime-hours", lifetimeHours);
         plugin.getConfig().set(path + ".behavior", behavior.name());

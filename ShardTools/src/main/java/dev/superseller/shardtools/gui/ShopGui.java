@@ -256,6 +256,8 @@ public final class ShopGui {
                 ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
         long stepPrice = potion
                 ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+        int maxSteps = potion
+                ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
         int steps = clampSteps(entry, holder.steps());
         holder.steps(steps);
 
@@ -265,14 +267,20 @@ public final class ShopGui {
         }
         String stepTime = TimeWords.format(stepMinutes * 60_000L);
         String stepCost = Numbers.format(stepPrice);
-        inventory.setItem(ExtendHolder.SLOT_MINUS, button("RED_STAINED_GLASS_PANE",
-                plugin.messages().itemLine("extend.minus",
-                        "%time%", stepTime, "%price%", stepCost,
-                        "%symbol%", plugin.settings().symbol())));
-        inventory.setItem(ExtendHolder.SLOT_PLUS, button("LIME_STAINED_GLASS_PANE",
-                plugin.messages().itemLine("extend.plus",
-                        "%time%", stepTime, "%price%", stepCost,
-                        "%symbol%", plugin.settings().symbol())));
+        // Only show the -/+ buttons while they can actually change something:
+        // no minus pane at 0 extra time, no plus pane at the cap.
+        if (steps > 0) {
+            inventory.setItem(ExtendHolder.SLOT_MINUS, button("RED_STAINED_GLASS_PANE",
+                    plugin.messages().itemLine("extend.minus",
+                            "%time%", stepTime, "%price%", stepCost,
+                            "%symbol%", plugin.settings().symbol())));
+        }
+        if (steps < maxSteps) {
+            inventory.setItem(ExtendHolder.SLOT_PLUS, button("LIME_STAINED_GLASS_PANE",
+                    plugin.messages().itemLine("extend.plus",
+                            "%time%", stepTime, "%price%", stepCost,
+                            "%symbol%", plugin.settings().symbol())));
+        }
 
         Long base = plugin.priceBook().price(entry.id());
         long basePrice = base == null ? 0L : base;

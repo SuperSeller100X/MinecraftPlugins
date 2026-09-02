@@ -67,7 +67,8 @@ Clicking an **expiring shard item** or the **haste potion** in the shop opens an
 - **Haste potion**: each step makes the **effect last +30 minutes longer** when drunk,
   for **+50 ✦** per step (defaults) — the item's 24 h shelf life stays unchanged.
 - Steps **stack**: +6 hours of haste = 12 × 30 min = **+600 ✦** on top of the base price.
-  Shift-click the +/- buttons to move in jumps of 5 steps.
+  Shift-click the +/- buttons to move in jumps of 5 steps; the - button only
+  appears once extra time is selected and the + button hides at the cap.
 - Step size, step price and the per-purchase cap are configurable separately for tools
   and the potion under `shop.time-extension:` (or turn the whole feature off with
   `enabled: false`).
@@ -87,8 +88,9 @@ The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
   hand** (hotbar switch), put shard **armor** on, or drink a shard potion.
 - **On purchase** — resonate + purple ring.
 - The currency icon is a **purple star** (`currency.symbol:
-  "<light_purple>✦</light_purple>"`); item names render in their **normal (white)
-  color** — only the **Shard Potion of Haste is aqua** (name and bottle color);
+  "<light_purple>✦</light_purple>"`); item names are plain text and render in
+  their **normal (default) color** — only the **Shard Potion of Haste is aqua**
+  (name and bottle color);
   the shop shows your balance on an amethyst shard icon.
 - Every sound entry supports its own volume/pitch: `"sound-id volume pitch"`.
 
