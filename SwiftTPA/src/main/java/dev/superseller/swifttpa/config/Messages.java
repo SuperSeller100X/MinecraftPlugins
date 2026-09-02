@@ -56,6 +56,11 @@ public final class Messages {
         return mini.deserialize(apply(body, placeholders));
     }
 
+    /** Same as {@link #componentNoPrefix(String, Map)} without placeholders. */
+    public Component componentNoPrefix(String key) {
+        return componentNoPrefix(key, Map.of());
+    }
+
     public void send(CommandSender sender, String key, Map<String, String> placeholders) {
         sender.sendMessage(component(key, placeholders));
     }

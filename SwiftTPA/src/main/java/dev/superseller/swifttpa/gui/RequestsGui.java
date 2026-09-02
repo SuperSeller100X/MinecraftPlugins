@@ -175,7 +175,7 @@ public final class RequestsGui {
             return;
         }
         PlayerProfile profile = skull.getOwnerProfile();
-        java.util.concurrent.CompletableFuture<PlayerProfile> future;
+        java.util.concurrent.CompletableFuture<? extends PlayerProfile> future;
         try {
             future = profile.update();
         } catch (Throwable e) {
