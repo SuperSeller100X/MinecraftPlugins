@@ -5,8 +5,19 @@ target-distance: 6
 
 containers:
   chests: true          # normal and trapped chests; both halves of a double chest share one lock
+  copper-chests: true   # plain, exposed, weathered, oxidized, and waxed copper chests
   barrels: true
   shulker-boxes: true   # every placed shulker-box color
+  furnaces: true        # furnace, blast furnace, and smoker
+  dispensers: true      # dispenser and dropper
+  hoppers: true
+  brewing-stands: true
+  crafters: true
+  chiseled-bookshelves: true
+  decorated-pots: true
+  lecterns: true
+  shelves: true         # every wood-type shelf
+  jukeboxes: true
 
 passcodes:
   min-length: 4

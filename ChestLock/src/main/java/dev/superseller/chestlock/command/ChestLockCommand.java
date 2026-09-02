@@ -50,6 +50,7 @@ public final class ChestLockCommand implements CommandExecutor, TabCompleter {
             case "change", "c" -> dialogs.beginChange(player);
             case "remove", "r" -> dialogs.beginRemove(player);
             case "key", "k" -> dialogs.beginKey(player);
+            case "access", "a" -> dialogs.beginAccess(player);
             case "settings", "s" -> dialogs.openSettings(player);
             case "help", "h", "?" -> dialogs.showHelp(player);
             case "bypass", "bp" -> toggleBypass(player);
@@ -91,6 +92,7 @@ public final class ChestLockCommand implements CommandExecutor, TabCompleter {
         add(sender, values, "chestlock.info", "info", "i");
         add(sender, values, "chestlock.manage", "change", "c", "remove", "r");
         add(sender, values, "chestlock.key", "key", "k");
+        add(sender, values, "chestlock.manage", "access", "a");
         add(sender, values, "chestlock.settings", "settings", "s");
         add(sender, values, "chestlock.use", "help", "h");
         add(sender, values, "chestlock.admin.bypass", "bypass", "bp");

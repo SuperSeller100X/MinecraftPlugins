@@ -16,10 +16,22 @@ Anyone who knows the correct passcode can unlock and break the container during 
 
 ### Supported containers
 
-- normal chests;
-- trapped chests;
-- barrels; and
-- every color of placed shulker box.
+- normal and trapped chests (both halves of a double chest share one lock);
+- copper chests, including exposed, weathered, oxidized, and waxed variants;
+- barrels;
+- every color of placed shulker box;
+- furnaces, blast furnaces, and smokers;
+- dispensers and droppers;
+- hoppers;
+- brewing stands;
+- crafters;
+- chiseled bookshelves;
+- decorated pots;
+- lecterns;
+- every wood-type shelf; and
+- jukeboxes.
+
+Ender chests are intentionally not lockable: their contents are per-player. Each family can be disabled with the `containers.*` toggles in `config.yml`.
 
 Both halves of a double chest carry the same lock. Targeting either half addresses the complete double chest. Adding another chest beside a locked single chest is blocked so its inventory cannot be merged into the lock. When an authorized player breaks a locked shulker box, its dropped item keeps its contents but not the live lock metadata; place it again and create a new lock if protection is still wanted.
 
@@ -34,6 +46,10 @@ A key is a named, glowing item (a tripwire hook by default) bound by unguessable
 - Keys cannot be consumed as ordinary crafting ingredients.
 - A lost key is harmless after key revocation or lock removal.
 
+### Access blocks
+
+An owner can grant specific placed hoppers, droppers, and dispensers access to one of their locks with `/cl access`. A granted block may move items **both into and out of** the locked container exactly like an unlocked hopper, and it keeps working even while `protection.block-hoppers: true` seals the container against every other automation block. Grants target the exact placed block (world + coordinates), never the block type, so other hoppers stay blocked. Revoke grants the same way at any time.
+
 ## Protection behavior
 
 By default ChestLock prevents:
@@ -45,7 +61,7 @@ By default ChestLock prevents:
 - burning and entity block changes; and
 - merging a newly placed chest with a locked chest.
 
-Per the selected design, **hoppers and hopper minecarts remain usable**. Set `protection.block-hoppers: true` if the server owner wants a fully sealed container instead.
+Per the selected design, **hoppers and hopper minecarts remain usable**. Set `protection.block-hoppers: true` if the server owner wants a fully sealed container instead. When hopper blocking is enabled, blocks granted access with `/cl access` keep working, while all other hoppers, droppers, dispensers, and hopper minecarts remain strictly blocked.
 
 Protection is event based. Administrative world editors or other plugins that replace blocks without firing Bukkit/Paper events can bypass any protection plugin; restrict those tools to trusted staff.
 
@@ -96,6 +112,7 @@ All commands have both a long and short form. `/chestlock` itself is shortened t
 | `/cl change` | `/cl c` | Owner: verify and change the passcode | `chestlock.manage` |
 | `/cl remove` | `/cl r` | Owner: verify and permanently remove the lock | `chestlock.manage` |
 | `/cl key` | `/cl k` | Owner: issue a key or revoke old keys | `chestlock.key` |
+| `/cl access` | `/cl a` | Owner: grant/revoke access to specific automation blocks | `chestlock.manage` |
 | `/cl settings` | `/cl s` | Open personal defaults and feedback settings | `chestlock.settings` |
 | `/cl help` | `/cl h` | Open the in-game command guide | `chestlock.use` |
 | `/cl bypass` | `/cl bp` | Toggle explicit administrative bypass for yourself | `chestlock.admin.bypass` |

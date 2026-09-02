@@ -23,4 +23,26 @@ public record BlockRef(UUID worldId, int x, int y, int z) {
     public String display() {
         return x + ", " + y + ", " + z;
     }
+
+    /** Stable one-line form used to persist access blocks in a container's PDC. */
+    public String serialize() {
+        return worldId + ";" + x + ";" + y + ";" + z;
+    }
+
+    /** Inverse of {@link #serialize()}. Returns {@code null} for malformed input. */
+    public static BlockRef parse(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String[] parts = raw.split(";");
+        if (parts.length != 4) {
+            return null;
+        }
+        try {
+            return new BlockRef(UUID.fromString(parts[0]), Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
 }

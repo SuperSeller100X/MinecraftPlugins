@@ -1,6 +1,7 @@
 package dev.superseller.chestlock.model;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,7 +15,8 @@ public record LockData(
         int iterations,
         long unlockDurationMillis,
         UUID keyToken,
-        long createdAtMillis
+        long createdAtMillis,
+        List<BlockRef> accessBlocks
 ) {
     public LockData {
         Objects.requireNonNull(lockId, "lockId");
@@ -23,8 +25,10 @@ public record LockData(
         Objects.requireNonNull(salt, "salt");
         Objects.requireNonNull(hash, "hash");
         Objects.requireNonNull(keyToken, "keyToken");
+        Objects.requireNonNull(accessBlocks, "accessBlocks");
         salt = salt.clone();
         hash = hash.clone();
+        accessBlocks = List.copyOf(accessBlocks);
     }
 
     @Override
@@ -52,16 +56,22 @@ public record LockData(
                 && ownerName.equals(other.ownerName)
                 && unlockDurationMillis == other.unlockDurationMillis
                 && keyToken.equals(other.keyToken)
-                && createdAtMillis == other.createdAtMillis;
+                && createdAtMillis == other.createdAtMillis
+                && accessBlocks.equals(other.accessBlocks);
     }
 
     public LockData withPassword(byte[] newSalt, byte[] newHash, int newIterations) {
         return new LockData(lockId, ownerId, ownerName, newSalt, newHash, newIterations,
-                unlockDurationMillis, keyToken, createdAtMillis);
+                unlockDurationMillis, keyToken, createdAtMillis, accessBlocks);
     }
 
     public LockData withKeyToken(UUID newKeyToken) {
         return new LockData(lockId, ownerId, ownerName, salt, hash, iterations,
-                unlockDurationMillis, newKeyToken, createdAtMillis);
+                unlockDurationMillis, newKeyToken, createdAtMillis, accessBlocks);
+    }
+
+    public LockData withAccessBlocks(List<BlockRef> newAccessBlocks) {
+        return new LockData(lockId, ownerId, ownerName, salt, hash, iterations,
+                unlockDurationMillis, keyToken, createdAtMillis, newAccessBlocks);
     }
 }
