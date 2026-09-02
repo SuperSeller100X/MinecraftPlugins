@@ -130,6 +130,12 @@ public final class ShardToolsPlugin extends JavaPlugin {
         }
         long sweepTicks = settings.sweepSeconds() * 20L;
         PlatformScheduler.runRepeating(sweep::tick, sweepTicks, sweepTicks);
+        if (settings.loreRefresh()) {
+            // Fast display-only countdown refresher; separate from the sweep
+            // so tooltips feel live without speeding up expiry bookkeeping.
+            long refreshTicks = settings.loreRefreshSeconds() * 20L;
+            PlatformScheduler.runRepeating(sweep::refreshTick, refreshTicks, refreshTicks);
+        }
     }
 
     /** Reloads config.yml, messages.yml, runtime overrides and the catalog. */

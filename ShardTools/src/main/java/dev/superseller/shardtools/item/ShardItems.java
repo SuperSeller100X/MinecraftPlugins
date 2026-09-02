@@ -33,7 +33,6 @@ public final class ShardItems {
     private final NamespacedKey keyCreated;
     private final NamespacedKey keyLifetime;
     private final NamespacedKey keyWarned;
-    private final NamespacedKey keyMinutes;
     private final NamespacedKey keyAbilityOff;
     private final NamespacedKey keyEffectMinutes;
 
@@ -43,7 +42,6 @@ public final class ShardItems {
         this.keyCreated = new NamespacedKey((Plugin) plugin, "created");
         this.keyLifetime = new NamespacedKey((Plugin) plugin, "lifetime");
         this.keyWarned = new NamespacedKey((Plugin) plugin, "warned");
-        this.keyMinutes = new NamespacedKey((Plugin) plugin, "minutes");
         this.keyAbilityOff = new NamespacedKey((Plugin) plugin, "ability-off");
         this.keyEffectMinutes = new NamespacedKey((Plugin) plugin, "effect-minutes");
     }
@@ -199,6 +197,30 @@ public final class ShardItems {
         return stack;
     }
 
+    /**
+     * Purchase-dialog preview icon: display only (no persistent data), with
+     * the PROJECTED lifetime/effect duration and the currently selected
+     * enchant baked in, so the item's own tooltip lines (the red
+     * self-destruct text, the "when drunk" line, the enchant list) update
+     * live while the buyer clicks around. The real item is only created
+     * once, on confirm.
+     */
+    public ItemStack previewIcon(ShardCatalog.Entry entry, long price,
+                                 long lifetimeMs, long effectMinutes, EnchantSpec choice) {
+        Material material = Material.matchMaterial(entry.material());
+        if (material == null) {
+            material = Material.AIR;
+        }
+        List<Component> extra = new ArrayList<>();
+        extra.add(plugin.messages().itemLine("shop.price-line",
+                "%price%", dev.superseller.shardtools.util.Numbers.format(price),
+                "%symbol%", plugin.settings().symbol()));
+        ItemStack stack = new ItemStack(material, 1);
+        stack.editMeta(meta -> apply(meta, entry, System.currentTimeMillis(),
+                extra, lifetimeMs, effectMinutes, choice));
+        return stack;
+    }
+
     private List<Component> purchaseLore(ShardCatalog.Entry entry, long price) {
         Settings settings = plugin.settings();
         List<Component> extra = new ArrayList<>();
@@ -256,7 +278,6 @@ public final class ShardItems {
             pdc.set(keyCreated, PersistentDataType.LONG, now);
             pdc.set(keyLifetime, PersistentDataType.LONG, lifetimeMs);
             pdc.set(keyWarned, PersistentDataType.INTEGER, 0);
-            pdc.set(keyMinutes, PersistentDataType.LONG, -1L);
             if (effectMinutes > 0L) {
                 pdc.set(keyEffectMinutes, PersistentDataType.LONG, effectMinutes);
             }
@@ -332,23 +353,48 @@ public final class ShardItems {
             play(holder, plugin.settings().soundWarn());
             metaChanged = true;
         }
-        if (plugin.settings().loreRefresh()) {
-            long minutesLeft = TimeWords.minutesOf(remaining);
-            Long shown = pdc.get(keyMinutes, PersistentDataType.LONG);
-            if (shown == null || shown != minutesLeft) {
-                pdc.set(keyMinutes, PersistentDataType.LONG, minutesLeft);
-                Long effectOverride = pdc.get(keyEffectMinutes, PersistentDataType.LONG);
-                long effectMs = effectOverride != null && effectOverride > 0L
-                        ? effectOverride * 60_000L : defaultEffectMs();
-                meta.lore(renderLore(entry, remaining, effectMs, null));
-                metaChanged = true;
-            }
-        }
         if (metaChanged) {
             stack.setItemMeta(meta);
-            return TickResult.UPDATED;
         }
-        return TickResult.NONE;
+        boolean loreChanged = refreshLore(stack, entry, nowMs);
+        return metaChanged || loreChanged ? TickResult.UPDATED : TickResult.NONE;
+    }
+
+    /**
+     * Display-only countdown resync: re-renders the dynamic lore lines (the
+     * red remaining-lifetime text and the potion "when drunk" duration) from
+     * the item's immutable creation data. Never writes persistent data - the
+     * item itself stays untouched; only the visible tooltip text is brought
+     * up to date, and only when it actually differs from what is shown.
+     * Returns true when the tooltip changed (caller resyncs the client).
+     */
+    public boolean refreshLore(ItemStack stack, ShardCatalog.Entry entry, long nowMs) {
+        if (!plugin.settings().loreRefresh()) {
+            return false;
+        }
+        Long created = created(stack);
+        Long lifetime = lifetime(stack);
+        if (created == null || lifetime == null || lifetime <= 0L) {
+            return false;
+        }
+        long remaining = created + lifetime - nowMs;
+        if (remaining <= 0L) {
+            return false;   // expiry sweep destroys it, nothing to display
+        }
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        Long effectOverride = meta.getPersistentDataContainer().get(keyEffectMinutes, PersistentDataType.LONG);
+        long effectMs = effectOverride != null && effectOverride > 0L
+                ? effectOverride * 60_000L : defaultEffectMs();
+        List<Component> fresh = renderLore(entry, remaining, effectMs, null);
+        if (fresh.isEmpty() || fresh.equals(meta.lore())) {
+            return false;
+        }
+        meta.lore(fresh);
+        stack.setItemMeta(meta);
+        return true;
     }
 
     private void play(Player holder, String soundId) {

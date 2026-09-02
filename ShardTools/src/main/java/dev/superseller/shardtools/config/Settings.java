@@ -59,6 +59,7 @@ public final class Settings {
 
     private long sweepSeconds = 30;
     private boolean loreRefresh = true;
+    private long loreRefreshSeconds = 5;
     private long[] warnMinutes = {60, 10, 1};
     private boolean scanOpenedInventories = true;
 
@@ -161,6 +162,7 @@ public final class Settings {
 
         sweepSeconds = Math.max(5L, config.getLong("expiry.sweep-seconds", 30L));
         loreRefresh = config.getBoolean("expiry.lore-refresh", true);
+        loreRefreshSeconds = Math.max(1L, config.getLong("expiry.lore-refresh-seconds", 5L));
         List<Long> warnList = new ArrayList<>();
         for (long minutes : config.getLongList("expiry.warn-minutes")) {
             if (minutes > 0) {
@@ -407,6 +409,10 @@ public final class Settings {
 
     public boolean loreRefresh() {
         return loreRefresh;
+    }
+
+    public long loreRefreshSeconds() {
+        return loreRefreshSeconds;
     }
 
     public long[] warnMinutes() {

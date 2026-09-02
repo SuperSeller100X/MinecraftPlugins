@@ -40,6 +40,41 @@ public final class ExpirySweep {
         }
     }
 
+    /** Global-region tick of the fast, display-only countdown refresher. */
+    public void refreshTick() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            dev.superseller.shardtools.scheduler.PlatformScheduler.runEntity(player, () -> refreshDisplay(player));
+        }
+    }
+
+    /**
+     * Display-only pass over one player's inventory: brings the countdown
+     * tooltips (red remaining-time text, potion "when drunk" duration) up to
+     * date and resyncs the client when something visible changed. Unlike
+     * {@link #scan} this never destroys items, never warns and never writes
+     * persistent data - the items themselves stay untouched.
+     */
+    public void refreshDisplay(Player player) {
+        if (!player.isOnline()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        boolean changed = false;
+        for (ItemStack stack : player.getInventory().getContents()) {
+            String id = plugin.items().itemId(stack);
+            if (id == null) {
+                continue;
+            }
+            ShardCatalog.Entry entry = plugin.catalog().byId(id);
+            if (entry != null && plugin.items().refreshLore(stack, entry, now)) {
+                changed = true;
+            }
+        }
+        if (changed) {
+            player.updateInventory();
+        }
+    }
+
     /** Scans one player's inventory (runs on the player's region thread). */
     public void scan(Player player) {
         if (!player.isOnline()) {

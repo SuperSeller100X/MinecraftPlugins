@@ -79,6 +79,18 @@ Clicking an **expiring shard item** or the **haste potion** in the shop opens an
 The dialog shows the resulting lifetime/effect duration and the total price before you
 confirm; the purchased item's lore and `/st info` reflect the extended time.
 
+### Live tooltips
+- **In the purchase dialog** the item preview is display-only and updates **live**:
+  the red *"Self-destructs in …"* line, the potion's *"Haste II for … when drunk"*
+  line and the enchant list all reflect the current +/- and Fortune/Silk selection
+  instantly. The real item is only created once, when you confirm.
+- **On owned items** the red remaining-lifetime countdown (and the potion's
+  effect line) is kept up to date by a **display-only refresher** (every
+  `expiry.lore-refresh-seconds`, default 5 s): it re-renders the visible lore from
+  the item's immutable creation timestamp and **never writes any data to the item
+  itself** — no persistent-data churn, only the tooltip text is resynced when it
+  actually changed.
+
 ### DonutSMP amethyst sounds & particles — purple star included
 The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
 
@@ -185,7 +197,8 @@ behavior:
   area-materials: [STONE, DIRT, SAND, ...]   # shared 3x3 list for all tools
   tree: {max-blocks: 256, same-material-only: true, replant: false}
 expiry:
-  sweep-seconds: 30            # removal + lore countdown refresh cadence
+  sweep-seconds: 30            # removal + warning cadence
+  lore-refresh-seconds: 5      # display-only tooltip countdown refresh
   warn-minutes: [60, 10, 1]
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}

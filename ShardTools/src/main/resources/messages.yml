@@ -65,7 +65,6 @@ choice:
   hint: "<dark_gray>Choose your enchant when buying</dark_gray>"
   button: "<yellow>Enchant: <green>%enchant%</green></yellow>"
   switch: "<dark_gray>Click to switch</dark_gray>"
-  line: "<gray>Enchant: <yellow>%enchant%</yellow></gray>"
 
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"

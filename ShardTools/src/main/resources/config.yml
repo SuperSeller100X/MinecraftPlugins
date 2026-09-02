@@ -341,10 +341,15 @@ behavior:
 
 # ---------- Self-destruct ----------
 expiry:
-  # How often expired items are removed / lore countdowns refreshed.
+  # How often expired items are removed and warnings are checked.
   sweep-seconds: 30
-  # Update the "%time%" lore countdown while items are held.
+  # Live tooltip countdown: keeps the red "%time%" text and the potion's
+  # "%effect%" duration up to date while items are held. Display-only -
+  # the refresher never writes any data to the item itself, it just
+  # re-renders the visible lore from the item's creation timestamp.
   lore-refresh: true
+  # How often (seconds) the display-only tooltip refresher runs.
+  lore-refresh-seconds: 5
   # Warn the holder when less than these minutes remain (largest first).
   warn-minutes: [60, 10, 1]
   # Also remove expired items from chests/shulkers when opened.

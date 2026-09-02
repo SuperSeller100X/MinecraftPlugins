@@ -316,15 +316,19 @@ public final class ShopGui {
         long baseMs = potion
                 ? plugin.items().defaultEffectMs() : entry.lifetimeMs();
 
-        ItemStack icon = plugin.items().displayIcon(entry, basePrice);
+        // Display-only preview: the icon's own tooltip lines (red
+        // self-destruct countdown, "when drunk" duration, enchant list)
+        // reflect the current selection live. The real item is only built
+        // once, when the purchase is confirmed.
+        ItemStack icon = potion
+                ? plugin.items().previewIcon(entry, basePrice,
+                        entry.lifetimeMs(), (baseMs + extraMs) / 60_000L, chosen)
+                : plugin.items().previewIcon(entry, basePrice,
+                        baseMs + extraMs, -1L, chosen);
         ItemMeta iconMeta = icon.getItemMeta();
         if (iconMeta != null) {
             List<Component> lore = iconMeta.lore() != null
                     ? new ArrayList<>(iconMeta.lore()) : new ArrayList<>();
-            if (chosen != null) {
-                lore.add(plugin.messages().itemLine("choice.line",
-                        "%enchant%", prettyEnchant(chosen)));
-            }
             if (extendable) {
                 lore.add(plugin.messages().itemLine(potion ? "extend.effect-line" : "extend.lifetime-line",
                         "%base%", TimeWords.format(baseMs),
