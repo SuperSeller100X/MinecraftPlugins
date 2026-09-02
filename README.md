@@ -2,6 +2,27 @@
 
 A collection of Minecraft plugins.
 
+## SwiftTPA ⚡
+
+A fast, fully configurable teleport-request suite for Minecraft **26.2** (Paper /
+Purpur / Folia), Java 25. `/tpa` and `/tpahere` with clickable **[Accept] /
+[Deny]** chat chips, answering by name or newest-first without one, a requests
+GUI with live player heads, warmup countdowns that cancel on move/damage,
+cooldowns, per-player toggles and persisted block lists, sounds on every event,
+and a full admin toolbox.
+
+- `/tpa (tpr)` · `/tpahere (tph)` · `/tpaccept (tacc) [player]` — no name accepts the latest · `/tpdeny (tdeny)` · `/tpacancel (tpcl)` · `/tpatoggle (tptg)` · `/tpalist (tpls)` · `/tpablock (tpbl)` · `/tpaunblock (tpub)`
+- `/swifttpa (stpa)` — help / gui / info / version
+- `/swifttpaadmin (stpaadmin)` — reload (rl) · forcetp (ftp) · forcetphere (ftph) · clear (c) · spy (s) · stats (st) · info (i)
+- Permissions `swifttpa.*` incl. bypass nodes, full TabCompleter, YAML **or**
+  SQLite storage, Folia-safe `teleportAsync`
+
+See [SwiftTPA/README.md](SwiftTPA/README.md). Build with `mvn -B clean package` in
+`SwiftTPA/` (JDK 25 required). A CI workflow that runs the consistency checks, the
+unit tests and `mvn clean verify` on Temurin 25 is included at
+`SwiftTPA/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/`
+to activate it).
+
 ## PlayerVault 🗄️
 
 A personal, expandable vault for every player on Minecraft **26.2** (Paper / Purpur /

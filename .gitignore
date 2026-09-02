@@ -48,5 +48,11 @@ JustGambling/data.yml.tmp
 # ChunkVoter
 ChunkVoter/target/
 
+# SwiftTPA
+SwiftTPA/target/
+SwiftTPA/data/
+SwiftTPA/playerdata/
+SwiftTPA/swifttpa.db*
+
 # PlayerHeads smoke classes
 smoke-classes/

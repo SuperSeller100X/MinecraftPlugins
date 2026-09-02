@@ -1,0 +1,128 @@
+name: SwiftTPA
+version: '${project.version}'
+main: dev.superseller.swifttpa.SwiftTPAPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: A fast, fully configurable teleport-request suite (/tpa, /tpahere, clickable accept/deny, GUI, warmups, cooldowns, toggles, blocks, admin tools) for Paper / Purpur / Folia 26.2.
+
+commands:
+  tpa:
+    description: Ask a player if you may teleport to them.
+    usage: /<command> <player>
+    aliases: [tpreq, tpr]
+  tpahere:
+    description: Ask a player to teleport to you.
+    usage: /<command> <player>
+    aliases: [tphere, tph]
+  tpaccept:
+    description: Accept a teleport request. Without a name the newest request is accepted.
+    usage: /<command> [player]
+    aliases: [tpyes, tacc]
+  tpdeny:
+    description: Deny a teleport request. Without a name the newest request is denied.
+    usage: /<command> [player]
+    aliases: [tpno, tdeny]
+  tpacancel:
+    description: Cancel the teleport request you sent.
+    usage: /<command>
+    aliases: [tpcancel, tpcl]
+  tpatoggle:
+    description: Toggle receiving teleport requests on or off.
+    usage: /<command>
+    aliases: [tptoggle, tptg]
+  tpalist:
+    description: List your pending teleport requests.
+    usage: /<command>
+    aliases: [tplist, tpls]
+  tpablock:
+    description: Block a player from sending you teleport requests.
+    usage: /<command> <player>
+    aliases: [tpblock, tpbl]
+  tpaunblock:
+    description: Remove a player from your teleport block list.
+    usage: /<command> <player>
+    aliases: [tpunblock, tpub]
+  swifttpa:
+    description: SwiftTPA help, GUI, info and version.
+    usage: /<command> [help|gui|info|version]
+    aliases: [stpa]
+  swifttpaadmin:
+    description: SwiftTPA administration (reload, force teleports, clear requests, spy, stats).
+    usage: /<command> [reload|forcetp|forcetphere|clear|spy|stats|info]
+    aliases: [stpaadmin, tpaadmin]
+
+permissions:
+  swifttpa.tpa:
+    description: Send /tpa requests.
+    default: true
+  swifttpa.tpahere:
+    description: Send /tpahere requests.
+    default: true
+  swifttpa.accept:
+    description: Accept teleport requests with /tpaccept.
+    default: true
+  swifttpa.deny:
+    description: Deny teleport requests with /tpdeny.
+    default: true
+  swifttpa.cancel:
+    description: Cancel your own outgoing request with /tpacancel.
+    default: true
+  swifttpa.toggle:
+    description: Toggle incoming requests with /tpatoggle.
+    default: true
+  swifttpa.list:
+    description: List pending requests with /tpalist.
+    default: true
+  swifttpa.block:
+    description: Block and unblock players with /tpablock and /tpaunblock.
+    default: true
+  swifttpa.gui:
+    description: Open the requests GUI.
+    default: true
+  swifttpa.stats:
+    description: View your own teleport statistics with /swifttpa info.
+    default: true
+  swifttpa.bypass.cooldown:
+    description: Skip the request cooldown.
+    default: op
+  swifttpa.bypass.warmup:
+    description: Teleport instantly without the warmup delay.
+    default: op
+  swifttpa.bypass.toggle:
+    description: Send requests to players who disabled requests.
+    default: op
+  swifttpa.bypass.blocked:
+    description: Send requests to players who blocked you.
+    default: op
+  swifttpa.bypass.world:
+    description: Ignore cross-world and disabled-world restrictions.
+    default: op
+  swifttpa.admin:
+    description: Use the SwiftTPA admin suite.
+    default: op
+  swifttpa.admin.reload:
+    description: Reload SwiftTPA configuration and messages.
+    default: op
+  swifttpa.*:
+    description: All SwiftTPA permissions.
+    default: op
+    children:
+      swifttpa.tpa: true
+      swifttpa.tpahere: true
+      swifttpa.accept: true
+      swifttpa.deny: true
+      swifttpa.cancel: true
+      swifttpa.toggle: true
+      swifttpa.list: true
+      swifttpa.block: true
+      swifttpa.gui: true
+      swifttpa.stats: true
+      swifttpa.bypass.cooldown: true
+      swifttpa.bypass.warmup: true
+      swifttpa.bypass.toggle: true
+      swifttpa.bypass.blocked: true
+      swifttpa.bypass.world: true
+      swifttpa.admin: true
+      swifttpa.admin.reload: true
