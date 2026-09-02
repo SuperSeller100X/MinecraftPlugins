@@ -1,0 +1,113 @@
+# ==============================================================================
+# CombatTag messages
+# MiniMessage tags (<red>, <gradient:...>) and legacy codes (&c, §c) both work.
+# Placeholders use <name> or {name}.
+# ==============================================================================
+prefix: "<gradient:#ff5f6d:#ffc371><b>CombatTag</b></gradient> <dark_gray>»</dark_gray> "
+
+combat:
+  tag-start: "<prefix><red>You are now in combat!</red> <gray>Shops, teleports and repairs are locked for <white><seconds>s</white>.</gray>"
+  tag-end: "<prefix><green>You are no longer in combat.</green>"
+
+status:
+  safe: "<prefix><green>You are not in combat.</green>"
+  tagged: "<prefix><red>In combat</red> <gray>for</gray> <white><time></white> <dark_gray>|</dark_gray> <gray>opponent:</gray> <white><opponent></white>"
+
+check:
+  tagged: "<prefix><white><player></white> <red>is in combat</red> <gray>(<seconds>s left)</gray>"
+  safe: "<prefix><white><player></white> <green>is not in combat.</green>"
+
+blocked:
+  shop: "<prefix><red>You cannot open shops while in combat!</red> <gray>(<seconds>s left)</gray>"
+  teleport: "<prefix><red>You cannot teleport while in combat!</red> <gray>(<seconds>s left)</gray>"
+  easymending: "<prefix><red>You cannot repair with EasyMending while in combat!</red> <gray>(<seconds>s left)</gray>"
+  command: "<prefix><red>You cannot use <white><detail></white> while in combat!</red> <gray>(<seconds>s left)</gray>"
+  pearl: "<prefix><red>You cannot teleport while in combat!</red> <gray>(<seconds>s left)</gray>"
+
+display:
+  boss-bar: "<red><b>IN COMBAT</b></red> <dark_gray>|</dark_gray> <white><seconds>s</white> <dark_gray>|</dark_gray> <gray><opponent></gray>"
+  action-bar: "<red>⚔ In combat</red> <dark_gray>·</dark_gray> <white><time></white>"
+  title: "<red><b>IN COMBAT</b></red>"
+  subtitle: "<gray>No shops, teleports or repairs for <white><seconds>s</white></gray>"
+
+combat-log:
+  broadcast: "<prefix><red><player> combat logged</red> <gray>while fighting</gray> <white><opponent></white><gray>!</gray>"
+
+info:
+  summary: "<prefix><gray>Combat lasts <white><duration>s</white> (projectiles <white><projectile>s</white>) <dark_gray>|</dark_gray> shops blocked: <white><shops></white>, teleports: <white><teleports></white>, EasyMending: <white><easymending></white> <dark_gray>|</dark_gray> in combat now: <white><active></white></gray>"
+
+help:
+  player: "<prefix><gray>Commands:</gray>\n<gray>› </gray><white>/<label> status</white> <dark_gray>(s)</dark_gray> <gray>— your combat status</gray>\n<gray>› </gray><white>/<label> gui</white> <dark_gray>(g)</dark_gray> <gray>— open the status GUI</gray>\n<gray>› </gray><white>/<label> check <player></white> <dark_gray>(c)</dark_gray> <gray>— check someone else</gray>\n<gray>› </gray><white>/<label> info</white> <dark_gray>(i)</dark_gray> <gray>— what is blocked and for how long</gray>"
+  admin: "<prefix><gray>Admin commands:</gray>\n<gray>› </gray><white>/<label> tag <player> [time]</white> <dark_gray>(t)</dark_gray>\n<gray>› </gray><white>/<label> untag <player></white> <dark_gray>(u)</dark_gray>\n<gray>› </gray><white>/<label> clear</white> <dark_gray>(c)</dark_gray>\n<gray>› </gray><white>/<label> list</white> <dark_gray>(l)</dark_gray>\n<gray>› </gray><white>/<label> exempt <player></white> <dark_gray>(e)</dark_gray>\n<gray>› </gray><white>/<label> duration <time></white> <dark_gray>(d)</dark_gray>\n<gray>› </gray><white>/<label> stats</white> <dark_gray>(st)</dark_gray>\n<gray>› </gray><white>/<label> gui</white> <dark_gray>(g)</dark_gray>\n<gray>› </gray><white>/<label> reload</white> <dark_gray>(rl)</dark_gray>"
+
+admin:
+  tagged: "<prefix><gray>Tagged</gray> <white><player></white> <gray>for</gray> <white><seconds>s</white><gray>.</gray>"
+  untagged: "<prefix><gray>Removed the combat tag of</gray> <white><player></white><gray>.</gray>"
+  not-tagged: "<prefix><white><player></white> <gray>is not in combat.</gray>"
+  cleared: "<prefix><gray>Cleared</gray> <white><count></white> <gray>combat tags.</gray>"
+  list-header: "<prefix><gray>Players in combat (<white><count></white>):</gray>"
+  list-entry: "<gray>› </gray><white><player></white> <dark_gray>—</dark_gray> <red><seconds>s</red> <dark_gray>vs</dark_gray> <gray><opponent></gray>"
+  list-empty: "<prefix><gray>Nobody is in combat right now.</gray>"
+  exempt-on: "<prefix><white><player></white> <green>is now exempt from combat tagging.</green>"
+  exempt-off: "<prefix><white><player></white> <yellow>is no longer exempt from combat tagging.</yellow>"
+  duration-set: "<prefix><gray>Combat duration is now</gray> <white><seconds>s</white><gray>.</gray>"
+  duration-hint: "<prefix><gray>Combat duration is</gray> <white><seconds>s</white><gray>. Change it with</gray> <white>/cta duration <time></white><gray>.</gray>"
+  stats: "<prefix><gray>Active: <white><active></white> <dark_gray>|</dark_gray> total tags: <white><tags></white> <dark_gray>|</dark_gray> blocked actions: <white><blocked></white> <dark_gray>|</dark_gray> combat logs: <white><logs></white></gray>"
+  reloaded: "<prefix><green>Configuration reloaded.</green>"
+  block-notification: "<prefix><gray><player> tried <white><action></white> (<detail>) while tagged.</gray>"
+
+error:
+  no-permission: "<prefix><red>You do not have permission to do that.</red>"
+  players-only: "<prefix><red>Only players can use this command.</red>"
+  player-not-found: "<prefix><red>Player <white><player></white> was not found.</red>"
+  invalid-duration: "<prefix><red>Invalid duration:</red> <white><input></white> <gray>(try 10, 30s, 2m, 1h)</gray>"
+  usage: "<prefix><gray>Usage:</gray> <white><usage></white>"
+  gui-disabled: "<prefix><red>The GUI is disabled on this server.</red>"
+
+gui:
+  title-status: "<dark_red><b>Combat</b></dark_red> <gray>Status</gray>"
+  title-admin: "<dark_red><b>CombatTag</b></dark_red> <gray>Admin</gray>"
+  toggle-on: "<green>blocked</green>"
+  toggle-off: "<gray>allowed</gray>"
+  close-name: "<red>Close</red>"
+  close-lore:
+    - "<gray>Click to close this menu.</gray>"
+  status:
+    tagged-name: "<red><b>In Combat</b></red>"
+    tagged-lore:
+      - "<gray>Time left: <white><time></white>"
+      - "<gray>Opponent: <white><opponent></white>"
+      - ""
+      - "<gray>Shops, teleports and repairs"
+      - "<gray>are locked until the timer ends.</gray>"
+    safe-name: "<green><b>Not in Combat</b></green>"
+    safe-lore:
+      - "<gray>You are free to shop, teleport"
+      - "<gray>and repair your gear.</gray>"
+    restrictions-name: "<gold><b>Restrictions</b></gold>"
+    restrictions-lore:
+      - "<gray>Combat duration: <white><duration>s</white>"
+      - ""
+      - "<gray>Shops: <white><shops></white>"
+      - "<gray>Teleports: <white><teleports></white>"
+      - "<gray>EasyMending: <white><easymending></white>"
+      - "<gray>Command list: <white><commands></white>"
+  admin:
+    duration-name: "<gold>Combat duration: <white><seconds>s</white></gold>"
+    duration-lore:
+      - "<gray>Change it with</gray>"
+      - "<white>/cta duration <time></white>"
+    active-name: "<yellow>Players in combat: <white><count></white></yellow>"
+    active-lore:
+      - "<gray>Click for the full stats line.</gray>"
+    stats-name: "<aqua>Statistics</aqua>"
+    stats-lore:
+      - "<gray>Total tags: <white><tags></white>"
+      - "<gray>Blocked actions: <white><blocked></white>"
+      - "<gray>Combat logs: <white><logs></white>"
+    clear-name: "<red>Clear all tags</red>"
+    clear-lore:
+      - "<gray>Removes every active combat tag.</gray>"
+    reload-name: "<green>Reload configuration</green>"
+    reload-lore:
+      - "<gray>Reloads config.yml and messages.yml.</gray>"
