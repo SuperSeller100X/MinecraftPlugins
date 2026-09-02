@@ -101,6 +101,12 @@ public final class CombatGui {
                 messages.get("gui.admin.clear-name", Map.of()),
                 messages.getList("gui.admin.clear-lore", Map.of())));
 
+        boolean bypassOn = config.isBypassEnabled();
+        inv.setItem(20, item(bypassOn ? Material.ENDER_EYE : Material.ENDER_PEARL,
+                messages.get("gui.admin.bypass-name", Map.of("state",
+                        messages.getRaw(bypassOn ? "admin.bypass-state-on" : "admin.bypass-state-off"))),
+                messages.getList("gui.admin.bypass-lore", Map.of())));
+
         inv.setItem(22, item(Material.COMPARATOR,
                 messages.get("gui.admin.reload-name", Map.of()),
                 messages.getList("gui.admin.reload-lore", Map.of())));

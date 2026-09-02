@@ -1,6 +1,7 @@
 package dev.superseller.combattag;
 
 import dev.superseller.combattag.api.CombatTagApi;
+import dev.superseller.combattag.combat.BypassService;
 import dev.superseller.combattag.combat.CombatManager;
 import dev.superseller.combattag.combat.RestrictionService;
 import dev.superseller.combattag.command.CombatTabCompleter;
@@ -32,6 +33,7 @@ public final class CombatTagPlugin extends JavaPlugin {
     private PluginConfig pluginConfig;
     private Messages messages;
     private CombatManager combatManager;
+    private BypassService bypassService;
     private RestrictionService restrictions;
     private DisplayManager display;
     private CombatGui gui;
@@ -49,8 +51,9 @@ public final class CombatTagPlugin extends JavaPlugin {
         this.messages = new Messages(this);
         this.messages.load();
 
-        this.combatManager = new CombatManager(pluginConfig);
-        this.restrictions = new RestrictionService(this, pluginConfig, messages, combatManager);
+        this.bypassService = new BypassService(pluginConfig);
+        this.combatManager = new CombatManager(pluginConfig, bypassService);
+        this.restrictions = new RestrictionService(this, pluginConfig, messages, combatManager, bypassService);
         this.display = new DisplayManager(pluginConfig, messages, combatManager);
         this.gui = new CombatGui(pluginConfig, messages, combatManager);
         this.api = new CombatTagApi(combatManager);
@@ -125,7 +128,8 @@ public final class CombatTagPlugin extends JavaPlugin {
         pm.registerEvents(new TeleportListener(pluginConfig, combatManager, restrictions), this);
         pm.registerEvents(new InventoryListener(pluginConfig, combatManager, restrictions), this);
         pm.registerEvents(new EasyMendingListener(pluginConfig, combatManager, restrictions), this);
-        pm.registerEvents(new ConnectionListener(this, pluginConfig, messages, combatManager, display), this);
+        pm.registerEvents(
+                new ConnectionListener(this, pluginConfig, messages, combatManager, display, bypassService), this);
         pm.registerEvents(new GuiListener(this, pluginConfig, messages, combatManager, gui), this);
     }
 
@@ -158,6 +162,10 @@ public final class CombatTagPlugin extends JavaPlugin {
 
     public CombatManager getCombatManager() {
         return combatManager;
+    }
+
+    public BypassService getBypassService() {
+        return bypassService;
     }
 
     public CombatTagApi getApi() {

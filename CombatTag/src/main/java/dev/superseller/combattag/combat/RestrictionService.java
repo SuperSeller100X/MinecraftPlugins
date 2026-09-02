@@ -20,12 +20,15 @@ public final class RestrictionService {
     private final PluginConfig config;
     private final Messages messages;
     private final CombatManager combat;
+    private final BypassService bypass;
 
-    public RestrictionService(JavaPlugin plugin, PluginConfig config, Messages messages, CombatManager combat) {
+    public RestrictionService(JavaPlugin plugin, PluginConfig config, Messages messages,
+                              CombatManager combat, BypassService bypass) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.combat = combat;
+        this.bypass = bypass;
     }
 
     /**
@@ -38,10 +41,9 @@ public final class RestrictionService {
         if (!combat.isTagged(player.getUniqueId())) {
             return false;
         }
-        if (player.hasPermission(action.bypassPermission()) || player.hasPermission("combattag.bypass.*")) {
-            return false;
-        }
-        return true;
+        // Evaluated live on every event: as soon as a bypass is switched off, the
+        // restriction is enforced again without any reload.
+        return !bypass.canBypass(player, action);
     }
 
     /**

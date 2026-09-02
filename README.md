@@ -208,6 +208,10 @@ command can be blocked through a blacklist or strict whitelist.
 
 - `/combattag` (`/ct`) — `status` (`s`) · `gui` (`g`) · `time` (`t`) · `check` (`c`) · `info` (`i`)
 - `/combattagadmin` (`/cta`) — `tag` (`t`) · `untag` (`u`) · `clear` (`c`) · `list` (`l`) · `exempt` (`e`) · `duration` (`d`) · `stats` (`st`) · `gui` (`g`) · `reload` (`rl`)
+- `/cta bypass` (`b`) — live bypass control: the master switch and each individual bypass
+  (`tag`, `shop`, `teleport`, `easymending`, `command`, `combatlog`) can be toggled at
+  runtime, and switching one **off enforces that restriction instantly for everyone** —
+  no reload, no restart, no re-login
 - Boss bar + action bar countdown, GUIs, sounds, full `combattag.*` permission tree with
   bypasses off by default, tab completion, PlaceholderAPI (`%combattag_status%`), developer
   API, Folia-safe scheduling, everything configurable and translatable

@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 public final class CombatManager {
 
     private final PluginConfig config;
+    private final BypassService bypass;
     private final Map<UUID, CombatTagEntry> tags = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> exempt = new ConcurrentHashMap<>();
 
@@ -28,8 +29,9 @@ public final class CombatManager {
     private BiConsumer<Player, CombatTagEntry> onTagStart = (p, e) -> { };
     private BiConsumer<UUID, CombatTagEntry> onTagEnd = (p, e) -> { };
 
-    public CombatManager(PluginConfig config) {
+    public CombatManager(PluginConfig config, BypassService bypass) {
         this.config = config;
+        this.bypass = bypass;
     }
 
     public void setCallbacks(BiConsumer<Player, CombatTagEntry> start, BiConsumer<UUID, CombatTagEntry> end) {
@@ -157,9 +159,12 @@ public final class CombatManager {
     }
 
     public boolean isExempt(Player player) {
-        return player != null
-                && (exempt.containsKey(player.getUniqueId())
-                    || player.hasPermission("combattag.bypass.tag"));
+        if (player == null) {
+            return false;
+        }
+        // Runtime exemptions (/cta exempt) always apply; permission/OP bypasses only
+        // count while the bypass system is switched on.
+        return exempt.containsKey(player.getUniqueId()) || bypass.canBypassTagging(player);
     }
 
     public boolean isExemptId(UUID id) {
@@ -167,7 +172,7 @@ public final class CombatManager {
             return true;
         }
         Player p = Bukkit.getPlayer(id);
-        return p != null && p.hasPermission("combattag.bypass.tag");
+        return p != null && bypass.canBypassTagging(p);
     }
 
     public void countBlocked() {

@@ -88,6 +88,9 @@ python3 tools/check_consistency.py
 | `/cta list` | `/cta l` | Everyone currently tagged | `combattag.admin.list` |
 | `/cta exempt <player>` | `/cta e` | Toggle tagging exemption | `combattag.admin.exempt` |
 | `/cta duration <time>` | `/cta d` | Change the tag duration live (saved to config) | `combattag.admin.duration` |
+| `/cta bypass` | `/cta b` | Show the live state of every bypass | `combattag.admin.bypass` |
+| `/cta bypass on\|off` | `/cta b off` | Master switch — `off` enforces **everything** for everyone | `combattag.admin.bypass` |
+| `/cta bypass <key> [true\|false]` | `/cta b shop false` | Toggle one bypass (`tag`, `shop`, `teleport`, `easymending`, `command`, `combatlog`) | `combattag.admin.bypass` |
 | `/cta stats` | `/cta st` | Tags, blocked actions, combat logs | `combattag.admin` |
 | `/cta gui` | `/cta g` | Open the admin panel | `combattag.admin` |
 | `/cta reload` | `/cta rl` | Reload `config.yml` + `messages.yml` | `combattag.admin.reload` |
@@ -106,8 +109,38 @@ names, duration suggestions).
 | `combattag.check` | op | Check other players |
 | `combattag.notify` | op | Receive "player X was blocked" notifications |
 | `combattag.admin` | op | All admin commands (parent of the ones below) |
-| `combattag.admin.tag` / `.untag` / `.clear` / `.list` / `.exempt` / `.duration` / `.reload` | op | Individual admin actions |
+| `combattag.admin.tag` / `.untag` / `.clear` / `.list` / `.exempt` / `.duration` / `.bypass` / `.reload` | op | Individual admin actions |
 | `combattag.*` | op | All player + admin permissions (**bypasses stay off**) |
+
+### Bypass system — live, no reload needed
+
+Bypasses are evaluated **per event, against the current configuration**. Switching a bypass
+off makes the matching restriction **fully functional immediately** — no `/cta reload`, no
+server restart, and no re-login for the affected players. The same is true in reverse.
+
+```yaml
+bypass:
+  enabled: true        # master switch: false = nobody bypasses anything, ever
+  permissions: true    # honour the combattag.bypass.* permissions at all?
+  op-bypasses: false   # do operators bypass automatically? (off by default)
+  allow:
+    tag: true
+    shop: true
+    teleport: true     # also covers ender pearls and chorus fruit
+    easymending: true
+    command: true
+    combatlog: true
+```
+
+Three layers, all checked live, all of which must pass for a bypass to apply:
+
+1. `bypass.enabled` — the master switch. While it is `false`, **every** restriction is
+   enforced for **everyone**: permissions, `combattag.bypass.*`, and OP status are all ignored.
+2. `bypass.allow.<key>` — the individual switch for that restriction.
+3. The player actually holding the permission (or being OP, if `op-bypasses` is on).
+
+Toggle any of it at runtime with `/cta bypass …` or the **Bypass system** button in
+`/cta gui`; changes apply to the very next event and are written back to `config.yml`.
 
 ### Bypass permissions — **off by default, even for operators**
 

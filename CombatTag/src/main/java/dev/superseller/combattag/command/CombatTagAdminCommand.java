@@ -63,6 +63,7 @@ public final class CombatTagAdminCommand implements CommandExecutor {
             case "list", "l" -> list(sender);
             case "exempt", "e" -> exempt(sender, label, args);
             case "duration", "d" -> duration(sender, label, args);
+            case "bypass", "b" -> bypass(sender, label, args);
             case "stats", "st" -> sender.sendMessage(messages.get("admin.stats", Map.of(
                     "active", String.valueOf(combat.getActiveCount()),
                     "tags", String.valueOf(combat.getTotalTags()),
@@ -186,6 +187,76 @@ public final class CombatTagAdminCommand implements CommandExecutor {
         }
         config.setTagSeconds(parsed);
         messages.send(sender, "admin.duration-set", "seconds", String.valueOf(parsed));
+    }
+
+    /**
+     * {@code /cta bypass} — inspect and toggle the bypass system at runtime.
+     *
+     * <p>Every change takes effect on the very next event: no reload, no restart and no
+     * re-login. Turning the master switch off enforces <em>all</em> restrictions for
+     * everyone, regardless of permissions or OP status.</p>
+     */
+    private void bypass(CommandSender sender, String label, String[] args) {
+        if (!sender.hasPermission("combattag.admin.bypass")) {
+            messages.send(sender, "error.no-permission");
+            return;
+        }
+        if (args.length < 2) {
+            showBypassState(sender);
+            return;
+        }
+        String key = args[1].toLowerCase(Locale.ROOT);
+        Boolean value = args.length >= 3 ? parseBoolean(args[2]) : null;
+
+        if (key.equals("on") || key.equals("off") || key.equals("all")) {
+            boolean newValue = switch (key) {
+                case "on" -> true;
+                case "off" -> false;
+                default -> value != null ? value : !config.isBypassEnabled();
+            };
+            config.setBypassEnabled(newValue);
+            messages.send(sender, "admin.bypass-master",
+                    "state", state(newValue),
+                    "effect", messages.getRaw(newValue
+                            ? "admin.bypass-master-on-effect"
+                            : "admin.bypass-master-off-effect"));
+            return;
+        }
+
+        if (!config.getBypassToggles().containsKey(key)) {
+            messages.send(sender, "error.usage", "usage", "/" + label + " bypass <on|off|tag|shop|teleport|easymending|command|combatlog> [true|false]");
+            messages.send(sender, "admin.bypass-unknown", "key", key);
+            return;
+        }
+        boolean newValue = value != null ? value : !config.isBypassAllowed(key);
+        config.setBypassAllowed(key, newValue);
+        messages.send(sender, "admin.bypass-set", "key", key, "state", state(newValue));
+    }
+
+    private void showBypassState(CommandSender sender) {
+        messages.send(sender, "admin.bypass-header",
+                "state", state(config.isBypassEnabled()),
+                "permissions", state(config.isPermissionBypassEnabled()),
+                "op", state(config.isOpBypasses()));
+        config.getBypassToggles().forEach((key, value) ->
+                sender.sendMessage(messages.get("admin.bypass-entry", Map.of(
+                        "key", key,
+                        "state", state(config.isBypassEnabled() && value)))));
+    }
+
+    private String state(boolean value) {
+        return messages.getRaw(value ? "admin.bypass-state-on" : "admin.bypass-state-off");
+    }
+
+    private static Boolean parseBoolean(String raw) {
+        String s = raw.toLowerCase(Locale.ROOT);
+        if (s.equals("true") || s.equals("on") || s.equals("yes") || s.equals("enable")) {
+            return Boolean.TRUE;
+        }
+        if (s.equals("false") || s.equals("off") || s.equals("no") || s.equals("disable")) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 
     private void requirePerm(CommandSender sender, String permission, Runnable action) {

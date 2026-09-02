@@ -58,7 +58,11 @@ permissions:
       combattag.admin.list: true
       combattag.admin.exempt: true
       combattag.admin.duration: true
-      combattag.admin.reload: true
+      combattag.admin.bypass: true
+      combattag.admin.bypass:
+    description: Inspect and toggle the bypass system at runtime.
+    default: op
+  combattag.admin.reload: true
       combattag.check: true
       combattag.notify: true
   combattag.admin.tag:
@@ -78,6 +82,9 @@ permissions:
     default: op
   combattag.admin.duration:
     description: Change the combat duration at runtime.
+    default: op
+  combattag.admin.bypass:
+    description: Inspect and toggle the bypass system at runtime.
     default: op
   combattag.admin.reload:
     description: Reload config.yml and messages.yml.

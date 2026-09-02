@@ -1,5 +1,6 @@
 package dev.superseller.combattag.listener;
 
+import dev.superseller.combattag.combat.BypassService;
 import dev.superseller.combattag.combat.CombatManager;
 import dev.superseller.combattag.combat.CombatTagEntry;
 import dev.superseller.combattag.config.Messages;
@@ -29,14 +30,16 @@ public final class ConnectionListener implements Listener {
     private final Messages messages;
     private final CombatManager combat;
     private final DisplayManager display;
+    private final BypassService bypass;
 
     public ConnectionListener(JavaPlugin plugin, PluginConfig config, Messages messages,
-                              CombatManager combat, DisplayManager display) {
+                              CombatManager combat, DisplayManager display, BypassService bypass) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
         this.combat = combat;
         this.display = display;
+        this.bypass = bypass;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -66,7 +69,7 @@ public final class ConnectionListener implements Listener {
         if (!tagged || !config.isPunishCombatLog()) {
             return;
         }
-        if (player.hasPermission("combattag.bypass.combatlog") || player.hasPermission("combattag.bypass.*")) {
+        if (bypass.canBypassCombatLog(player)) {
             return;
         }
         combat.countCombatLog();

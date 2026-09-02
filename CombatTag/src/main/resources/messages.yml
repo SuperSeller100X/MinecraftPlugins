@@ -38,7 +38,7 @@ info:
 
 help:
   player: "<prefix><gray>Commands:</gray>\n<gray>› </gray><white>/<label> status</white> <dark_gray>(s)</dark_gray> <gray>— your combat status</gray>\n<gray>› </gray><white>/<label> gui</white> <dark_gray>(g)</dark_gray> <gray>— open the status GUI</gray>\n<gray>› </gray><white>/<label> check <player></white> <dark_gray>(c)</dark_gray> <gray>— check someone else</gray>\n<gray>› </gray><white>/<label> info</white> <dark_gray>(i)</dark_gray> <gray>— what is blocked and for how long</gray>"
-  admin: "<prefix><gray>Admin commands:</gray>\n<gray>› </gray><white>/<label> tag <player> [time]</white> <dark_gray>(t)</dark_gray>\n<gray>› </gray><white>/<label> untag <player></white> <dark_gray>(u)</dark_gray>\n<gray>› </gray><white>/<label> clear</white> <dark_gray>(c)</dark_gray>\n<gray>› </gray><white>/<label> list</white> <dark_gray>(l)</dark_gray>\n<gray>› </gray><white>/<label> exempt <player></white> <dark_gray>(e)</dark_gray>\n<gray>› </gray><white>/<label> duration <time></white> <dark_gray>(d)</dark_gray>\n<gray>› </gray><white>/<label> stats</white> <dark_gray>(st)</dark_gray>\n<gray>› </gray><white>/<label> gui</white> <dark_gray>(g)</dark_gray>\n<gray>› </gray><white>/<label> reload</white> <dark_gray>(rl)</dark_gray>"
+  admin: "<prefix><gray>Admin commands:</gray>\n<gray>› </gray><white>/<label> tag <player> [time]</white> <dark_gray>(t)</dark_gray>\n<gray>› </gray><white>/<label> untag <player></white> <dark_gray>(u)</dark_gray>\n<gray>› </gray><white>/<label> clear</white> <dark_gray>(c)</dark_gray>\n<gray>› </gray><white>/<label> list</white> <dark_gray>(l)</dark_gray>\n<gray>› </gray><white>/<label> exempt <player></white> <dark_gray>(e)</dark_gray>\n<gray>› </gray><white>/<label> duration <time></white> <dark_gray>(d)</dark_gray>\n<gray>› </gray><white>/<label> bypass [key] [true|false]</white> <dark_gray>(b)</dark_gray>\n<gray>› </gray><white>/<label> stats</white> <dark_gray>(st)</dark_gray>\n<gray>› </gray><white>/<label> gui</white> <dark_gray>(g)</dark_gray>\n<gray>› </gray><white>/<label> reload</white> <dark_gray>(rl)</dark_gray>"
 
 admin:
   tagged: "<prefix><gray>Tagged</gray> <white><player></white> <gray>for</gray> <white><seconds>s</white><gray>.</gray>"
@@ -53,6 +53,15 @@ admin:
   duration-set: "<prefix><gray>Combat duration is now</gray> <white><seconds>s</white><gray>.</gray>"
   duration-hint: "<prefix><gray>Combat duration is</gray> <white><seconds>s</white><gray>. Change it with</gray> <white>/cta duration <time></white><gray>.</gray>"
   stats: "<prefix><gray>Active: <white><active></white> <dark_gray>|</dark_gray> total tags: <white><tags></white> <dark_gray>|</dark_gray> blocked actions: <white><blocked></white> <dark_gray>|</dark_gray> combat logs: <white><logs></white></gray>"
+  bypass-header: "<prefix><gray>Bypass system: <white><state></white> <dark_gray>|</dark_gray> permissions: <white><permissions></white> <dark_gray>|</dark_gray> OP bypass: <white><op></white></gray>"
+  bypass-entry: "<gray>› </gray><white><key></white> <dark_gray>—</dark_gray> <state>"
+  bypass-set: "<prefix><gray>Bypass</gray> <white><key></white> <gray>is now</gray> <state> <gray>— active immediately, no reload needed.</gray>"
+  bypass-master: "<prefix><gray>Bypass master switch is now</gray> <state><gray>. <white><effect></white></gray>"
+  bypass-master-off-effect: "All restrictions are fully enforced for everyone."
+  bypass-master-on-effect: "Individual bypass permissions apply again."
+  bypass-unknown: "<prefix><red>Unknown bypass:</red> <white><key></white> <gray>(tag, shop, teleport, easymending, command, combatlog, all)</gray>"
+  bypass-state-on: "<green>enabled</green>"
+  bypass-state-off: "<red>disabled</red>"
   reloaded: "<prefix><green>Configuration reloaded.</green>"
   block-notification: "<prefix><gray><player> tried <white><action></white> (<detail>) while tagged.</gray>"
 
@@ -108,6 +117,15 @@ gui:
     clear-name: "<red>Clear all tags</red>"
     clear-lore:
       - "<gray>Removes every active combat tag.</gray>"
+    bypass-name: "<light_purple>Bypass system: <white><state></white></light_purple>"
+    bypass-lore:
+      - "<gray>Click to toggle the master switch.</gray>"
+      - "<gray>While it is off, every restriction is</gray>"
+      - "<gray>enforced for everyone - instantly,</gray>"
+      - "<gray>with no reload required.</gray>"
+      - ""
+      - "<gray>Fine-grained control:</gray>"
+      - "<white>/cta bypass <key> <true|false></white>"
     reload-name: "<green>Reload configuration</green>"
     reload-lore:
       - "<gray>Reloads config.yml and messages.yml.</gray>"

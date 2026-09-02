@@ -19,7 +19,10 @@ public final class CombatTabCompleter implements TabCompleter {
             List.of("status", "s", "gui", "g", "time", "t", "check", "c", "info", "i", "help", "h");
     private static final List<String> ADMIN_SUBS =
             List.of("tag", "t", "untag", "u", "clear", "c", "list", "l", "exempt", "e",
-                    "duration", "d", "stats", "st", "gui", "g", "reload", "rl");
+                    "duration", "d", "bypass", "b", "stats", "st", "gui", "g", "reload", "rl");
+    private static final List<String> BYPASS_KEYS =
+            List.of("on", "off", "all", "tag", "shop", "teleport", "easymending", "command", "combatlog");
+    private static final List<String> BOOLEANS = List.of("true", "false");
     private static final List<String> DURATIONS = List.of("10", "15", "30", "60", "30s", "2m");
 
     @Override
@@ -39,6 +42,9 @@ public final class CombatTabCompleter implements TabCompleter {
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2) {
             if (admin) {
+                if (sub.equals("bypass") || sub.equals("b")) {
+                    return filter(BYPASS_KEYS, args[1]);
+                }
                 if (sub.equals("duration") || sub.equals("d")) {
                     return filter(DURATIONS, args[1]);
                 }
@@ -52,8 +58,13 @@ public final class CombatTabCompleter implements TabCompleter {
             }
             return Collections.emptyList();
         }
-        if (admin && args.length == 3 && (sub.equals("tag") || sub.equals("t"))) {
-            return filter(DURATIONS, args[2]);
+        if (admin && args.length == 3) {
+            if (sub.equals("tag") || sub.equals("t")) {
+                return filter(DURATIONS, args[2]);
+            }
+            if (sub.equals("bypass") || sub.equals("b")) {
+                return filter(BOOLEANS, args[2]);
+            }
         }
         return Collections.emptyList();
     }

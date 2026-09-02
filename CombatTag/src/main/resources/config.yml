@@ -34,6 +34,35 @@ combat:
     - "hub"
 
 # ==============================================================================
+# Bypasses
+# ------------------------------------------------------------------------------
+# Every value here is read LIVE on each event, so switching something off makes the
+# matching restriction fully functional again immediately - no /cta reload, no
+# restart and no re-login needed. Changes made with /cta bypass ... are applied
+# instantly and written back to this file.
+# ==============================================================================
+bypass:
+  # Master switch. While this is false NOBODY bypasses anything: not permissions,
+  # not operators, not combattag.bypass.* - every restriction is fully enforced.
+  enabled: true
+
+  # Should the combattag.bypass.* permissions be honoured at all?
+  permissions: true
+
+  # Should server operators automatically bypass everything? (off by default)
+  op-bypasses: false
+
+  # Individual switches. Turning one off enforces that restriction for everyone,
+  # even for players who hold the matching bypass permission.
+  allow:
+    tag: true          # combattag.bypass.tag         - never get tagged
+    shop: true         # combattag.bypass.shop        - shops while tagged
+    teleport: true     # combattag.bypass.teleport    - teleports / pearls / chorus
+    easymending: true  # combattag.bypass.easymending - EasyMending repairs
+    command: true      # combattag.bypass.command     - blacklisted commands
+    combatlog: true    # combattag.bypass.combatlog   - quitting while tagged
+
+# ==============================================================================
 # Restrictions applied while a player is combat tagged
 # Every section can be turned off individually; bypass permissions are listed in
 # the plugin README (combattag.bypass.*), and are OFF by default even for OPs.

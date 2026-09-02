@@ -78,6 +78,11 @@ public final class PluginConfig {
     private boolean guiEnabled;
     private int guiRows;
 
+    private boolean bypassEnabled;
+    private boolean bypassOp;
+    private boolean bypassPermissions;
+    private final java.util.Map<String, Boolean> bypassToggles = new java.util.concurrent.ConcurrentHashMap<>();
+
     private boolean placeholderApiEnabled;
     private boolean statsEnabled;
     private boolean updateNotify;
@@ -148,6 +153,17 @@ public final class PluginConfig {
 
         guiEnabled = c.getBoolean("gui.enabled", true);
         guiRows = clamp(c.getInt("gui.rows", 3), 1, 6);
+
+        bypassEnabled = c.getBoolean("bypass.enabled", true);
+        bypassOp = c.getBoolean("bypass.op-bypasses", false);
+        bypassPermissions = c.getBoolean("bypass.permissions", true);
+        bypassToggles.clear();
+        bypassToggles.put("tag", c.getBoolean("bypass.allow.tag", true));
+        bypassToggles.put("shop", c.getBoolean("bypass.allow.shop", true));
+        bypassToggles.put("teleport", c.getBoolean("bypass.allow.teleport", true));
+        bypassToggles.put("easymending", c.getBoolean("bypass.allow.easymending", true));
+        bypassToggles.put("command", c.getBoolean("bypass.allow.command", true));
+        bypassToggles.put("combatlog", c.getBoolean("bypass.allow.combatlog", true));
 
         placeholderApiEnabled = c.getBoolean("integrations.placeholderapi", true);
         statsEnabled = c.getBoolean("integrations.statistics", true);
@@ -324,6 +340,51 @@ public final class PluginConfig {
     public boolean isPlaceholderApiEnabled() { return placeholderApiEnabled; }
     public boolean isStatsEnabled() { return statsEnabled; }
     public boolean isNotifyAdminsOnBlock() { return updateNotify; }
+
+    public boolean isBypassEnabled() { return bypassEnabled; }
+    public boolean isOpBypasses() { return bypassOp; }
+    public boolean isPermissionBypassEnabled() { return bypassPermissions; }
+
+    /** @return whether the named bypass ({@code shop}, {@code teleport}, ...) is switched on. */
+    public boolean isBypassAllowed(String key) {
+        return key != null && bypassToggles.getOrDefault(key, Boolean.TRUE);
+    }
+
+    /** @return an unmodifiable view of every individual bypass toggle. */
+    public java.util.Map<String, Boolean> getBypassToggles() {
+        return java.util.Collections.unmodifiableMap(bypassToggles);
+    }
+
+    /**
+     * Flips the bypass master switch. The new value applies to the very next event —
+     * no reload is required — and is persisted to config.yml.
+     *
+     * @return the new value
+     */
+    public boolean setBypassEnabled(boolean value) {
+        this.bypassEnabled = value;
+        plugin.getConfig().set("bypass.enabled", value);
+        plugin.saveConfig();
+        return value;
+    }
+
+    /**
+     * Switches an individual bypass on or off at runtime. Takes effect immediately and is
+     * persisted to config.yml.
+     *
+     * @param key one of tag, shop, teleport, easymending, command, combatlog
+     * @param value the new value
+     * @return true when the key is known and was updated
+     */
+    public boolean setBypassAllowed(String key, boolean value) {
+        if (key == null || !bypassToggles.containsKey(key)) {
+            return false;
+        }
+        bypassToggles.put(key, value);
+        plugin.getConfig().set("bypass.allow." + key, value);
+        plugin.saveConfig();
+        return true;
+    }
 
     /** Live-updates the combat duration and persists it. */
     public void setTagSeconds(int seconds) {

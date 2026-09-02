@@ -63,6 +63,19 @@ public final class GuiListener implements Listener {
                 messages.send(player, "admin.cleared", "count", String.valueOf(cleared));
                 gui.openAdmin(player);
             }
+            case 20 -> {
+                if (!player.hasPermission("combattag.admin.bypass")) {
+                    messages.send(player, "error.no-permission");
+                    return;
+                }
+                boolean newValue = config.setBypassEnabled(!config.isBypassEnabled());
+                messages.send(player, "admin.bypass-master",
+                        "state", messages.getRaw(newValue ? "admin.bypass-state-on" : "admin.bypass-state-off"),
+                        "effect", messages.getRaw(newValue
+                                ? "admin.bypass-master-on-effect"
+                                : "admin.bypass-master-off-effect"));
+                gui.openAdmin(player);
+            }
             case 22 -> {
                 plugin.reloadEverything();
                 messages.send(player, "admin.reloaded");
