@@ -33,13 +33,18 @@ public final class PotionListener implements Listener {
         if (entry == null || entry.behavior() != Behavior.HASTE_POTION) {
             return;
         }
-        long ticks = plugin.settings().hasteDurationHours() * 3600L * 20L;
+        // Potions bought with extra time carry their own effect duration.
+        Long overrideMinutes = plugin.items().effectMinutes(event.getItem());
+        long effectMs = overrideMinutes != null
+                ? overrideMinutes * 60_000L
+                : plugin.settings().hasteDurationHours() * 3_600_000L;
+        long ticks = effectMs / 1000L * 20L;
         org.bukkit.potion.PotionEffect haste = new org.bukkit.potion.PotionEffect(
                 org.bukkit.potion.PotionEffectType.HASTE, (int) Math.min(Integer.MAX_VALUE, ticks),
                 plugin.settings().hasteAmplifier());
         player.addPotionEffect(haste);
         plugin.messages().send(player, "potion.haste",
-                "%time%", TimeWords.format(plugin.settings().hasteDurationHours() * 3_600_000L));
+                "%time%", TimeWords.format(effectMs));
         plugin.effects().equipEffect(player);
     }
 }

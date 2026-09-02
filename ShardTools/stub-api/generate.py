@@ -565,6 +565,7 @@ public class InventoryClickEvent extends Event {
     public InventoryView getView() { return null; }
     public void setCancelled(boolean cancelled) {}
     public int getRawSlot() { return -1; }
+    public boolean isShiftClick() { return false; }
 }
 """)
 
@@ -758,6 +759,7 @@ public class JavaPlugin implements Plugin {
     public void onDisable() {}
     public FileConfiguration getConfig() { return null; }
     public void reloadConfig() {}
+    public void saveConfig() {}
     public void saveDefaultConfig() {}
     public void saveResource(String resourcePath, boolean replace) {}
     public java.io.InputStream getResource(String resourcePath) { return null; }

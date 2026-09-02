@@ -85,10 +85,14 @@ jobs:
           echo 'online-mode=false' >> server.properties
           # Feed console commands after the server has booted, then stop it.
           ( sleep 120; echo 'st help'; sleep 5; echo 'st shop'; sleep 5; \
-            echo 'st interval 10'; sleep 5; echo 'st amount 10'; sleep 5; \
-            echo 'st award off'; sleep 3; echo 'st award on'; sleep 3; \
-            echo 'st setprice haste_potion 5000'; sleep 5; echo 'st items'; sleep 5; \
-            echo 'st top'; sleep 5; echo 'st rl'; sleep 8; echo 'stop' ) \
+            echo 'st toggle'; sleep 3; \
+            echo 'sta interval 10'; sleep 5; echo 'sta amount 10'; sleep 5; \
+            echo 'sta award off'; sleep 3; echo 'sta award on'; sleep 3; \
+            echo 'sta setprice haste_potion 5000'; sleep 5; echo 'sta items'; sleep 5; \
+            echo 'sta add smoke_sword NETHERITE_SWORD 1234'; sleep 5; \
+            echo 'sta edit smoke_sword price 2345'; sleep 5; \
+            echo 'sta remove smoke_sword'; sleep 5; \
+            echo 'st top'; sleep 5; echo 'sta rl'; sleep 8; echo 'stop' ) \
             | java -Xms512M -Xmx2G -jar paper.jar nogui > boot.log 2>&1 || true
           echo '--- boot.log (tail 80) ---'
           tail -n 80 boot.log
@@ -102,5 +106,8 @@ jobs:
           grep -q  'Shard income amount set to' server/boot.log
           grep -qi 'Automatic shard income is now enabled' server/boot.log
           grep -q  'Price of haste_potion set to' server/boot.log
+          grep -q  'Added shop item' server/boot.log
+          grep -q  'of smoke_sword' server/boot.log
+          grep -q  'Removed shop item' server/boot.log
           grep -q  'shop catalog reloaded' server/boot.log
           echo 'Server smoke test OK'
