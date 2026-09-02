@@ -70,6 +70,14 @@ public final class Settings {
     private int shopRows = 6;
     private String shopFiller = "GRAY_STAINED_GLASS_PANE";
 
+    private boolean extendEnabled = true;
+    private long extendToolStepMinutes = 60;
+    private long extendToolStepPrice = 100;
+    private int extendToolMaxSteps = 24;
+    private long extendPotionStepMinutes = 30;
+    private long extendPotionStepPrice = 50;
+    private int extendPotionMaxSteps = 12;
+
     private boolean moneyShopEnabled = true;
     private double moneyCostPerShard = 10.0D;
     private long moneyMin = 1L;
@@ -173,6 +181,15 @@ public final class Settings {
         shopConfirm = config.getBoolean("shop.confirm", false);
         shopRows = Math.max(3, Math.min(6, config.getInt("shop.rows", 6)));
         shopFiller = config.getString("shop.filler", "GRAY_STAINED_GLASS_PANE");
+
+        // Buy extra time on top of expiring shard items / the haste effect.
+        extendEnabled = config.getBoolean("shop.time-extension.enabled", true);
+        extendToolStepMinutes = Math.max(1L, config.getLong("shop.time-extension.tool.step-minutes", 60L));
+        extendToolStepPrice = Math.max(0L, config.getLong("shop.time-extension.tool.step-price", 100L));
+        extendToolMaxSteps = Math.max(1, config.getInt("shop.time-extension.tool.max-steps", 24));
+        extendPotionStepMinutes = Math.max(1L, config.getLong("shop.time-extension.potion.step-minutes", 30L));
+        extendPotionStepPrice = Math.max(0L, config.getLong("shop.time-extension.potion.step-price", 50L));
+        extendPotionMaxSteps = Math.max(1, config.getInt("shop.time-extension.potion.max-steps", 12));
 
         // Buying shards with in-game money through Vault (EssentialsX etc.).
         moneyShopEnabled = config.getBoolean("money-shop.enabled", true);
@@ -438,6 +455,34 @@ public final class Settings {
 
     public String shopFiller() {
         return shopFiller;
+    }
+
+    public boolean extendEnabled() {
+        return extendEnabled;
+    }
+
+    public long extendToolStepMinutes() {
+        return extendToolStepMinutes;
+    }
+
+    public long extendToolStepPrice() {
+        return extendToolStepPrice;
+    }
+
+    public int extendToolMaxSteps() {
+        return extendToolMaxSteps;
+    }
+
+    public long extendPotionStepMinutes() {
+        return extendPotionStepMinutes;
+    }
+
+    public long extendPotionStepPrice() {
+        return extendPotionStepPrice;
+    }
+
+    public int extendPotionMaxSteps() {
+        return extendPotionMaxSteps;
     }
 
     public boolean anvilProtect() {

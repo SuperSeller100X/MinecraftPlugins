@@ -36,6 +36,9 @@ public final class ShopListener implements Listener {
             if (topInv.getHolder() instanceof ShopGui.ConfirmHolder) {
                 event.setCancelled(true);
                 handleConfirmClick(event, (ShopGui.ConfirmHolder) topInv.getHolder());
+            } else if (topInv.getHolder() instanceof ShopGui.ExtendHolder) {
+                event.setCancelled(true);
+                handleExtendClick(event, (ShopGui.ExtendHolder) topInv.getHolder());
             }
             return;
         }
@@ -71,6 +74,12 @@ public final class ShopListener implements Listener {
             plugin.messages().send(player, "no-permission");
             return;
         }
+        if (plugin.items().extendable(entry)) {
+            // Expiring shard items and the haste potion open the extra-time
+            // dialog (it doubles as the purchase confirmation).
+            plugin.gui().openExtend(player, entry, holder.page(), 0);
+            return;
+        }
         if (plugin.settings().shopConfirm()) {
             plugin.gui().openConfirm(player, entry, holder.page());
             return;
@@ -82,7 +91,8 @@ public final class ShopListener implements Listener {
     public void onDrag(InventoryDragEvent event) {
         Inventory top = event.getView().getTopInventory();
         if (!(top.getHolder() instanceof ShopGui.ShopHolder
-                || top.getHolder() instanceof ShopGui.ConfirmHolder)) {
+                || top.getHolder() instanceof ShopGui.ConfirmHolder
+                || top.getHolder() instanceof ShopGui.ExtendHolder)) {
             return;
         }
         for (int rawSlot : event.getRawSlots()) {
@@ -117,10 +127,63 @@ public final class ShopListener implements Listener {
         purchase(player, entry, holder.backPage());
     }
 
+    /** Clicks inside the buy-with-extra-time dialog. */
+    private void handleExtendClick(InventoryClickEvent event, ShopGui.ExtendHolder holder) {
+        if (!(event.getWhoClicked() instanceof Player)) {
+            return;
+        }
+        Player player = (Player) event.getWhoClicked();
+        Inventory top = event.getView().getTopInventory();
+        if (event.getClickedInventory() != top) {
+            return;
+        }
+        ShardCatalog.Entry entry = plugin.catalog().byId(holder.itemId());
+        if (entry == null) {
+            plugin.gui().open(player, holder.backPage());
+            return;
+        }
+        int slot = event.getRawSlot();
+        int delta = event.isShiftClick() ? 5 : 1;   // shift-click = 5 steps at once
+        switch (slot) {
+            case ShopGui.ExtendHolder.SLOT_MINUS:
+                holder.steps(plugin.gui().clampSteps(entry, holder.steps() - delta));
+                plugin.gui().renderExtend(holder, entry);
+                return;
+            case ShopGui.ExtendHolder.SLOT_PLUS:
+                holder.steps(plugin.gui().clampSteps(entry, holder.steps() + delta));
+                plugin.gui().renderExtend(holder, entry);
+                return;
+            case ShopGui.ExtendHolder.SLOT_CANCEL:
+                plugin.gui().open(player, holder.backPage());
+                return;
+            case ShopGui.ExtendHolder.SLOT_CONFIRM:
+                purchaseExtended(player, entry, holder.backPage(), holder.steps());
+                return;
+            default:
+        }
+    }
+
     private void purchase(Player player, ShardCatalog.Entry entry, int backPage) {
-        Long price = plugin.priceBook().price(entry.id());
-        if (price == null) {
-            price = 0L;
+        purchaseExtended(player, entry, backPage, 0);
+    }
+
+    /**
+     * Runs a purchase with {@code steps} extra-time steps on top: expiring
+     * shard items get extra lifetime, the haste potion a longer effect.
+     */
+    private void purchaseExtended(Player player, ShardCatalog.Entry entry, int backPage, int steps) {
+        Long base = plugin.priceBook().price(entry.id());
+        long price = base == null ? 0L : base;
+        long extraMinutes = 0L;
+        int safeSteps = plugin.gui().clampSteps(entry, steps);
+        if (safeSteps > 0 && plugin.items().extendable(entry)) {
+            boolean potion = entry.behavior() == dev.superseller.shardtools.item.Behavior.HASTE_POTION;
+            long stepMinutes = potion
+                    ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+            long stepPrice = potion
+                    ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+            extraMinutes = safeSteps * stepMinutes;
+            price += safeSteps * stepPrice;
         }
         Long newBalance = plugin.accounts().take(player.getUniqueId(), player.getName(), price);
         if (newBalance == null) {
@@ -136,7 +199,7 @@ public final class ShopListener implements Listener {
             String command = entry.command().replace("%player%", player.getName());
             org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
         } else {
-            give(player, plugin.items().create(entry, 1));
+            give(player, plugin.items().create(entry, 1, extraMinutes));
         }
         plugin.messages().send(player, "shop.purchased",
                 "%item%", entry.displayName(),

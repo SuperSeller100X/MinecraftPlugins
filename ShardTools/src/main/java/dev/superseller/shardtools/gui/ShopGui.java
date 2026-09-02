@@ -17,8 +17,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import dev.superseller.shardtools.ShardToolsPlugin;
+import dev.superseller.shardtools.item.Behavior;
 import dev.superseller.shardtools.item.ShardCatalog;
 import dev.superseller.shardtools.util.Numbers;
+import dev.superseller.shardtools.util.TimeWords;
 
 /**
  * DonutSMP-style shard shop GUI with automatic pagination and an optional
@@ -88,6 +90,53 @@ public final class ShopGui {
 
         public int backPage() {
             return backPage;
+        }
+    }
+
+    /** Holder for the buy-with-extra-time dialog. */
+    public static final class ExtendHolder implements InventoryHolder {
+
+        /** Raw slots of the dialog's buttons. */
+        public static final int SLOT_MINUS = 11;
+        public static final int SLOT_ICON = 13;
+        public static final int SLOT_PLUS = 15;
+        public static final int SLOT_CONFIRM = 21;
+        public static final int SLOT_CANCEL = 23;
+
+        private Inventory inventory;
+        private final String itemId;
+        private final int backPage;
+        private int steps;
+
+        public ExtendHolder(String itemId, int backPage) {
+            this.itemId = itemId;
+            this.backPage = backPage;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+
+        void inventory(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
+        public String itemId() {
+            return itemId;
+        }
+
+        public int backPage() {
+            return backPage;
+        }
+
+        /** Currently selected number of extra-time steps. */
+        public int steps() {
+            return steps;
+        }
+
+        public void steps(int steps) {
+            this.steps = steps;
         }
     }
 
@@ -176,6 +225,99 @@ public final class ShopGui {
         inventory.setItem(15, navItem("RED_STAINED_GLASS_PANE",
                 plugin.messages().itemLine("shop.click-to-cancel"), null, null, -1));
         player.openInventory(inventory);
+    }
+
+    // ---------------------------------------------------------------
+    // Buy-with-extra-time dialog
+    // ---------------------------------------------------------------
+
+    /**
+     * Opens the extra-time dialog for an extendable item: expiring shard
+     * items buy extra lifetime, the haste potion buys a longer effect.
+     */
+    public void openExtend(Player player, ShardCatalog.Entry entry, int backPage, int steps) {
+        ExtendHolder holder = new ExtendHolder(entry.id(), backPage);
+        holder.steps(clampSteps(entry, steps));
+        Component title = plugin.messages().bare("extend.title", "%item%", entry.displayName());
+        Inventory inventory = Bukkit.createInventory(holder, 27, title);
+        holder.inventory(inventory);
+        renderExtend(holder, entry);
+        player.openInventory(inventory);
+    }
+
+    /** (Re-)draws the extra-time dialog after the step count changed. */
+    public void renderExtend(ExtendHolder holder, ShardCatalog.Entry entry) {
+        Inventory inventory = holder.getInventory();
+        if (inventory == null) {
+            return;
+        }
+        boolean potion = entry.behavior() == Behavior.HASTE_POTION;
+        long stepMinutes = potion
+                ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+        long stepPrice = potion
+                ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+        int steps = clampSteps(entry, holder.steps());
+        holder.steps(steps);
+
+        ItemStack filler = borderItem();
+        for (int slot = 0; slot < 27; slot++) {
+            inventory.setItem(slot, filler);
+        }
+        String stepTime = TimeWords.format(stepMinutes * 60_000L);
+        String stepCost = Numbers.format(stepPrice);
+        inventory.setItem(ExtendHolder.SLOT_MINUS, button("RED_STAINED_GLASS_PANE",
+                plugin.messages().itemLine("extend.minus",
+                        "%time%", stepTime, "%price%", stepCost,
+                        "%symbol%", plugin.settings().symbol())));
+        inventory.setItem(ExtendHolder.SLOT_PLUS, button("LIME_STAINED_GLASS_PANE",
+                plugin.messages().itemLine("extend.plus",
+                        "%time%", stepTime, "%price%", stepCost,
+                        "%symbol%", plugin.settings().symbol())));
+
+        Long base = plugin.priceBook().price(entry.id());
+        long basePrice = base == null ? 0L : base;
+        long extraMs = steps * stepMinutes * 60_000L;
+        long totalPrice = basePrice + steps * stepPrice;
+        long baseMs = potion
+                ? plugin.items().defaultEffectMs() : entry.lifetimeMs();
+
+        ItemStack icon = plugin.items().displayIcon(entry, basePrice);
+        ItemMeta iconMeta = icon.getItemMeta();
+        if (iconMeta != null) {
+            List<Component> lore = iconMeta.lore() != null
+                    ? new ArrayList<>(iconMeta.lore()) : new ArrayList<>();
+            lore.add(plugin.messages().itemLine(potion ? "extend.effect-line" : "extend.lifetime-line",
+                    "%base%", TimeWords.format(baseMs),
+                    "%extra%", TimeWords.format(extraMs),
+                    "%total%", TimeWords.format(baseMs + extraMs)));
+            lore.add(plugin.messages().itemLine("extend.total-line",
+                    "%price%", Numbers.format(totalPrice),
+                    "%symbol%", plugin.settings().symbol()));
+            iconMeta.lore(lore);
+            icon.setItemMeta(iconMeta);
+        }
+        inventory.setItem(ExtendHolder.SLOT_ICON, icon);
+
+        inventory.setItem(ExtendHolder.SLOT_CONFIRM, button("GREEN_STAINED_GLASS_PANE",
+                plugin.messages().itemLine("extend.confirm",
+                        "%price%", Numbers.format(totalPrice),
+                        "%symbol%", plugin.settings().symbol())));
+        inventory.setItem(ExtendHolder.SLOT_CANCEL, button("BARRIER",
+                plugin.messages().itemLine("shop.click-to-cancel")));
+    }
+
+    /** Clamps the selected steps to 0..max for the entry's extension type. */
+    public int clampSteps(ShardCatalog.Entry entry, int steps) {
+        int max = entry.behavior() == Behavior.HASTE_POTION
+                ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
+        return Math.max(0, Math.min(steps, max));
+    }
+
+    private ItemStack button(String materialName, Component name) {
+        Material material = Material.matchMaterial(materialName);
+        ItemStack stack = new ItemStack(material == null ? Material.AIR : material, 1);
+        stack.editMeta(meta -> meta.displayName(name));
+        return stack;
     }
 
     private ItemStack infoItem(Player player, int page, int pages) {

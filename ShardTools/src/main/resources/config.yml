@@ -43,7 +43,8 @@ award:
 #                 /st toggle.
 #   enchants      list of "enchant:level" (vanilla ids, e.g. efficiency:5)
 #   lore          MiniMessage lore lines; %time% = remaining lifetime,
-#                 %price% = current price
+#                 %price% = current price, %effect% = haste effect duration
+#                 (only meaningful on the haste potion)
 #
 # Default prices mirror the DonutSMP shard shop (June-July 2026).
 items:
@@ -116,7 +117,7 @@ items:
     behavior: HASTE_POTION
     enchants: []
     lore:
-      - "<gray>Grants <yellow>Haste II for 1 hour</yellow> when drunk.</gray>"
+      - "<gray>Grants <yellow>Haste II for %effect%</yellow> when drunk.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
   netherite_pickaxe_fortune:
     material: NETHERITE_PICKAXE
@@ -396,6 +397,29 @@ shop:
   # Filler material for the border.
   filler: GRAY_STAINED_GLASS_PANE
   # Buying shards with in-game money lives in money-shop: below.
+
+  # ---------- Buy extra time ----------
+  # Clicking an EXPIRING shard item (or the haste potion) in the shop opens
+  # a dialog where every buyer can stack extra time on top of the purchase:
+  #   shard tools  -> extra REAL-TIME lifetime before the self-destruct
+  #   haste potion -> longer EFFECT duration when drunk
+  # Each +/- click adds/removes one step (shift-click = 5 steps). The extra
+  # cost is steps * step-price, e.g. +6 hours on a tool = 6 x 100 = 600
+  # shards on top of the base price.
+  time-extension:
+    enabled: true
+    # Shard tools and every other expiring item: +1 hour per 100 shards.
+    tool:
+      step-minutes: 60
+      step-price: 100
+      # Never more than this many steps per purchase (24 x 1h = +24h).
+      max-steps: 24
+    # Haste potion effect: +30 minutes per 50 shards.
+    potion:
+      step-minutes: 30
+      step-price: 50
+      # 12 x 30min = +6h -> "6 more hours costs 600 shards".
+      max-steps: 12
 
 # ---------- Buy shards with in-game money ----------
 # /st buy <shards> converts server money (whatever economy Vault exposes,

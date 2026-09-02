@@ -50,6 +50,16 @@ toggle:
   disabled: "<gray>Ability of <white>%item%</white> is now <red>disabled</red>.</gray>"
   not-tool: "<red>Hold a shard tool with an ability to toggle it.</red>"
 
+extend:
+  title: "<dark_gray>Extra time</dark_gray> <gray>-</gray> <white>%item%</white>"
+  hint: "<dark_gray>Click to pick extra time before buying</dark_gray>"
+  minus: "<red>- %time%</red> <dark_gray>(-%symbol%%price%)</dark_gray>"
+  plus: "<green>+ %time%</green> <dark_gray>(+%symbol%%price%)</dark_gray>"
+  lifetime-line: "<gray>Lifetime: <white>%base%</white> <dark_gray>+</dark_gray> <yellow>%extra%</yellow> <dark_gray>=</dark_gray> <white>%total%</white></gray>"
+  effect-line: "<gray>Haste effect: <white>%base%</white> <dark_gray>+</dark_gray> <yellow>%extra%</yellow> <dark_gray>=</dark_gray> <white>%total%</white></gray>"
+  total-line: "<dark_gray>Total: <light_purple>%symbol%%price%</light_purple></dark_gray>"
+  confirm: "<green>Buy for %symbol%%price%</green>"
+
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"
   received: "<gray>You received <white>%amount%x %item%</white>.</gray>"

@@ -58,6 +58,23 @@ enchantments applied**: no custom name, no color, no rarity change, no lore, no 
 data. The `name`/`lore` in config.yml only style their **shop icon**. All shop icons
 render **non-italic** (Minecraft's default italics for custom names are disabled).
 
+### Buy extra time in the shop — stackable
+Clicking an **expiring shard item** or the **haste potion** in the shop opens an
+**extra-time dialog** (available to everyone) instead of buying instantly:
+
+- **Shard tools** (and any other expiring item): each step adds **+1 hour of real-time
+  lifetime** on top before the self-destruct, for **+100 ✦** per step (defaults).
+- **Haste potion**: each step makes the **effect last +30 minutes longer** when drunk,
+  for **+50 ✦** per step (defaults) — the item's 24 h shelf life stays unchanged.
+- Steps **stack**: +6 hours of haste = 12 × 30 min = **+600 ✦** on top of the base price.
+  Shift-click the +/- buttons to move in jumps of 5 steps.
+- Step size, step price and the per-purchase cap are configurable separately for tools
+  and the potion under `shop.time-extension:` (or turn the whole feature off with
+  `enabled: false`).
+
+The dialog shows the resulting lifetime/effect duration and the total price before you
+confirm; the purchased item's lore and `/st info` reflect the extended time.
+
 ### DonutSMP amethyst sounds & particles — purple star included
 The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
 
@@ -166,6 +183,10 @@ expiry:
   warn-minutes: [60, 10, 1]
 haste-potion: {duration-hours: 1, amplifier: 1}   # 1h effect; item destructs after 24h
 shop: {confirm: false, rows: 6}
+shop.time-extension:           # buy extra time in the shop (stackable)
+  enabled: true
+  tool:   {step-minutes: 60, step-price: 100, max-steps: 24}  # +1h / 100 ✦
+  potion: {step-minutes: 30, step-price: 50,  max-steps: 12}  # +30min effect / 50 ✦
 money-shop:                  # /st buy - shards for in-game money via Vault
   enabled: true              # false = feature completely off
   cost-per-shard: 10.0       # /st buy 100 costs 1,000 money
