@@ -6,6 +6,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import dev.superseller.shardtools.command.ShardToolsAdminCommand;
 import dev.superseller.shardtools.command.ShardToolsCommand;
 import dev.superseller.shardtools.config.Messages;
 import dev.superseller.shardtools.config.RuntimeStore;
@@ -90,6 +91,15 @@ public final class ShardToolsPlugin extends JavaPlugin {
             getLogger().severe("Command 'shardtools' missing from plugin.yml");
         }
 
+        ShardToolsAdminCommand adminCommand = new ShardToolsAdminCommand(this);
+        PluginCommand shardtoolsAdmin = getCommand("shardtoolsadmin");
+        if (shardtoolsAdmin != null) {
+            shardtoolsAdmin.setExecutor(adminCommand);
+            shardtoolsAdmin.setTabCompleter(adminCommand);
+        } else {
+            getLogger().severe("Command 'shardtoolsadmin' missing from plugin.yml");
+        }
+
         restartTasks();
         getLogger().info("ShardTools enabled: " + catalog.ordered().size() + " shop items, awarding "
                 + effectiveAwardAmount() + " shards every " + effectiveAwardIntervalMinutes() + " min");
@@ -132,6 +142,15 @@ public final class ShardToolsPlugin extends JavaPlugin {
         priceBook.reload(catalog.defaultPrices(), runtimeStore.priceOverrides());
         vault.reconnect();
         restartTasks();
+    }
+
+    /**
+     * Rebuilds the shop catalog and prices from the in-memory config after
+     * /sta add, /sta remove or /sta edit changed the items: section.
+     */
+    public void rebuildCatalog() {
+        catalog = ShardCatalog.load(getConfig(), getLogger());
+        priceBook.reload(catalog.defaultPrices(), runtimeStore.priceOverrides());
     }
 
     public long effectiveAwardIntervalMinutes() {

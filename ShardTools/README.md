@@ -17,7 +17,7 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 
 ### Shards — the new currency
 - Every player on the server automatically earns **5 Shards every 5 minutes** (default,
-  fully configurable — `/st interval`, `/st amount`, `/st award off`).
+  fully configurable — `/sta interval`, `/sta amount`, `/sta award off`).
 - Balances persist in `plugins/ShardTools/shards.yml`, survive restarts, and are paid
   between players with `/st pay` — and can be **bought with in-game money**
   (`/st buy 100`) through any Vault economy such as EssentialsX, at a
@@ -47,6 +47,16 @@ Area breaking details (all configurable):
 - Radius configurable (`behavior.area-radius`: 1 = 3×3, 2 = 5×5). Tree felling caps at
   `behavior.tree.max-blocks` (default 256) with same-log-type chaining **and breaks the
   tree's leaves too** (`behavior.tree.break-leaves`), exactly like DonutSMP's amethyst axe.
+- **`/st toggle`** pauses/resumes the ability of the shard tool in hand (stored on the
+  item itself, so each tool remembers its own state) — only works while holding a shard
+  tool that actually has an ability.
+
+### Enchanted vanilla gear — no gimmicks
+Shop items **without an ability** (`behavior: NONE` — the netherite armor, sword, hoe,
+mace, bow, crossbow, …) are handed out as **plain vanilla items with only their
+enchantments applied**: no custom name, no color, no rarity change, no lore, no plugin
+data. The `name`/`lore` in config.yml only style their **shop icon**. All shop icons
+render **non-italic** (Minecraft's default italics for custom names are disabled).
 
 ### DonutSMP amethyst sounds & particles — purple star included
 The real DonutSMP shard-tool sounds, all under `effects:` in config.yml:
@@ -72,36 +82,52 @@ Shard items cannot be renamed or merged in **anvils** or disenchanted in **grind
 
 ## Commands
 
-Main command `/shardtools` with aliases **`/shard`** and **`/st`** — every subcommand has a
-short form. Console works for all admin commands.
+Player command `/shardtools` with aliases **`/shard`** and **`/st`**; admin command
+`/shardtoolsadmin` with aliases **`/sta`**, **`/stadmin`** and **`/shardadmin`** — every
+subcommand has a short form. Console works for all admin commands.
+
+### Player commands — `/st`
 
 | Command | Short | Description | Permission |
 |---|---|---|---|
 | `/st help` | `h`, `?` | Command overview | — |
 | `/st shop` | `s` | Open the shard shop GUI | `shardtools.shop` |
+| `/st toggle` | `tg`, `ability`, `ab` | Toggle the **ability of the shard tool in hand** (3×3 mining / tree felling) on or off — only works while holding a shard tool that has an ability | `shardtools.toggle` |
 | `/st balance [player]` | `bal`, `b` | Check your (or another player's) balance | `shardtools.balance` / `.others` |
 | `/st pay <player> <amount>` | `p` | Send shards (supports `2.5k`, `1m`, …) | `shardtools.pay` |
 | `/st buy <shards>` | — | **Buy shards with in-game money** (Vault economy, e.g. EssentialsX) | `shardtools.buy` |
 | `/st top [n]` | `t` | Shard leaderboard (default top 10, max 25) | `shardtools.top` |
 | `/st info` | `i` | Inspect the held shard item (remaining lifetime) | `shardtools.info` |
-| `/st give <player> <item> [amount]` | `g` | Give any shop item *(op)* | `shardtools.give` |
-| `/st items` | `l` | List all item ids + prices *(op)* | `shardtools.items` |
-| `/st setprice <item> <price>` | `sp` | Change a price at runtime *(op)* | `shardtools.setprice` |
-| `/st shards <player> <give\|take\|set> <amount>` | `sh` | Edit balances *(op)* | `shardtools.economy` |
-| `/st interval <minutes>` | `iv` | Set the income interval *(op)* | `shardtools.settings` |
-| `/st amount <shards>` | `am` | Set the income amount *(op)* | `shardtools.settings` |
-| `/st award <on\|off>` | `aw` | Toggle automatic income *(op)* | `shardtools.settings` |
-| `/st reload` | `rl` | Reload config, messages & shop *(op)* | `shardtools.reload` |
 
-Tab completion covers every subcommand, player names, item ids, and sensible amounts.
-Runtime changes (`/st setprice`, `/st interval`, `/st amount`, `/st award`) persist in
-`plugins/ShardTools/runtime.yml` and survive restarts *and* `/st reload`.
+### Admin commands — `/sta`
+
+| Command | Short | Description | Permission |
+|---|---|---|---|
+| `/sta help` | `h`, `?` | Admin command overview | — |
+| `/sta give <player> <item> [amount]` | `g` | Give any shop item | `shardtools.give` |
+| `/sta items` | `list`, `l` | List all item ids + prices | `shardtools.items` |
+| `/sta add <id> <material> <price> [lifetimeHours] [behavior]` | `a`, `create` | **Add a new shop item** to config.yml and the live shop | `shardtools.manage` |
+| `/sta remove <id>` | `rm`, `delete`, `del` | **Remove a shop item** from config.yml and the live shop | `shardtools.manage` |
+| `/sta edit <id> <property> <value>` | `e` | **Edit a shop item**: `name`, `material`, `price`, `lifetime` (hours), `behavior`, `enchants` (comma list like `efficiency:5,mending:1`, or `none`) or `lore` (MiniMessage lines separated by `\|`, or `none`) | `shardtools.manage` |
+| `/sta setprice <item> <price>` | `price`, `sp` | Change a price at runtime | `shardtools.setprice` |
+| `/sta shards <player> <give\|take\|set> <amount>` | `sh`, `eco` | Edit balances | `shardtools.economy` |
+| `/sta interval <minutes>` | `iv` | Set the income interval | `shardtools.settings` |
+| `/sta amount <shards>` | `am` | Set the income amount | `shardtools.settings` |
+| `/sta award <on\|off>` | `aw` | Toggle automatic income | `shardtools.settings` |
+| `/sta reload` | `rl` | Reload config, messages & shop | `shardtools.reload` |
+
+Tab completion covers every subcommand, player names, item ids, edit properties,
+behaviors, and sensible amounts. Runtime changes (`/sta setprice`, `/sta interval`,
+`/sta amount`, `/sta award`) persist in `plugins/ShardTools/runtime.yml` and survive
+restarts *and* `/sta reload`; `/sta add`, `/sta remove` and `/sta edit` write straight
+into `config.yml`.
 
 ## Permissions
 
 | Node | Default | Description |
 |---|---|---|
 | `shardtools.use` | everyone | Use shard tool powers (3×3, tree fell, haste potion) |
+| `shardtools.toggle` | everyone | `/st toggle` — pause/resume the held shard tool's ability |
 | `shardtools.shop` | everyone | Open/buy from the shard shop |
 | `shardtools.balance` | everyone | Check own balance |
 | `shardtools.balance.others` | op | Check other players' balances |
@@ -109,12 +135,13 @@ Runtime changes (`/st setprice`, `/st interval`, `/st amount`, `/st award`) pers
 | `shardtools.buy` | everyone | Buy shards with in-game money (needs Vault + economy on the server) |
 | `shardtools.top` | everyone | Leaderboard |
 | `shardtools.info` | everyone | Inspect held shard item |
-| `shardtools.give` | op | `/st give` |
-| `shardtools.items` | op | `/st items` |
-| `shardtools.economy` | op | `/st shards` |
-| `shardtools.setprice` | op | `/st setprice` |
-| `shardtools.settings` | op | `/st interval`, `/st amount`, `/st award` |
-| `shardtools.reload` | op | `/st reload` |
+| `shardtools.give` | op | `/sta give` |
+| `shardtools.items` | op | `/sta items` |
+| `shardtools.economy` | op | `/sta shards` |
+| `shardtools.setprice` | op | `/sta setprice` |
+| `shardtools.manage` | op | `/sta add`, `/sta remove`, `/sta edit` |
+| `shardtools.settings` | op | `/sta interval`, `/sta amount`, `/sta award` |
+| `shardtools.reload` | op | `/sta reload` |
 | `shardtools.admin` | op | All admin nodes combined |
 | `shardtools.*` | op | Everything |
 
@@ -180,7 +207,7 @@ mvn -B clean package        # requires JDK 25 (Temurin 25 recommended)
 `pom.xml` compiles with `release 25` against `paper-api 26.2.build.115-stable`
 (https://repo.papermc.io). The CI workflow in `.github/workflows/build.yml` runs this
 Maven build on Temurin 25 and additionally **boots a real Paper 26.2 server** with the
-plugin and exercises `st help`, `st interval`, `st setprice`, `st rl`, … (copy it to the
+plugin and exercises `st help`, `sta interval`, `sta setprice`, `sta add`, `sta rl`, … (copy it to the
 repo root `.github/workflows/` to activate it).
 
 ### Offline build (no Maven Central access)
@@ -200,15 +227,15 @@ Maven build compiles the same sources with `release 25`.
    (Paper / Purpur / Folia 26.2, Java 25).
 2. Start the server — `config.yml` and `messages.yml` are generated in
    `plugins/ShardTools/`.
-3. Optional: tweak prices, income interval/amount, lifetimes and messages, then `/st rl`.
+3. Optional: tweak prices, income interval/amount, lifetimes and messages, then `/sta rl`.
 
-## Item ids (for `/st give`, `/st setprice`)
+## Item ids (for `/sta give`, `/sta setprice`, `/sta edit`)
 
 `shard_pickaxe_fortune`, `shard_pickaxe_silk`, `shard_axe_fortune`, `shard_axe_silk`,
 `shard_shovel_fortune`, `shard_shovel_silk`, `haste_potion`, `netherite_pickaxe_fortune`,
 `netherite_pickaxe_silk`, `netherite_shovel`, `netherite_axe`, `netherite_hoe`,
 `netherite_helmet`, `netherite_chestplate`, `netherite_leggings`, `netherite_boots`,
-`netherite_sword`, `mace`, `crossbow`, `bow` — or run `/st items`.
+`netherite_sword`, `mace`, `crossbow`, `bow` — or run `/sta items` — or create your own with `/sta add`.
 
 ## Version verification (2026-08-24)
 

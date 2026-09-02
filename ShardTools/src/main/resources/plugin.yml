@@ -9,13 +9,20 @@ description: DonutSMP-style Shard currency, self-destructing Shard Tools, armor 
 
 commands:
   shardtools:
-    description: Shard currency, shard shop and shard tool management.
-    usage: /<command> <help|shop|balance|pay|buy|top|info|give|items|setprice|shards|interval|amount|award|reload>
+    description: Shard currency, shard shop and shard tool commands for players.
+    usage: /<command> <help|shop|toggle|balance|pay|buy|top|info>
     aliases: [shard, st]
+  shardtoolsadmin:
+    description: ShardTools administration - give items, manage the shop catalog, edit balances and settings.
+    usage: /<command> <help|give|items|add|remove|edit|setprice|shards|interval|amount|award|reload>
+    aliases: [sta, stadmin, shardadmin]
 
 permissions:
   shardtools.use:
     description: Use Shard Tools (3x3 mining, tree felling, haste potion).
+    default: true
+  shardtools.toggle:
+    description: Toggle the ability of the held shard tool with /st toggle.
     default: true
   shardtools.shop:
     description: Open the shard shop GUI and buy items with shards.
@@ -50,6 +57,9 @@ permissions:
   shardtools.setprice:
     description: Change shop prices at runtime.
     default: op
+  shardtools.manage:
+    description: Add, remove and edit shop items at runtime (/sta add, remove, edit).
+    default: op
   shardtools.settings:
     description: Change award interval/amount and toggle auto-awards.
     default: op
@@ -57,13 +67,14 @@ permissions:
     description: Reload configuration, messages and shop catalog.
     default: op
   shardtools.admin:
-    description: All administrative ShardTools permissions.
+    description: All administrative ShardTools permissions (/sta).
     default: op
     children:
       shardtools.give: true
       shardtools.items: true
       shardtools.economy: true
       shardtools.setprice: true
+      shardtools.manage: true
       shardtools.settings: true
       shardtools.reload: true
       shardtools.balance.others: true
@@ -72,6 +83,7 @@ permissions:
     default: op
     children:
       shardtools.use: true
+      shardtools.toggle: true
       shardtools.shop: true
       shardtools.balance: true
       shardtools.balance.others: true

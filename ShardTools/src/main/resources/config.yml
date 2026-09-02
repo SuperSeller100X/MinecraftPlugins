@@ -3,7 +3,7 @@
 #  Minecraft 26.2 (Paper / Purpur / Folia), Java 25
 #
 #  Every value below can be changed at runtime with commands or
-#  by editing this file and running /st reload.
+#  by editing this file and running /sta reload.
 # ============================================================
 
 # ---------- Currency ----------
@@ -25,16 +25,22 @@ award:
   announce: true
 
 # ---------- Shop catalog ----------
-# Every entry can be bought in /st shop and handed out with /st give.
+# Every entry can be bought in /st shop and handed out with /sta give.
+# Add, remove or edit entries at runtime with /sta add, /sta remove, /sta edit.
 #   material      vanilla material of the item
 #   name          MiniMessage display name
-#   price         shard price (0 = free); override at runtime: /st setprice
+#   price         shard price (0 = free); override at runtime: /sta setprice
 #   lifetime-hours  real-time lifetime before the item self-destructs
 #                   (0 = never expires). Works while the player is offline
 #                   and even while the server is stopped.
 #   behavior      AREA_PICKAXE | AREA_SHOVEL | TREE_AXE | HASTE_POTION | NONE
 #                 (all area tools share one block list; TREE_AXE also fells
 #                  whole trees when the broken block is a log)
+#                 NONE = no ability: the item is handed out as a plain
+#                 vanilla item with only its enchantments applied (no custom
+#                 name, color or lore - the name/lore below only style the
+#                 shop icon). Players can pause a tool's ability with
+#                 /st toggle.
 #   enchants      list of "enchant:level" (vanilla ids, e.g. efficiency:5)
 #   lore          MiniMessage lore lines; %time% = remaining lifetime,
 #                 %price% = current price

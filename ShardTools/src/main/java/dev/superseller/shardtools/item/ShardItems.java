@@ -34,6 +34,7 @@ public final class ShardItems {
     private final NamespacedKey keyLifetime;
     private final NamespacedKey keyWarned;
     private final NamespacedKey keyMinutes;
+    private final NamespacedKey keyAbilityOff;
 
     public ShardItems(ShardToolsPlugin plugin) {
         this.plugin = plugin;
@@ -42,6 +43,7 @@ public final class ShardItems {
         this.keyLifetime = new NamespacedKey((Plugin) plugin, "lifetime");
         this.keyWarned = new NamespacedKey((Plugin) plugin, "warned");
         this.keyMinutes = new NamespacedKey((Plugin) plugin, "minutes");
+        this.keyAbilityOff = new NamespacedKey((Plugin) plugin, "ability-off");
     }
 
     /** Item id stored on the stack, or {@code null} for non-shard items. */
@@ -87,6 +89,31 @@ public final class ShardItems {
         return nowMs >= created + lifetime;
     }
 
+    /** True unless the holder switched the tool's ability off with /st toggle. */
+    public boolean abilityEnabled(ItemStack stack) {
+        if (stack == null) {
+            return true;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return true;
+        }
+        Integer off = meta.getPersistentDataContainer().get(keyAbilityOff, PersistentDataType.INTEGER);
+        return off == null || off == 0;
+    }
+
+    /** Flips the ability flag on the stack and returns the NEW enabled state. */
+    public boolean toggleAbility(ItemStack stack) {
+        boolean enable = !abilityEnabled(stack);
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return true;
+        }
+        meta.getPersistentDataContainer().set(keyAbilityOff, PersistentDataType.INTEGER, enable ? 0 : 1);
+        stack.setItemMeta(meta);
+        return enable;
+    }
+
     /** Creates the purchasable/giveable item with a fresh lifetime. */
     public ItemStack create(ShardCatalog.Entry entry, int amount) {
         Material material = Material.matchMaterial(entry.material());
@@ -115,17 +142,27 @@ public final class ShardItems {
     private List<Component> purchaseLore(long price) {
         Settings settings = plugin.settings();
         List<Component> extra = new ArrayList<>();
-        extra.add(plugin.messages().bare("shop.price-line",
+        extra.add(plugin.messages().itemLine("shop.price-line",
                 "%price%", dev.superseller.shardtools.util.Numbers.format(price),
                 "%symbol%", settings.symbol()));
-        extra.add(plugin.messages().bare("shop.click-to-buy"));
+        extra.add(plugin.messages().itemLine("shop.click-to-buy"));
         return extra;
     }
 
     private void apply(ItemMeta meta, ShardCatalog.Entry entry, long now, List<Component> extraLore) {
-        meta.displayName(plugin.messages().miniMessage().deserialize(entry.displayName()));
-        List<Component> lore = renderLore(entry, entry.lifetimeMs(), extraLore);
-        meta.lore(lore);
+        boolean shopIcon = extraLore != null;
+        // Items without an ability stay plain vanilla when handed out: no
+        // custom name, no rarity color, no lore - just the enchantments.
+        boolean vanillaLook = !shopIcon && entry.behavior() == Behavior.NONE;
+        if (!vanillaLook) {
+            meta.displayName(plugin.messages().itemText(entry.displayName()));
+        }
+        if (!vanillaLook || entry.expires()) {
+            List<Component> lore = renderLore(entry, entry.lifetimeMs(), extraLore);
+            if (!lore.isEmpty()) {
+                meta.lore(lore);
+            }
+        }
         for (EnchantSpec spec : entry.enchants()) {
             org.bukkit.enchantments.Enchantment enchantment = plugin.enchantResolver().resolve(spec.enchant());
             if (enchantment != null) {
@@ -135,7 +172,10 @@ public final class ShardItems {
         if (meta instanceof PotionMeta && entry.behavior() == Behavior.HASTE_POTION) {
             ((PotionMeta) meta).setColor(Color.fromRGB(plugin.settings().hasteColorRgb()));
         }
-        if (extraLore == null) {
+        // Persistent data only where the plugin still has work to do: items
+        // with an ability or a self-destruct timer. Plain vanilla items carry
+        // no ShardTools data at all.
+        if (!shopIcon && (entry.behavior() != Behavior.NONE || entry.expires())) {
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             pdc.set(keyId, PersistentDataType.STRING, entry.id());
             pdc.set(keyCreated, PersistentDataType.LONG, now);
@@ -156,7 +196,7 @@ public final class ShardItems {
         for (String template : entry.lore()) {
             String line = template.replace("%time%", time).replace("%price%", price)
                     .replace("%symbol%", settings.symbol());
-            lore.add(plugin.messages().miniMessage().deserialize(line));
+            lore.add(plugin.messages().itemText(line));
         }
         if (extra != null) {
             lore.addAll(extra);

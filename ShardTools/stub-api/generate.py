@@ -758,6 +758,7 @@ public class JavaPlugin implements Plugin {
     public void onDisable() {}
     public FileConfiguration getConfig() { return null; }
     public void reloadConfig() {}
+    public void saveConfig() {}
     public void saveDefaultConfig() {}
     public void saveResource(String resourcePath, boolean replace) {}
     public java.io.InputStream getResource(String resourcePath) { return null; }

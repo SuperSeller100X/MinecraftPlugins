@@ -90,6 +90,20 @@ public final class Messages {
         return mini.deserialize(raw(key, replacements));
     }
 
+    /**
+     * Renders raw MiniMessage text for item names/lore. Minecraft renders
+     * custom item names and lore in italics by default; the leading
+     * {@code <!italic>} tag disables that so shop items show upright text.
+     */
+    public Component itemText(String text) {
+        return mini.deserialize("<!italic>" + text);
+    }
+
+    /** Renders a message key as a non-italic item name/lore line. */
+    public Component itemLine(String key, String... replacements) {
+        return mini.deserialize("<!italic>" + raw(key, replacements));
+    }
+
     public String raw(String key, String... replacements) {
         String text = messages.getString(key);
         if (text == null) {

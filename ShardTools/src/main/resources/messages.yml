@@ -9,8 +9,10 @@ no-permission: "<red>You don't have permission to do that.</red>"
 player-only: "<red>Only players can use this command.</red>"
 invalid-player: "<red>Player <white>%player%</white> was not found.</red>"
 invalid-amount: "<red>'<white>%amount%</white>' is not a valid amount.</red>"
-invalid-item: "<red>Unknown item id <white>%item%</white>. Use /st items.</red>"
+invalid-item: "<red>Unknown item id <white>%item%</white>. Use /sta items.</red>"
 unknown-command: "<red>Unknown subcommand. Try /st help.</red>"
+unknown-admin-command: "<red>Unknown subcommand. Try /sta help.</red>"
+admin-moved: "<red>The admin commands moved to <yellow>/sta</yellow>. Try /sta help.</red>"
 
 balance:
   self: "<gray>Your balance: <light_purple>%symbol%%balance%</light_purple></gray>"
@@ -39,7 +41,14 @@ shop:
   click-to-buy: "<yellow>Click to purchase</yellow>"
   click-to-confirm: "<green>Click to confirm</green>"
   click-to-cancel: "<red>Click to cancel</red>"
+  previous-page: "<yellow>Previous page</yellow>"
+  next-page: "<yellow>Next page</yellow>"
   page: "<dark_gray>Page %page% / %pages%</dark_gray>"
+
+toggle:
+  enabled: "<gray>Ability of <white>%item%</white> is now <green>enabled</green>.</gray>"
+  disabled: "<gray>Ability of <white>%item%</white> is now <red>disabled</red>.</gray>"
+  not-tool: "<red>Hold a shard tool with an ability to toggle it.</red>"
 
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"
@@ -51,6 +60,16 @@ items:
 
 price:
   set: "<gray>Price of <white>%item%</white> set to <light_purple>%symbol%%price%</light_purple>.</gray>"
+
+catalog:
+  added: "<gray>Added shop item <white>%item%</white> for <light_purple>%symbol%%price%</light_purple>. Fine-tune it with /sta edit.</gray>"
+  removed: "<gray>Removed shop item <white>%item%</white> from the shop.</gray>"
+  edited: "<gray>Updated <yellow>%key%</yellow> of <white>%item%</white> to <white>%value%</white>.</gray>"
+  exists: "<red>An item with the id <white>%item%</white> already exists.</red>"
+  invalid-material: "<red>Unknown material <white>%material%</white>.</red>"
+  invalid-behavior: "<red>Unknown behavior <white>%behavior%</white>. Use NONE, AREA_PICKAXE, AREA_SHOVEL, TREE_AXE or HASTE_POTION.</red>"
+  invalid-key: "<red>Unknown property <white>%key%</white>. Use name, material, price, lifetime, behavior, enchants or lore.</red>"
+  invalid-enchant: "<red>'<white>%enchant%</white>' is not a valid enchant. Use ids like <white>efficiency:5</white>.</red>"
 
 buy:
   disabled: "<red>Buying shards with money is disabled on this server.</red>"
@@ -93,16 +112,24 @@ reload:
 help:
   header: "<gray>=== </gray><light_purple>ShardTools</light_purple><gray> ===</gray>"
   line-shop: "<yellow>/st shop</yellow> <dark_gray>(s)</dark_gray> <gray>- open the shard shop</gray>"
+  line-toggle: "<yellow>/st toggle</yellow> <dark_gray>(tg)</dark_gray> <gray>- toggle the held shard tool's ability</gray>"
   line-balance: "<yellow>/st balance [player]</yellow> <dark_gray>(b)</dark_gray> <gray>- check shard balance</gray>"
   line-pay: "<yellow>/st pay <player> <amount></yellow> <dark_gray>(p)</dark_gray> <gray>- send shards</gray>"
   line-buy: "<yellow>/st buy &lt;shards&gt;</yellow> <gray>- buy shards with money</gray>"
   line-top: "<yellow>/st top [n]</yellow> <dark_gray>(t)</dark_gray> <gray>- shard leaderboard</gray>"
   line-info: "<yellow>/st info</yellow> <dark_gray>(i)</dark_gray> <gray>- inspect held shard item</gray>"
-  line-give: "<yellow>/st give <player> <item> [amount]</yellow> <dark_gray>(g)</dark_gray> <gray>- give shop items <dark_gray>(op)</dark_gray></gray>"
-  line-items: "<yellow>/st items</yellow> <dark_gray>(l)</dark_gray> <gray>- list item ids <dark_gray>(op)</dark_gray></gray>"
-  line-setprice: "<yellow>/st setprice <item> <price></yellow> <dark_gray>(sp)</dark_gray> <gray>- change price <dark_gray>(op)</dark_gray></gray>"
-  line-shards: "<yellow>/st shards <player> <give|take|set> <amount></yellow> <dark_gray>(sh)</dark_gray> <gray>- edit balance <dark_gray>(op)</dark_gray></gray>"
-  line-interval: "<yellow>/st interval <minutes></yellow> <dark_gray>(iv)</dark_gray> <gray>- income interval <dark_gray>(op)</dark_gray></gray>"
-  line-amount: "<yellow>/st amount <shards></yellow> <dark_gray>(am)</dark_gray> <gray>- income amount <dark_gray>(op)</dark_gray></gray>"
-  line-award: "<yellow>/st award <on|off></yellow> <dark_gray>(aw)</dark_gray> <gray>- toggle income <dark_gray>(op)</dark_gray></gray>"
-  line-reload: "<yellow>/st reload</yellow> <dark_gray>(rl)</dark_gray> <gray>- reload config <dark_gray>(op)</dark_gray></gray>"
+  line-admin: "<yellow>/sta</yellow> <gray>- admin commands: give, items, add, remove, edit, setprice, shards, interval, amount, award, reload <dark_gray>(op)</dark_gray></gray>"
+
+admin-help:
+  header: "<gray>=== </gray><light_purple>ShardTools Admin</light_purple><gray> ===</gray>"
+  line-give: "<yellow>/sta give <player> <item> [amount]</yellow> <dark_gray>(g)</dark_gray> <gray>- give shop items</gray>"
+  line-items: "<yellow>/sta items</yellow> <dark_gray>(l)</dark_gray> <gray>- list item ids and prices</gray>"
+  line-add: "<yellow>/sta add <id> <material> <price> [lifetimeHours] [behavior]</yellow> <dark_gray>(a)</dark_gray> <gray>- add a shop item</gray>"
+  line-remove: "<yellow>/sta remove <id></yellow> <dark_gray>(rm)</dark_gray> <gray>- remove a shop item</gray>"
+  line-edit: "<yellow>/sta edit <id> <name|material|price|lifetime|behavior|enchants|lore> <value></yellow> <dark_gray>(e)</dark_gray> <gray>- edit a shop item</gray>"
+  line-setprice: "<yellow>/sta setprice <item> <price></yellow> <dark_gray>(sp)</dark_gray> <gray>- change a price</gray>"
+  line-shards: "<yellow>/sta shards <player> <give|take|set> <amount></yellow> <dark_gray>(sh)</dark_gray> <gray>- edit balances</gray>"
+  line-interval: "<yellow>/sta interval <minutes></yellow> <dark_gray>(iv)</dark_gray> <gray>- income interval</gray>"
+  line-amount: "<yellow>/sta amount <shards></yellow> <dark_gray>(am)</dark_gray> <gray>- income amount</gray>"
+  line-award: "<yellow>/sta award <on|off></yellow> <dark_gray>(aw)</dark_gray> <gray>- toggle income</gray>"
+  line-reload: "<yellow>/sta reload</yellow> <dark_gray>(rl)</dark_gray> <gray>- reload config</gray>"

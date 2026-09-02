@@ -141,11 +141,11 @@ public final class ShopGui {
         int bottomStart = (rows - 1) * 9;
         if (safePage > 0) {
             inventory.setItem(bottomStart + 2, navItem("ARROW",
-                    Component.text("Previous page"), "__prev__", holder, bottomStart + 2));
+                    plugin.messages().itemLine("shop.previous-page"), "__prev__", holder, bottomStart + 2));
         }
         if (safePage < pages - 1) {
             inventory.setItem(bottomStart + 6, navItem("ARROW",
-                    Component.text("Next page"), "__next__", holder, bottomStart + 6));
+                    plugin.messages().itemLine("shop.next-page"), "__next__", holder, bottomStart + 6));
         }
         inventory.setItem(bottomStart + 4, infoItem(player, safePage, pages));
 
@@ -166,7 +166,7 @@ public final class ShopGui {
         List<Component> lore = icon.getItemMeta() != null && icon.getItemMeta().lore() != null
                 ? new ArrayList<>(icon.getItemMeta().lore())
                 : new ArrayList<>();
-        lore.add(plugin.messages().bare("shop.click-to-confirm"));
+        lore.add(plugin.messages().itemLine("shop.click-to-confirm"));
         ItemMeta iconMeta = icon.getItemMeta();
         if (iconMeta != null) {
             iconMeta.lore(lore);
@@ -174,7 +174,7 @@ public final class ShopGui {
         }
         inventory.setItem(11, icon);
         inventory.setItem(15, navItem("RED_STAINED_GLASS_PANE",
-                plugin.messages().bare("shop.click-to-cancel"), null, null, -1));
+                plugin.messages().itemLine("shop.click-to-cancel"), null, null, -1));
         player.openInventory(inventory);
     }
 
@@ -183,14 +183,14 @@ public final class ShopGui {
         ItemStack stack = new ItemStack(Material.matchMaterial("AMETHYST_SHARD"), 1);
         long balance = plugin.accounts().balance(player.getUniqueId(), player.getName());
         List<Component> lore = new ArrayList<>();
-        lore.add(plugin.messages().bare("shop.balance-lore",
+        lore.add(plugin.messages().itemLine("shop.balance-lore",
                 "%balance%", Numbers.format(balance),
                 "%symbol%", plugin.settings().symbol()));
-        lore.add(plugin.messages().bare("shop.page",
+        lore.add(plugin.messages().itemLine("shop.page",
                 "%page%", Integer.toString(page + 1),
                 "%pages%", Integer.toString(pages)));
         stack.editMeta(meta -> {
-            meta.displayName(plugin.messages().bare("shop.balance-item",
+            meta.displayName(plugin.messages().itemLine("shop.balance-item",
                     "%balance%", Numbers.format(balance),
                     "%symbol%", plugin.settings().symbol()));
             meta.lore(lore);

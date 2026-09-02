@@ -14,6 +14,11 @@ public enum Behavior {
     /** Drinkable potion granting haste. */
     HASTE_POTION;
 
+    /** True for block-breaking abilities that /st toggle can switch on/off. */
+    public boolean toggleable() {
+        return this == AREA_PICKAXE || this == AREA_SHOVEL || this == TREE_AXE;
+    }
+
     public static Behavior parse(String text) {
         if (text == null) {
             return NONE;

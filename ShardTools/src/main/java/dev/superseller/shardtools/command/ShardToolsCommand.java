@@ -22,11 +22,14 @@ import dev.superseller.shardtools.util.Numbers;
 import dev.superseller.shardtools.util.TimeWords;
 
 /**
- * /shardtools (/shard, /st) - every subcommand also has a short alias:
+ * /shardtools (/shard, /st) - the player-facing command. Every subcommand
+ * also has a short alias:
  *
- *   help h ? | shop s | balance bal b | pay p | buy | top t | info i |
- *   give g | items l | setprice sp | shards sh | interval iv |
- *   amount am | award aw | reload rl
+ *   help h ? | shop s | toggle tg ability ab | balance bal b | pay p |
+ *   buy | top t | info i
+ *
+ * All administrative subcommands live in /shardtoolsadmin (/sta) - typing an
+ * old admin subcommand here points the sender there.
  */
 public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
 
@@ -38,6 +41,10 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
         SUBS.put("?", "help");
         SUBS.put("shop", "shop");
         SUBS.put("s", "shop");
+        SUBS.put("toggle", "toggle");
+        SUBS.put("tg", "toggle");
+        SUBS.put("ability", "toggle");
+        SUBS.put("ab", "toggle");
         SUBS.put("balance", "balance");
         SUBS.put("bal", "balance");
         SUBS.put("b", "balance");
@@ -48,24 +55,13 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
         SUBS.put("t", "top");
         SUBS.put("info", "info");
         SUBS.put("i", "info");
-        SUBS.put("give", "give");
-        SUBS.put("g", "give");
-        SUBS.put("items", "items");
-        SUBS.put("list", "items");
-        SUBS.put("l", "items");
-        SUBS.put("setprice", "setprice");
-        SUBS.put("price", "setprice");
-        SUBS.put("sp", "setprice");
-        SUBS.put("shards", "shards");
-        SUBS.put("sh", "shards");
-        SUBS.put("interval", "interval");
-        SUBS.put("iv", "interval");
-        SUBS.put("amount", "amount");
-        SUBS.put("am", "amount");
-        SUBS.put("award", "award");
-        SUBS.put("aw", "award");
-        SUBS.put("reload", "reload");
-        SUBS.put("rl", "reload");
+        // Former /st admin subcommands - redirect the sender to /sta.
+        String[] moved = {"give", "g", "items", "list", "l", "setprice", "price", "sp",
+                "shards", "sh", "eco", "interval", "iv", "amount", "am", "award", "aw",
+                "reload", "rl", "add", "remove", "edit"};
+        for (String name : moved) {
+            SUBS.put(name, "admin-moved");
+        }
     }
 
     private final ShardToolsPlugin plugin;
@@ -86,6 +82,8 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
                 return help(sender);
             case "shop":
                 return shop(sender);
+            case "toggle":
+                return toggle(sender);
             case "balance":
                 return balance(sender, args);
             case "pay":
@@ -96,32 +94,17 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
                 return top(sender, args);
             case "info":
                 return info(sender);
-            case "give":
-                return give(sender, args);
-            case "items":
-                return items(sender);
-            case "setprice":
-                return setPrice(sender, args);
-            case "shards":
-                return shards(sender, args);
-            case "interval":
-                return interval(sender, args);
-            case "amount":
-                return amount(sender, args);
-            case "award":
-                return award(sender, args);
-            case "reload":
-                return reload(sender);
+            case "admin-moved":
+                plugin.messages().send(sender, "admin-moved");
+                return true;
             default:
                 return true;
         }
     }
 
     private boolean help(CommandSender sender) {
-        String[] lines = {"help.header", "help.line-shop", "help.line-balance", "help.line-pay",
-                "help.line-buy", "help.line-top", "help.line-info", "help.line-give", "help.line-items",
-                "help.line-setprice", "help.line-shards", "help.line-interval", "help.line-amount",
-                "help.line-award", "help.line-reload"};
+        String[] lines = {"help.header", "help.line-shop", "help.line-toggle", "help.line-balance",
+                "help.line-pay", "help.line-buy", "help.line-top", "help.line-info", "help.line-admin"};
         for (String line : lines) {
             sender.sendMessage(plugin.messages().bare(line));
         }
@@ -139,6 +122,35 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         plugin.gui().open(player, 0);
+        return true;
+    }
+
+    /**
+     * /st toggle - switches the ability (3x3 mining / tree felling) of the
+     * shard tool in the main hand on or off. Only works while holding a
+     * shard tool that actually has an ability.
+     */
+    private boolean toggle(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            plugin.messages().send(sender, "player-only");
+            return true;
+        }
+        Player player = (Player) sender;
+        if (!player.hasPermission(Permissions.TOGGLE)) {
+            plugin.messages().send(player, "no-permission");
+            return true;
+        }
+        ItemStack held = player.getInventory().getItemInMainHand();
+        String id = plugin.items().itemId(held);
+        ShardCatalog.Entry entry = id == null ? null : plugin.catalog().byId(id);
+        if (entry == null || !entry.behavior().toggleable()) {
+            plugin.messages().send(player, "toggle.not-tool");
+            return true;
+        }
+        boolean enabled = plugin.items().toggleAbility(held);
+        player.getInventory().setItemInMainHand(held);
+        plugin.messages().send(player, enabled ? "toggle.enabled" : "toggle.disabled",
+                "%item%", entry.displayName());
         return true;
     }
 
@@ -352,229 +364,6 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean give(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.GIVE)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 3) {
-            usage(sender, "/st give <player> <item> [amount]");
-            return true;
-        }
-        Player target = Bukkit.getPlayerExact(args[1]);
-        if (target == null) {
-            plugin.messages().send(sender, "invalid-player", "%player%", args[1]);
-            return true;
-        }
-        ShardCatalog.Entry entry = plugin.catalog().byId(args[2]);
-        if (entry == null) {
-            plugin.messages().send(sender, "invalid-item", "%item%", args[2]);
-            return true;
-        }
-        int amount = 1;
-        if (args.length >= 4) {
-            Long parsed = Numbers.parse(args[3]);
-            if (parsed == null || parsed < 1) {
-                plugin.messages().send(sender, "invalid-amount", "%amount%", args[3]);
-                return true;
-            }
-            amount = (int) Math.min(64L * 27L, parsed);
-        }
-        if (entry.isCommandItem()) {
-            // Command items (spawners, crate keys...) run their console command
-            // instead of handing out a physical icon.
-            for (int i = 0; i < amount; i++) {
-                String command = entry.command().replace("%player%", target.getName());
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-            }
-        } else {
-            int remaining = amount;
-            while (remaining > 0) {
-                ItemStack stack = plugin.items().create(entry, remaining);
-                HashMap<Integer, ItemStack> leftover = target.getInventory().addItem(stack);
-                for (ItemStack rest : leftover.values()) {
-                    target.getWorld().dropItem(target.getLocation(), rest);
-                }
-                remaining -= stack.getAmount();
-            }
-        }
-        plugin.messages().send(sender, "give.given", "%player%", target.getName(),
-                "%item%", entry.displayName(), "%amount%", Numbers.format(amount));
-        plugin.messages().send(target, "give.received",
-                "%item%", entry.displayName(), "%amount%", Numbers.format(amount));
-        return true;
-    }
-
-    private boolean items(CommandSender sender) {
-        if (!sender.hasPermission(Permissions.ITEMS)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        sender.sendMessage(plugin.messages().bare("items.header",
-                "%symbol%", plugin.settings().symbol()));
-        for (ShardCatalog.Entry entry : plugin.catalog().ordered()) {
-            Long price = plugin.priceBook().price(entry.id());
-            String time = entry.expires()
-                    ? TimeWords.format(entry.lifetimeMs()) : plugin.messages().raw("time.permanent");
-            sender.sendMessage(plugin.messages().bare("items.entry",
-                    "%item%", entry.id(),
-                    "%price%", Numbers.format(price == null ? 0L : price),
-                    "%time%", time,
-                    "%symbol%", plugin.settings().symbol()));
-        }
-        return true;
-    }
-
-    private boolean setPrice(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.SETPRICE)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 3) {
-            usage(sender, "/st setprice <item> <price>");
-            return true;
-        }
-        ShardCatalog.Entry entry = plugin.catalog().byId(args[1]);
-        if (entry == null) {
-            plugin.messages().send(sender, "invalid-item", "%item%", args[1]);
-            return true;
-        }
-        Long price = Numbers.parse(args[2]);
-        if (price == null) {
-            plugin.messages().send(sender, "invalid-amount", "%amount%", args[2]);
-            return true;
-        }
-        plugin.priceBook().setPrice(entry.id(), price);
-        plugin.runtimeStore().setPriceOverride(entry.id(), price);
-        plugin.messages().send(sender, "price.set", "%item%", entry.id(),
-                "%price%", Numbers.format(price), "%symbol%", plugin.settings().symbol());
-        return true;
-    }
-
-    private boolean shards(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.ECONOMY)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 4) {
-            usage(sender, "/st shards <player> <give|take|set> <amount>");
-            return true;
-        }
-        Target target = resolve(args[1]);
-        if (target == null) {
-            plugin.messages().send(sender, "invalid-player", "%player%", args[1]);
-            return true;
-        }
-        String action = args[2].toLowerCase(Locale.ROOT);
-        Long amount = Numbers.parse(args[3]);
-        if (amount == null) {
-            plugin.messages().send(sender, "invalid-amount", "%amount%", args[3]);
-            return true;
-        }
-        String symbol = plugin.settings().symbol();
-        switch (action) {
-            case "give": {
-                long balance = plugin.accounts().add(target.uuid(), target.name(), amount);
-                plugin.messages().send(sender, "shards.given", "%player%", target.name(),
-                        "%amount%", Numbers.format(amount), "%balance%", Numbers.format(balance),
-                        "%symbol%", symbol);
-                break;
-            }
-            case "take": {
-                Long balance = plugin.accounts().take(target.uuid(), target.name(), amount);
-                if (balance == null) {
-                    long current = plugin.accounts().balance(target.uuid(), target.name());
-                    plugin.messages().send(sender, "shards.insufficient", "%player%", target.name(),
-                            "%balance%", Numbers.format(current), "%symbol%", symbol);
-                    return true;
-                }
-                plugin.messages().send(sender, "shards.taken", "%player%", target.name(),
-                        "%amount%", Numbers.format(amount), "%balance%", Numbers.format(balance),
-                        "%symbol%", symbol);
-                break;
-            }
-            case "set": {
-                long balance = plugin.accounts().set(target.uuid(), target.name(), amount);
-                plugin.messages().send(sender, "shards.set", "%player%", target.name(),
-                        "%balance%", Numbers.format(balance), "%symbol%", symbol);
-                break;
-            }
-            default:
-                usage(sender, "/st shards <player> <give|take|set> <amount>");
-                return true;
-        }
-        plugin.accounts().saveAsync();
-        return true;
-    }
-
-    private boolean interval(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.SETTINGS)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 2) {
-            usage(sender, "/st interval <minutes>");
-            return true;
-        }
-        Long minutes = Numbers.parse(args[1]);
-        if (minutes == null || minutes < 1) {
-            plugin.messages().send(sender, "invalid-amount", "%amount%", args[1]);
-            return true;
-        }
-        plugin.runtimeStore().setAwardInterval(minutes);
-        plugin.restartTasks();
-        plugin.messages().send(sender, "award.interval-set", "%minutes%", Numbers.format(minutes));
-        return true;
-    }
-
-    private boolean amount(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.SETTINGS)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 2) {
-            usage(sender, "/st amount <shards>");
-            return true;
-        }
-        Long amount = Numbers.parse(args[1]);
-        if (amount == null) {
-            plugin.messages().send(sender, "invalid-amount", "%amount%", args[1]);
-            return true;
-        }
-        plugin.runtimeStore().setAwardAmount(amount);
-        plugin.restartTasks();
-        plugin.messages().send(sender, "award.amount-set", "%amount%", Numbers.format(amount),
-                "%symbol%", plugin.settings().symbol());
-        return true;
-    }
-
-    private boolean award(CommandSender sender, String[] args) {
-        if (!sender.hasPermission(Permissions.SETTINGS)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        if (args.length < 2 || (!args[1].equalsIgnoreCase("on") && !args[1].equalsIgnoreCase("off"))) {
-            usage(sender, "/st award <on|off>");
-            return true;
-        }
-        boolean enabled = args[1].equalsIgnoreCase("on");
-        plugin.runtimeStore().setAwardEnabled(enabled);
-        plugin.restartTasks();
-        plugin.messages().send(sender, "award.enabled",
-                "%state%", enabled ? "enabled" : "disabled");
-        return true;
-    }
-
-    private boolean reload(CommandSender sender) {
-        if (!sender.hasPermission(Permissions.RELOAD)) {
-            plugin.messages().send(sender, "no-permission");
-            return true;
-        }
-        plugin.reloadAll();
-        plugin.messages().send(sender, "reload.done");
-        return true;
-    }
-
     private void usage(CommandSender sender, String usage) {
         sender.sendMessage(net.kyori.adventure.text.Component.text(usage));
     }
@@ -587,7 +376,8 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
-            out.addAll(filter(visibleSubcommands(sender), args[0]));
+            out.addAll(filter(List.of("shop", "toggle", "balance", "pay", "buy", "top", "info", "help"),
+                    args[0]));
         } else if (args.length == 2) {
             String sub = SUBS.get(args[0].toLowerCase(Locale.ROOT));
             if (sub == null) {
@@ -596,97 +386,28 @@ public final class ShardToolsCommand implements CommandExecutor, TabCompleter {
             switch (sub) {
                 case "balance":
                     if (sender.hasPermission(Permissions.BALANCE_OTHERS)) {
-                        out.addAll(playerNames());
+                        out.addAll(filter(playerNames(), args[1]));
                     }
                     break;
                 case "pay":
-                case "give":
-                    out.addAll(playerNames());
-                    break;
-                case "shards":
-                    out.addAll(playerNames());
+                    out.addAll(filter(playerNames(), args[1]));
                     break;
                 case "top":
-                    out.addAll(List.of("5", "10", "25"));
+                    out.addAll(filter(List.of("5", "10", "25"), args[1]));
                     break;
-                case "setprice":
-                    out.addAll(filter(itemIds(), args[1]));
-                    break;
-                case "interval":
-                    out.addAll(List.of("5", "10", "15", "30", "60"));
-                    break;
-                case "amount":
-                    out.addAll(List.of("1", "5", "10", "25", "50"));
-                    break;
-                case "award":
-                    out.addAll(List.of("on", "off"));
+                case "buy":
+                    out.addAll(filter(List.of("10", "100", "1000"), args[1]));
                     break;
                 default:
                     break;
             }
         } else if (args.length == 3) {
             String sub = SUBS.get(args[0].toLowerCase(Locale.ROOT));
-            if (sub == null) {
-                return out;
-            }
-            switch (sub) {
-                case "give":
-                    out.addAll(filter(itemIds(), args[2]));
-                    break;
-                case "pay":
-                    out.addAll(List.of("100", "1000", "5000"));
-                    break;
-                case "buy":
-                    out.addAll(List.of("10", "100", "1000"));
-                    break;
-                case "shards":
-                    out.addAll(filter(List.of("give", "take", "set"), args[2]));
-                    break;
-                default:
-                    break;
-            }
-        } else if (args.length == 4) {
-            String sub = SUBS.get(args[0].toLowerCase(Locale.ROOT));
-            if ("give".equals(sub)) {
-                out.addAll(List.of("1", "5", "64"));
-            } else if ("shards".equals(sub)) {
-                out.addAll(List.of("100", "1000", "3000"));
+            if ("pay".equals(sub)) {
+                out.addAll(filter(List.of("100", "1000", "5000"), args[2]));
             }
         }
         return out;
-    }
-
-    private List<String> visibleSubcommands(CommandSender sender) {
-        List<String> subs = new ArrayList<>(List.of("shop", "balance", "pay", "buy", "top", "info", "help"));
-        if (sender.hasPermission(Permissions.GIVE)) {
-            subs.add("give");
-        }
-        if (sender.hasPermission(Permissions.ITEMS)) {
-            subs.add("items");
-        }
-        if (sender.hasPermission(Permissions.SETPRICE)) {
-            subs.add("setprice");
-        }
-        if (sender.hasPermission(Permissions.ECONOMY)) {
-            subs.add("shards");
-        }
-        if (sender.hasPermission(Permissions.SETTINGS)) {
-            subs.add("interval");
-            subs.add("amount");
-            subs.add("award");
-        }
-        if (sender.hasPermission(Permissions.RELOAD)) {
-            subs.add("reload");
-        }
-        return subs;
-    }
-
-    private List<String> itemIds() {
-        List<String> ids = new ArrayList<>();
-        for (ShardCatalog.Entry entry : plugin.catalog().ordered()) {
-            ids.add(entry.id());
-        }
-        return ids;
     }
 
     private List<String> playerNames() {
