@@ -1,0 +1,134 @@
+# =====================================================================
+#  SwiftTPA — Minecraft 26.2 (Paper / Purpur / Folia), Java 25
+#  A fast teleport-request suite: /tpa, /tpahere, clickable accept and
+#  deny, a chest GUI, warmups, cooldowns, toggles, block lists and a
+#  full admin toolbox. Reload with /stpaadmin reload
+#  (permission: swifttpa.admin.reload)
+# =====================================================================
+
+storage:
+  # Where player settings (toggle state, block list, statistics) are
+  # stored: "yaml" (one small file per player) or "sqlite" (single
+  # database file, better for large servers). Both work identically on
+  # Linux, Windows and macOS.
+  type: yaml
+
+  autosave:
+    # Periodically flush cached data to disk. SQLite writes through on
+    # every change, so this is mainly a safety net for the YAML backend.
+    enabled: true
+    # Minimum 30 seconds.
+    interval-seconds: 300
+
+requests:
+  # Seconds before a teleport request expires. 0 = requests never expire.
+  expire-seconds: 120
+  # Maximum pending requests one player may receive. When the queue is
+  # full the oldest request is dropped (both players are notified).
+  max-pending-per-target: 5
+  # When true a player can only have ONE outgoing request; sending a new
+  # one replaces the old one (the old target is notified). When false a
+  # player may request several players at once.
+  one-outgoing: true
+
+cooldowns:
+  # Seconds a player must wait between sending requests. 0 = no cooldown.
+  # Bypass permission: swifttpa.bypass.cooldown
+  request-seconds: 30
+
+warmup:
+  # Seconds between accepting a request and the actual teleport.
+  # 0 = teleport instantly.
+  # Bypass permission: swifttpa.bypass.warmup
+  seconds: 3
+  # Cancel the warmup when the teleporting player moves to another block.
+  cancel-on-move: true
+  # Cancel the warmup when the teleporting player takes damage.
+  cancel-on-damage: true
+  # Show the countdown in the action bar (over the hotbar).
+  action-bar: true
+
+teleport:
+  # Allow teleports between different worlds.
+  # Bypass permission: swifttpa.bypass.world
+  allow-cross-world: true
+  # Teleports INTO these worlds are refused (exact world folder names).
+  disabled-worlds: []
+
+features:
+  # Allow admins with swifttpa.admin to watch request traffic with
+  # /stpaadmin spy.
+  spy: true
+
+sounds:
+  # Master switch for every sound effect.
+  enabled: true
+  # Sounds are vanilla sound keys, with or without the "minecraft:"
+  # namespace (see https://minecraft.wiki/w/Sounds.json). Leave the sound
+  # value empty ("") to disable a single event.
+  request-sent:
+    sound: "block.note_block.pling"
+    volume: 1.0
+    pitch: 1.6
+  request-received:
+    sound: "entity.experience_orb.pickup"
+    volume: 1.0
+    pitch: 1.0
+  accepted:
+    sound: "entity.player.levelup"
+    volume: 1.0
+    pitch: 1.4
+  denied:
+    sound: "entity.villager.no"
+    volume: 1.0
+    pitch: 1.0
+  cancelled:
+    sound: "block.note_block.bass"
+    volume: 1.0
+    pitch: 0.8
+  expired:
+    sound: "block.note_block.bass"
+    volume: 1.0
+    pitch: 0.6
+  teleported:
+    sound: "entity.enderman.teleport"
+    volume: 1.0
+    pitch: 1.0
+  warmup-tick:
+    sound: "block.note_block.hat"
+    volume: 0.6
+    pitch: 1.0
+  gui-open:
+    sound: "block.chest.open"
+    volume: 0.7
+    pitch: 1.2
+  gui-click:
+    sound: "ui.button.click"
+    volume: 0.7
+    pitch: 1.0
+  blocked:
+    sound: "entity.villager.no"
+    volume: 0.8
+    pitch: 0.9
+  unblocked:
+    sound: "entity.villager.yes"
+    volume: 0.8
+    pitch: 1.1
+  toggle:
+    sound: "ui.button.click"
+    volume: 0.8
+    pitch: 1.2
+  error:
+    sound: "entity.villager.no"
+    volume: 1.0
+    pitch: 1.0
+
+gui:
+  # MiniMessage title of the requests inventory.
+  title: "<gradient:#38bdf8:#a78bfa><bold>Teleport Requests</bold></gradient>"
+  # Icon materials (https://jd.papermc.io -> org.bukkit.Material).
+  icons:
+    filling: GRAY_STAINED_GLASS_PANE
+    outgoing-cancel: BARRIER
+    toggle-on: LIME_DYE
+    toggle-off: GRAY_DYE

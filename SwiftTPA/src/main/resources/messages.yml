@@ -1,0 +1,155 @@
+# =====================================================================
+#  SwiftTPA messages — MiniMessage format
+#  https://docs.advntr.dev/minimessage/format.html
+#  Placeholders use {name}: {player} {target} {sender} {seconds}
+#  {age} {expires} {count} {world} {type} {sent} {accepted} {denied}
+#  {teleported} {input} {version} {storage} {platform}
+# =====================================================================
+
+prefix: "<gradient:#38bdf8:#a78bfa><bold>SwiftTPA</bold></gradient> <dark_gray>»</dark_gray> "
+
+no-permission: "<red>You don't have permission to do that.</red>"
+players-only: "<red>Only players can use this command.</red>"
+reloaded: "<green>Configuration and messages reloaded.</green>"
+unknown-subcommand: "<red>Unknown sub-command <white>{input}</white>. Try <white>/stpa help</white>.</red>"
+player-not-found: "<red>Could not find an online player named <white>{input}</white>.</red>"
+usage-tpa: "<red>Usage: <white>/tpa <player></white></red>"
+usage-tpahere: "<red>Usage: <white>/tpahere <player></white></red>"
+usage-block: "<red>Usage: <white>/tpablock <player></white></red>"
+usage-unblock: "<red>Usage: <white>/tpaunblock <player></white></red>"
+
+request-sent-tpa: "<green>Teleport request sent to <white>{player}</white>.</green> <gray>Expires in {seconds}s — cancel with <white>/tpacancel</white>.</gray>"
+request-sent-here: "<green>You asked <white>{player}</white> to teleport to you.</green> <gray>Expires in {seconds}s.</gray>"
+
+# The clickable chips appended to the two received messages below.
+request-received-tpa: "<white>{player}</white> <gray>wants to teleport <aqua>to you</aqua>.</gray>"
+request-received-here: "<white>{player}</white> <gray>wants you to teleport <light_purple>to them</light_purple>.</gray>"
+request-buttons: " <green><bold><click:run_command:/tpaccept {sender}><hover:show_text:'<green>Accept the teleport request'>[Accept]</hover></click></bold></green> <red><bold><click:run_command:/tpdeny {sender}><hover:show_text:'<red>Deny the teleport request'>[Deny]</hover></click></bold></red> <dark_gray>({seconds}s)</dark_gray>"
+
+accepted-sender: "<white>{player}</white> <green>accepted your teleport request.</green>"
+accepted-target: "<green>Accepted <white>{player}</white>'s request.</green>"
+denied-sender: "<white>{player}</white> <red>denied your teleport request.</red>"
+denied-target: "<red>Denied <white>{player}</white>'s request.</red>"
+cancelled-sender: "<gray>You cancelled your teleport request to <white>{player}</white>.</gray>"
+cancelled-target: "<white>{player}</white> <gray>cancelled their teleport request.</gray>"
+expired-sender: "<gray>Your teleport request to <white>{player}</white> expired.</gray>"
+expired-target: "<gray>The teleport request from <white>{player}</white> expired.</gray>"
+
+teleported: "<green>Teleported to <white>{player}</white>.</green>"
+teleported-here-side: "<white>{player}</white> <green>teleported to you.</green>"
+
+warmup-started: "<gray>Teleporting in <white>{seconds}</white>s — don't move!</gray>"
+warmup-actionbar: "<aqua>Teleporting in <white>{seconds}</white>…</aqua>"
+warmup-cancelled-moved: "<red>Teleport cancelled — you moved.</red>"
+warmup-cancelled-damage: "<red>Teleport cancelled — you took damage.</red>"
+warmup-cancelled: "<red>Teleport cancelled.</red>"
+
+toggle-on: "<green>You now receive teleport requests.</green>"
+toggle-off: "<gray>You will no longer receive teleport requests.</gray>"
+
+blocked: "<red>You blocked <white>{player}</white>.</red> <gray>They can no longer send you requests.</gray>"
+unblocked: "<green>You unblocked <white>{player}</white>.</green>"
+
+list-header: "<gray>——— <aqua>Teleport Requests ({count})</aqua> ———</gray>"
+list-incoming-tpa: "<white>{player}</white> <gray>wants to teleport to you</gray> <dark_gray>({seconds} left)</dark_gray>"
+list-incoming-here: "<white>{player}</white> <gray>wants you to teleport to them</gray> <dark_gray>({seconds} left)</dark_gray>"
+list-outgoing-tpa: "<gray>Your request</gray> <white>→ {player}</white> <dark_gray>({seconds} left)</dark_gray>"
+list-outgoing-here: "<gray>Your summon</gray> <white>← {player}</white> <dark_gray>({seconds} left)</dark_gray>"
+list-empty: "<gray>You have no pending teleport requests.</gray>"
+
+blocklist-header: "<gray>——— <red>Blocked Players ({count})</red> ———</gray>"
+blocklist-line: "<white>{player}</white>"
+blocklist-empty: "<gray>Your block list is empty. Block someone with <white>/tpablock <player></white>.</gray>"
+
+stats-self: "<gray>Your stats — sent: <white>{sent}</white>, accepted: <white>{accepted}</white>, denied: <white>{denied}</white>, teleported: <white>{teleported}</white></gray>"
+stats-other: "<gray>{player}'s stats — sent: <white>{sent}</white>, accepted: <white>{accepted}</white>, denied: <white>{denied}</white>, teleported: <white>{teleported}</white></gray>"
+info-line: "<gray>SwiftTPA <white>{version}</white> on <aqua>{platform}</aqua> <dark_gray>|</dark_gray> storage: <white>{storage}</white></gray>"
+
+error:
+  self: "<red>You can't send a teleport request to yourself.</red>"
+  none: "<red>You have no pending teleport requests.</red>"
+  none-from: "<red>You have no pending request from <white>{player}</white>.</red>"
+  none-outgoing: "<red>You have no outgoing request to cancel.</red>"
+  cooldown: "<red>Please wait <white>{seconds}</white> before sending another request.</red>"
+  cross-world: "<red>Cross-world teleport requests are disabled on this server.</red>"
+  disabled-world: "<red>Teleports into world <white>{world}</white> are disabled.</red>"
+  target-toggle: "<white>{player}</white> <red>isn't accepting teleport requests right now.</red>"
+  blocked-by-target: "<white>{player}</white> <red>blocked your teleport requests.</red>"
+  already-blocked: "<red>You already blocked <white>{player}</white>.</red>"
+  not-blocked: "<red>You haven't blocked <white>{player}</white>.</red>"
+  sender-offline: "<red>The sender of that request is no longer online.</red>"
+  target-offline: "<red>The other player is no longer online — teleport cancelled.</red>"
+  disabled: "<red>That feature is disabled on this server.</red>"
+
+spy-send: "<dark_gray>[spy]</dark_gray> <gray>{sender}</gray> <dark_gray>→</dark_gray> <gray>{target}</gray> <dark_gray>({type})</dark_gray>"
+spy-accept: "<dark_gray>[spy]</dark_gray> <gray>{player}</gray> <green>accepted</green> <gray>{sender}</gray> <dark_gray>({type})</dark_gray>"
+spy-deny: "<dark_gray>[spy]</dark_gray> <gray>{player}</gray> <red>denied</red> <gray>{sender}</gray> <dark_gray>({type})</dark_gray>"
+spy-cancel: "<dark_gray>[spy]</dark_gray> <gray>{player}</gray> <gray>cancelled a request</gray> <dark_gray>({type})</dark_gray>"
+spy-expire: "<dark_gray>[spy]</dark_gray> <gray>{sender}</gray> <dark_gray>→</dark_gray> <gray>{target}</gray> <yellow>expired</yellow> <dark_gray>({type})</dark_gray>"
+spy-teleport: "<dark_gray>[spy]</dark_gray> <gray>{player}</gray> <aqua>teleported</aqua> <gray>→ {target}</gray>"
+
+admin:
+  forced-tp: "<green>Teleported <white>{player}</white> to <white>{target}</white>.</green>"
+  forced-notify-player: "<yellow>An administrator teleported you.</yellow>"
+  cleared-all: "<green>Cleared all pending requests (<white>{count}</white>).</green>"
+  cleared-player: "<green>Cleared <white>{count}</white> request(s) involving <white>{player}</white>.</green>"
+  clear-none: "<gray>No pending requests matched.</gray>"
+  spy-on: "<green>Teleport spy enabled — you now see all request traffic.</green>"
+  spy-off: "<gray>Teleport spy disabled.</gray>"
+  usage-forcetp: "<red>Usage: <white>/stpaadmin forcetp <player> <target></white></red>"
+  usage-forcetphere: "<red>Usage: <white>/stpaadmin forcetphere <player></white></red>"
+
+help:
+  player:
+    - "<gray>——— <gradient:#38bdf8:#a78bfa><bold>SwiftTPA</bold></gradient> <gray>———</gray>"
+    - "<aqua>/tpa <white><player></white></aqua> <gray>ask to teleport to a player</gray> <dark_gray>(/tpreq, /tpr)</dark_gray>"
+    - "<aqua>/tpahere <white><player></white></aqua> <gray>ask a player to teleport to you</gray> <dark_gray>(/tphere, /tph)</dark_gray>"
+    - "<aqua>/tpaccept <white>[player]</white></aqua> <gray>accept a request (newest first)</gray> <dark_gray>(/tpyes, /tacc)</dark_gray>"
+    - "<aqua>/tpdeny <white>[player]</white></aqua> <gray>deny a request</gray> <dark_gray>(/tpno, /tdeny)</dark_gray>"
+    - "<aqua>/tpacancel</aqua> <gray>cancel your outgoing request</gray> <dark_gray>(/tpcancel, /tpcl)</dark_gray>"
+    - "<aqua>/tpatoggle</aqua> <gray>toggle receiving requests</gray> <dark_gray>(/tptoggle, /tptg)</dark_gray>"
+    - "<aqua>/tpalist</aqua> <gray>list pending requests</gray> <dark_gray>(/tplist, /tpls)</dark_gray>"
+    - "<aqua>/tpablock <white><player></white></aqua> <gray>block a player's requests</gray> <dark_gray>(/tpblock, /tpbl)</dark_gray>"
+    - "<aqua>/tpaunblock <white><player></white></aqua> <gray>unblock a player</gray> <dark_gray>(/tpunblock, /tpub)</dark_gray>"
+    - "<aqua>/stpa gui</aqua> <gray>manage requests in a GUI</gray> <dark_gray>(/stpa)</dark_gray>"
+  admin:
+    - "<gray>——— <gradient:#38bdf8:#a78bfa><bold>SwiftTPA Admin</bold></gradient> <gray>———</gray>"
+    - "<aqua>/stpaadmin reload</aqua> <gray>reload config and messages</gray> <dark_gray>(rl)</dark_gray>"
+    - "<aqua>/stpaadmin forcetp <white><player> <target></white></aqua> <gray>force-teleport a player</gray> <dark_gray>(ftp)</dark_gray>"
+    - "<aqua>/stpaadmin forcetphere <white><player></white></aqua> <gray>force-teleport a player to you</gray> <dark_gray>(ftph)</dark_gray>"
+    - "<aqua>/stpaadmin clear <white>[player|all]</white></aqua> <gray>cancel pending requests</gray> <dark_gray>(c)</dark_gray>"
+    - "<aqua>/stpaadmin spy</aqua> <gray>watch all request traffic</gray> <dark_gray>(s)</dark_gray>"
+    - "<aqua>/stpaadmin stats <white>[player]</white></aqua> <gray>view teleport statistics</gray> <dark_gray>(st)</dark_gray>"
+    - "<aqua>/stpaadmin info</aqua> <gray>plugin and platform info</gray> <dark_gray>(i)</dark_gray>"
+
+gui:
+  head-name-tpa: "<aqua><bold>{player}</bold></aqua>"
+  head-name-here: "<light_purple><bold>{player}</bold></light_purple>"
+  head-lore-tpa:
+    - "<gray>{player} wants to teleport to you.</gray>"
+    - "<gray>Expires in <white>{expires}</white></gray>"
+    - ""
+    - "<green>Left-click to accept</green>"
+    - "<red>Right-click to deny</red>"
+  head-lore-here:
+    - "<gray>{player} wants you to teleport</gray>"
+    - "<gray>to them. Expires in <white>{expires}</white></gray>"
+    - ""
+    - "<green>Left-click to accept</green>"
+    - "<red>Right-click to deny</red>"
+  cancel-name: "<red><bold>Cancel Your Request</bold></red>"
+  cancel-lore:
+    - "<gray>You asked <white>{player}</white> ({type}).</gray>"
+    - "<gray>Expires in <white>{expires}</white></gray>"
+    - ""
+    - "<red>Click to cancel</red>"
+  toggle-on-name: "<green><bold>Requests: ON</bold></green>"
+  toggle-on-lore:
+    - "<gray>You receive teleport requests.</gray>"
+    - ""
+    - "<yellow>Click to disable</yellow>"
+  toggle-off-name: "<red><bold>Requests: OFF</bold></red>"
+  toggle-off-lore:
+    - "<gray>You ignore teleport requests.</gray>"
+    - ""
+    - "<yellow>Click to enable</yellow>"
