@@ -217,6 +217,28 @@ Repair tools, weapons, and armor that have Mending using your existing XP for Mi
 
 See [EasyMending/README.md](EasyMending/README.md). Build with `mvn -B clean package` in `EasyMending/` (JDK 25 required).
 
+## CombatTag ⚔️
+
+PvP **combat tagging** for Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Getting hit
+by a player — or their arrow, trident or splash potion — puts you in combat for **10s**
+(configurable). While tagged you **cannot open shops** (EconomyShopGUI & co., detected by
+command *and* by the GUI itself), **cannot teleport** (`/home`, `/warp`, `/tpa`, `/back`,
+`/rtp`, TeleportSigns, ender pearls, chorus fruit — plus every generic `PlayerTeleportEvent`),
+and **cannot repair with EasyMending**. Combat logging kills the quitter, and any other
+command can be blocked through a blacklist or strict whitelist.
+
+- `/combattag` (`/ct`) — `status` (`s`) · `gui` (`g`) · `time` (`t`) · `check` (`c`) · `info` (`i`)
+- `/combattagadmin` (`/cta`) — `tag` (`t`) · `untag` (`u`) · `clear` (`c`) · `list` (`l`) · `exempt` (`e`) · `duration` (`d`) · `stats` (`st`) · `gui` (`g`) · `reload` (`rl`)
+- `/cta bypass` (`b`) — live bypass control: the master switch and each individual bypass
+  (`tag`, `shop`, `teleport`, `easymending`, `command`, `combatlog`) can be toggled at
+  runtime, and switching one **off enforces that restriction instantly for everyone** —
+  no reload, no restart, no re-login
+- Boss bar + action bar countdown, GUIs, sounds, full `combattag.*` permission tree with
+  bypasses off by default, tab completion, PlaceholderAPI (`%combattag_status%`), developer
+  API, Folia-safe scheduling, everything configurable and translatable
+
+See [CombatTag/README.md](CombatTag/README.md). Build with `mvn -B clean verify` in
+`CombatTag/` (JDK 25 required); a CI workflow is provided at `CombatTag/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/` to activate it).
 ## RapidHoppers ⚡
 
 Configurable **high-speed item transport** for Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Hoppers, hopper minecarts, chest minecarts, droppers and (optionally) dispensers move items far faster than vanilla — **32× throughput by default** (every 2 ticks instead of 8, 8 items instead of 1) — without replacing vanilla logic, so comparators and item sorters keep working. A TPS auto-throttle slows or pauses the engine before the server suffers, plus per-chunk / per-world / per-tick budgets and a player-activity radius.

@@ -1,0 +1,128 @@
+name: CombatTag
+version: '${project.version}'
+main: dev.superseller.combattag.CombatTagPlugin
+api-version: '26.2'
+folia-supported: true
+load: POSTWORLD
+
+description: 'Tags players in PvP combat and blocks shops, teleports, EasyMending repairs and configurable commands until the timer runs out.'
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+
+softdepend:
+  - PlaceholderAPI
+  - EconomyShopGUI
+  - EconomyShopGUI-Premium
+  - EasyMending
+  - Essentials
+  - EssentialsX
+  - CMI
+  - HuskHomes
+  - AdvancedTeleport
+  - BetterRTP
+  - ShopGUIPlus
+  - Vault
+
+commands:
+  combattag:
+    description: Show your combat status, open the status GUI or check another player.
+    aliases: [ct, combat, ctag]
+    permission: combattag.use
+    usage: /<command> [status|gui|time|check <player>|info|help]
+  combattagadmin:
+    description: Administrator commands for CombatTag.
+    aliases: [cta, ctadmin, combatadmin]
+    permission: combattag.admin
+    usage: /<command> [tag|untag|clear|list|exempt|duration|stats|gui|reload]
+
+permissions:
+  combattag.use:
+    description: Use the /combattag command.
+    default: true
+  combattag.gui:
+    description: Open the combat status GUI.
+    default: true
+  combattag.check:
+    description: Check another player's combat status.
+    default: op
+  combattag.notify:
+    description: Receive admin notifications when a tagged player is blocked.
+    default: op
+  combattag.admin:
+    description: Full access to all CombatTag administrator commands.
+    default: op
+    children:
+      combattag.admin.tag: true
+      combattag.admin.untag: true
+      combattag.admin.clear: true
+      combattag.admin.list: true
+      combattag.admin.exempt: true
+      combattag.admin.duration: true
+      combattag.admin.bypass: true
+      combattag.admin.bypass:
+    description: Inspect and toggle the bypass system at runtime.
+    default: op
+  combattag.admin.reload: true
+      combattag.check: true
+      combattag.notify: true
+  combattag.admin.tag:
+    description: Manually tag a player.
+    default: op
+  combattag.admin.untag:
+    description: Remove a player's combat tag.
+    default: op
+  combattag.admin.clear:
+    description: Clear all active combat tags.
+    default: op
+  combattag.admin.list:
+    description: List all tagged players.
+    default: op
+  combattag.admin.exempt:
+    description: Toggle a player's combat exemption.
+    default: op
+  combattag.admin.duration:
+    description: Change the combat duration at runtime.
+    default: op
+  combattag.admin.bypass:
+    description: Inspect and toggle the bypass system at runtime.
+    default: op
+  combattag.admin.reload:
+    description: Reload config.yml and messages.yml.
+    default: op
+  combattag.bypass.tag:
+    description: Never get combat tagged (off by default, even for operators).
+    default: false
+  combattag.bypass.shop:
+    description: Open shops while in combat.
+    default: false
+  combattag.bypass.teleport:
+    description: Teleport (homes, warps, tpa, pearls) while in combat.
+    default: false
+  combattag.bypass.easymending:
+    description: Use EasyMending while in combat.
+    default: false
+  combattag.bypass.command:
+    description: Use blacklisted commands while in combat.
+    default: false
+  combattag.bypass.combatlog:
+    description: Quit while tagged without being punished.
+    default: false
+  combattag.bypass.*:
+    description: All bypass permissions at once (off by default).
+    default: false
+    children:
+      combattag.bypass.tag: true
+      combattag.bypass.shop: true
+      combattag.bypass.teleport: true
+      combattag.bypass.easymending: true
+      combattag.bypass.command: true
+      combattag.bypass.combatlog: true
+  combattag.*:
+    description: All player and admin permissions (bypasses stay off).
+    default: op
+    children:
+      combattag.use: true
+      combattag.gui: true
+      combattag.check: true
+      combattag.notify: true
+      combattag.admin: true

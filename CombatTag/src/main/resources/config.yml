@@ -1,0 +1,302 @@
+# ==============================================================================
+# CombatTag Configuration
+# Target: Minecraft 26.2 (Paper / Purpur / Folia) | Java 25
+# Everything in this file is reloadable with /cta reload
+# ==============================================================================
+
+combat:
+  # How long (in seconds) a player stays "in combat" after being hit.
+  tag-seconds: 10
+
+  # Separate duration for projectile hits (bows, crossbows, tridents, snowballs...).
+  # Set it to the same value as tag-seconds to make no difference.
+  projectile-tag-seconds: 10
+
+  # Who gets tagged when a PvP hit happens?
+  tag-victim: true
+  tag-attacker: true
+
+  # Which damage sources start a combat tag.
+  tag-on-projectile: true
+  tag-on-splash-potion: true
+  tag-on-pet-damage: false
+
+  # Remove the tag when the player dies.
+  clear-tag-on-death: true
+
+  # true  = every new hit resets the timer back to the full duration
+  # false = the timer only ever gets extended, never shortened
+  refresh-on-hit: true
+
+  # Worlds where combat tagging is completely disabled (e.g. spawn / creative worlds).
+  disabled-worlds:
+    - "creative"
+    - "hub"
+
+# ==============================================================================
+# Bypasses
+# ------------------------------------------------------------------------------
+# Every value here is read LIVE on each event, so switching something off makes the
+# matching restriction fully functional again immediately - no /cta reload, no
+# restart and no re-login needed. Changes made with /cta bypass ... are applied
+# instantly and written back to this file.
+# ==============================================================================
+bypass:
+  # Master switch. While this is false NOBODY bypasses anything: not permissions,
+  # not operators, not combattag.bypass.* - every restriction is fully enforced.
+  enabled: true
+
+  # Should the combattag.bypass.* permissions be honoured at all?
+  permissions: true
+
+  # Should server operators automatically bypass everything? (off by default)
+  op-bypasses: false
+
+  # Individual switches. Turning one off enforces that restriction for everyone,
+  # even for players who hold the matching bypass permission.
+  allow:
+    tag: true          # combattag.bypass.tag         - never get tagged
+    shop: true         # combattag.bypass.shop        - shops while tagged
+    teleport: true     # combattag.bypass.teleport    - teleports / pearls / chorus
+    easymending: true  # combattag.bypass.easymending - EasyMending repairs
+    command: true      # combattag.bypass.command     - blacklisted commands
+    combatlog: true    # combattag.bypass.combatlog   - quitting while tagged
+
+# ==============================================================================
+# Restrictions applied while a player is combat tagged
+# Every section can be turned off individually; bypass permissions are listed in
+# the plugin README (combattag.bypass.*), and are OFF by default even for OPs.
+# ==============================================================================
+restrictions:
+
+  # ---- Shops (EconomyShopGUI and any other shop plugin) --------------------
+  shops:
+    enabled: true
+    # Commands that open or use a shop. Entries may be plain (shop),
+    # namespaced (economyshopgui:shop), sub-command specific (eshop open)
+    # or use a trailing wildcard (sell*).
+    commands:
+      - "shop"
+      - "shops"
+      - "eshop"
+      - "editshop"
+      - "sellall"
+      - "sellgui"
+      - "sell"
+      - "buy"
+      - "market"
+      - "ah"
+      - "auctionhouse"
+      - "auction"
+      - "chestshop"
+      - "shopgui"
+      - "gui"
+    # Any GUI whose title contains one of these (case-insensitive) is blocked.
+    inventory-titles:
+      - "shop"
+      - "market"
+      - "auction"
+      - "sell"
+      - "buy"
+    # Any GUI whose InventoryHolder class name contains one of these is blocked.
+    # This catches shop GUIs even when their title is fully customised.
+    inventory-holder-classes:
+      - "economyshopgui"
+      - "shopguiplus"
+      - "brcshopgui"
+      - "auctionhouse"
+      - "zauctionhouse"
+      - "chestshop"
+
+  # ---- Teleports (homes, warps, tpa, spawn, back, rtp, pearls ...) ---------
+  teleports:
+    enabled: true
+    commands:
+      - "home"
+      - "homes"
+      - "sethome"      # deliberate: prevents "log-out home" abuse; remove if you allow it
+      - "warp"
+      - "warps"
+      - "spawn"
+      - "hub"
+      - "lobby"
+      - "server"
+      - "tp"
+      - "tpa"
+      - "tpahere"
+      - "tpaccept"
+      - "tpyes"
+      - "tpask"
+      - "tphere"
+      - "tpo"
+      - "tpop"
+      - "back"
+      - "rtp"
+      - "wild"
+      - "wilderness"
+      - "randomtp"
+      - "essentials:home"
+      - "essentials:warp"
+      - "essentials:spawn"
+      - "cmi:home"
+      - "cmi:warp"
+      - "cmi:spawn"
+      - "huskhomes:home"
+      - "huskhomes:warp"
+      - "at"
+      - "island"
+      - "is"
+      - "plot"
+      - "p"
+      - "town"
+      - "nation"
+      - "res"
+      - "ts"          # TeleportSigns
+    # Teleport causes that stay allowed while tagged. Valid values are the
+    # PlayerTeleportEvent.TeleportCause names, e.g.
+    # PLUGIN, COMMAND, ENDER_PEARL, CHORUS_FRUIT, NETHER_PORTAL, END_PORTAL,
+    # END_GATEWAY, SPECTATE, UNKNOWN, DISMOUNT, EXIT_BED
+    allowed-causes:
+      - "UNKNOWN"
+      - "DISMOUNT"
+      - "EXIT_BED"
+    block-ender-pearls: true
+    block-chorus-fruit: true
+
+  # ---- EasyMending (the XP repair plugin) ---------------------------------
+  easymending:
+    enabled: true
+    commands:
+      - "easymending"
+      - "em"
+      - "mend"
+      - "easymend"
+      - "mending"
+      - "easymendingadmin"
+      - "emadmin"
+      - "ema"
+      - "mendadmin"
+      - "repair"
+      - "fix"
+    inventory-holder-classes:
+      - "easymending"
+
+  # ---- Generic command control --------------------------------------------
+  commands:
+    enabled: true
+    # false = blacklist mode (block the listed commands)
+    # true  = whitelist mode (block EVERYTHING except the listed commands)
+    whitelist-mode: false
+    blacklist:
+      - "enderchest"
+      - "ec"
+      - "pv"          # PlayerVault
+      - "playervault"
+      - "vault"
+      - "kit"
+      - "fly"
+      - "god"
+      - "heal"
+      - "feed"
+      - "gamemode"
+      - "gm"
+      - "gmc"
+      - "gms"
+      - "gmsp"
+      - "craft"
+      - "workbench"
+      - "anvil"
+      - "logout"
+      - "afk"
+      - "suicide"
+      - "kill"
+      - "msgtoggle"
+    whitelist:
+      - "combattag"
+      - "ct"
+      - "combat"
+      - "msg"
+      - "r"
+      - "helpop"
+
+# ==============================================================================
+# Combat logging (quitting while tagged)
+# ==============================================================================
+combat-logging:
+  enabled: true
+  kill-player: true
+  drop-inventory: true
+  broadcast: true
+  log-to-console: true
+  # Console commands executed on combat log. Placeholders: {player}, {opponent}
+  run-commands: []
+  # Example:
+  #  - "eco take {player} 500"
+  #  - "tempban {player} 10m Combat logging"
+
+# ==============================================================================
+# Display
+# ==============================================================================
+display:
+  boss-bar:
+    enabled: true
+    # PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
+    color: "RED"
+    # PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20
+    overlay: "PROGRESS"
+  action-bar:
+    enabled: true
+  # Show a big title the moment a player enters combat.
+  title-on-tag: false
+  # How often (in ticks) the boss bar / action bar refresh. 10 ticks = 0.5s.
+  update-interval-ticks: 10
+
+# ==============================================================================
+# Sounds
+# Sound names accept both modern keys (block.anvil.use) and legacy constants
+# (BLOCK_ANVIL_USE).
+# ==============================================================================
+sounds:
+  enabled: true
+  tag-start:
+    sound: "ENTITY_ENDER_DRAGON_GROWL"
+    volume: 0.6
+    pitch: 1.4
+  tag-end:
+    sound: "ENTITY_PLAYER_LEVELUP"
+    volume: 0.7
+    pitch: 1.6
+  action-blocked:
+    sound: "BLOCK_NOTE_BLOCK_BASS"
+    volume: 1.0
+    pitch: 0.6
+  gui-open:
+    sound: "BLOCK_CHEST_OPEN"
+    volume: 0.7
+    pitch: 1.2
+  gui-click:
+    sound: "UI_BUTTON_CLICK"
+    volume: 0.7
+    pitch: 1.0
+  combat-log:
+    sound: "ENTITY_WITHER_SPAWN"
+    volume: 0.8
+    pitch: 1.0
+
+# ==============================================================================
+# GUI
+# ==============================================================================
+gui:
+  enabled: true
+  rows: 3
+
+# ==============================================================================
+# Integrations
+# ==============================================================================
+integrations:
+  # Register the %combattag_...% PlaceholderAPI expansion when PAPI is installed.
+  placeholderapi: true
+  # Track counters shown by /cta stats.
+  statistics: true
+  # Send a message to staff with combattag.notify whenever an action is blocked.
+  notify-admins-on-block: false
