@@ -1,0 +1,137 @@
+# ---------------------------------------------------------------------------
+#  RapidHoppers - configuration
+#  Minecraft 26.2 (Paper / Purpur / Folia) - Java 25
+#
+#  Everything in this file can be changed in-game with /rha ... or the GUI
+#  (/rha gui). Values written by commands/GUI are saved back to this file.
+# ---------------------------------------------------------------------------
+
+# Master switch. When false the plugin stays loaded but vanilla speeds apply.
+enabled: true
+
+engine:
+  # How often (in server ticks) accelerated containers perform a transfer.
+  # Vanilla hoppers move 1 item every 8 ticks. 1 = every tick (8x faster).
+  # Allowed: 1 - 8
+  interval-ticks: 2
+
+  # How many items are moved per transfer operation (vanilla: 1).
+  # Allowed: 1 - 64. 64 moves whole stacks at once.
+  items-per-transfer: 8
+
+  # Also boost transfers that vanilla itself triggers (InventoryMoveItemEvent).
+  # This makes even non-tracked / edge-case movements move full amounts.
+  boost-vanilla-transfers: true
+
+  # Scan interval (ticks) for (re)discovering containers in loaded chunks.
+  # Higher = cheaper, but newly placed containers start faster a bit later.
+  scan-interval-ticks: 100
+
+  # Only accelerate containers in chunks that have a player within this radius
+  # (in chunks). 0 = accelerate every loaded chunk. Recommended: 4 - 8.
+  player-activity-radius-chunks: 6
+
+containers:
+  hopper:
+    enabled: true
+    # Pull items from the inventory above the hopper.
+    pull-from-above: true
+    # Push items into the container the hopper faces.
+    push-to-facing: true
+    # Pick up dropped item entities that sit on top of the hopper.
+    pickup-items: true
+  hopper-minecart:
+    enabled: true
+    # Also accelerate hopper minecarts pulling from containers/hoppers above.
+    pull-from-above: true
+    # Push into a container the minecart is standing on/inside of.
+    push-to-container: true
+  chest-minecart:
+    # Accelerate hoppers feeding/draining storage minecarts on top of them.
+    enabled: true
+  dropper:
+    enabled: true
+    # Droppers push into the container they face at engine speed.
+    interval-multiplier: 2
+  dispenser:
+    # Dispensers holding non-dispensable items behave like droppers.
+    enabled: false
+    interval-multiplier: 2
+
+worlds:
+  # Mode: BLACKLIST (accelerate everywhere except 'list') or
+  #       WHITELIST (accelerate only worlds in 'list').
+  mode: BLACKLIST
+  list: []
+
+performance:
+  # --- TPS aware auto throttle -------------------------------------------
+  throttle:
+    enabled: true
+    # Below this TPS the engine slows down step by step.
+    soft-tps: 18.0
+    # Below this TPS the engine pauses completely until the server recovers.
+    hard-tps: 14.0
+    # Interval multiplier applied while throttled (interval * this).
+    interval-multiplier: 3
+    # Seconds between throttle re-evaluations.
+    check-interval-seconds: 5
+    # Log a message when the throttle state changes.
+    log-state-changes: true
+
+  # Maximum number of accelerated containers per chunk (0 = unlimited).
+  # Protects against giant item-sorter chunk lag.
+  max-containers-per-chunk: 96
+
+  # Maximum accelerated containers per world (0 = unlimited).
+  max-containers-per-world: 20000
+
+  # Maximum transfer operations per engine tick across the whole server.
+  # 0 = unlimited. Acts as a hard CPU budget.
+  max-transfers-per-tick: 2000
+
+sounds:
+  enabled: true
+  gui-open:
+    sound: BLOCK_BARREL_OPEN
+    volume: 0.6
+    pitch: 1.4
+  gui-click:
+    sound: UI_BUTTON_CLICK
+    volume: 0.5
+    pitch: 1.6
+  gui-close:
+    sound: BLOCK_BARREL_CLOSE
+    volume: 0.6
+    pitch: 1.2
+  success:
+    sound: ENTITY_EXPERIENCE_ORB_PICKUP
+    volume: 0.7
+    pitch: 1.5
+  error:
+    sound: BLOCK_NOTE_BLOCK_BASS
+    volume: 0.7
+    pitch: 0.7
+  toggle-on:
+    sound: BLOCK_LEVER_CLICK
+    volume: 0.6
+    pitch: 1.6
+  toggle-off:
+    sound: BLOCK_LEVER_CLICK
+    volume: 0.6
+    pitch: 0.8
+
+gui:
+  title: "<gradient:#38bdf8:#a855f7><bold>RapidHoppers</bold></gradient>"
+  # 3, 4, 5 or 6 rows.
+  rows: 5
+  # Fill empty slots with this material (NONE to leave them empty).
+  filler: GRAY_STAINED_GLASS_PANE
+  # Refresh the live statistics inside an open GUI every n ticks (0 = off).
+  refresh-ticks: 20
+
+# Verbose logging of engine decisions. Only for debugging - very spammy.
+debug: false
+
+# Do not edit: used to migrate configs between plugin versions.
+config-version: 1

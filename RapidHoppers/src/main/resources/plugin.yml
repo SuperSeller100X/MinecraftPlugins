@@ -1,0 +1,73 @@
+name: RapidHoppers
+version: ${project.version}
+main: dev.superseller.rapidhoppers.RapidHoppersPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Configurable high-speed hoppers, hopper minecarts, droppers and dispensers with TPS-aware throttling.
+
+commands:
+  rapidhoppers:
+    description: RapidHoppers player commands (info, stats, GUI)
+    usage: /rapidhoppers [gui|info|stats|help]
+    aliases: [rhoppers, rh]
+    permission: rapidhoppers.use
+  rapidhoppersadmin:
+    description: RapidHoppers administration
+    usage: /rapidhoppersadmin <reload|toggle|speed|stack|world|throttle|limit|debug|stats|gui>
+    aliases: [rhadmin, rha]
+    permission: rapidhoppers.admin
+
+permissions:
+  rapidhoppers.use:
+    description: Access the /rapidhoppers command
+    default: true
+  rapidhoppers.info:
+    description: View plugin info
+    default: true
+  rapidhoppers.stats:
+    description: View live transfer statistics
+    default: true
+  rapidhoppers.gui:
+    description: Open the RapidHoppers control GUI (read-only without admin)
+    default: op
+  rapidhoppers.admin:
+    description: Full administration access
+    default: op
+    children:
+      rapidhoppers.admin.reload: true
+      rapidhoppers.admin.toggle: true
+      rapidhoppers.admin.speed: true
+      rapidhoppers.admin.stack: true
+      rapidhoppers.admin.world: true
+      rapidhoppers.admin.throttle: true
+      rapidhoppers.admin.limit: true
+      rapidhoppers.admin.debug: true
+      rapidhoppers.gui: true
+      rapidhoppers.stats: true
+      rapidhoppers.info: true
+  rapidhoppers.admin.reload:
+    description: Reload configuration
+    default: op
+  rapidhoppers.admin.toggle:
+    description: Enable/disable the acceleration engine or single container types
+    default: op
+  rapidhoppers.admin.speed:
+    description: Change the transfer interval at runtime
+    default: op
+  rapidhoppers.admin.stack:
+    description: Change the items-per-transfer amount at runtime
+    default: op
+  rapidhoppers.admin.world:
+    description: Enable/disable acceleration per world
+    default: op
+  rapidhoppers.admin.throttle:
+    description: Configure the TPS auto-throttle
+    default: op
+  rapidhoppers.admin.limit:
+    description: Configure the per-chunk container limit
+    default: op
+  rapidhoppers.admin.debug:
+    description: Toggle verbose debug logging
+    default: op
