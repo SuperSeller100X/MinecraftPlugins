@@ -17,8 +17,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import dev.superseller.shardtools.ShardToolsPlugin;
+import dev.superseller.shardtools.item.Behavior;
+import dev.superseller.shardtools.item.EnchantSpec;
 import dev.superseller.shardtools.item.ShardCatalog;
 import dev.superseller.shardtools.util.Numbers;
+import dev.superseller.shardtools.util.TimeWords;
 
 /**
  * DonutSMP-style shard shop GUI with automatic pagination and an optional
@@ -91,6 +94,64 @@ public final class ShopGui {
         }
     }
 
+    /** Holder for the buy-with-extra-time / enchant-choice dialog. */
+    public static final class ExtendHolder implements InventoryHolder {
+
+        /** Raw slots of the dialog's buttons. */
+        public static final int SLOT_CHOICE = 4;
+        public static final int SLOT_MINUS = 11;
+        public static final int SLOT_ICON = 13;
+        public static final int SLOT_PLUS = 15;
+        public static final int SLOT_CONFIRM = 21;
+        public static final int SLOT_CANCEL = 23;
+
+        private Inventory inventory;
+        private final String itemId;
+        private final int backPage;
+        private int steps;
+        private int choice;
+
+        public ExtendHolder(String itemId, int backPage) {
+            this.itemId = itemId;
+            this.backPage = backPage;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+
+        void inventory(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
+        public String itemId() {
+            return itemId;
+        }
+
+        public int backPage() {
+            return backPage;
+        }
+
+        /** Currently selected number of extra-time steps. */
+        public int steps() {
+            return steps;
+        }
+
+        public void steps(int steps) {
+            this.steps = steps;
+        }
+
+        /** Currently selected enchant-choice index (e.g. Fortune vs Silk Touch). */
+        public int choice() {
+            return choice;
+        }
+
+        public void choice(int choice) {
+            this.choice = choice;
+        }
+    }
+
     private final ShardToolsPlugin plugin;
 
     public ShopGui(ShardToolsPlugin plugin) {
@@ -141,11 +202,11 @@ public final class ShopGui {
         int bottomStart = (rows - 1) * 9;
         if (safePage > 0) {
             inventory.setItem(bottomStart + 2, navItem("ARROW",
-                    Component.text("Previous page"), "__prev__", holder, bottomStart + 2));
+                    plugin.messages().itemLine("shop.previous-page"), "__prev__", holder, bottomStart + 2));
         }
         if (safePage < pages - 1) {
             inventory.setItem(bottomStart + 6, navItem("ARROW",
-                    Component.text("Next page"), "__next__", holder, bottomStart + 6));
+                    plugin.messages().itemLine("shop.next-page"), "__next__", holder, bottomStart + 6));
         }
         inventory.setItem(bottomStart + 4, infoItem(player, safePage, pages));
 
@@ -166,7 +227,7 @@ public final class ShopGui {
         List<Component> lore = icon.getItemMeta() != null && icon.getItemMeta().lore() != null
                 ? new ArrayList<>(icon.getItemMeta().lore())
                 : new ArrayList<>();
-        lore.add(plugin.messages().bare("shop.click-to-confirm"));
+        lore.add(plugin.messages().itemLine("shop.click-to-confirm"));
         ItemMeta iconMeta = icon.getItemMeta();
         if (iconMeta != null) {
             iconMeta.lore(lore);
@@ -174,8 +235,172 @@ public final class ShopGui {
         }
         inventory.setItem(11, icon);
         inventory.setItem(15, navItem("RED_STAINED_GLASS_PANE",
-                plugin.messages().bare("shop.click-to-cancel"), null, null, -1));
+                plugin.messages().itemLine("shop.click-to-cancel"), null, null, -1));
         player.openInventory(inventory);
+    }
+
+    // ---------------------------------------------------------------
+    // Buy dialog: extra time and/or enchant choice
+    // ---------------------------------------------------------------
+
+    /**
+     * Opens the purchase dialog for an item that is extendable (buy extra
+     * time) and/or offers an enchant choice (e.g. Fortune vs Silk Touch).
+     */
+    public void openExtend(Player player, ShardCatalog.Entry entry, int backPage, int steps) {
+        ExtendHolder holder = new ExtendHolder(entry.id(), backPage);
+        holder.steps(clampSteps(entry, steps));
+        String titleKey = plugin.items().extendable(entry) ? "extend.title" : "choice.title";
+        Component title = plugin.messages().bare(titleKey, "%item%", entry.displayName());
+        Inventory inventory = Bukkit.createInventory(holder, 27, title);
+        holder.inventory(inventory);
+        renderExtend(holder, entry);
+        player.openInventory(inventory);
+    }
+
+    /** (Re-)draws the purchase dialog after the selection changed. */
+    public void renderExtend(ExtendHolder holder, ShardCatalog.Entry entry) {
+        Inventory inventory = holder.getInventory();
+        if (inventory == null) {
+            return;
+        }
+        boolean potion = entry.behavior() == Behavior.HASTE_POTION;
+        boolean extendable = plugin.items().extendable(entry);
+        long stepMinutes = potion
+                ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+        long stepPrice = potion
+                ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+        int maxSteps = potion
+                ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
+        int steps = clampSteps(entry, holder.steps());
+        holder.steps(steps);
+
+        ItemStack filler = borderItem();
+        for (int slot = 0; slot < 27; slot++) {
+            inventory.setItem(slot, filler);
+        }
+        if (extendable) {
+            String stepTime = TimeWords.format(stepMinutes * 60_000L);
+            String stepCost = Numbers.format(stepPrice);
+            // Only show the -/+ buttons while they can actually change
+            // something: no minus pane at 0 extra time, no plus at the cap.
+            if (steps > 0) {
+                inventory.setItem(ExtendHolder.SLOT_MINUS, button("RED_STAINED_GLASS_PANE",
+                        plugin.messages().itemLine("extend.minus",
+                                "%time%", stepTime, "%price%", stepCost,
+                                "%symbol%", plugin.settings().symbol())));
+            }
+            if (steps < maxSteps) {
+                inventory.setItem(ExtendHolder.SLOT_PLUS, button("LIME_STAINED_GLASS_PANE",
+                        plugin.messages().itemLine("extend.plus",
+                                "%time%", stepTime, "%price%", stepCost,
+                                "%symbol%", plugin.settings().symbol())));
+            }
+        }
+
+        EnchantSpec chosen = null;
+        if (entry.hasEnchantChoice()) {
+            int choiceIndex = Math.floorMod(holder.choice(), entry.enchantChoices().size());
+            holder.choice(choiceIndex);
+            chosen = entry.enchantChoice(choiceIndex);
+            inventory.setItem(ExtendHolder.SLOT_CHOICE, button("ENCHANTED_BOOK",
+                    plugin.messages().itemLine("choice.button",
+                            "%enchant%", prettyEnchant(chosen)),
+                    plugin.messages().itemLine("choice.switch")));
+        }
+
+        Long base = plugin.priceBook().price(entry.id());
+        long basePrice = base == null ? 0L : base;
+        long extraMs = steps * stepMinutes * 60_000L;
+        long totalPrice = basePrice + steps * stepPrice;
+        long baseMs = potion
+                ? plugin.items().defaultEffectMs() : entry.lifetimeMs();
+
+        // Display-only preview: the icon's own tooltip lines (red
+        // self-destruct countdown, "when drunk" duration, enchant list)
+        // reflect the current selection live. The real item is only built
+        // once, when the purchase is confirmed.
+        ItemStack icon = potion
+                ? plugin.items().previewIcon(entry, basePrice,
+                        entry.lifetimeMs(), (baseMs + extraMs) / 60_000L, chosen)
+                : plugin.items().previewIcon(entry, basePrice,
+                        baseMs + extraMs, -1L, chosen);
+        ItemMeta iconMeta = icon.getItemMeta();
+        if (iconMeta != null) {
+            List<Component> lore = iconMeta.lore() != null
+                    ? new ArrayList<>(iconMeta.lore()) : new ArrayList<>();
+            if (extendable) {
+                lore.add(plugin.messages().itemLine(potion ? "extend.effect-line" : "extend.lifetime-line",
+                        "%base%", TimeWords.format(baseMs),
+                        "%extra%", TimeWords.format(extraMs),
+                        "%total%", TimeWords.format(baseMs + extraMs)));
+            }
+            lore.add(plugin.messages().itemLine("extend.total-line",
+                    "%price%", Numbers.format(totalPrice),
+                    "%symbol%", plugin.settings().symbol()));
+            iconMeta.lore(lore);
+            icon.setItemMeta(iconMeta);
+        }
+        inventory.setItem(ExtendHolder.SLOT_ICON, icon);
+
+        inventory.setItem(ExtendHolder.SLOT_CONFIRM, button("GREEN_STAINED_GLASS_PANE",
+                plugin.messages().itemLine("extend.confirm",
+                        "%price%", Numbers.format(totalPrice),
+                        "%symbol%", plugin.settings().symbol())));
+        inventory.setItem(ExtendHolder.SLOT_CANCEL, button("BARRIER",
+                plugin.messages().itemLine("shop.click-to-cancel")));
+    }
+
+    /** Clamps the selected steps to 0..max for the entry's extension type. */
+    public int clampSteps(ShardCatalog.Entry entry, int steps) {
+        if (!plugin.items().extendable(entry)) {
+            return 0;
+        }
+        int max = entry.behavior() == Behavior.HASTE_POTION
+                ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
+        return Math.max(0, Math.min(steps, max));
+    }
+
+    /** "fortune:3" -> "Fortune III", "silk_touch:1" -> "Silk Touch". */
+    public static String prettyEnchant(EnchantSpec spec) {
+        String[] parts = spec.enchant().split("_");
+        StringBuilder builder = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(' ');
+            }
+            builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        if (spec.level() >= 2) {
+            builder.append(' ').append(roman(spec.level()));
+        }
+        return builder.toString();
+    }
+
+    private static String roman(int level) {
+        String[] numerals = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+        return level >= 1 && level <= numerals.length
+                ? numerals[level - 1] : Integer.toString(level);
+    }
+
+    private ItemStack button(String materialName, Component name) {
+        Material material = Material.matchMaterial(materialName);
+        ItemStack stack = new ItemStack(material == null ? Material.AIR : material, 1);
+        stack.editMeta(meta -> meta.displayName(name));
+        return stack;
+    }
+
+    private ItemStack button(String materialName, Component name, Component loreLine) {
+        ItemStack stack = button(materialName, name);
+        stack.editMeta(meta -> {
+            List<Component> lore = new ArrayList<>();
+            lore.add(loreLine);
+            meta.lore(lore);
+        });
+        return stack;
     }
 
     private ItemStack infoItem(Player player, int page, int pages) {
@@ -183,14 +408,14 @@ public final class ShopGui {
         ItemStack stack = new ItemStack(Material.matchMaterial("AMETHYST_SHARD"), 1);
         long balance = plugin.accounts().balance(player.getUniqueId(), player.getName());
         List<Component> lore = new ArrayList<>();
-        lore.add(plugin.messages().bare("shop.balance-lore",
+        lore.add(plugin.messages().itemLine("shop.balance-lore",
                 "%balance%", Numbers.format(balance),
                 "%symbol%", plugin.settings().symbol()));
-        lore.add(plugin.messages().bare("shop.page",
+        lore.add(plugin.messages().itemLine("shop.page",
                 "%page%", Integer.toString(page + 1),
                 "%pages%", Integer.toString(pages)));
         stack.editMeta(meta -> {
-            meta.displayName(plugin.messages().bare("shop.balance-item",
+            meta.displayName(plugin.messages().itemLine("shop.balance-item",
                     "%balance%", Numbers.format(balance),
                     "%symbol%", plugin.settings().symbol()));
             meta.lore(lore);

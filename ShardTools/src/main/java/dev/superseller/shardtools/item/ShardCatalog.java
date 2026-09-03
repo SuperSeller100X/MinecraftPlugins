@@ -30,15 +30,24 @@ public final class ShardCatalog {
         private final List<EnchantSpec> enchants;
         private final List<String> lore;
         private final String command;
+        private final List<EnchantSpec> enchantChoices;
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore) {
-            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, null);
+            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, null,
+                    new ArrayList<EnchantSpec>());
         }
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
                      String command) {
+            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, command,
+                    new ArrayList<EnchantSpec>());
+        }
+
+        public Entry(String id, String material, String displayName, long defaultPrice,
+                     long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
+                     String command, List<EnchantSpec> enchantChoices) {
             this.id = id;
             this.material = material;
             this.displayName = displayName;
@@ -48,6 +57,7 @@ public final class ShardCatalog {
             this.enchants = enchants;
             this.lore = lore;
             this.command = command;
+            this.enchantChoices = enchantChoices;
         }
 
         public String id() {
@@ -94,6 +104,25 @@ public final class ShardCatalog {
         public boolean isCommandItem() {
             return command != null && !command.isBlank();
         }
+
+        /** Alternative enchants the buyer picks ONE of (e.g. Fortune vs Silk Touch). */
+        public List<EnchantSpec> enchantChoices() {
+            return enchantChoices;
+        }
+
+        /** True when the shop should show a chooser (two or more alternatives). */
+        public boolean hasEnchantChoice() {
+            return enchantChoices.size() >= 2;
+        }
+
+        /** The choice at {@code index} (clamped), or {@code null} without choices. */
+        public EnchantSpec enchantChoice(int index) {
+            if (enchantChoices.isEmpty()) {
+                return null;
+            }
+            int clamped = Math.max(0, Math.min(index, enchantChoices.size() - 1));
+            return enchantChoices.get(clamped);
+        }
     }
 
     private final Map<String, Entry> byId = new LinkedHashMap<>();
@@ -128,8 +157,15 @@ public final class ShardCatalog {
             if (command != null && command.isBlank()) {
                 command = null;
             }
+            List<EnchantSpec> choices = new ArrayList<>();
+            for (String spec : section.getStringList("enchant-choice")) {
+                EnchantSpec parsed = EnchantSpec.parse(spec);
+                if (parsed != null) {
+                    choices.add(parsed);
+                }
+            }
             Entry entry = new Entry(id.toLowerCase(Locale.ROOT), material.toUpperCase(Locale.ROOT),
-                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command);
+                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command, choices);
             catalog.byId.put(entry.id(), entry);
             catalog.ordered.add(entry);
         }

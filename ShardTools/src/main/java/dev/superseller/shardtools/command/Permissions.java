@@ -6,6 +6,7 @@ package dev.superseller.shardtools.command;
 public final class Permissions {
 
     public static final String USE = "shardtools.use";
+    public static final String TOGGLE = "shardtools.toggle";
     public static final String SHOP = "shardtools.shop";
     public static final String BALANCE = "shardtools.balance";
     public static final String BALANCE_OTHERS = "shardtools.balance.others";
@@ -17,6 +18,7 @@ public final class Permissions {
     public static final String ITEMS = "shardtools.items";
     public static final String ECONOMY = "shardtools.economy";
     public static final String SETPRICE = "shardtools.setprice";
+    public static final String MANAGE = "shardtools.manage";
     public static final String SETTINGS = "shardtools.settings";
     public static final String RELOAD = "shardtools.reload";
     public static final String ADMIN = "shardtools.admin";

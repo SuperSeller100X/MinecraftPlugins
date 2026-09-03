@@ -50,6 +50,9 @@ public final class BreakListener implements Listener {
         if (entry == null || entry.behavior() == Behavior.NONE || entry.behavior() == Behavior.HASTE_POTION) {
             return;
         }
+        if (!plugin.items().abilityEnabled(tool)) {
+            return;   // ability switched off with /st toggle
+        }
         if (!player.hasPermission(Permissions.USE)) {
             return;
         }

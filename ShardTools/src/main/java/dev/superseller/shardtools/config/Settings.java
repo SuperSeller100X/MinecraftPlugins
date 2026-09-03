@@ -59,16 +59,25 @@ public final class Settings {
 
     private long sweepSeconds = 30;
     private boolean loreRefresh = true;
+    private long loreRefreshSeconds = 5;
     private long[] warnMinutes = {60, 10, 1};
     private boolean scanOpenedInventories = true;
 
     private long hasteDurationHours = 1;
     private int hasteAmplifier = 1;
-    private int hasteColorRgb = 0xF7FF8A;
+    private int hasteColorRgb = 0x55FFFF;
 
     private boolean shopConfirm;
     private int shopRows = 6;
     private String shopFiller = "GRAY_STAINED_GLASS_PANE";
+
+    private boolean extendEnabled = true;
+    private long extendToolStepMinutes = 60;
+    private long extendToolStepPrice = 100;
+    private int extendToolMaxSteps = 24;
+    private long extendPotionStepMinutes = 30;
+    private long extendPotionStepPrice = 50;
+    private int extendPotionMaxSteps = 12;
 
     private boolean moneyShopEnabled = true;
     private double moneyCostPerShard = 10.0D;
@@ -153,6 +162,7 @@ public final class Settings {
 
         sweepSeconds = Math.max(5L, config.getLong("expiry.sweep-seconds", 30L));
         loreRefresh = config.getBoolean("expiry.lore-refresh", true);
+        loreRefreshSeconds = Math.max(1L, config.getLong("expiry.lore-refresh-seconds", 5L));
         List<Long> warnList = new ArrayList<>();
         for (long minutes : config.getLongList("expiry.warn-minutes")) {
             if (minutes > 0) {
@@ -168,11 +178,20 @@ public final class Settings {
 
         hasteDurationHours = Math.max(1L, config.getLong("haste-potion.duration-hours", 1L));
         hasteAmplifier = Math.max(0, config.getInt("haste-potion.amplifier", 1));
-        hasteColorRgb = parseColor(config.getString("haste-potion.color", "#f7ff8a"), 0xF7FF8A);
+        hasteColorRgb = parseColor(config.getString("haste-potion.color", "#55ffff"), 0x55FFFF);
 
         shopConfirm = config.getBoolean("shop.confirm", false);
         shopRows = Math.max(3, Math.min(6, config.getInt("shop.rows", 6)));
         shopFiller = config.getString("shop.filler", "GRAY_STAINED_GLASS_PANE");
+
+        // Buy extra time on top of expiring shard items / the haste effect.
+        extendEnabled = config.getBoolean("shop.time-extension.enabled", true);
+        extendToolStepMinutes = Math.max(1L, config.getLong("shop.time-extension.tool.step-minutes", 60L));
+        extendToolStepPrice = Math.max(0L, config.getLong("shop.time-extension.tool.step-price", 100L));
+        extendToolMaxSteps = Math.max(1, config.getInt("shop.time-extension.tool.max-steps", 24));
+        extendPotionStepMinutes = Math.max(1L, config.getLong("shop.time-extension.potion.step-minutes", 30L));
+        extendPotionStepPrice = Math.max(0L, config.getLong("shop.time-extension.potion.step-price", 50L));
+        extendPotionMaxSteps = Math.max(1, config.getInt("shop.time-extension.potion.max-steps", 12));
 
         // Buying shards with in-game money through Vault (EssentialsX etc.).
         moneyShopEnabled = config.getBoolean("money-shop.enabled", true);
@@ -392,6 +411,10 @@ public final class Settings {
         return loreRefresh;
     }
 
+    public long loreRefreshSeconds() {
+        return loreRefreshSeconds;
+    }
+
     public long[] warnMinutes() {
         return warnMinutes;
     }
@@ -438,6 +461,34 @@ public final class Settings {
 
     public String shopFiller() {
         return shopFiller;
+    }
+
+    public boolean extendEnabled() {
+        return extendEnabled;
+    }
+
+    public long extendToolStepMinutes() {
+        return extendToolStepMinutes;
+    }
+
+    public long extendToolStepPrice() {
+        return extendToolStepPrice;
+    }
+
+    public int extendToolMaxSteps() {
+        return extendToolMaxSteps;
+    }
+
+    public long extendPotionStepMinutes() {
+        return extendPotionStepMinutes;
+    }
+
+    public long extendPotionStepPrice() {
+        return extendPotionStepPrice;
+    }
+
+    public int extendPotionMaxSteps() {
+        return extendPotionMaxSteps;
     }
 
     public boolean anvilProtect() {

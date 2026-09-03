@@ -218,3 +218,12 @@ command can be blocked through a blacklist or strict whitelist.
 
 See [CombatTag/README.md](CombatTag/README.md). Build with `mvn -B clean verify` in
 `CombatTag/` (JDK 25 required); a CI workflow is provided at `CombatTag/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/` to activate it).
+## RapidHoppers ⚡
+
+Configurable **high-speed item transport** for Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Hoppers, hopper minecarts, chest minecarts, droppers and (optionally) dispensers move items far faster than vanilla — **32× throughput by default** (every 2 ticks instead of 8, 8 items instead of 1) — without replacing vanilla logic, so comparators and item sorters keep working. A TPS auto-throttle slows or pauses the engine before the server suffers, plus per-chunk / per-world / per-tick budgets and a player-activity radius.
+
+- `/rapidhoppers` · `/rhoppers` · `/rh` — `i` info, `s` stats, `g` gui, `h` help
+- `/rapidhoppersadmin` · `/rhadmin` · `/rha` — `rl` reload, `t` toggle [type], `sp` speed, `st` stack, `w` world, `th` throttle, `l` limit, `d` debug, `i`, `s`, `g`
+- Clickable GUI control panel with live stats, full `rapidhoppers.*` permission tree, TabCompleter, configurable sounds, MiniMessage messages — no dependencies, everything configurable, changes saved back to `config.yml`
+
+See [RapidHoppers/README.md](RapidHoppers/README.md). Build with `mvn -B clean package` in `RapidHoppers/` (JDK 25 required); an offline stub build + smoke tests run via `./build.sh`.

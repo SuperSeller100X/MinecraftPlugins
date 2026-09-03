@@ -11,4 +11,5 @@ public class InventoryClickEvent extends Event {
     public InventoryView getView() { return null; }
     public void setCancelled(boolean cancelled) {}
     public int getRawSlot() { return -1; }
+    public boolean isShiftClick() { return false; }
 }
