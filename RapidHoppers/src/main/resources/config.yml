@@ -51,10 +51,12 @@ containers:
     enabled: true
   dropper:
     enabled: true
-    # Droppers push into the container they face at engine speed.
+    # When a dropper is pulsed, move items-per-transfer into the container it
+    # faces instead of vanilla's single item. Droppers are never ticked on
+    # their own — that would dump the inventory without redstone.
     interval-multiplier: 2
   dispenser:
-    # Dispensers holding non-dispensable items behave like droppers.
+    # Same pulse-boost as droppers, off by default (dispensers usually shoot).
     enabled: false
     interval-multiplier: 2
 
