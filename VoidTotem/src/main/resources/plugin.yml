@@ -1,0 +1,30 @@
+name: VoidTotem
+version: '${project.version}'
+main: dev.superseller.voidtotem.VoidTotemPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: A custom Void / Shard Totem that saves you from the void. Sold for 1000 shards in the ShardTools shard shop.
+
+softdepend: [ShardTools]
+
+commands:
+  voidtotem:
+    description: Give a Void Totem, or show info / reload config.
+    usage: /<command> <give|info|reload> [player] [amount]
+    aliases: [vt]
+
+permissions:
+  voidtotem.give:
+    description: Give Void Totems to players.
+    default: op
+  voidtotem.reload:
+    description: Reload the VoidTotem configuration.
+    default: op
+  voidtotem.*:
+    description: All VoidTotem permissions.
+    default: op
+    children:
+      voidtotem.give: true
+      voidtotem.reload: true

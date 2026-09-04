@@ -1,0 +1,69 @@
+# ============================================================
+#  VoidTotem - custom Void / Shard Totem for Minecraft 26.2
+#  (Paper / Purpur / Folia), Java 25
+#
+#  A totem that saves a player from the void. It is sold for
+#  1000 shards in the ShardTools shard shop (auto-registered on
+#  startup - see auto-register-in-shardtools below) and, when a
+#  player is about to die in the void while carrying one, it is
+#  consumed and the player is pulled back to safety.
+#
+#  Every value below can be changed at runtime with /vt reload.
+# ============================================================
+
+# The item_model id the plugin stamps onto the totem. It MUST match the
+# "when" key in the resource pack's assets/minecraft/items/totem_of_undying.json.
+# Only items carrying this id get the custom Blockbench model; every other
+# (vanilla) totem stays normal.
+item-model: "voidtotem:void_totem"
+
+# ---- ShardTools shard shop integration ----
+# On startup VoidTotem adds a "void_totem" entry to ShardTools' shop config
+# (price below) and rebuilds the catalog, so it shows up in /st shop at 1000
+# shards. The purchase runs "voidtotem give %player% 1", which hands out the
+# properly modeled totem. Set false to manage the entry yourself.
+auto-register-in-shardtools: true
+shop-price: 1000
+
+# ---- Rescue behaviour ----
+# Where the player is sent when the totem saves them:
+#   LAST_SAFE = the last safe, grounded spot they stood on (falls back to spawn)
+#   SPAWN     = the spawn of their current world
+#   COORDS    = the x/y/z/world below
+rescue-mode: LAST_SAFE
+rescue-world: ""          # empty = use the rescued player's current world
+rescue-x: 0.5
+rescue-y: 64
+rescue-z: 0.5
+
+# Health restored after a rescue (20 = full hearts).
+heal-amount: 20.0
+
+# Remove harmful status effects (poison, wither, slowness, etc.) on rescue.
+clear-harmful-effects: true
+
+# Brief safety buffs so you don't instantly die again on arrival.
+resistance-seconds: 5
+slow-falling-seconds: 5
+
+# Where the totem may be consumed from:
+#   ANY  = works from anywhere in the inventory (like a charm)
+#   HAND = must be held in the main or off hand (like a vanilla totem)
+consume-from: ANY
+
+# ---- Flavour ----
+play-totem-animation: true
+play-totem-sound: true
+spawn-particles: true
+particle-id: PORTAL
+particle-count: 30
+
+# Minimum seconds between rescues for the same player (anti double-trigger).
+rescue-cooldown-seconds: 2
+
+messages:
+  rescued: "<gradient:#7a00ff:#00e5ff>The Void Totem shatters and drags you back from the abyss!</gradient>"
+  given: "<aqua>You received a <b>Void Totem</b>. It will catch you if you fall into the void.</aqua>"
+  reloaded: "<green>VoidTotem configuration reloaded.</green>"
+  registered: "<green>Void Totem registered in the ShardTools shop for %price% shards. Open /st shop.</green>"
+  usage: "<gray>Usage: /vt <give|info|reload> [player] [amount]</gray>"

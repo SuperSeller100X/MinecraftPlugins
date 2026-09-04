@@ -201,6 +201,17 @@ supported via configurable command items.
 
 See [ShardTools/README.md](ShardTools/README.md) for the full documentation. Build with
 `mvn -B clean package` in `ShardTools/` (JDK 25 required).
+
+## VoidTotem 🟣
+
+A custom **Void / Shard Totem** for Minecraft **26.2** (Paper / Purpur / Folia) that saves you from the void, sold for **1000 shards** in the **ShardTools** shard shop. When a player is about to die in the void while carrying one, the totem is consumed and they are pulled back to safety. Only this totem uses the custom Blockbench model — vanilla totems stay normal.
+
+- `/vt give <player> [amount]` — hand out Void Totems (also called by ShardTools on purchase)
+- `/vt info` · `/vt reload`
+- Permissions `voidtotem.*` (give / reload, default op)
+
+See [VoidTotem/README.md](VoidTotem/README.md). Build with `mvn -B clean package` in `VoidTotem/` (JDK 25 required).
+
 ## EasyMending 🛠️
 
 Repair tools, weapons, and armor that have Mending using your existing XP for Minecraft **26.2** (Paper / Purpur / Folia). Interactive drop-in anvil repair station GUI (`/em`), instant commands with 1-letter short aliases (`/em h`, `/em oh`, `/em a`, `/em hb`, `/em *`), partial repair fallback, customizable sound/particle effects, full permission tree, and admin management commands (`/ema`). Bypass is strictly off by default for all players and OPs. Cross-platform (Linux / Windows / Mac) with Java 25 and Maven.

@@ -1,0 +1,31 @@
+name: Build VoidTotem
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'VoidTotem/**'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Build with Maven
+        working-directory: VoidTotem
+        run: mvn -B clean package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoidTotem
+          path: VoidTotem/target/VoidTotem-*.jar
