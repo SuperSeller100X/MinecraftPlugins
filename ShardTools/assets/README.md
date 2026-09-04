@@ -13,14 +13,20 @@ minecraft/textures/item/void_totem.png   the totem texture
 void_totem.bbmodel                       the Blockbench source project (not copied)
 ```
 
+## How the custom model is wired up
+
+ShardTools stamps every shop-bought Void Totem with the `minecraft:item_model`
+component `shardtools:void_totem`. The client resolves that ID directly to the
+item model definition `resourcepack/assets/shardtools/items/void_totem.json`,
+which points at `minecraft:item/void_totem` (=> `models/item/void_totem.json`),
+and that model's textures reference `minecraft:item/void_totem` (=>
+`textures/item/void_totem.png`). That `shardtools/items/` definition lives in
+the resource pack itself and is not generated from this staging folder.
+
 ## Rules
 
 - The model file **must** be named `void_totem.json` and the texture **must**
-  be named `void_totem.png`. The pack's `items/totem_of_undying.json` routes
-  the `shardtools:void_totem` item model to `minecraft:item/void_totem`
-  (=> `models/item/void_totem.json`), and the model's textures reference
-  `minecraft:item/void_totem` (=> `textures/item/void_totem.png`). Keep those
-  names and it just works.
+  be named `void_totem.png`. Keep those names and it just works.
 - If your Blockbench export points its textures at a local file (e.g.
   `"C:/Users/.../totem_of_undying"`) or uses extra overlay textures, edit the
   model JSON here so every texture path is `minecraft:item/void_totem` (or
