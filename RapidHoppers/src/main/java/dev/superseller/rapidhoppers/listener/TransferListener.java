@@ -20,10 +20,14 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Boosts the transfers vanilla itself performs.
  *
- * <p>When a hopper moves its single item, this listener immediately tops the
- * transfer up to {@code engine.items-per-transfer}. That covers containers the
- * scanning engine skipped (unloaded-adjacent chunks, exotic holders) and keeps
- * amounts consistent everywhere.</p>
+ * <p>When a hopper (or dropper / dispenser inserting into a container) would
+ * move a single item, this listener <em>replaces</em> that transfer with one
+ * of {@code engine.items-per-transfer} items of the same type.</p>
+ *
+ * <p>The vanilla event is cancelled and the plugin performs the whole move.
+ * Adding extra items on top of an uncancelled event is the classic hopper
+ * dupe: the plugin takes the last item, then vanilla still deposits its
+ * clone into the destination.</p>
  */
 public final class TransferListener implements Listener {
 
@@ -31,20 +35,29 @@ public final class TransferListener implements Listener {
     private final ThrottleMonitor throttle;
     private final Stats stats;
 
+    /** Prevents re-entrant move events from stacking transfers. */
+    private final ThreadLocal<Boolean> replacing = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     public TransferListener(Settings settings, ThrottleMonitor throttle, Stats stats) {
         this.settings = settings;
         this.throttle = throttle;
         this.stats = stats;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMove(InventoryMoveItemEvent event) {
+        if (Boolean.TRUE.equals(replacing.get())) {
+            return;
+        }
         if (!settings.isEnabled() || !settings.isBoostVanillaTransfers() || throttle.isPaused()) {
             return;
         }
         Inventory source = event.getSource();
         Inventory destination = event.getDestination();
-        if (source == null || destination == null) {
+        if (source == null || destination == null || InventoryOps.sameInventory(source, destination)) {
+            return;
+        }
+        if (!InventoryOps.isSimpleStorage(source) || !InventoryOps.isSimpleStorage(destination)) {
             return;
         }
         if (!typeEnabled(source.getType()) && !typeEnabled(destination.getType())) {
@@ -56,21 +69,33 @@ public final class TransferListener implements Listener {
             return;
         }
         ItemStack moving = event.getItem();
-        if (moving == null || moving.getType().isAir()) {
+        if (moving == null || moving.getType().isAir() || moving.getAmount() <= 0) {
             return;
         }
-        int extra = settings.getItemsPerTransfer() - moving.getAmount();
-        if (extra <= 0) {
+        int wanted = TransferMath.replaceAmount(
+                settings.getItemsPerTransfer(),
+                moving.getAmount(),
+                InventoryOps.countSimilar(source, moving),
+                InventoryOps.freeSpaceFor(destination, moving),
+                moving.getMaxStackSize());
+        if (wanted <= 0) {
             return;
         }
-        int free = InventoryOps.freeSpaceFor(destination, moving) - moving.getAmount();
-        int amount = TransferMath.moveAmount(extra, countSimilar(source, moving), free, moving.getMaxStackSize());
-        if (amount <= 0) {
+        // Replacing vanilla's 1-item move with the same 1 item is a no-op.
+        if (wanted <= moving.getAmount()) {
             return;
         }
-        int moved = InventoryOps.moveOneStack(source, destination, amount);
-        if (moved > 0) {
-            stats.recordTransfer(moved);
+
+        replacing.set(Boolean.TRUE);
+        try {
+            int moved = InventoryOps.moveSimilar(source, destination, moving, wanted);
+            if (moved > 0) {
+                // Vanilla still holds a clone it will deposit unless we cancel.
+                event.setCancelled(true);
+                stats.recordTransfer(moved);
+            }
+        } finally {
+            replacing.set(Boolean.FALSE);
         }
     }
 
@@ -83,18 +108,8 @@ public final class TransferListener implements Listener {
                     || settings.isContainerEnabled(ContainerType.HOPPER_MINECART);
             case DROPPER -> settings.isContainerEnabled(ContainerType.DROPPER);
             case DISPENSER -> settings.isContainerEnabled(ContainerType.DISPENSER);
-            default -> settings.isContainerEnabled(ContainerType.HOPPER);
+            default -> false;
         };
-    }
-
-    private int countSimilar(Inventory inv, ItemStack probe) {
-        int total = 0;
-        for (ItemStack stack : inv.getStorageContents()) {
-            if (stack != null && stack.isSimilar(probe)) {
-                total += stack.getAmount();
-            }
-        }
-        return total;
     }
 
     /** Utility used by the GUI to close viewers safely. */

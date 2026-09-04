@@ -54,6 +54,20 @@ public final class TransferMath {
     }
 
     /**
+     * How many items the plugin may move when <em>replacing</em> a vanilla
+     * hopper/dropper transfer of {@code vanillaAmount} items.
+     *
+     * <p>This is the full replacement amount (not "extra on top"). Adding on
+     * top of vanilla is what caused the classic InventoryMoveItemEvent dupe:
+     * the plugin moved the last item, then vanilla deposited it again.</p>
+     */
+    public static int replaceAmount(int itemsPerTransfer, int vanillaAmount, int similarInSource,
+                                    int destFree, int maxStack) {
+        int wanted = Math.max(Math.max(0, vanillaAmount), itemsPerTransfer);
+        return moveAmount(wanted, similarInSource, destFree, maxStack);
+    }
+
+    /**
      * True when the throttle should engage.
      *
      * @param tps  measured TPS

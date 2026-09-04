@@ -121,8 +121,10 @@ public final class RapidHoppersPlugin extends JavaPlugin {
 
     /** Round-robin cursor used by the GUI container-type button. */
     public int nextContainerCursor(int size) {
-        containerCursor = (containerCursor + 1) % Math.max(1, size);
-        return containerCursor;
+        int n = Math.max(1, size);
+        int current = containerCursor % n;
+        containerCursor = (current + 1) % n;
+        return current;
     }
 
     public ConfigService configService() {

@@ -208,6 +208,14 @@ public interface Directional extends BlockData {
     BlockFace getFacing();
 }
 """,
+"org/bukkit/block/data/type/Hopper.java": """
+package org.bukkit.block.data.type;
+import org.bukkit.block.data.Directional;
+public interface Hopper extends Directional {
+    boolean isEnabled();
+    void setEnabled(boolean enabled);
+}
+""",
 "org/bukkit/entity/Entity.java": """
 package org.bukkit.entity;
 import org.bukkit.Location;
@@ -225,6 +233,8 @@ import org.bukkit.inventory.ItemStack;
 public interface Item extends Entity {
     ItemStack getItemStack();
     void setItemStack(ItemStack stack);
+    int getPickupDelay();
+    void setPickupDelay(int delay);
 }
 """,
 "org/bukkit/entity/HumanEntity.java": """
@@ -359,7 +369,7 @@ public @interface EventHandler {
 """,
 "org/bukkit/event/inventory/InventoryType.java": """
 package org.bukkit.event.inventory;
-public enum InventoryType { CHEST, HOPPER, DROPPER, DISPENSER, BARREL, PLAYER }
+public enum InventoryType { CHEST, HOPPER, DROPPER, DISPENSER, BARREL, SHULKER_BOX, PLAYER }
 """,
 "org/bukkit/event/inventory/ClickType.java": """
 package org.bukkit.event.inventory;

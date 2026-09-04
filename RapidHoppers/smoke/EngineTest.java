@@ -40,6 +40,12 @@ public final class EngineTest {
         eq(0, TransferMath.moveAmount(8, 0, 64, 64), "nothing to move");
         eq(0, TransferMath.moveAmount(8, 5, -1, 64), "negative space clamps to 0");
 
+        eq(8, TransferMath.replaceAmount(8, 1, 8, 64, 64), "replace vanilla 1 with configured 8");
+        eq(1, TransferMath.replaceAmount(8, 1, 1, 64, 64), "cannot take more than source has");
+        eq(0, TransferMath.replaceAmount(8, 1, 0, 64, 64), "empty source is not boosted");
+        eq(1, TransferMath.replaceAmount(1, 1, 5, 64, 64), "items-per-transfer 1 leaves vanilla alone");
+        eq(4, TransferMath.replaceAmount(8, 1, 20, 4, 64), "replacement limited by dest space");
+
         yes(TransferMath.shouldThrottle(17.0D, 18.0D, true), "throttle below soft tps");
         no(TransferMath.shouldThrottle(17.0D, 18.0D, false), "throttle disabled");
         yes(TransferMath.shouldPause(13.0D, 14.0D, true), "pause below hard tps");
@@ -110,6 +116,36 @@ public final class EngineTest {
         full.setItem(0, new ItemStack(Material.HOPPER, 64));
         no(InventoryOps.hasSpace(full), "full inventory has no space");
         eq(0, InventoryOps.freeSpaceFor(full, new ItemStack(Material.STONE, 1)), "no space for other type");
+
+        FakeInventory src = new FakeInventory(1);
+        FakeInventory dest = new FakeInventory(1);
+        src.setItem(0, new ItemStack(Material.STONE, 40));
+        dest.setItem(0, new ItemStack(Material.STONE, 62));
+        eq(2, InventoryOps.moveOneStack(src, dest, 8), "partial fill does not dupe");
+        eq(38, src.getItem(0).getAmount(), "source reduced by deposited amount only");
+        eq(64, dest.getItem(0).getAmount(), "destination filled to max");
+
+        FakeInventory self = new FakeInventory(2);
+        self.setItem(0, new ItemStack(Material.STONE, 16));
+        eq(0, InventoryOps.moveOneStack(self, self, 8), "self-transfer is refused");
+        eq(16, self.getItem(0).getAmount(), "self-transfer did not clone items");
+
+        FakeInventory mixedFrom = new FakeInventory(2);
+        FakeInventory mixedTo = new FakeInventory(2);
+        mixedFrom.setItem(0, new ItemStack(Material.HOPPER, 10));
+        mixedFrom.setItem(1, new ItemStack(Material.STONE, 10));
+        eq(4, InventoryOps.moveSimilar(mixedFrom, mixedTo, new ItemStack(Material.STONE, 1), 4),
+                "moveSimilar only takes the probed type");
+        eq(10, mixedFrom.getItem(0).getAmount(), "unrelated slot untouched");
+        eq(6, mixedFrom.getItem(1).getAmount(), "similar slot reduced");
+        eq(4, mixedTo.total(Material.STONE), "destination received probed type");
+        eq(0, mixedTo.total(Material.HOPPER), "destination did not receive other type");
+
+        yes(InventoryOps.sameInventory(self, self), "same instance is the same inventory");
+        no(InventoryOps.sameInventory(src, dest), "distinct inventories are not the same");
+        yes(InventoryOps.isSimpleStorage(src), "hopper inventory is simple storage");
+        eq(0, InventoryOps.addUpTo(dest, new ItemStack(Material.STONE, 8), 8),
+                "addUpTo refuses when destination is full");
     }
 
     private static void testStats() {

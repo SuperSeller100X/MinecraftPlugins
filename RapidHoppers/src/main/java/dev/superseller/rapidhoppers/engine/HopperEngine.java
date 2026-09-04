@@ -12,9 +12,8 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.Dispenser;
-import org.bukkit.block.Dropper;
 import org.bukkit.block.Hopper;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
@@ -32,11 +31,16 @@ import org.bukkit.plugin.java.JavaPlugin;
  * The acceleration engine.
  *
  * <p>Every {@code engine.interval-ticks} ticks the engine walks the loaded
- * chunks of every enabled world, finds hoppers, hopper minecarts, storage
- * minecarts, droppers and dispensers and performs <em>additional</em> transfer
- * operations on top of whatever vanilla does. Vanilla logic is never disabled,
- * so redstone comparators, item sorters and all other contraptions keep
- * working &mdash; they simply move items far quicker.</p>
+ * chunks of every enabled world, finds hoppers, hopper minecarts and storage
+ * minecarts and performs <em>additional</em> transfer operations on top of
+ * whatever vanilla does. Vanilla logic is never disabled, so redstone
+ * comparators, item sorters and all other contraptions keep working &mdash;
+ * they simply move items far quicker.</p>
+ *
+ * <p>Droppers and dispensers are <em>not</em> ticked here. Vanilla only
+ * fires them on a redstone pulse; accelerating them every engine tick would
+ * dump their entire inventory unprompted. Their pulses are boosted by
+ * {@code TransferListener} instead.</p>
  *
  * <p>All world/block access is dispatched through
  * {@link PlatformScheduler#runAtLocation} so the engine is region-safe on
@@ -200,28 +204,24 @@ public final class HopperEngine {
     // --- container handlers -------------------------------------------------
 
     private boolean handleBlockState(BlockState state) {
-        if (state instanceof Hopper hopper) {
-            if (!settings.isContainerEnabled(ContainerType.HOPPER)) {
-                return false;
-            }
-            tickHopper(hopper);
-            return true;
+        if (!(state instanceof Hopper)) {
+            return false;
         }
-        if (state instanceof Dropper dropper) {
-            if (!settings.isContainerEnabled(ContainerType.DROPPER)) {
-                return false;
-            }
-            tickFacingPusher(dropper.getBlock(), dropper.getInventory(), settings.getDropperMultiplier());
-            return true;
+        if (!settings.isContainerEnabled(ContainerType.HOPPER)) {
+            return false;
         }
-        if (state instanceof Dispenser dispenser) {
-            if (!settings.isContainerEnabled(ContainerType.DISPENSER)) {
-                return false;
-            }
-            tickFacingPusher(dispenser.getBlock(), dispenser.getInventory(), settings.getDispenserMultiplier());
-            return true;
+        // chunk.getTileEntities() returns snapshots on Paper. Moving out of a
+        // snapshot and into a live destination is a dupe (source never shrinks).
+        Block block = state.getBlock();
+        if (block == null || !isChunkLoaded(block)) {
+            return false;
         }
-        return false;
+        BlockState live = block.getState(false);
+        if (!(live instanceof Hopper hopper)) {
+            return false;
+        }
+        tickHopper(hopper);
+        return true;
     }
 
     private boolean handleEntity(Entity entity) {
@@ -244,16 +244,22 @@ public final class HopperEngine {
 
     /** Extra pull/push/pickup work for a placed hopper. */
     private void tickHopper(Hopper hopper) {
+        Block block = hopper.getBlock();
+        if (block == null || isRedstoneLocked(block)) {
+            return;
+        }
         int amount = settings.getItemsPerTransfer();
         Inventory self = hopper.getInventory();
-        Block block = hopper.getBlock();
+        if (!InventoryOps.isSimpleStorage(self)) {
+            return;
+        }
 
         if (settings.isHopperPushToFacing() && InventoryOps.hasItems(self)) {
             Inventory target = facingInventory(block);
             if (target == null) {
                 target = minecartInventoryAt(block.getRelative(0, -1, 0));
             }
-            if (target != null) {
+            if (target != null && !InventoryOps.sameInventory(self, target)) {
                 record(InventoryOps.moveOneStack(self, target, amount));
             }
         }
@@ -263,7 +269,7 @@ public final class HopperEngine {
             if (source == null) {
                 source = minecartInventoryAt(above);
             }
-            if (source != null) {
+            if (source != null && !InventoryOps.sameInventory(self, source)) {
                 record(InventoryOps.moveOneStack(source, self, amount));
             }
         }
@@ -272,35 +278,38 @@ public final class HopperEngine {
         }
     }
 
-    /** Droppers and dispensers pushing into the container they face. */
-    private void tickFacingPusher(Block block, Inventory self, int multiplier) {
-        if (multiplier > 1 && tickCounter % multiplier != 0L) {
-            return;
-        }
-        if (!InventoryOps.hasItems(self)) {
-            return;
-        }
-        Inventory target = facingInventory(block);
-        if (target != null) {
-            record(InventoryOps.moveOneStack(self, target, settings.getItemsPerTransfer()));
-        }
-    }
-
     private void tickHopperMinecart(HopperMinecart cart) {
         int amount = settings.getItemsPerTransfer();
         Inventory self = cart.getInventory();
-        Block block = cart.getLocation().getBlock();
+        if (!InventoryOps.isSimpleStorage(self)) {
+            return;
+        }
+        Location location = cart.getLocation();
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+        Block block = location.getBlock();
+        if (block == null) {
+            return;
+        }
 
         if (settings.isMinecartPullFromAbove() && InventoryOps.hasSpace(self)) {
-            Inventory above = inventoryOf(block.getRelative(0, 1, 0));
-            if (above != null) {
-                record(InventoryOps.moveOneStack(above, self, amount));
+            Block above = block.getRelative(0, 1, 0);
+            if (!hopperWillPushInto(above, block)) {
+                Inventory aboveInv = inventoryOf(above);
+                if (aboveInv != null && !InventoryOps.sameInventory(self, aboveInv)) {
+                    record(InventoryOps.moveOneStack(aboveInv, self, amount));
+                }
             }
         }
         if (settings.isMinecartPushToContainer() && InventoryOps.hasItems(self)) {
-            Inventory below = inventoryOf(block.getRelative(0, -1, 0));
-            if (below != null) {
-                record(InventoryOps.moveOneStack(self, below, amount));
+            Block below = block.getRelative(0, -1, 0);
+            // A hopper under the rails already pulls; pushing as well double-moves.
+            if (!hopperWillPullFrom(below)) {
+                Inventory belowInv = inventoryOf(below);
+                if (belowInv != null && !InventoryOps.sameInventory(self, belowInv)) {
+                    record(InventoryOps.moveOneStack(self, belowInv, amount));
+                }
             }
         }
     }
@@ -308,34 +317,44 @@ public final class HopperEngine {
     /** Storage minecarts sitting on a hopper are drained faster. */
     private void tickStorageMinecart(StorageMinecart cart) {
         Inventory self = cart.getInventory();
-        if (!InventoryOps.hasItems(self)) {
+        if (!InventoryOps.hasItems(self) || !InventoryOps.isSimpleStorage(self)) {
             return;
         }
-        Block below = cart.getLocation().getBlock().getRelative(0, -1, 0);
+        Location location = cart.getLocation();
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+        Block below = location.getBlock().getRelative(0, -1, 0);
+        // The hopper below already pulls from above; draining here as well
+        // would move twice as many items as configured.
+        if (hopperWillPullFrom(below)) {
+            return;
+        }
         Inventory target = inventoryOf(below);
-        if (target != null && below.getState() instanceof Hopper) {
+        if (target != null && !InventoryOps.sameInventory(self, target)
+                && isLiveHopper(below)) {
             record(InventoryOps.moveOneStack(self, target, settings.getItemsPerTransfer()));
         }
     }
 
     private void pickUpItems(Block block, Inventory self, int amount) {
-        Location above = block.getLocation().add(0.5D, 1.0D, 0.5D);
-        for (Entity entity : block.getWorld().getNearbyEntities(above, 0.5D, 0.6D, 0.5D)) {
+        Location centre = block.getLocation().add(0.5D, 0.5D, 0.5D);
+        for (Entity entity : block.getWorld().getNearbyEntities(centre, 0.5D, 0.75D, 0.5D)) {
             if (!(entity instanceof Item item) || item.isDead()) {
                 continue;
             }
+            if (item.getPickupDelay() > 0) {
+                continue;
+            }
             ItemStack stack = item.getItemStack();
-            int free = InventoryOps.freeSpaceFor(self, stack);
-            int move = TransferMath.moveAmount(amount, stack.getAmount(), free, stack.getMaxStackSize());
-            if (move <= 0) {
+            if (stack == null || stack.getType().isAir() || stack.getAmount() <= 0) {
                 continue;
             }
-            ItemStack moving = stack.clone();
-            moving.setAmount(move);
-            if (!self.addItem(moving).isEmpty()) {
+            int moved = InventoryOps.addUpTo(self, stack, amount);
+            if (moved <= 0) {
                 continue;
             }
-            int remaining = stack.getAmount() - move;
+            int remaining = stack.getAmount() - moved;
             if (remaining <= 0) {
                 item.remove();
             } else {
@@ -343,7 +362,7 @@ public final class HopperEngine {
                 left.setAmount(remaining);
                 item.setItemStack(left);
             }
-            record(move);
+            record(moved);
             return;
         }
     }
@@ -360,28 +379,93 @@ public final class HopperEngine {
         return inv != null ? inv : minecartInventoryAt(target);
     }
 
+    /**
+     * Live inventory of a simple storage container in a loaded chunk.
+     * Furnaces, brewers, crafters and the like are skipped so {@code addItem}
+     * cannot stuff the result slot or steal fuel.
+     */
     private Inventory inventoryOf(Block block) {
-        if (block == null) {
+        if (block == null || !isChunkLoaded(block)) {
             return null;
         }
         BlockState state = block.getState(false);
         if (state instanceof InventoryHolder holder) {
-            return holder.getInventory();
+            Inventory inv = holder.getInventory();
+            if (InventoryOps.isSimpleStorage(inv)) {
+                return inv;
+            }
         }
         return null;
     }
 
     private Inventory minecartInventoryAt(Block block) {
-        if (block == null) {
+        if (block == null || !isChunkLoaded(block) || block.getWorld() == null) {
             return null;
         }
         Location centre = block.getLocation().add(0.5D, 0.5D, 0.5D);
         for (Entity entity : block.getWorld().getNearbyEntities(centre, 0.6D, 0.6D, 0.6D)) {
             if (entity instanceof HopperMinecart || entity instanceof StorageMinecart) {
-                return ((InventoryHolder) entity).getInventory();
+                Inventory inv = ((InventoryHolder) entity).getInventory();
+                if (InventoryOps.isSimpleStorage(inv)) {
+                    return inv;
+                }
             }
         }
         return null;
+    }
+
+    /** Vanilla hoppers with HopperBlock.ENABLED = false do not transfer. */
+    private boolean isRedstoneLocked(Block block) {
+        if (block == null) {
+            return false;
+        }
+        BlockData data = block.getBlockData();
+        return data instanceof org.bukkit.block.data.type.Hopper hopperData && !hopperData.isEnabled();
+    }
+
+    private boolean isChunkLoaded(Block block) {
+        if (block == null) {
+            return false;
+        }
+        World world = block.getWorld();
+        return world != null && world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4);
+    }
+
+    private boolean isLiveHopper(Block block) {
+        if (block == null || !isChunkLoaded(block)) {
+            return false;
+        }
+        return block.getState(false) instanceof Hopper;
+    }
+
+    /** True when the hopper at {@code hopperBlock} will push down into {@code into}. */
+    private boolean hopperWillPushInto(Block hopperBlock, Block into) {
+        if (!settings.isContainerEnabled(ContainerType.HOPPER) || !settings.isHopperPushToFacing()) {
+            return false;
+        }
+        if (hopperBlock == null || into == null || !isChunkLoaded(hopperBlock) || isRedstoneLocked(hopperBlock)) {
+            return false;
+        }
+        if (!(hopperBlock.getState(false) instanceof Hopper)) {
+            return false;
+        }
+        BlockData data = hopperBlock.getBlockData();
+        if (!(data instanceof Directional directional) || directional.getFacing() != BlockFace.DOWN) {
+            return false;
+        }
+        Block facing = hopperBlock.getRelative(BlockFace.DOWN);
+        return facing.getX() == into.getX() && facing.getY() == into.getY() && facing.getZ() == into.getZ();
+    }
+
+    /** True when the hopper at {@code hopperBlock} will pull from the inventory above it. */
+    private boolean hopperWillPullFrom(Block hopperBlock) {
+        if (!settings.isContainerEnabled(ContainerType.HOPPER) || !settings.isHopperPullFromAbove()) {
+            return false;
+        }
+        if (hopperBlock == null || !isChunkLoaded(hopperBlock) || isRedstoneLocked(hopperBlock)) {
+            return false;
+        }
+        return hopperBlock.getState(false) instanceof Hopper;
     }
 
     private void record(int moved) {
