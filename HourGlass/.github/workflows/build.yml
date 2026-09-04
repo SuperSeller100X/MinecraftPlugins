@@ -1,3 +1,7 @@
+# HourGlass build. GitHub only reads workflows from .github/workflows/ at the
+# repository root, so this copy travels with the plugin but does not run here;
+# copy HourGlass/ci/root-workflow.yml to .github/workflows/hourglass-build.yml to
+# activate exactly these steps on pushes and pull requests.
 name: HourGlass build
 
 on:

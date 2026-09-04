@@ -556,10 +556,12 @@ python3 tools/check_consistency.py   # resources vs. code, no JDK needed
   endings), `PluginDescriptorTest` (the shipped `plugin.yml` parses, both commands
   and every permission resolve) and `ResourceFilesTest` (gui.yml slots and
   actions, config.yml paths, sound events, `{placeholder}` hygiene).
-- CI: `.github/workflows/hourglass-build.yml` at the repository root runs the
-  consistency check and `mvn clean verify` on every push and pull request that
-  touches this folder. A copy of the workflow lives in `HourGlass/.github/workflows/`
-  to match the other plugins in this repository.
+- CI: `HourGlass/.github/workflows/build.yml` runs the consistency check, the unit
+  tests and `mvn -B -ntp clean verify` on Temurin 25, matching the other plugins in
+  this repository. GitHub only executes workflows found in `.github/workflows/` at
+  the repository root, so `HourGlass/ci/root-workflow.yml` is shipped as a drop-in
+  copy: `cp HourGlass/ci/root-workflow.yml .github/workflows/hourglass-build.yml`
+  turns it on for every push and pull request that touches this folder.
 
 ---
 

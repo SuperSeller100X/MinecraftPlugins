@@ -796,12 +796,14 @@ def check_build(plugin: dict[str, str | None], config: dict[str, str | None]) ->
         fail("HourGlass/.github/workflows/build.yml is missing")
     elif "mvn -B -ntp clean verify" not in workflow.read_text(encoding="utf-8"):
         warn("the CI workflow should run 'mvn -B -ntp clean verify' like its siblings")
-    root_workflow = ROOT.parent / ".github/workflows"
-    if root_workflow.is_dir():
-        found = any("HourGlass" in path.read_text(encoding="utf-8") for path in root_workflow.glob("*.y*ml"))
-        if not found:
-            warn("no root workflow references HourGlass, so CI may never run for this plugin "
-                 "(GitHub only reads .github/workflows at the repository root)")
+    drop_in = ROOT / "ci/root-workflow.yml"
+    if not drop_in.is_file():
+        fail("HourGlass/ci/root-workflow.yml is missing — this is the copy that turns CI on "
+             "(GitHub only reads .github/workflows/ at the repository root)")
+    else:
+        text = drop_in.read_text(encoding="utf-8")
+        if "mvn -B -ntp clean verify" not in text or "check_consistency.py" not in text:
+            warn("ci/root-workflow.yml should run the consistency check and 'mvn -B -ntp clean verify'")
 
 
 def check_resources(sources: dict[Path, str]) -> None:

@@ -1,6 +1,11 @@
-# This repository keeps a copy of its workflow inside each plugin folder, which
-# GitHub does not pick up (only .github/workflows at the root is read). This file
-# is the one that actually runs for HourGlass, and it runs the same steps.
+# Drop-in CI workflow for HourGlass.
+#
+# GitHub only reads .github/workflows/ at the repository root, and this repo
+# keeps its workflow copies inside each plugin folder (where they are inert but
+# travel with the plugin). To actually run this on every push and pull request:
+#
+#   mkdir -p .github/workflows
+#   cp HourGlass/ci/root-workflow.yml .github/workflows/hourglass-build.yml
 name: HourGlass build
 
 on:

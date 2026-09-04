@@ -274,5 +274,7 @@ database, no shading, no async driver surprises.
   Linux, Windows and macOS
 
 See [HourGlass/README.md](HourGlass/README.md). Build with `mvn -B clean verify` in
-`HourGlass/` (JDK 25 required); CI runs it plus `tools/check_consistency.py`
-(resources verified against the code) from `.github/workflows/hourglass-build.yml`.
+`HourGlass/` (JDK 25 required). A CI workflow that runs `tools/check_consistency.py`
+plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
+`HourGlass/.github/workflows/build.yml`; copy `HourGlass/ci/root-workflow.yml` to
+`.github/workflows/hourglass-build.yml` to activate it.
