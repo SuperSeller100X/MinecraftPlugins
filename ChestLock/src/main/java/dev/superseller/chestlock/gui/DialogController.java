@@ -65,6 +65,9 @@ public final class DialogController implements Listener {
     private static final Key MENU_INFO = Key.key("chestlock:menu_info");
     private static final Key MENU_SETTINGS = Key.key("chestlock:menu_settings");
     private static final Key MENU_HELP = Key.key("chestlock:menu_help");
+    private static final Key MENU_ACCESS_ADD = Key.key("chestlock:menu_access_add");
+    private static final Key MENU_ACCESS_REMOVE = Key.key("chestlock:menu_access_remove");
+    private static final Key MENU_ACCESS_LIST = Key.key("chestlock:menu_access_list");
 
     private final ChestLockPlugin plugin;
     private final LockStore lockStore;
@@ -275,6 +278,26 @@ public final class DialogController implements Listener {
         player.showDialog(dialog);
     }
 
+    public void beginAccess(Player player) {
+        if (!require(player, "chestlock.manage")) return;
+        LockedTarget target = ownedTarget(player);
+        if (target == null) return;
+        putPending(player, Action.ACCESS, target.ref(), target.data());
+        Dialog dialog = Dialog.create(builder -> builder.empty()
+                .base(DialogBase.builder(Component.text("Access blocks", NamedTextColor.GOLD))
+                        .body(List.of(DialogBody.plainMessage(Component.text(
+                                "A granted block may move items into and out of this container "
+                                        + "even while hopper blocking is enabled.",
+                                NamedTextColor.GRAY))))
+                        .build())
+                .type(DialogType.multiAction(List.of(
+                        button("Add block", "Look at a hopper, dropper, or dispenser to grant it access", MENU_ACCESS_ADD),
+                        button("Remove block", "Look at a previously granted block to revoke it", MENU_ACCESS_REMOVE),
+                        button("List blocks", "Show every granted block", MENU_ACCESS_LIST)),
+                        closeButton(), 2)));
+        player.showDialog(dialog);
+    }
+
     public void openSettings(Player player) {
         if (!require(player, "chestlock.settings")) return;
         PlayerSettings settings = settingsStore.get(player.getUniqueId());
@@ -318,6 +341,8 @@ public final class DialogController implements Listener {
                 .append(Component.text(" — remove your lock", NamedTextColor.GRAY)).appendNewline()
                 .append(Component.text("/cl key", NamedTextColor.GOLD)).append(Component.text("  /cl k", NamedTextColor.DARK_GRAY))
                 .append(Component.text(" — issue/revoke keys", NamedTextColor.GRAY)).appendNewline()
+                .append(Component.text("/cl access", NamedTextColor.GOLD)).append(Component.text("  /cl a", NamedTextColor.DARK_GRAY))
+                .append(Component.text(" — grant blocks hopper access", NamedTextColor.GRAY)).appendNewline()
                 .append(Component.text("/cl settings", NamedTextColor.GOLD)).append(Component.text("  /cl s", NamedTextColor.DARK_GRAY))
                 .append(Component.text(" — personal defaults", NamedTextColor.GRAY))
                 .build();
@@ -393,6 +418,9 @@ public final class DialogController implements Listener {
         else if (identifier.equals(MENU_INFO)) action = () -> showInfo(player);
         else if (identifier.equals(MENU_SETTINGS)) action = () -> openSettings(player);
         else if (identifier.equals(MENU_HELP)) action = () -> showHelp(player);
+        else if (identifier.equals(MENU_ACCESS_ADD)) action = () -> accessAdd(player);
+        else if (identifier.equals(MENU_ACCESS_REMOVE)) action = () -> accessRemove(player);
+        else if (identifier.equals(MENU_ACCESS_LIST)) action = () -> accessList(player);
         if (action == null) return false;
         Runnable selected = action;
         player.getScheduler().run(plugin, task -> selected.run(), null);
@@ -432,7 +460,7 @@ public final class DialogController implements Listener {
                 PasscodeHasher.PasswordHash passwordHash = hasher.hash(secret, iterations);
                 LockData data = new LockData(UUID.randomUUID(), ownerId, ownerName, passwordHash.salt(),
                         passwordHash.hash(), iterations, duration * 1_000L, UUID.randomUUID(),
-                        System.currentTimeMillis());
+                        System.currentTimeMillis(), List.of());
                 onRegion(context.target(), player, block -> {
                     LockStore.Lookup lookup = lockStore.lookup(block);
                     if (!lookup.supported() || lookup.secured()
@@ -682,6 +710,94 @@ public final class DialogController implements Listener {
         });
     }
 
+    private void accessAdd(Player player) {
+        PendingAction context = pending.get(player.getUniqueId());
+        if (!validAccessContext(player, context)) return;
+        BlockRef ref = targetedAccessBlock(player);
+        if (ref == null) return;
+        onRegion(context.target(), player, block -> {
+            LockStore.Lookup lookup = lockStore.lookup(block);
+            if (!canManageCurrent(player, context.snapshot(), lookup)) return;
+            List<BlockRef> current = lookup.data().accessBlocks();
+            if (current.contains(ref)) {
+                feedback.failure(player, "access-already-added", Map.of());
+                return;
+            }
+            List<BlockRef> updated = new ArrayList<>(current);
+            updated.add(ref);
+            if (!lockStore.update(lookup.group(), lookup.data().withAccessBlocks(List.copyOf(updated)))) {
+                feedback.failure(player, "operation-failed", Map.of());
+                return;
+            }
+            feedback.success(player, "access-added", Map.of());
+            plugin.audit(player.getName() + " granted access to block " + ref.display()
+                    + " for lock " + shortId(lookup.data().lockId()));
+        });
+    }
+
+    private void accessRemove(Player player) {
+        PendingAction context = pending.get(player.getUniqueId());
+        if (!validAccessContext(player, context)) return;
+        BlockRef ref = targetedAccessBlock(player);
+        if (ref == null) return;
+        onRegion(context.target(), player, block -> {
+            LockStore.Lookup lookup = lockStore.lookup(block);
+            if (!canManageCurrent(player, context.snapshot(), lookup)) return;
+            List<BlockRef> current = lookup.data().accessBlocks();
+            if (!current.contains(ref)) {
+                feedback.failure(player, "access-not-added", Map.of());
+                return;
+            }
+            List<BlockRef> updated = new ArrayList<>(current);
+            updated.remove(ref);
+            if (!lockStore.update(lookup.group(), lookup.data().withAccessBlocks(List.copyOf(updated)))) {
+                feedback.failure(player, "operation-failed", Map.of());
+                return;
+            }
+            feedback.success(player, "access-removed", Map.of());
+            plugin.audit(player.getName() + " revoked access to block " + ref.display()
+                    + " for lock " + shortId(lookup.data().lockId()));
+        });
+    }
+
+    private void accessList(Player player) {
+        PendingAction context = pending.get(player.getUniqueId());
+        if (!validAccessContext(player, context)) return;
+        onRegion(context.target(), player, block -> {
+            LockStore.Lookup lookup = lockStore.lookup(block);
+            if (!canManageCurrent(player, context.snapshot(), lookup)) return;
+            if (lookup.data().accessBlocks().isEmpty()) {
+                feedback.message(player, "access-none");
+                return;
+            }
+            for (BlockRef ref : lookup.data().accessBlocks()) {
+                World world = Bukkit.getWorld(ref.worldId());
+                feedback.message(player, "access-list-entry", Map.of(
+                        "world", world == null ? ref.worldId().toString() : world.getName(),
+                        "location", ref.display()));
+            }
+        });
+    }
+
+    private BlockRef targetedAccessBlock(Player player) {
+        Block targeted = player.getTargetBlockExact(plugin.runtimeConfig().targetDistance());
+        if (targeted == null || !LockStore.isAutomationBlock(targeted.getType())) {
+            feedback.failure(player, "access-invalid-block", Map.of(
+                    "distance", Integer.toString(plugin.runtimeConfig().targetDistance())));
+            return null;
+        }
+        return BlockRef.of(targeted);
+    }
+
+    private boolean validAccessContext(Player player, PendingAction context) {
+        if (context == null || context.action() != Action.ACCESS || context.snapshot() == null
+                || context.expiresAtMillis() < System.currentTimeMillis()) {
+            feedback.message(player, "dialog-expired");
+            return false;
+        }
+        return true;
+    }
+
     private void failedAttempt(Player player, PendingAction context, LockData snapshot) {
         PluginConfig config = plugin.runtimeConfig();
         long now = System.currentTimeMillis();
@@ -899,7 +1015,8 @@ public final class DialogController implements Listener {
 
     private enum Action {
         LOCK(LOCK_SUBMIT), UNLOCK(UNLOCK_SUBMIT), CHANGE(CHANGE_SUBMIT), REMOVE(REMOVE_SUBMIT),
-        KEY(KEY_SUBMIT), SETTINGS(SETTINGS_SUBMIT), FORCE_REMOVE(FORCE_REMOVE_SUBMIT);
+        KEY(KEY_SUBMIT), SETTINGS(SETTINGS_SUBMIT), FORCE_REMOVE(FORCE_REMOVE_SUBMIT),
+        ACCESS(null);
 
         private final Key key;
 
@@ -909,7 +1026,7 @@ public final class DialogController implements Listener {
 
         static Action fromKey(Key key) {
             for (Action action : values()) {
-                if (action.key.equals(key)) return action;
+                if (action.key != null && action.key.equals(key)) return action;
             }
             return null;
         }

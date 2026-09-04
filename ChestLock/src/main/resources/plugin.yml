@@ -10,7 +10,7 @@ folia-supported: true
 commands:
   chestlock:
     description: Open ChestLock or perform a lock action.
-    usage: /chestlock [lock|unlock|info|change|remove|key|settings|help|bypass|forceremove|reload]
+    usage: /chestlock [lock|unlock|info|change|remove|key|access|settings|help|bypass|forceremove|reload]
     aliases: [cl]
     permission: chestlock.use
 

@@ -2,7 +2,9 @@ package dev.superseller.chestlock.storage;
 
 import dev.superseller.chestlock.ChestLockPlugin;
 import dev.superseller.chestlock.config.PluginConfig;
+import dev.superseller.chestlock.model.BlockRef;
 import dev.superseller.chestlock.model.LockData;
+import io.papermc.paper.block.TileStateInventoryHolder;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -11,8 +13,9 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
+import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.block.TileState;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -33,6 +36,7 @@ public final class LockStore {
     private final NamespacedKey durationKey;
     private final NamespacedKey keyTokenKey;
     private final NamespacedKey createdAtKey;
+    private final NamespacedKey accessBlocksKey;
     private final NamespacedKey itemLockIdKey;
     private final NamespacedKey itemKeyTokenKey;
 
@@ -47,39 +51,105 @@ public final class LockStore {
         durationKey = new NamespacedKey(plugin, "unlock_duration_ms");
         keyTokenKey = new NamespacedKey(plugin, "key_token");
         createdAtKey = new NamespacedKey(plugin, "created_at");
+        accessBlocksKey = new NamespacedKey(plugin, "access_blocks");
         itemLockIdKey = new NamespacedKey(plugin, "key_lock_id");
         itemKeyTokenKey = new NamespacedKey(plugin, "key_token");
     }
 
+    /**
+     * Classifies the family of a lockable container material.
+     *
+     * <p>Ender chests are intentionally excluded: their contents are per-player and they cannot
+     * exchange items with automation blocks. Minecart containers are entities, not blocks, and
+     * cannot carry block metadata.</p>
+     */
+    public static Family family(Material material) {
+        if (material == null) {
+            return Family.NONE;
+        }
+        String name = material.name();
+        if (material == Material.CHEST || material == Material.TRAPPED_CHEST) {
+            return Family.CHEST;
+        }
+        if (material == Material.COPPER_CHEST || name.endsWith("_COPPER_CHEST")) {
+            return Family.COPPER_CHEST;
+        }
+        if (material == Material.BARREL) {
+            return Family.BARREL;
+        }
+        if (material == Material.SHULKER_BOX || name.endsWith("_SHULKER_BOX")) {
+            return Family.SHULKER_BOX;
+        }
+        if (material == Material.FURNACE || material == Material.BLAST_FURNACE || material == Material.SMOKER) {
+            return Family.FURNACE;
+        }
+        if (material == Material.DISPENSER || material == Material.DROPPER) {
+            return Family.DISPENSER;
+        }
+        if (material == Material.HOPPER) {
+            return Family.HOPPER;
+        }
+        if (material == Material.BREWING_STAND) {
+            return Family.BREWING_STAND;
+        }
+        if (material == Material.CRAFTER) {
+            return Family.CRAFTER;
+        }
+        if (material == Material.CHISELED_BOOKSHELF) {
+            return Family.CHISELED_BOOKSHELF;
+        }
+        if (material == Material.DECORATED_POT) {
+            return Family.DECORATED_POT;
+        }
+        if (material == Material.LECTERN) {
+            return Family.LECTERN;
+        }
+        if (name.endsWith("_SHELF")) {
+            return Family.SHELF;
+        }
+        if (material == Material.JUKEBOX) {
+            return Family.JUKEBOX;
+        }
+        return Family.NONE;
+    }
+
     public boolean isContainer(Material material) {
-        return material == Material.CHEST
-                || material == Material.TRAPPED_CHEST
-                || material == Material.BARREL
-                || material == Material.SHULKER_BOX
-                || material.name().endsWith("_SHULKER_BOX");
+        return family(material) != Family.NONE;
+    }
+
+    /** Blocks that can move items into and out of containers and therefore be granted access. */
+    public static boolean isAutomationBlock(Material material) {
+        return material == Material.HOPPER || material == Material.DROPPER || material == Material.DISPENSER;
     }
 
     public boolean canCreateLock(Material material, PluginConfig config) {
-        if (material == Material.CHEST || material == Material.TRAPPED_CHEST) {
-            return config.lockChests();
-        }
-        if (material == Material.BARREL) {
-            return config.lockBarrels();
-        }
-        if (material == Material.SHULKER_BOX || material.name().endsWith("_SHULKER_BOX")) {
-            return config.lockShulkerBoxes();
-        }
-        return false;
+        return switch (family(material)) {
+            case CHEST -> config.lockChests();
+            case COPPER_CHEST -> config.lockCopperChests();
+            case BARREL -> config.lockBarrels();
+            case SHULKER_BOX -> config.lockShulkerBoxes();
+            case FURNACE -> config.lockFurnaces();
+            case DISPENSER -> config.lockDispensers();
+            case HOPPER -> config.lockHoppers();
+            case BREWING_STAND -> config.lockBrewingStands();
+            case CRAFTER -> config.lockCrafters();
+            case CHISELED_BOOKSHELF -> config.lockChiseledBookshelves();
+            case DECORATED_POT -> config.lockDecoratedPots();
+            case LECTERN -> config.lockLecterns();
+            case SHELF -> config.lockShelves();
+            case JUKEBOX -> config.lockJukeboxes();
+            case NONE -> false;
+        };
     }
 
     public ContainerGroup resolve(Block block) {
-        if (!isContainer(block.getType()) || !(block.getState() instanceof Container container)) {
+        if (!isContainer(block.getType()) || !(block.getState() instanceof TileStateInventoryHolder holder)) {
             return null;
         }
         List<Block> blocks = new ArrayList<>();
-        Inventory inventory = container.getInventory();
-        InventoryHolder holder = inventory.getHolder();
-        if (holder instanceof DoubleChest doubleChest) {
+        Inventory inventory = holder.getInventory();
+        InventoryHolder inventoryHolder = inventory.getHolder();
+        if (inventoryHolder instanceof DoubleChest doubleChest) {
             addChestSide(blocks, doubleChest.getLeftSide());
             addChestSide(blocks, doubleChest.getRightSide());
         }
@@ -93,7 +163,7 @@ public final class LockStore {
     }
 
     private static void addChestSide(List<Block> blocks, InventoryHolder holder) {
-        if (holder instanceof org.bukkit.block.Chest chest) {
+        if (holder instanceof Chest chest) {
             blocks.add(chest.getBlock());
         }
     }
@@ -106,11 +176,11 @@ public final class LockStore {
         LockData found = null;
         boolean corrupt = false;
         for (Block member : group.blocks()) {
-            if (!(member.getState() instanceof Container state)) {
+            if (!(member.getState() instanceof TileStateInventoryHolder holder)) {
                 corrupt = true;
                 continue;
             }
-            ReadResult read = read(state.getPersistentDataContainer());
+            ReadResult read = read(holder.getPersistentDataContainer());
             if (read.corrupt()) {
                 corrupt = true;
             }
@@ -127,8 +197,8 @@ public final class LockStore {
 
     public boolean create(ContainerGroup group, LockData data) {
         for (Block block : group.blocks()) {
-            if (!(block.getState() instanceof Container container)
-                    || read(container.getPersistentDataContainer()).secured()) {
+            if (!(block.getState() instanceof TileStateInventoryHolder holder)
+                    || read(holder.getPersistentDataContainer()).secured()) {
                 return false;
             }
         }
@@ -142,11 +212,11 @@ public final class LockStore {
     private boolean write(ContainerGroup group, LockData data) {
         boolean success = true;
         for (Block block : group.blocks()) {
-            if (!(block.getState() instanceof Container container)) {
+            if (!(block.getState() instanceof TileStateInventoryHolder holder)) {
                 success = false;
                 continue;
             }
-            PersistentDataContainer pdc = container.getPersistentDataContainer();
+            PersistentDataContainer pdc = holder.getPersistentDataContainer();
             pdc.set(versionKey, PersistentDataType.INTEGER, DATA_VERSION);
             pdc.set(lockIdKey, PersistentDataType.STRING, data.lockId().toString());
             pdc.set(ownerIdKey, PersistentDataType.STRING, data.ownerId().toString());
@@ -157,7 +227,9 @@ public final class LockStore {
             pdc.set(durationKey, PersistentDataType.LONG, data.unlockDurationMillis());
             pdc.set(keyTokenKey, PersistentDataType.STRING, data.keyToken().toString());
             pdc.set(createdAtKey, PersistentDataType.LONG, data.createdAtMillis());
-            success &= container.update(true, false);
+            pdc.set(accessBlocksKey, PersistentDataType.LIST.strings(),
+                    data.accessBlocks().stream().map(BlockRef::serialize).toList());
+            success &= holder.update(true, false);
         }
         return success;
     }
@@ -165,12 +237,12 @@ public final class LockStore {
     public boolean clear(ContainerGroup group) {
         boolean success = true;
         for (Block block : group.blocks()) {
-            if (!(block.getState() instanceof Container container)) {
+            if (!(block.getState() instanceof TileStateInventoryHolder holder)) {
                 success = false;
                 continue;
             }
-            removeLockMetadata(container.getPersistentDataContainer());
-            success &= container.update(true, false);
+            removeLockMetadata(holder.getPersistentDataContainer());
+            success &= holder.update(true, false);
         }
         return success;
     }
@@ -180,12 +252,12 @@ public final class LockStore {
      * item or creative clone from duplicating a lock UUID while leaving an adjacent locked chest untouched.
      */
     public boolean clearCopiedMetadata(Block block) {
-        if (!(block.getState() instanceof Container container)
-                || !read(container.getPersistentDataContainer()).secured()) {
+        if (!(block.getState() instanceof TileStateInventoryHolder holder)
+                || !read(holder.getPersistentDataContainer()).secured()) {
             return false;
         }
-        removeLockMetadata(container.getPersistentDataContainer());
-        container.update(true, false);
+        removeLockMetadata(holder.getPersistentDataContainer());
+        holder.update(true, false);
         return true;
     }
 
@@ -195,12 +267,12 @@ public final class LockStore {
             return false;
         }
         BlockState state = meta.getBlockState();
-        if (!(state instanceof Container container)
-                || !read(container.getPersistentDataContainer()).secured()) {
+        if (!(state instanceof TileStateInventoryHolder holder)
+                || !read(holder.getPersistentDataContainer()).secured()) {
             return false;
         }
-        removeLockMetadata(container.getPersistentDataContainer());
-        meta.setBlockState(container);
+        removeLockMetadata(holder.getPersistentDataContainer());
+        meta.setBlockState(state);
         item.setItemMeta(meta);
         return true;
     }
@@ -216,6 +288,7 @@ public final class LockStore {
         pdc.remove(durationKey);
         pdc.remove(keyTokenKey);
         pdc.remove(createdAtKey);
+        pdc.remove(accessBlocksKey);
     }
 
     private ReadResult read(PersistentDataContainer pdc) {
@@ -240,23 +313,43 @@ public final class LockStore {
                     || iterations < 1 || duration < 1) {
                 return new ReadResult(null, true);
             }
+            List<BlockRef> accessBlocks = readAccessBlocks(pdc);
             return new ReadResult(new LockData(UUID.fromString(rawId), UUID.fromString(rawOwner), ownerName,
-                    salt, hash, iterations, duration, UUID.fromString(rawKeyToken), createdAt), false);
+                    salt, hash, iterations, duration, UUID.fromString(rawKeyToken), createdAt, accessBlocks), false);
         } catch (IllegalArgumentException exception) {
             return new ReadResult(null, true);
         }
+    }
+
+    /**
+     * Reads the optional access-block whitelist. Locks created before this feature simply have
+     * no entry and default to an empty whitelist. Unreadable entries are dropped.
+     */
+    private List<BlockRef> readAccessBlocks(PersistentDataContainer pdc) {
+        List<String> raw = pdc.get(accessBlocksKey, PersistentDataType.LIST.strings());
+        if (raw == null) {
+            return List.of();
+        }
+        List<BlockRef> blocks = new ArrayList<>(raw.size());
+        for (String entry : raw) {
+            BlockRef ref = BlockRef.parse(entry);
+            if (ref != null) {
+                blocks.add(ref);
+            }
+        }
+        return List.copyOf(blocks);
     }
 
     public Block blockForInventory(Inventory inventory) {
         InventoryHolder holder = inventory.getHolder();
         if (holder instanceof DoubleChest doubleChest) {
             InventoryHolder left = doubleChest.getLeftSide();
-            if (left instanceof org.bukkit.block.Chest chest) {
+            if (left instanceof Chest chest) {
                 return chest.getBlock();
             }
         }
-        if (holder instanceof Container container) {
-            return container.getBlock();
+        if (holder instanceof TileState tileState) {
+            return tileState.getBlock();
         }
         return null;
     }
@@ -293,5 +386,24 @@ public final class LockStore {
         boolean secured() {
             return data != null || corrupt;
         }
+    }
+
+    /** The container families ChestLock understands. */
+    public enum Family {
+        NONE,
+        CHEST,
+        COPPER_CHEST,
+        BARREL,
+        SHULKER_BOX,
+        FURNACE,
+        DISPENSER,
+        HOPPER,
+        BREWING_STAND,
+        CRAFTER,
+        CHISELED_BOOKSHELF,
+        DECORATED_POT,
+        LECTERN,
+        SHELF,
+        JUKEBOX
     }
 }

@@ -3,14 +3,20 @@ package dev.superseller.chestlock.listener;
 import dev.superseller.chestlock.ChestLockPlugin;
 import dev.superseller.chestlock.gui.DialogController;
 import dev.superseller.chestlock.message.Feedback;
+import dev.superseller.chestlock.model.BlockRef;
 import dev.superseller.chestlock.model.LockData;
 import dev.superseller.chestlock.security.AttemptLimiter;
 import dev.superseller.chestlock.security.SessionManager;
 import dev.superseller.chestlock.service.KeyService;
 import dev.superseller.chestlock.storage.LockStore;
 import dev.superseller.chestlock.storage.PlayerSettingsStore;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Directional;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -36,6 +42,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 /** Unconditional, absolute defense-in-depth protection making locked containers literally impossible to destroy or open when not unlocked. */
@@ -143,14 +150,31 @@ public final class ProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         Block placed = event.getBlockPlaced();
-        if (!lockStore.isContainer(placed.getType())) return;
+        Player player = event.getPlayer();
 
-        lockStore.clearCopiedMetadata(placed);
-        LockStore.Lookup lookup = lockStore.lookup(placed);
-        if (!lookup.secured()) return;
+        if (lockStore.isContainer(placed.getType())) {
+            lockStore.clearCopiedMetadata(placed);
+            LockStore.Lookup lookup = lockStore.lookup(placed);
+            if (lookup.secured()) {
+                event.setCancelled(true);
+                feedback.locked(player);
+                return;
+            }
+        }
 
-        event.setCancelled(true);
-        feedback.locked(event.getPlayer());
+        if (LockStore.isAutomationBlock(placed.getType()) && !sessions.hasBypass(player.getUniqueId())) {
+            for (Block adjacent : getAdjacentOrTargetContainers(placed)) {
+                LockStore.Lookup lookup = lockStore.lookup(adjacent);
+                if (lookup.secured()) {
+                    LockData lock = lookup.data();
+                    if (lock == null || !sessions.isAuthorized(player.getUniqueId(), lock.lockId(), System.currentTimeMillis())) {
+                        event.setCancelled(true);
+                        feedback.locked(player);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -225,10 +249,24 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryMove(InventoryMoveItemEvent event) {
+        if (!plugin.runtimeConfig().blockHoppers()) {
+            return;
+        }
         Block source = lockStore.blockForInventory(event.getSource());
         Block destination = lockStore.blockForInventory(event.getDestination());
-        if ((source != null && isSecured(source)) || (destination != null && isSecured(destination))) {
-            event.setCancelled(true);
+        boolean sourceSecured = source != null && isSecured(source);
+        boolean destinationSecured = destination != null && isSecured(destination);
+        if (sourceSecured || destinationSecured) {
+            // Whitelisted automation blocks may move items both into and out of the locked
+            // container; every other automation stays strictly blocked.
+            boolean allowed = (sourceSecured && destination != null
+                    && isWhitelisted(lockStore.lookup(source), destination))
+                    || (destinationSecured && source != null
+                    && isWhitelisted(lockStore.lookup(destination), source));
+            if (!allowed) {
+                event.setCancelled(true);
+                return;
+            }
             return;
         }
         if (isInventoryNearSecuredContainer(event.getSource()) || isInventoryNearSecuredContainer(event.getDestination())) {
@@ -238,6 +276,9 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryPickupItem(InventoryPickupItemEvent event) {
+        if (!plugin.runtimeConfig().blockHoppers()) {
+            return;
+        }
         Block block = lockStore.blockForInventory(event.getInventory());
         if ((block != null && isSecured(block)) || isInventoryNearSecuredContainer(event.getInventory())) {
             event.setCancelled(true);
@@ -246,9 +287,15 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockDispense(BlockDispenseEvent event) {
-        if (event.getBlock().getBlockData() instanceof org.bukkit.block.data.type.Dispenser dispenser) {
-            Block target = event.getBlock().getRelative(dispenser.getFacing());
-            if (isSecured(target)) {
+        if (!plugin.runtimeConfig().blockHoppers()) {
+            return;
+        }
+        if (event.getBlock().getBlockData() instanceof Directional directional) {
+            Block target = event.getBlock().getRelative(directional.getFacing());
+            LockStore.Lookup lookup = lockStore.lookup(target);
+            if (lookup.secured()
+                    && (lookup.data() == null
+                    || !lookup.data().accessBlocks().contains(BlockRef.of(event.getBlock())))) {
                 event.setCancelled(true);
             }
         }
@@ -266,83 +313,6 @@ public final class ProtectionListener implements Listener {
         if (isSecured(event.getBlock())) {
             event.setCancelled(true);
         }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlace(BlockPlaceEvent event) {
-        Block placed = event.getBlockPlaced();
-        Player player = event.getPlayer();
-
-        if (lockStore.isContainer(placed.getType())) {
-            lockStore.clearCopiedMetadata(placed);
-            LockStore.Lookup lookup = lockStore.lookup(placed);
-            if (lookup.secured()) {
-                event.setCancelled(true);
-                feedback.locked(player);
-                return;
-            }
-        }
-
-        if (isContainerDevice(placed.getType())) {
-            if (!sessions.hasBypass(player.getUniqueId())) {
-                for (Block adjacent : getAdjacentOrTargetContainers(placed)) {
-                    LockStore.Lookup lookup = lockStore.lookup(adjacent);
-                    if (lookup.secured()) {
-                        LockData lock = lookup.data();
-                        if (lock == null || !sessions.isAuthorized(player.getUniqueId(), lock.lockId(), System.currentTimeMillis())) {
-                            event.setCancelled(true);
-                            feedback.locked(player);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private boolean isContainerDevice(org.bukkit.Material material) {
-        return material == org.bukkit.Material.HOPPER
-                || material == org.bukkit.Material.DROPPER
-                || material == org.bukkit.Material.DISPENSER;
-    }
-
-    private java.util.List<Block> getAdjacentOrTargetContainers(Block block) {
-        java.util.List<Block> containers = new java.util.ArrayList<>();
-        org.bukkit.block.BlockFace[] faces = {
-            org.bukkit.block.BlockFace.UP, org.bukkit.block.BlockFace.DOWN,
-            org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.SOUTH,
-            org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.WEST
-        };
-        for (org.bukkit.block.BlockFace face : faces) {
-            Block rel = block.getRelative(face);
-            if (lockStore.isContainer(rel.getType())) {
-                containers.add(rel);
-            }
-        }
-        if (block.getBlockData() instanceof org.bukkit.block.data.Directional directional) {
-            Block target = block.getRelative(directional.getFacing());
-            if (lockStore.isContainer(target.getType()) && !containers.contains(target)) {
-                containers.add(target);
-            }
-        }
-        return containers;
-    }
-
-    private boolean isInventoryNearSecuredContainer(Inventory inventory) {
-        if (inventory == null) return false;
-        Block block = lockStore.blockForInventory(inventory);
-        if (block != null) {
-            return isSecured(block);
-        }
-        org.bukkit.inventory.InventoryHolder holder = inventory.getHolder();
-        if (holder instanceof org.bukkit.entity.Entity entity) {
-            Block entBlock = entity.getLocation().getBlock();
-            if (isSecured(entBlock)) return true;
-            for (Block adj : getAdjacentOrTargetContainers(entBlock)) {
-                if (isSecured(adj)) return true;
-            }
-        }
-        return false;
     }
 
     @EventHandler
@@ -365,6 +335,50 @@ public final class ProtectionListener implements Listener {
         attempts.clearPlayer(event.getPlayer().getUniqueId());
         dialogs.clearPlayer(event.getPlayer().getUniqueId());
         feedback.clearPlayer(event.getPlayer().getUniqueId());
+    }
+
+    private boolean isWhitelisted(LockStore.Lookup securedContainer, Block automationBlock) {
+        return securedContainer.data() != null
+                && securedContainer.data().accessBlocks().contains(BlockRef.of(automationBlock));
+    }
+
+    private List<Block> getAdjacentOrTargetContainers(Block block) {
+        List<Block> containers = new ArrayList<>();
+        BlockFace[] faces = {
+            BlockFace.UP, BlockFace.DOWN,
+            BlockFace.NORTH, BlockFace.SOUTH,
+            BlockFace.EAST, BlockFace.WEST
+        };
+        for (BlockFace face : faces) {
+            Block rel = block.getRelative(face);
+            if (lockStore.isContainer(rel.getType())) {
+                containers.add(rel);
+            }
+        }
+        if (block.getBlockData() instanceof Directional directional) {
+            Block target = block.getRelative(directional.getFacing());
+            if (lockStore.isContainer(target.getType()) && !containers.contains(target)) {
+                containers.add(target);
+            }
+        }
+        return containers;
+    }
+
+    private boolean isInventoryNearSecuredContainer(Inventory inventory) {
+        if (inventory == null) return false;
+        Block block = lockStore.blockForInventory(inventory);
+        if (block != null) {
+            return isSecured(block);
+        }
+        InventoryHolder holder = inventory.getHolder();
+        if (holder instanceof Entity entity) {
+            Block entBlock = entity.getLocation().getBlock();
+            if (isSecured(entBlock)) return true;
+            for (Block adj : getAdjacentOrTargetContainers(entBlock)) {
+                if (isSecured(adj)) return true;
+            }
+        }
+        return false;
     }
 
     private boolean isSecured(Block block) {
