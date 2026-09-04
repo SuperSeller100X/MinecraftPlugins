@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import dev.superseller.shardtools.expiry.ExpiryMath;
+import dev.superseller.shardtools.item.Behavior;
 import dev.superseller.shardtools.shop.PriceBook;
 import dev.superseller.shardtools.tools.AreaPlane;
 import dev.superseller.shardtools.tools.TreeFeller;
@@ -28,6 +29,7 @@ public final class SmokeTest {
         testAreaPlane();
         testTreeFeller();
         testPriceBook();
+        testBehavior();
 
         if (failures.length() > 0) {
             System.err.println("FAILURES:\n" + failures);
@@ -218,5 +220,17 @@ public final class SmokeTest {
 
         book.reload(Map.of("haste_potion", 6000L), Map.of());
         checkEquals("reload clears overrides", 6000L, book.price("haste_potion"));
+    }
+
+    private static void testBehavior() {
+        checkEquals("parse VOID_TOTEM", Behavior.VOID_TOTEM, Behavior.parse("VOID_TOTEM"));
+        checkEquals("parse case/dash insensitive", Behavior.VOID_TOTEM, Behavior.parse("void-totem"));
+        checkEquals("parse haste", Behavior.HASTE_POTION, Behavior.parse("haste_potion"));
+        checkEquals("parse null -> NONE", Behavior.NONE, Behavior.parse(null));
+        checkEquals("parse garbage -> NONE", Behavior.NONE, Behavior.parse("bogus"));
+        check("void totem not toggleable", !Behavior.VOID_TOTEM.toggleable());
+        check("area pickaxe toggleable", Behavior.AREA_PICKAXE.toggleable());
+        check("tree axe toggleable", Behavior.TREE_AXE.toggleable());
+        check("haste potion not toggleable", !Behavior.HASTE_POTION.toggleable());
     }
 }

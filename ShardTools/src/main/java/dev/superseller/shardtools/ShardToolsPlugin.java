@@ -11,6 +11,7 @@ import dev.superseller.shardtools.command.ShardToolsCommand;
 import dev.superseller.shardtools.config.Messages;
 import dev.superseller.shardtools.config.RuntimeStore;
 import dev.superseller.shardtools.config.Settings;
+import dev.superseller.shardtools.config.VoidTotemSettings;
 import dev.superseller.shardtools.economy.AwardService;
 import dev.superseller.shardtools.economy.VaultBridge;
 import dev.superseller.shardtools.economy.ShardAccounts;
@@ -27,6 +28,7 @@ import dev.superseller.shardtools.listener.BreakListener;
 import dev.superseller.shardtools.listener.ExpiryListener;
 import dev.superseller.shardtools.listener.PotionListener;
 import dev.superseller.shardtools.listener.ShopListener;
+import dev.superseller.shardtools.listener.VoidListener;
 import dev.superseller.shardtools.scheduler.PlatformScheduler;
 import dev.superseller.shardtools.shop.PriceBook;
 
@@ -40,6 +42,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
 
     private Settings settings;
     private Messages messages;
+    private VoidTotemSettings voidTotemSettings;
     private RuntimeStore runtimeStore;
     private ShardCatalog catalog;
     private PriceBook priceBook;
@@ -59,6 +62,9 @@ public final class ShardToolsPlugin extends JavaPlugin {
         saveDefaultConfig();
         settings = new Settings(this);
         settings.load();
+        voidTotemSettings = new VoidTotemSettings();
+        voidTotemSettings.load(getConfig());
+        ensureVoidTotemEntry();
         messages = new Messages(this);
         runtimeStore = new RuntimeStore(this);
         catalog = ShardCatalog.load(getConfig(), getLogger());
@@ -81,6 +87,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
         manager.registerEvents(new ExpiryListener(this), this);
         manager.registerEvents(new AnvilListener(this), this);
         manager.registerEvents(new EquipListener(this), this);
+        manager.registerEvents(new VoidListener(this), this);
 
         ShardToolsCommand command = new ShardToolsCommand(this);
         PluginCommand shardtools = getCommand("shardtools");
@@ -142,6 +149,7 @@ public final class ShardToolsPlugin extends JavaPlugin {
     public void reloadAll() {
         reloadConfig();
         settings.load();
+        voidTotemSettings.load(getConfig());
         messages.reload();
         runtimeStore.reload();
         catalog = ShardCatalog.load(getConfig(), getLogger());
@@ -174,12 +182,44 @@ public final class ShardToolsPlugin extends JavaPlugin {
         return override != null ? override : settings.awardEnabled();
     }
 
+    /**
+     * Adds the void_totem shop entry (Void Totem, 1000 shards) to the
+     * in-memory config when an existing server's config.yml predates it,
+     * then persists the file so admins can edit it like any other entry.
+     * Fresh installs get it from the packaged default config anyway.
+     */
+    private void ensureVoidTotemEntry() {
+        org.bukkit.configuration.ConfigurationSection items =
+                getConfig().getConfigurationSection("items");
+        if (items == null || items.contains("void_totem")) {
+            return;
+        }
+        org.bukkit.configuration.ConfigurationSection section = items.createSection("void_totem");
+        section.set("material", "TOTEM_OF_UNDYING");
+        section.set("name", "<gradient:#7a00ff:#00e5ff>Void Totem</gradient>");
+        section.set("price", 1000L);
+        section.set("lifetime-hours", 0L);
+        section.set("behavior", "VOID_TOTEM");
+        section.set("item-model", "shardtools:void_totem");
+        section.set("enchants", java.util.Collections.emptyList());
+        section.set("lore", java.util.Arrays.asList(
+                "<gray>Carried at the edge of the void, it shatters</gray>",
+                "<gray>and drags you back to safety.</gray>",
+                "<dark_gray>Consumed on rescue.</dark_gray>"));
+        saveConfig();
+        getLogger().info("Added the Void Totem to the shard shop (1000 shards)");
+    }
+
     public Settings settings() {
         return settings;
     }
 
     public Messages messages() {
         return messages;
+    }
+
+    public VoidTotemSettings voidTotem() {
+        return voidTotemSettings;
     }
 
     public RuntimeStore runtimeStore() {

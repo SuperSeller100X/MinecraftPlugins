@@ -34,9 +34,12 @@ award:
 #   lifetime-hours  real-time lifetime before the item self-destructs
 #                   (0 = never expires). Works while the player is offline
 #                   and even while the server is stopped.
-#   behavior      AREA_PICKAXE | AREA_SHOVEL | TREE_AXE | HASTE_POTION | NONE
+#   behavior      AREA_PICKAXE | AREA_SHOVEL | TREE_AXE | HASTE_POTION |
+#                 VOID_TOTEM | NONE
 #                 (all area tools share one block list; TREE_AXE also fells
 #                  whole trees when the broken block is a log)
+#                 VOID_TOTEM = consumed to rescue the holder from a lethal
+#                 void hit (see the void-totem: section below)
 #                 NONE = no ability: the item is handed out as a plain
 #                 vanilla item with only its enchantments applied (no custom
 #                 name, color or lore - the name/lore below only style the
@@ -47,6 +50,9 @@ award:
 #                 exactly ONE of them in the shop dialog (e.g. Fortune III
 #                 vs Silk Touch). /sta give uses the first one unless an
 #                 enchant name is passed as the last argument.
+#   item-model    optional custom item model (e.g. "shardtools:void_totem")
+#                 stamped on this item only - it needs the matching entry in
+#                 the ShardTools resource pack (see resourcepack/README.md)
 #   lore          MiniMessage lore lines; %time% = remaining lifetime,
 #                 %price% = current price, %effect% = haste effect duration
 #                 (only meaningful on the haste potion)
@@ -98,6 +104,21 @@ items:
     lore:
       - "<gray>Grants <yellow>Haste II for %effect%</yellow> when drunk.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
+  void_totem:
+    material: TOTEM_OF_UNDYING
+    name: "<gradient:#7a00ff:#00e5ff>Void Totem</gradient>"
+    price: 1000
+    lifetime-hours: 0
+    # Consumed to rescue the holder from a lethal void hit (void-totem:
+    # section below). item-model gives ONLY this totem the custom Blockbench
+    # model from the ShardTools resource pack - vanilla totems stay normal.
+    behavior: VOID_TOTEM
+    item-model: "shardtools:void_totem"
+    enchants: []
+    lore:
+      - "<gray>Carried at the edge of the void, it shatters</gray>"
+      - "<gray>and drags you back to safety.</gray>"
+      - "<dark_gray>Consumed on rescue.</dark_gray>"
   netherite_pickaxe:
     material: NETHERITE_PICKAXE
     name: "Netherite Pickaxe"
@@ -363,6 +384,45 @@ haste-potion:
   amplifier: 1
   # Potion bottle color (RGB) - aqua, matching the potion name.
   color: "#55ffff"
+
+# ---------- Void Totem ----------
+# The Void Totem (1000 shards in the shard shop) saves its holder from a
+# lethal void hit: it is consumed, the player is teleported out of the void,
+# fully healed, harmful effects cleared, and granted Resistance + Slow
+# Falling while landing. Only shop-bought Void Totems trigger - vanilla
+# totems of undying keep their normal behaviour.
+void-totem:
+  # Master switch for the whole feature.
+  enabled: true
+  # Seconds between two rescues (blocks double consumption while the
+  # teleport settles).
+  cooldown-seconds: 5
+  # Remove poison, wither, slowness, darkness... after the rescue.
+  clear-harmful: true
+  # Resistance duration after the rescue, in seconds (0 = none).
+  resistance-seconds: 45
+  # Slow Falling duration after the rescue, in seconds (0 = none).
+  slow-falling-seconds: 30
+  # Where the player is pulled back to:
+  #   LAST_SAFE - the last grounded spot they stood on (world spawn fallback)
+  #   SPAWN     - the spawn point of the world they fell in
+  #   COORDS    - the fixed rescue-world / rescue-x / rescue-y / rescue-z below
+  rescue-mode: LAST_SAFE
+  # Only used by rescue-mode: COORDS (empty world = the player's world).
+  rescue-world: ""
+  rescue-x: 0.5
+  rescue-y: 100.0
+  rescue-z: 0.5
+  # Which slots a totem is consumed from: INVENTORY (any slot) or HAND.
+  consume-from: INVENTORY
+  # Vanilla totem-of-undying animation and use sound on rescue.
+  animation: true
+  sound: true
+  # Particle burst on rescue (id + count), like the shop's purple theme.
+  particles:
+    enabled: true
+    id: PORTAL
+    count: 40
 
 # ---------- Shop GUI ----------
 shop:

@@ -5,6 +5,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class ItemStack {
     public ItemStack(Material type, int amount) {}
     public Material getType() { return null; }
+    public void setType(Material type) {}
     public int getAmount() { return 1; }
     public void setAmount(int amount) {}
     public ItemMeta getItemMeta() { return null; }

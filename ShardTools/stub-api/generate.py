@@ -69,9 +69,12 @@ public interface Keyed {
 write("org/bukkit/Registry.java", """
 package org.bukkit;
 public interface Registry<T extends Keyed> {
+    Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = null;
+    Registry<Sound> SOUND_EVENT = null;
     T get(NamespacedKey key);
 }
 """)
+
 
 # ---------------------------------------------------------------- core
 
@@ -81,12 +84,20 @@ import org.bukkit.plugin.Plugin;
 public class NamespacedKey {
     public NamespacedKey(Plugin plugin, String key) {}
     public static NamespacedKey minecraft(String key) { return new NamespacedKey(null, key); }
+    public static NamespacedKey fromString(String string) { return null; }
+    @Override
+    public String toString() { return ""; }
 }
 """)
 
+
 write("org/bukkit/Particle.java", """
 package org.bukkit;
-public enum Particle { PORTAL, END_ROD, WITCH, DUST, TOTEM }
+public enum Particle implements Keyed {
+    PORTAL, END_ROD, WITCH, DUST, TOTEM;
+    @Override
+    public NamespacedKey getKey() { return null; }
+}
 """)
 
 write("org/bukkit/Color.java", """
@@ -118,10 +129,17 @@ public class Location {
     public double getX() { return 0; }
     public double getY() { return 0; }
     public double getZ() { return 0; }
+    public int getBlockX() { return 0; }
+    public int getBlockY() { return 0; }
+    public int getBlockZ() { return 0; }
     public Vector getDirection() { return new Vector(); }
     public Location add(double x, double y, double z) { return this; }
+    public Location subtract(double x, double y, double z) { return this; }
+    public Location clone() { return this; }
+    public org.bukkit.block.Block getBlock() { return null; }
 }
 """)
+
 
 write("org/bukkit/Tag.java", """
 package org.bukkit;
@@ -137,12 +155,15 @@ package org.bukkit;
 public enum Material {
     AIR, DIRT, GRASS_BLOCK,
     CHEST, TRAPPED_CHEST, BARREL, HOPPER, DISPENSER, DROPPER,
-    FURNACE, BLAST_FURNACE, SMOKER, BREWING_STAND, SHULKER_BOX;
+    FURNACE, BLAST_FURNACE, SMOKER, BREWING_STAND, SHULKER_BOX,
+    TOTEM_OF_UNDYING;
 
     public static Material matchMaterial(String name) { return AIR; }
     public int getMaxStackSize() { return 64; }
+    public boolean isSolid() { return true; }
 }
 """)
+
 
 write("org/bukkit/Sound.java", """
 package org.bukkit;
@@ -171,6 +192,8 @@ public interface World {
     String getName();
     Block getBlockAt(int x, int y, int z);
     boolean isChunkLoaded(int chunkX, int chunkZ);
+    int getMinHeight();
+    Location getSpawnLocation();
     <T extends Entity> T spawn(Location location, Class<T> type, Consumer<T> consumer);
     Item dropItem(Location location, ItemStack stack);
     void spawnParticle(Particle particle, Location location, int count,
@@ -232,6 +255,7 @@ public final class Bukkit {
     public static Inventory createInventory(InventoryHolder owner, int size, Component title) { return null; }
     public static org.bukkit.command.CommandSender getConsoleSender() { return null; }
     public static boolean dispatchCommand(org.bukkit.command.CommandSender sender, String command) { return true; }
+    public static World getWorld(String name) { return null; }
 }
 """)
 
@@ -268,6 +292,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 public class ItemStack {
     public ItemStack(Material type, int amount) {}
     public Material getType() { return null; }
+    public void setType(Material type) {}
     public int getAmount() { return 1; }
     public void setAmount(int amount) {}
     public ItemMeta getItemMeta() { return null; }
@@ -290,6 +315,8 @@ public interface ItemMeta {
     List<Component> lore();
     boolean addEnchant(Enchantment enchantment, int level, boolean ignoreLevelRestrictions);
     PersistentDataContainer getPersistentDataContainer();
+    void setItemModel(NamespacedKey itemModel);
+    NamespacedKey getItemModel();
 }
 """)
 
@@ -318,6 +345,10 @@ package org.bukkit.inventory;
 public interface PlayerInventory extends Inventory {
     ItemStack getItemInMainHand();
     void setItemInMainHand(ItemStack stack);
+    ItemStack getItemInOffHand();
+    void setItemInOffHand(ItemStack stack);
+    ItemStack[] getStorageContents();
+    ItemStack[] getArmorContents();
 }
 """)
 
@@ -420,8 +451,10 @@ public abstract class Enchantment implements Keyed {
 
 write("org/bukkit/potion/PotionEffectType.java", """
 package org.bukkit.potion;
-public class PotionEffectType {
+public class PotionEffectType implements org.bukkit.Keyed {
     public static final PotionEffectType HASTE = new PotionEffectType();
+    @Override
+    public org.bukkit.NamespacedKey getKey() { return null; }
 }
 """)
 
@@ -437,20 +470,56 @@ write("org/bukkit/entity/Player.java", """
 package org.bukkit.entity;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
+import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 public interface Player extends HumanEntity, org.bukkit.OfflinePlayer {
     UUID getUniqueId();
     void sendMessage(Component message);
     void sendActionBar(Component message);
     void playSound(Location location, Sound sound, float volume, float pitch);
+    void playEffect(EntityEffect effect);
     void updateInventory();
     InventoryView getOpenInventory();
     boolean isOnline();
     boolean isSneaking();
+    boolean isDead();
+    boolean isOnGround();
+    boolean isFlying();
+    boolean isGliding();
+    double getHealth();
+    void setHealth(double health);
+    double getAbsorptionAmount();
+    void setAbsorptionAmount(double amount);
+    void setFallDistance(float distance);
+    boolean teleport(Location location);
     boolean addPotionEffect(PotionEffect effect);
+    void removePotionEffect(PotionEffectType type);
+    AttributeInstance getAttribute(Attribute attribute);
+}
+""")
+
+write("org/bukkit/EntityEffect.java", """
+package org.bukkit;
+public enum EntityEffect { TOTEM_RESURRECT, FIREWORK_EXPLODE, HURT }
+""")
+
+write("org/bukkit/attribute/Attribute.java", """
+package org.bukkit.attribute;
+public enum Attribute { MAX_HEALTH, MOVEMENT_SPEED, ARMOR }
+""")
+
+write("org/bukkit/attribute/AttributeInstance.java", """
+package org.bukkit.attribute;
+public interface AttributeInstance {
+    double getValue();
+    double getBaseValue();
+    void setBaseValue(double value);
 }
 """)
 
@@ -525,6 +594,34 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 public class PlayerJoinEvent extends Event {
     public Player getPlayer() { return null; }
+}
+""")
+
+write("org/bukkit/event/player/PlayerMoveEvent.java", """
+package org.bukkit.event.player;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+public class PlayerMoveEvent extends Event {
+    public Player getPlayer() { return null; }
+    public Location getFrom() { return null; }
+    public Location getTo() { return null; }
+    public void setTo(Location to) {}
+    public void setCancelled(boolean cancelled) {}
+}
+""")
+
+write("org/bukkit/event/entity/EntityDamageEvent.java", """
+package org.bukkit.event.entity;
+import org.bukkit.entity.Entity;
+import org.bukkit.event.Event;
+public class EntityDamageEvent extends Event {
+    public enum DamageCause { VOID, FALL, FIRE, DROWNING, ENTITY_ATTACK }
+    public Entity getEntity() { return null; }
+    public DamageCause getCause() { return null; }
+    public double getFinalDamage() { return 0D; }
+    public void setCancelled(boolean cancelled) {}
+    public boolean isCancelled() { return false; }
 }
 """)
 
@@ -683,6 +780,7 @@ public interface ConfigurationSection {
     default boolean getBoolean(String path, boolean def) { return def; }
     default boolean contains(String path) { return false; }
     default ConfigurationSection getConfigurationSection(String path) { return null; }
+    default ConfigurationSection createSection(String path) { return null; }
     default Set<String> getKeys(boolean deep) { return Set.of(); }
     default void set(String path, Object value) {}
     default void setDefaults(ConfigurationSection defaults) {}

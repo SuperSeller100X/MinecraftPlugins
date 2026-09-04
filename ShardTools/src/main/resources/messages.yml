@@ -83,7 +83,7 @@ catalog:
   edited: "<gray>Updated <yellow>%key%</yellow> of <white>%item%</white> to <white>%value%</white>.</gray>"
   exists: "<red>An item with the id <white>%item%</white> already exists.</red>"
   invalid-material: "<red>Unknown material <white>%material%</white>.</red>"
-  invalid-behavior: "<red>Unknown behavior <white>%behavior%</white>. Use NONE, AREA_PICKAXE, AREA_SHOVEL, TREE_AXE or HASTE_POTION.</red>"
+  invalid-behavior: "<red>Unknown behavior <white>%behavior%</white>. Use NONE, AREA_PICKAXE, AREA_SHOVEL, TREE_AXE, HASTE_POTION or VOID_TOTEM.</red>"
   invalid-key: "<red>Unknown property <white>%key%</white>. Use name, material, price, lifetime, behavior, enchants, choices or lore.</red>"
   invalid-enchant: "<red>'<white>%enchant%</white>' is not a valid enchant. Use ids like <white>efficiency:5</white>.</red>"
 
@@ -118,6 +118,9 @@ expire:
 
 potion:
   haste: "<gray>You feel a surge of energy: <yellow>Haste II for %time%</yellow>.</gray>"
+
+void-totem:
+  rescued: "<gray>Your <light_purple>Void Totem</light_purple> shatters and drags you back from the void.</gray>"
 
 time:
   permanent: "unlimited"

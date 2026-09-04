@@ -9,6 +9,8 @@ public interface World {
     String getName();
     Block getBlockAt(int x, int y, int z);
     boolean isChunkLoaded(int chunkX, int chunkZ);
+    int getMinHeight();
+    Location getSpawnLocation();
     <T extends Entity> T spawn(Location location, Class<T> type, Consumer<T> consumer);
     Item dropItem(Location location, ItemStack stack);
     void spawnParticle(Particle particle, Location location, int count,

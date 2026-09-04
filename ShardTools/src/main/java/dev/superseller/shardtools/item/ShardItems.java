@@ -269,6 +269,17 @@ public final class ShardItems {
         if (meta instanceof PotionMeta && entry.behavior() == Behavior.HASTE_POTION) {
             ((PotionMeta) meta).setColor(Color.fromRGB(plugin.settings().hasteColorRgb()));
         }
+        // Custom resource-pack model for this entry only (e.g. the Void
+        // Totem); every other item of the same material stays vanilla.
+        if (entry.itemModel() != null) {
+            NamespacedKey modelKey = NamespacedKey.fromString(entry.itemModel());
+            if (modelKey != null) {
+                meta.setItemModel(modelKey);
+            } else {
+                plugin.getLogger().warning(
+                        "Invalid item-model '" + entry.itemModel() + "' for item " + entry.id());
+            }
+        }
         // Persistent data only where the plugin still has work to do: items
         // with an ability or a self-destruct timer. Plain vanilla items carry
         // no ShardTools data at all.

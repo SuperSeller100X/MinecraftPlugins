@@ -31,6 +31,7 @@ public final class ShardCatalog {
         private final List<String> lore;
         private final String command;
         private final List<EnchantSpec> enchantChoices;
+        private final String itemModel;
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore) {
@@ -48,6 +49,13 @@ public final class ShardCatalog {
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
                      String command, List<EnchantSpec> enchantChoices) {
+            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, command,
+                    enchantChoices, null);
+        }
+
+        public Entry(String id, String material, String displayName, long defaultPrice,
+                     long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
+                     String command, List<EnchantSpec> enchantChoices, String itemModel) {
             this.id = id;
             this.material = material;
             this.displayName = displayName;
@@ -58,6 +66,7 @@ public final class ShardCatalog {
             this.lore = lore;
             this.command = command;
             this.enchantChoices = enchantChoices;
+            this.itemModel = itemModel;
         }
 
         public String id() {
@@ -115,6 +124,16 @@ public final class ShardCatalog {
             return enchantChoices.size() >= 2;
         }
 
+        /**
+         * Custom item model id (e.g. "shardtools:void_totem") stamped on the
+         * item via the item_model component, or {@code null} for vanilla
+         * looks. Lets a single catalog entry carry a resource-pack model
+         * without touching every other item of the same material.
+         */
+        public String itemModel() {
+            return itemModel;
+        }
+
         /** The choice at {@code index} (clamped), or {@code null} without choices. */
         public EnchantSpec enchantChoice(int index) {
             if (enchantChoices.isEmpty()) {
@@ -164,8 +183,13 @@ public final class ShardCatalog {
                     choices.add(parsed);
                 }
             }
+            String itemModel = section.getString("item-model");
+            if (itemModel != null && itemModel.isBlank()) {
+                itemModel = null;
+            }
             Entry entry = new Entry(id.toLowerCase(Locale.ROOT), material.toUpperCase(Locale.ROOT),
-                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command, choices);
+                    name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command, choices,
+                    itemModel);
             catalog.byId.put(entry.id(), entry);
             catalog.ordered.add(entry);
         }

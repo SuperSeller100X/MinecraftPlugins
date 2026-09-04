@@ -12,7 +12,9 @@ public enum Behavior {
     /** Axe that fells whole trees. */
     TREE_AXE,
     /** Drinkable potion granting haste. */
-    HASTE_POTION;
+    HASTE_POTION,
+    /** Totem consumed to rescue the holder from a lethal void hit. */
+    VOID_TOTEM;
 
     /** True for block-breaking abilities that /st toggle can switch on/off. */
     public boolean toggleable() {

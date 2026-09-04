@@ -1,2 +1,6 @@
 package org.bukkit;
-public enum Particle { PORTAL, END_ROD, WITCH, DUST, TOTEM }
+public enum Particle implements Keyed {
+    PORTAL, END_ROD, WITCH, DUST, TOTEM;
+    @Override
+    public NamespacedKey getKey() { return null; }
+}
