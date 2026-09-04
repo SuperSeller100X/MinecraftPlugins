@@ -32,6 +32,7 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 | Shard Axe | 3,000 ✦ | Efficiency V, Unbreaking III, Mending + **Fortune III or Silk Touch** | **Fells whole trees** (log = whole tree) + **3×3 on everything else** | **24 h real time** |
 | Shard Shovel | 3,000 ✦ | Efficiency V, Unbreaking III, Mending + **Fortune III or Silk Touch** | Digs a **3×3 plane** — same shared block list as pickaxe & axe | **24 h real time** |
 | Shard Potion of Haste | 500 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
+| Void Totem | 1,000 ✦ | — | **Rescues you from a lethal void hit** — consumed, teleports you back to safety, full heal + Resistance & Slow Falling | permanent |
 
 Tools that support it (`enchant-choice:` in config.yml — shard pickaxe/axe/shovel and
 the netherite pickaxe by default) let the buyer **choose between Fortune III and Silk
@@ -60,6 +61,28 @@ mace, bow, crossbow, …) are handed out as **plain vanilla items with only thei
 enchantments applied**: no custom name, no color, no rarity change, no lore, no plugin
 data. The `name`/`lore` in config.yml only style their **shop icon**. All shop icons
 render **non-italic** (Minecraft's default italics for custom names are disabled).
+
+### Void Totem — the void cannot take you
+The **Void Totem** (1,000 ✦ in the shard shop) is a shard-forged charm that saves its
+holder from the void:
+
+- When a **lethal void hit** would kill you while carrying one, the totem is
+  **consumed**, the damage is cancelled and you are **teleported back to safety** —
+  by default the last grounded spot you stood on (fallback: world spawn), or a fixed
+  point / world spawn via `void-totem.rescue-mode`.
+- The rescue **fully heals** you, clears harmful effects, and grants **Resistance**
+  (45 s) + **Slow Falling** (30 s) while you land — plus the vanilla totem animation,
+  the totem use sound and a purple particle burst.
+- **Only shop-bought Void Totems trigger** — identified by their shard item data.
+  Vanilla totems of undying keep their normal behaviour and look.
+- The Void Totem is the only item stamped with a **custom item model**
+  (`item-model: shardtools:void_totem`): with the bundled resource pack
+  (see [`resourcepack/README.md`](resourcepack/README.md)) it renders as the custom
+  **Blockbench shard totem** — blocky, purple, with proper hand/GUI/shelf display
+  transforms. Without the pack it simply looks like a vanilla totem.
+- Everything is configurable under `void-totem:` in config.yml (cooldown, buffs,
+  rescue destination, which slots to consume from, animation/sound/particles).
+
 
 ### Buy extra time in the shop — stackable
 Clicking an **expiring shard item** or the **haste potion** in the shop opens an
@@ -254,7 +277,7 @@ repo root `.github/workflows/` to activate it).
 
 The full source can be compiled without Maven Central: generate the compile-only API
 stubs with `python3 stub-api/generate.py`, compile with the Eclipse compiler (ECJ)
-against them on any Java 25 runtime (e.g. `pip install jdk4py`), run the 59
+against them on any Java 25 runtime (e.g. `pip install jdk4py`), run the 68
 pure-logic smoke tests in `smoke/SmokeTest.java`, and zip the classes plus
 `src/main/resources` into a jar (stubs must **never** be packaged). The CI workflow's
 smoke step shows the exact `javac` invocation. Note: the offline ECJ used for
@@ -271,7 +294,8 @@ Maven build compiles the same sources with `release 25`.
 
 ## Item ids (for `/sta give`, `/sta setprice`, `/sta edit`)
 
-`shard_pickaxe`, `shard_axe`, `shard_shovel`, `haste_potion`, `netherite_pickaxe`,
+`shard_pickaxe`, `shard_axe`, `shard_shovel`, `haste_potion`, `void_totem`,
+`netherite_pickaxe`,
 `netherite_shovel`, `netherite_axe`, `netherite_hoe`,
 `netherite_helmet`, `netherite_chestplate`, `netherite_leggings`, `netherite_boots`,
 `netherite_sword`, `mace`, `crossbow`, `bow` — or run `/sta items` — or create your own with `/sta add`.

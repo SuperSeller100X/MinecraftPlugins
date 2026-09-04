@@ -1,18 +1,35 @@
 package org.bukkit.entity;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
+import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 public interface Player extends HumanEntity, org.bukkit.OfflinePlayer {
     UUID getUniqueId();
     void sendMessage(Component message);
     void sendActionBar(Component message);
     void playSound(Location location, Sound sound, float volume, float pitch);
+    void playEffect(EntityEffect effect);
     void updateInventory();
     InventoryView getOpenInventory();
     boolean isOnline();
     boolean isSneaking();
+    boolean isDead();
+    boolean isOnGround();
+    boolean isFlying();
+    boolean isGliding();
+    double getHealth();
+    void setHealth(double health);
+    double getAbsorptionAmount();
+    void setAbsorptionAmount(double amount);
+    void setFallDistance(float distance);
+    boolean teleport(Location location);
     boolean addPotionEffect(PotionEffect effect);
+    void removePotionEffect(PotionEffectType type);
+    AttributeInstance getAttribute(Attribute attribute);
 }

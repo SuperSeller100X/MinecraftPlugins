@@ -41,6 +41,7 @@ jobs:
             ShardTools/src/main/java/dev/superseller/shardtools/util/Numbers.java \
             ShardTools/src/main/java/dev/superseller/shardtools/util/TimeWords.java \
             ShardTools/src/main/java/dev/superseller/shardtools/expiry/ExpiryMath.java \
+            ShardTools/src/main/java/dev/superseller/shardtools/item/Behavior.java \
             ShardTools/src/main/java/dev/superseller/shardtools/tools/AreaPlane.java \
             ShardTools/src/main/java/dev/superseller/shardtools/tools/TreeFeller.java \
             ShardTools/src/main/java/dev/superseller/shardtools/shop/PriceBook.java

@@ -1,0 +1,659 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"0": "minecraft:item/void_totem",
+		"particle": "minecraft:item/void_totem"
+	},
+	"elements": [
+		{
+			"name": "totem_of_undying[1]_0",
+			"from": [
+				5,
+				1,
+				0
+			],
+			"to": [
+				11,
+				15,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						11,
+						1,
+						5,
+						15
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						10,
+						1,
+						11,
+						15
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						5,
+						1,
+						11,
+						15
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						5,
+						1,
+						6,
+						15
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						5,
+						1,
+						11,
+						2
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						5,
+						14,
+						11,
+						15
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_1",
+			"from": [
+				4,
+				3,
+				0
+			],
+			"to": [
+				5,
+				14,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						5,
+						2,
+						4,
+						13
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						4,
+						2,
+						5,
+						13
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						4,
+						2,
+						5,
+						13
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						4,
+						2,
+						5,
+						13
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						4,
+						2,
+						5,
+						3
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						4,
+						12,
+						5,
+						13
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_2",
+			"from": [
+				11,
+				3,
+				0
+			],
+			"to": [
+				12,
+				14,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						12,
+						2,
+						11,
+						13
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						11,
+						2,
+						12,
+						13
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						11,
+						2,
+						12,
+						13
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						11,
+						2,
+						12,
+						13
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						11,
+						2,
+						12,
+						3
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						11,
+						12,
+						12,
+						13
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_3",
+			"from": [
+				1,
+				6,
+				0
+			],
+			"to": [
+				4,
+				8,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						4,
+						8,
+						1,
+						10
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						3,
+						8,
+						4,
+						10
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						1,
+						8,
+						4,
+						10
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						1,
+						8,
+						2,
+						10
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						1,
+						8,
+						4,
+						9
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						1,
+						9,
+						4,
+						10
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_4",
+			"from": [
+				12,
+				6,
+				0
+			],
+			"to": [
+				15,
+				8,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						15,
+						8,
+						12,
+						10
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						14,
+						8,
+						15,
+						10
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						12,
+						8,
+						15,
+						10
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						12,
+						8,
+						13,
+						10
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						12,
+						8,
+						15,
+						9
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						12,
+						9,
+						15,
+						10
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_5",
+			"from": [
+				2,
+				5,
+				0
+			],
+			"to": [
+				4,
+				6,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						4,
+						10,
+						2,
+						11
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						3,
+						10,
+						4,
+						11
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						2,
+						10,
+						4,
+						11
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						2,
+						10,
+						3,
+						11
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						2,
+						10,
+						4,
+						11
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						2,
+						10,
+						4,
+						11
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_6",
+			"from": [
+				12,
+				5,
+				0
+			],
+			"to": [
+				14,
+				6,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						14,
+						10,
+						12,
+						11
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						13,
+						10,
+						14,
+						11
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						12,
+						10,
+						14,
+						11
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						12,
+						10,
+						13,
+						11
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						12,
+						10,
+						14,
+						11
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						12,
+						10,
+						14,
+						11
+					],
+					"texture": "#0"
+				}
+			}
+		},
+		{
+			"name": "totem_of_undying[1]_7",
+			"from": [
+				6,
+				0,
+				0
+			],
+			"to": [
+				10,
+				1,
+				1
+			],
+			"faces": {
+				"north": {
+					"uv": [
+						10,
+						15,
+						6,
+						16
+					],
+					"texture": "#0"
+				},
+				"east": {
+					"uv": [
+						9,
+						15,
+						10,
+						16
+					],
+					"texture": "#0"
+				},
+				"south": {
+					"uv": [
+						6,
+						15,
+						10,
+						16
+					],
+					"texture": "#0"
+				},
+				"west": {
+					"uv": [
+						6,
+						15,
+						7,
+						16
+					],
+					"texture": "#0"
+				},
+				"up": {
+					"uv": [
+						6,
+						15,
+						10,
+						16
+					],
+					"texture": "#0"
+				},
+				"down": {
+					"uv": [
+						6,
+						15,
+						10,
+						16
+					],
+					"texture": "#0"
+				}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [
+				0,
+				0,
+				5.5
+			],
+			"scale": [
+				0.6,
+				0.6,
+				0.75
+			]
+		},
+		"thirdperson_lefthand": {
+			"translation": [
+				0,
+				0,
+				5.5
+			],
+			"scale": [
+				0.6,
+				0.6,
+				0.75
+			]
+		},
+		"firstperson_righthand": {
+			"translation": [
+				0,
+				4,
+				2.5
+			]
+		},
+		"firstperson_lefthand": {
+			"translation": [
+				0,
+				4,
+				2.5
+			]
+		},
+		"ground": {
+			"translation": [
+				0,
+				3,
+				9.5
+			]
+		},
+		"gui": {
+			"translation": [
+				0,
+				0.5,
+				0
+			]
+		},
+		"head": {
+			"translation": [
+				0,
+				7.25,
+				5.75
+			]
+		},
+		"fixed": {
+			"translation": [
+				0,
+				0,
+				8
+			]
+		},
+		"on_shelf": {
+			"translation": [
+				0,
+				0,
+				4
+			]
+		}
+	},
+	"groups": [
+		{
+			"name": "totem_of_undying[1]",
+			"origin": [
+				8,
+				8,
+				8
+			],
+			"scope": 0,
+			"color": 0,
+			"children": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			]
+		}
+	]
+}

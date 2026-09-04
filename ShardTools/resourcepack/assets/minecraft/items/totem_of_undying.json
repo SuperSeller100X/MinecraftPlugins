@@ -1,0 +1,13 @@
+{
+	"model": {
+		"type": "minecraft:select",
+		"property": "minecraft:item_model",
+		"cases": [
+			{
+				"when": "shardtools:void_totem",
+				"model": "minecraft:item/void_totem"
+			}
+		],
+		"fallback": "minecraft:item/totem_of_undying"
+	}
+}

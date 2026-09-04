@@ -10,4 +10,6 @@ public interface ItemMeta {
     List<Component> lore();
     boolean addEnchant(Enchantment enchantment, int level, boolean ignoreLevelRestrictions);
     PersistentDataContainer getPersistentDataContainer();
+    void setItemModel(NamespacedKey itemModel);
+    NamespacedKey getItemModel();
 }
