@@ -1,0 +1,103 @@
+# =====================================================================
+#  HourGlass — messages.yml
+#
+#  MiniMessage format: https://docs.advntr.dev/minimessage/format.html
+#  Legacy & codes (&a, &l, ...) are translated too — see below.
+#  Placeholders are written {like_this}. A key set to "" is skipped, so
+#  muting a single message never needs a code change.
+# =====================================================================
+
+# Translated into MiniMessage tags before parsing. Turn off if you only use
+# MiniMessage and want "&" to be a normal character.
+legacy-color-codes: true
+
+# Escape player names before they are inserted, so a name like "<red>" cannot
+# inject formatting into somebody else's chat or GUI. Turn off to allow colour
+# codes inside placeholders coming from other plugins.
+escape-placeholder-values: true
+
+prefix: "<gradient:#c084fc:#22d3ee><bold>HourGlass</bold></gradient> <dark_gray>»</dark_gray> "
+
+# ------------------------------------------------------------ core / errors
+no-permission: "<red>You do not have permission for that.</red>"
+players-only: "<red>Only players can do that.</red>"
+reloaded: "<green>Reloaded <white>config.yml</white>, <white>messages.yml</white> and <white>gui.yml</white>.</green>"
+reload-failed: "<red>Reload finished with errors — check the console; the old settings are still active.</red>"
+internal-error: "<red>Something went wrong while doing that. The console has the details.</red>"
+unknown-subcommand: "<red>Unknown sub-command <white>{input}</white>.</red>"
+usage: "<gray>Usage: <white>{usage}</white></gray>"
+invalid-duration: "<red><white>{input}</white> is not a duration. Try <white>90m</white>, <white>2h</white>, <white>1d12h</white>, <white>2w</white> or <white>1:30</white>.</red>"
+player-not-found: "<red>No tracked player called <white>{input}</white>.</red>"
+
+# ------------------------------------------------------------ playtime views
+stats.total: "<gray>Total playtime:</gray> <aqua>{total}</aqua> <dark_gray>(</dark_gray><white>{total-raw}</white> <gray>s</gray><dark_gray>)</dark_gray>"
+stats.active: "<gray>Active playtime:</gray> <green>{active}</green> <dark_gray>(</dark_gray><gray>idle time excluded</gray><dark_gray>)</dark_gray>"
+stats.session: "<gray>This session:</gray> <yellow>{session}</yellow> <dark_gray>|</dark_gray> <gray>active:</gray> <green>{session-active}</green>"
+stats.first-join: "<gray>First joined:</gray> <white>{first_join}</white> <dark_gray>|</dark_gray> <gray>Last seen:</gray> <white>{last_seen}</white>"
+stats.rank: "<gray>Leaderboard rank:</gray> <gold>{rank}</gold> <dark_gray>|</dark_gray> <gray>{metric} time:</gray> <aqua>{primary}</aqua>"
+stats.other: "<gradient:#f0abfc:#67e8f9><bold>{player}</bold></gradient>\n<dark_gray> • </dark_gray><gray>Total:</gray> <aqua>{total}</aqua> <dark_gray>|</dark_gray> <gray>Active:</gray> <green>{active}</green>\n<dark_gray> • </dark_gray><gray>Session:</gray> <yellow>{session}</yellow> <dark_gray>|</dark_gray> <gray>Rank:</gray> <gold>{rank}</gold>\n<dark_gray> • </dark_gray><gray>First joined:</gray> <white>{first_join}</white> <dark_gray>|</dark_gray> <gray>Last seen:</gray> <white>{last_seen}</white>"
+summary.chat: "<gray><white>{player}</white> — total <aqua>{total}</aqua>, active <green>{active}</green>, rank <gold>{rank}</gold></gray>"
+
+# ------------------------------------------------------------ leaderboard
+leaderboard.header: "<gradient:#c084fc:#22d3ee><bold>Playtime leaderboard</bold></gradient> <dark_gray>—</dark_gray> <gray>page <white>{page}</white>/<white>{pages}</white>, ranked by <white>{metric}</white></gray>"
+leaderboard.line: "<dark_gray>#{rank}</dark_gray> <white>{player}</white> <dark_gray>—</dark_gray> <aqua>{time}</aqua>"
+leaderboard.line-self: "<dark_gray>»</dark_gray> <yellow><bold>#{rank} {player}</bold></yellow> <dark_gray>—</dark_gray> <aqua>{time}</aqua> <dark_gray>(you)</dark_gray>"
+leaderboard.footer: "<gray>Use <white>/pt top <page></white> to turn the page, <white>/pt gui</white> for the clickable one.</gray>"
+leaderboard.empty: "<gray>Nobody has recorded playtime yet.</gray>"
+leaderboard.disabled: "<red>The leaderboard is disabled on this server.</red>"
+leaderboard.unranked: "<gray>You are not on the leaderboard yet — just keep playing.</gray>"
+
+# ------------------------------------------------------------ history
+history.header: "<gray>Sessions of <white>{player}</white> — showing <white>{count}</white> of <white>{total}</white>.</gray>"
+history.line: "<dark_gray>#{index}</dark_gray> <white>{start}</white> <dark_gray>→</dark_gray> <white>{end}</white> <dark_gray>|</dark_gray> <aqua>{time}</aqua> <dark_gray>(</dark_gray><gray>active</gray> <green>{active}</green><dark_gray>)</dark_gray>"
+history.footer: "<dark_gray>—</dark_gray> <gray>Recorded total:</gray> <aqua>{total-time}</aqua>"
+history.empty: "<gray>No finished sessions for <white>{player}</white> yet — history starts with the next logout.</gray>"
+
+# ------------------------------------------------------------ milestones
+milestones.header: "<gradient:#fbbf24:#f472b6><bold>Milestones</bold></gradient> <dark_gray>—</dark_gray> <white>{reached}</white><gray>/<white>{total}</white> <gray>reached</gray>"
+milestones.line: "<dark_gray>[</dark_gray>{bar}<dark_gray>]</dark_gray> <gray>{milestone}</gray> <dark_gray>—</dark_gray> <white>{threshold}</white> <dark_gray>(</dark_gray><yellow>{percent}%</yellow><dark_gray>)</dark_gray>"
+milestones.line-reached: "<dark_gray>[</dark_gray>{bar}<dark_gray>]</dark_gray> <green><strikethrough>{milestone}</strikethrough></green> <dark_gray>—</dark_gray> <white>{threshold}</white> <gray>✓</gray>"
+milestones.empty: "<gray>No milestones are configured. Add some under <white>milestones.list</white> in config.yml.</gray>"
+milestones.reached: "<green>🏆 <white>{player}</white> reached the <yellow>{milestone}</yellow> milestone — <aqua>{threshold}</aqua> of playtime!</green>"
+milestones.broadcast: "<gradient:#fbbf24:#f472b6>HourGlass</gradient> <gray><white>{player}</white> has now played <aqua>{threshold}</aqua> here.</gray>"
+milestones.title: "<green><bold>{threshold}</bold></green>"
+milestones.subtitle: "<gray>playtime on this server"
+
+# ------------------------------------------------------------ live display
+display.changed: "<gray>Live playtime display set to <white>{display}</white>.</gray>"
+display.bossbar: "<dark_gray>⌛ </dark_gray><gray>Playtime</gray> <aqua>{time}</aqua> <dark_gray>|</dark_gray> <gray>today</gray> <white>{hours}h</white>"
+display.actionbar: "<dark_gray>⌛ </dark_gray><gray>playtime</gray> <aqua>{time}</aqua> <dark_gray>|</dark_gray> <gray>session</gray> <yellow>{session}</yellow>"
+
+# ------------------------------------------------------------ join / quit
+join.summary: "<gradient:#c084fc:#22d3ee><bold>Welcome back, {player}!</bold></gradient>\n<dark_gray> • </dark_gray><gray>You have spent</gray> <aqua>{total}</aqua> <gray>here in total, of which</gray> <green>{active}</green> <gray>was active.</gray>\n<dark_gray> • </dark_gray><gray>Rank</gray> <gold>{rank}</gold> <dark_gray>|</dark_gray> <gray>first joined</gray> <white>{first_join}</white>\n<dark_gray> • </dark_gray><gray>Use <white>/playtime</white> any time, or <white>/pt gui</white> for the full breakdown.</gray>"
+quit.staff-summary: "<gray><white>{player}</white> logged out after <aqua>{session}</aqua> <dark_gray>(</dark_gray><gray>total</gray> <aqua>{total}</aqua><dark_gray>)</dark_gray></gray>"
+
+# ------------------------------------------------------------ GUI messages
+gui.reset-confirm: "<yellow>That wipes the whole record.</yellow> <gray>Shift-click the button again to confirm.</gray>"
+gui.need-player: "<red>Click a player's head first, then use the buttons.</red>"
+
+# ------------------------------------------------------------ admin
+admin.info: "<gradient:#f0abfc:#67e8f9><bold>{player}</bold></gradient> <dark_gray>({uuid})</dark_gray>\n<dark_gray> • </dark_gray><gray>total</gray> <aqua>{total}</aqua> <dark_gray>|</dark_gray> <gray>active</gray> <green>{active}</green> <dark_gray>|</dark_gray> <gray>session</gray> <yellow>{session}</yellow>\n<dark_gray> • </dark_gray><gray>rank</gray> <gold>{rank}</gold> <dark_gray>|</dark_gray> <gray>sessions stored</gray> <white>{history}</white> <dark_gray>|</dark_gray> <gray>milestones</gray> <white>{reached}</white>\n<dark_gray> • </dark_gray><gray>first join</gray> <white>{first_join}</white> <dark_gray>|</dark_gray> <gray>last seen</gray> <white>{last_seen}</white>\n<dark_gray> • </dark_gray><gray>state</gray> <white>{online}</white> <dark_gray>|</dark_gray> <gray>idle</gray> <white>{idle}</white> <dark_gray>|</dark_gray> <gray>frozen</gray> <white>{frozen}</white>"
+admin.set-done: "<green>Set <white>{player}</white> to <aqua>{time}</aqua> <gray>(was <white>{old}</white>).</gray>"
+admin.add-done: "<green>Added <aqua>{amount}</aqua> to <white>{player}</white> → <aqua>{time}</aqua>.</green>"
+admin.remove-done: "<green>Removed <aqua>{amount}</aqua> from <white>{player}</white> → <aqua>{time}</aqua>.</green>"
+admin.reset-done: "<yellow>Reset</yellow> <white>{player}</white><gray>, removing</gray> <aqua>{removed}</aqua><gray>.</gray>"
+admin.freeze-on: "<gray><white>{player}</white> is now <red>frozen</red> — their playtime stops at <aqua>{time}</aqua>.</gray>"
+admin.freeze-off: "<gray><white>{player}</white> is <green>tracking again</green>.</gray>"
+admin.list-header: "<gray>Online now — <white>{count}</white> player(s), page <white>{page}</white>/<white>{pages}</white>.</gray>"
+admin.list-line: "<dark_gray>#{index}</dark_gray> <white>{player}</white> <dark_gray>—</dark_gray> <aqua>{total}</aqua> <dark_gray>|</dark_gray> <green>{active}</green> <dark_gray>|</dark_gray> <yellow>{session}</yellow> <dark_gray>|</dark_gray> <white>{idle}</white> <dark_gray>|</dark_gray> <white>{frozen}</white>"
+admin.list-footer: "<gray>Inspect someone with <white>/pta info <player></white>, or open the GUI with <white>/pta gui</white>.</gray>"
+admin.list-empty: "<gray>Nobody is online.</gray>"
+admin.top-refreshed: "<green>Leaderboard rebuilt:</green> <white>{entries}</white> <gray>rows (build <white>{builds}</white>).</gray>"
+admin.stats: "<gradient:#c084fc:#22d3ee><bold>HourGlass stats</bold></gradient>\n<dark_gray> • </dark_gray><gray>version</gray> <white>{version}</white> <dark_gray>|</dark_gray> <gray>server</gray> <white>{server}</white> <dark_gray>|</dark_gray> <gray>folia</gray> <white>{folia}</white> <dark_gray>|</dark_gray> <gray>java</gray> <white>{java}</white>\n<dark_gray> • </dark_gray><gray>players</gray> <white>{players}</white> <dark_gray>|</dark_gray> <gray>online</gray> <white>{online}</white> <dark_gray>|</dark_gray> <gray>tracked</gray> <white>{tracking}</white> <dark_gray>|</dark_gray> <gray>dirty</gray> <white>{dirty}</white>\n<dark_gray> • </dark_gray><gray>queued writes</gray> <white>{queued_writes}</white> <dark_gray>|</dark_gray> <gray>total writes</gray> <white>{writes}</white> <dark_gray>|</dark_gray> <gray>last write</gray> <white>{last_save}</white>\n<dark_gray> • </dark_gray><gray>metric</gray> <white>{metric}</white> <dark_gray>|</dark_gray> <gray>format</gray> <white>{format}</white> <dark_gray>|</dark_gray> <gray>autosave</gray> <white>{autosave}m</white> <dark_gray>|</dark_gray> <gray>idle after</gray> <white>{idle-seconds}s</white>\n<dark_gray> • </dark_gray><gray>leaderboard</gray> <white>{leaderboard-entries}</white> <gray>rows,</gray> <white>{leaderboard-builds}</white> <gray>builds, refreshed</gray> <white>{leaderboard-refresh}</white>\n<dark_gray> • </dark_gray><gray>milestones</gray> <white>{milestones}</white> <gray>configured,</gray> <white>{milestone-awards}</white> <gray>awarded</gray> <dark_gray>|</dark_gray> <gray>sounds</gray> <white>{sounds}</white> <dark_gray>|</dark_gray> <gray>display</gray> <white>{display}</white>"
+admin.export-done: "<green>Wrote</green> <white>{rows}</white> <gray>row(s) to</gray> <aqua>{file}</aqua> <gray>(in plugins/HourGlass/exports/).</gray>"
+admin.export-failed: "<red>Export failed:</red> <white>{error}</white>"
+admin.purge-preview: "<yellow><white>{count}</white> player record(s)</yellow> <gray>have been inactive for more than <white>{days}</white> days.</gray>\n<gray>Nothing was deleted. Confirm with <white>/pta purge {days} confirm</white>.</gray>"
+admin.purge-done: "<green>Deleted <white>{count}</white> record(s)</green> <gray>of players inactive for over <white>{days}</white> days.</gray>"
+admin.purge-none: "<gray>No player has been inactive for <white>{days}</white> days, so there is nothing to purge.</gray>"
+
+# ------------------------------------------------------------ info & help
+info: "<gradient:#c084fc:#22d3ee><bold>HourGlass</bold></gradient> <dark_gray>v{version}</dark_gray>\n<dark_gray> • </dark_gray><gray>Real playtime tracking for Paper, Purpur and Folia.</gray>\n<dark_gray> • </dark_gray><gray>Tracking</gray> <white>{players}</white> <gray>player(s),</gray> <white>{tracked}</white> <gray>online right now, primary metric</gray> <white>{metric}</white><gray>.</gray>\n<dark_gray> • </dark_gray><gray>Storage</gray> <white>{storage}</white> <dark_gray>|</dark_gray> <gray>leaderboard</gray> <white>{leaderboard}</white> <dark_gray>|</dark_gray> <gray>milestones</gray> <white>{milestones}</white> <dark_gray>|</dark_gray> <gray>display</gray> <white>{display}</white> <dark_gray>|</dark_gray> <gray>format</gray> <white>{format}</white><gray>.</gray>\n<dark_gray> • </dark_gray><gray>Server</gray> <white>{server}</white><gray>.</gray>"
+help.intro: "<gradient:#c084fc:#22d3ee><bold>HourGlass</bold></gradient> <gray>know how long you have really been here.</gray>"
+help.player: "<gray>Available sub-commands:</gray>\n  <white>/playtime</white> <dark_gray>(</dark_gray><white>/pt</white><dark_gray>)</dark_gray> <gray>— your playtime (the configured primary figure)</gray>\n  <white>/pt total</white> <dark_gray>(</dark_gray><white>/pt t</white><dark_gray>)</dark_gray> <gray>— every second since your first join</gray>\n  <white>/pt active</white> <dark_gray>(</dark_gray><white>/pt a</white><dark_gray>)</dark_gray> <gray>— seconds you were actually doing something</gray>\n  <white>/pt session</white> <dark_gray>(</dark_gray><white>/pt s</white><dark_gray>)</dark_gray> <gray>— this login</gray>\n  <white>/pt first</white> <dark_gray>(</dark_gray><white>/pt fi</white><dark_gray>)</dark_gray> <gray>— when you joined and last logged out</gray>\n  <white>/pt top</white> <dark_gray>(</dark_gray><white>/pt lb</white><dark_gray>)</dark_gray> <gray>— the leaderboard; <white>/pt top self</white> for your rank</gray>\n  <white>/pt rank</white> <dark_gray>(</dark_gray><white>/pt r</white><dark_gray>)</dark_gray> <gray>— your rank only</gray>\n  <white>/pt player <name></white> <dark_gray>(</dark_gray><white>/pt p <name></white><dark_gray>)</dark_gray> <gray>— somebody else's summary</gray>\n  <white>/pt history</white> <dark_gray>(</dark_gray><white>/pt h</white><dark_gray>)</dark_gray> <gray>— your last sessions</gray>\n  <white>/pt milestones</white> <dark_gray>(</dark_gray><white>/pt m</white><dark_gray>)</dark_gray> <gray>— progress towards each milestone</gray>\n  <white>/pt gui</white> <dark_gray>(</dark_gray><white>/pt g</white><dark_gray>)</dark_gray> <gray>— the clickable interface</gray>\n  <white>/pt display</white> <dark_gray>(</dark_gray><white>/pt d</white><dark_gray>)</dark_gray> <gray>— live boss bar / action bar: <white>bossbar</white>, <white>actionbar</white>, <white>off</white>, <white>reset</white></gray>\n  <white>/pt info</white> <dark_gray>(</dark_gray><white>/pt i</white><dark_gray>)</dark_gray> <gray>— version and state of this install</gray>"
+help.admin: "<gray>HourGlass admin — everything is also a clickable GUI with <white>/pta gui</white>:</gray>\n  <white>/pta info <player></white> <dark_gray>(</dark_gray><white>/pta i</white><dark_gray>)</dark_gray> <gray>— the full breakdown of one player</gray>\n  <white>/pta set <player> <time></white> <dark_gray>(</dark_gray><white>/pta s</white><dark_gray>)</dark_gray> <gray>— overwrite their total, e.g. <white>100h</white></gray>\n  <white>/pta add <player> <time></white> <dark_gray>(</dark_gray><white>/pta a</white><dark_gray>)</dark_gray> <gray>— grant time (also fires milestones)</gray>\n  <white>/pta remove <player> <time></white> <dark_gray>(</dark_gray><white>/pta rm</white><dark_gray>)</dark_gray> <gray>— take time back</gray>\n  <white>/pta reset <player></white> <dark_gray>(</dark_gray><white>/pta rs</white><dark_gray>)</dark_gray> <gray>— wipe a record</gray>\n  <white>/pta freeze <player> [on|off]</white> <dark_gray>(</dark_gray><white>/pta f</white><dark_gray>)</dark_gray> <gray>— pause or resume counting</gray>\n  <white>/pta list [page]</white> <dark_gray>(</dark_gray><white>/pta l</white><dark_gray>)</dark_gray> <gray>— everyone online with their totals</gray>\n  <white>/pta top [refresh|page]</white> <dark_gray>(</dark_gray><white>/pta t</white><dark_gray>)</dark_gray> <gray>— leaderboard, forcing a cache rebuild</gray>\n  <white>/pta purge [days] confirm</white> <dark_gray>(</dark_gray><white>/pta p</white><dark_gray>)</dark_gray> <gray>— delete long-inactive records</gray>\n  <white>/pta export</white> <dark_gray>(</dark_gray><white>/pta e</white><dark_gray>)</dark_gray> <gray>— CSV of everything</gray>\n  <white>/pta stats</white> <dark_gray>(</dark_gray><white>/pta st</white><dark_gray>)</dark_gray> <gray>— storage and timer internals</gray>\n  <white>/pta gui</white> <dark_gray>(</dark_gray><white>/pta g</white><dark_gray>)</dark_gray> <gray>— admin panel</gray>\n  <white>/pta reload</white> <dark_gray>(</dark_gray><white>/pta rl</white><dark_gray>)</dark_gray> <gray>— re-read all config files</gray>"

@@ -1,0 +1,39 @@
+name: HourGlass build
+
+on:
+  push:
+    paths:
+      - 'HourGlass/**'
+  pull_request:
+    paths:
+      - 'HourGlass/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: HourGlass
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Check resources against the code
+        run: python3 tools/check_consistency.py
+      - name: Test and package
+        run: mvn -B -ntp clean verify
+      - name: Upload the jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: HourGlass
+          path: HourGlass/target/HourGlass-*.jar
+          if-no-files-found: error

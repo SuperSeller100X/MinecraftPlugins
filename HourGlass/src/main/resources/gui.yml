@@ -1,0 +1,426 @@
+# =====================================================================
+#  HourGlass — gui.yml
+#
+#  Every screen, its title, size, icons, slots and texts live here.
+#  Buttons are wired to behaviour through "action:"; the text and looks
+#  are yours to change. MiniMessage (and legacy & codes) work everywhere.
+#
+#  item fields
+#    slot:        0-based index inside the GUI (row = slot / 9)
+#    material:    any item Material; PLAYER_HEAD shows a head when player-head: true
+#    player-head: true = put the relevant player's skin on this icon
+#    name/lore:   text; {placeholders} as listed at the bottom of this file
+#    action:      what a click does (see the list below)
+#    seconds / amount / hours / minutes / days:
+#                 the duration an add-time / remove-time button uses
+#
+#  actions
+#    none, close, back, open-stats, open-leaderboard, open-milestones,
+#    open-admin, page-back, page-forward, page-first, page-last, page-self,
+#    refresh, freeze-toggle, reset-time (shift-click required), add-time,
+#    remove-time, view-player, toggle-display, copy-summary, export, reload
+#
+#  Reload with /playtimeadmin reload.
+# =====================================================================
+gui-version: 1
+
+# ------------------------------------------------------------------ stats
+# The screen /pt gui opens. "info" carries the headline numbers.
+stats:
+  title: "<dark_gray>⌛ <gray>Your Playtime"
+  size: 27
+  fill: true
+  filler-material: GRAY_STAINED_GLASS_PANE
+  filler-name: " "
+  items:
+    info:
+      slot: 4
+      material: PLAYER_HEAD
+      player-head: true
+      name: "<aqua><bold>{player}</bold></aqua> <dark_gray>— {metric}"
+      lore:
+        - "<gray>Total:</gray> <aqua>{total}</aqua>"
+        - "<gray>Active:</gray> <green>{active}</green>"
+        - "<gray>This session:</gray> <yellow>{session}</yellow>"
+        - ""
+        - "<dark_gray>Primary metric: <white>{metric}</white></dark_gray>"
+      action: none
+    first-join:
+      slot: 11
+      material: CLOCK
+      name: "<white>First joined</white>"
+      lore:
+        - "<gray>{first_join}</gray>"
+        - ""
+        - "<gray>Last seen:</gray> <white>{last_seen}</white>"
+        - "<gray>Sessions stored:</gray> <white>{history}</white>"
+      action: open-milestones
+    status:
+      slot: 12
+      material: ENDER_EYE
+      name: "<white>Status</white>"
+      lore:
+        - "<gray>Online:</gray> <white>{online}</white>"
+        - "<gray>Idle right now:</gray> <white>{idle}</white>"
+        - "<gray>Frozen by staff:</gray> <white>{frozen}</white>"
+        - "<gray>Live display:</gray> <white>{display}</white>"
+      action: toggle-display
+    milestones:
+      slot: 13
+      material: BOOK
+      name: "<white>Milestones</white>"
+      lore:
+        - "<gray>Reached:</gray> <green>{reached}</green><gray>/<white>{milestones}</white>"
+        - "<gray>Next:</gray> <aqua>{milestones_next}</aqua> <dark_gray>(</dark_gray><white>{milestones_next_threshold}</white><dark_gray>)</dark_gray>"
+        - "<gray>Progress:</gray> <yellow>{milestones_next_percent}</yellow>"
+        - ""
+        - "<dark_gray>Click to open</dark_gray>"
+      action: open-milestones
+    rank:
+      slot: 14
+      material: NETHER_STAR
+      name: "<gold>Rank {rank}</gold>"
+      lore:
+        - "<gray>Ranked by</gray> <white>{metric}</white>"
+        - "<gray>Time:</gray> <aqua>{primary}</aqua>"
+        - ""
+        - "<dark_gray>Click for the leaderboard</dark_gray>"
+      action: open-leaderboard
+    hours:
+      slot: 15
+      material: COMPARATOR
+      name: "<white>Raw figures</white>"
+      lore:
+        - "<gray>Total seconds:</gray> <aqua>{total-raw}</aqua>"
+        - "<gray>Active seconds:</gray> <green>{active-raw}</green>"
+        - "<gray>≈ {days} days, {hours} hours</gray>"
+      action: none
+    summary:
+      slot: 20
+      material: WRITABLE_BOOK
+      name: "<white>Copyable summary</white>"
+      lore:
+        - "<gray>Prints one line you can paste anywhere.</gray>"
+      action: copy-summary
+    leaderboard:
+      slot: 22
+      material: OAK_SIGN
+      name: "<white>Leaderboard</white>"
+      lore:
+        - "<gray>See who has spent the most time here.</gray>"
+      action: open-leaderboard
+    display:
+      slot: 24
+      material: REDSTONE_LAMP
+      name: "<white>Toggle live timer</white>"
+      lore:
+        - "<gray>Cycles boss bar → action bar → off.</gray>"
+        - "<gray>Current:</gray> <aqua>{display}</aqua>"
+      action: toggle-display
+    close:
+      slot: 26
+      material: BARRIER
+      name: "<red>Close</red>"
+      lore:
+        - "<gray>Nothing is lost — /pt gui opens it again.</gray>"
+      action: close
+
+# ------------------------------------------------------------ leaderboard
+# The entry list fills the slots between "start-slot" and "cells"; the icons
+# below are the navigation row.
+leaderboard:
+  title: "<dark_gray>⌛ <gray>Playtime Leaderboard <dark_gray>(</dark_gray><white>{page}</white><gray>/<white>{pages}</white><dark_gray>)</dark_gray>"
+  size: 54
+  fill: true
+  filler-material: GRAY_STAINED_GLASS_PANE
+  filler-name: " "
+  list:
+    start-slot: 0
+    cells: 45
+    player-heads: true
+    item:
+      slot: 0
+      material: PLAYER_HEAD
+      player-head: true
+      name: "<gold>#{rank}</gold> <white>{player}</white>"
+      lore:
+        - "<gray>Playtime:</gray> <aqua>{time}</aqua>"
+        - "<gray>Total seconds:</gray> <white>{seconds}</white>"
+        - "<gray>Last seen:</gray> <white>{last_seen}</white>"
+        - ""
+        - "<dark_gray>Click for this player's summary</dark_gray>"
+      action: view-player
+  items:
+    page-back:
+      slot: 45
+      material: ARROW
+      name: "<white>Previous page</white>"
+      action: page-back
+    page-forward:
+      slot: 47
+      material: ARROW
+      name: "<white>Next page</white>"
+      action: page-forward
+    page-info:
+      slot: 49
+      material: PAPER
+      name: "<gray>Page <white>{page}</white>/<white>{pages}</white></gray>"
+      lore:
+        - "<gray>{entries} player(s) on the board.</gray>"
+        - "<gray>Your rank:</gray> <gold>{rank}</gold>"
+      action: page-self
+    refresh:
+      slot: 51
+      material: CLOCK
+      name: "<white>Refresh</white>"
+      lore:
+        - "<gray>Re-sorts the board from the live cache.</gray>"
+      action: refresh
+    stats:
+      slot: 46
+      material: PLAYER_HEAD
+      player-head: true
+      name: "<white>Your stats</white>"
+      action: open-stats
+    close:
+      slot: 53
+      material: BARRIER
+      name: "<red>Close</red>"
+      action: close
+
+# ------------------------------------------------------------- milestones
+milestones:
+  title: "<dark_gray>⌛ <gray>Milestones <dark_gray>(</dark_gray><white>{page}</white><gray>/<white>{pages}</white><dark_gray>)</dark_gray>"
+  size: 27
+  fill: true
+  filler-material: GRAY_STAINED_GLASS_PANE
+  filler-name: " "
+  list:
+    start-slot: 0
+    cells: 18
+    player-heads: false
+    item:
+      slot: 0
+      material: EMERALD
+      name: "<green><bold>{milestone}</bold></green> <dark_gray>—</dark_gray> <white>{threshold}</white>"
+      lore:
+        - "<gray>Progress:</gray> <yellow>{bar}</yellow> <white>{percent}%</white>"
+        - "<gray>Status:</gray> <white>{reached}</white>"
+      action: none
+  items:
+    page-back:
+      slot: 18
+      material: ARROW
+      name: "<white>Previous page</white>"
+      action: page-back
+    page-forward:
+      slot: 19
+      material: ARROW
+      name: "<white>Next page</white>"
+      action: page-forward
+    info:
+      slot: 22
+      material: BOOK
+      name: "<white>{reached}<gray>/<white>{milestones}</white> <gray>reached</gray>"
+      lore:
+        - "<gray>Milestones are configured under</gray> <white>milestones.list</white>"
+        - "<gray>in config.yml.</gray>"
+      action: none
+    back:
+      slot: 26
+      material: BARRIER
+      name: "<red>Back</red>"
+      action: back
+
+# ------------------------------------------------------------- admin panel
+# Lists everyone online, most time first. Clicking a head opens the details
+# screen; the bottom row holds the tools.
+admin:
+  title: "<dark_gray>⌛ <red>HourGlass Admin <dark_gray>(</dark_gray><white>{page}</white><gray>/<white>{pages}</white><dark_gray>)</dark_gray>"
+  size: 54
+  fill: true
+  filler-material: RED_STAINED_GLASS_PANE
+  filler-name: " "
+  list:
+    start-slot: 0
+    cells: 45
+    player-heads: true
+    item:
+      slot: 0
+      material: PLAYER_HEAD
+      player-head: true
+      name: "<white>{player}</white>"
+      lore:
+        - "<gray>Total:</gray> <aqua>{total}</aqua> <dark_gray>|</dark_gray> <gray>active:</gray> <green>{active}</green>"
+        - "<gray>Session:</gray> <yellow>{session}</yellow>"
+        - "<gray>Idle:</gray> <white>{idle}</white> <dark_gray>|</dark_gray> <gray>frozen:</gray> <white>{frozen}</white>"
+        - ""
+        - "<dark_gray>Click to manage this player</dark_gray>"
+      action: view-player
+  items:
+    page-back:
+      slot: 45
+      material: ARROW
+      name: "<white>Previous page</white>"
+      action: page-back
+    page-forward:
+      slot: 47
+      material: ARROW
+      name: "<white>Next page</white>"
+      action: page-forward
+    info:
+      slot: 49
+      material: COMPARATOR
+      name: "<white>HourGlass</white> <dark_gray>v{version}"
+      lore:
+        - "<gray>Tracked players:</gray> <white>{players}</white>"
+        - "<gray>Measured right now:</gray> <white>{tracked}</white>"
+        - "<gray>Queued writes:</gray> <white>{queued_writes}</white>"
+        - "<gray>Last save:</gray> <white>{last_save}</white>"
+        - "<gray>Milestone awards:</gray> <white>{milestone-awards}</white>"
+        - "<gray>Live display:</gray> <white>{display-mode}</white>"
+      action: none
+    refresh:
+      slot: 48
+      material: CLOCK
+      name: "<white>Refresh</white>"
+      action: refresh
+    export:
+      slot: 50
+      material: WRITABLE_BOOK
+      name: "<white>Export CSV</white>"
+      lore:
+        - "<gray>Writes every record to</gray> <white>plugins/HourGlass/exports/</white>"
+      action: export
+    reload:
+      slot: 51
+      material: REDSTONE_BLOCK
+      name: "<yellow>Reload configs</yellow>"
+      action: reload
+    leaderboard:
+      slot: 52
+      material: OAK_SIGN
+      name: "<white>Leaderboard</white>"
+      action: open-leaderboard
+    close:
+      slot: 53
+      material: BARRIER
+      name: "<red>Close</red>"
+      action: close
+
+# ---------------------------------------------------------- admin detail
+# One player, with time buttons. "seconds" (or amount/hours/days) sets how much
+# a button adds or removes; add as many buttons as you like.
+admin-player:
+  title: "<dark_gray>⌛ <red>Managing <white>{player}</white>"
+  size: 36
+  fill: true
+  filler-material: GRAY_STAINED_GLASS_PANE
+  filler-name: " "
+  items:
+    info:
+      slot: 4
+      material: PLAYER_HEAD
+      player-head: true
+      name: "<aqua><bold>{player}</bold></aqua>"
+      lore:
+        - "<gray>Total:</gray> <aqua>{total}</aqua> <dark_gray>(</dark_gray><white>{total-raw}</white> <gray>s</gray><dark_gray>)</dark_gray>"
+        - "<gray>Active:</gray> <green>{active}</green>"
+        - "<gray>Session:</gray> <yellow>{session}</yellow>"
+        - "<gray>Rank:</gray> <gold>{rank}</gold> <dark_gray>|</dark_gray> <gray>idle:</gray> <white>{idle}</white>"
+        - "<gray>First join:</gray> <white>{first_join}</white>"
+        - "<gray>Frozen:</gray> <white>{frozen}</white>"
+      action: none
+    freeze:
+      slot: 10
+      material: BLUE_ICE
+      name: "<white>Freeze / resume</white>"
+      lore:
+        - "<gray>Currently frozen:</gray> <white>{frozen}</white>"
+        - "<gray>A frozen player stops gaining time.</gray>"
+      action: freeze-toggle
+    summary:
+      slot: 12
+      material: WRITABLE_BOOK
+      name: "<white>Copyable summary</white>"
+      action: copy-summary
+    reset:
+      slot: 13
+      material: TNT
+      name: "<red>Reset record</red>"
+      lore:
+        - "<gray><bold>Shift-click</bold> to wipe this player's</gray>"
+        - "<gray>playtime. A plain click is refused.</gray>"
+      action: reset-time
+    leaderboard:
+      slot: 15
+      material: OAK_SIGN
+      name: "<white>Leaderboard</white>"
+      action: open-leaderboard
+    remove-week:
+      slot: 19
+      material: RED_DYE
+      name: "<red>−1 week</red>"
+      action: remove-time
+      days: 7
+    remove-day:
+      slot: 20
+      material: RED_DYE
+      name: "<red>−1 day</red>"
+      action: remove-time
+      days: 1
+    remove-hour:
+      slot: 21
+      material: RED_DYE
+      name: "<red>−1 hour</red>"
+      action: remove-time
+      hours: 1
+    add-hour:
+      slot: 23
+      material: LIME_DYE
+      name: "<green>+1 hour</green>"
+      action: add-time
+      hours: 1
+    add-day:
+      slot: 24
+      material: LIME_DYE
+      name: "<green>+1 day</green>"
+      action: add-time
+      days: 1
+    add-week:
+      slot: 25
+      material: EMERALD
+      name: "<green>+1 week</green>"
+      action: add-time
+      days: 7
+    back:
+      slot: 27
+      material: ARROW
+      name: "<white>Back to the list</white>"
+      action: back
+    admin:
+      slot: 31
+      material: COMPARATOR
+      name: "<white>Admin overview</white>"
+      action: open-admin
+    close:
+      slot: 35
+      material: BARRIER
+      name: "<red>Close</red>"
+      action: close
+
+# =====================================================================
+#  Placeholders available in every screen and item
+#
+#  general   {player} {uuid} {page} {pages} {entries} {version} {metric}
+#            {display} {now}
+#  your time {total} {active} {session} {session-active} {primary}
+#            {total-raw} {active-raw} {days} {hours} {first_join}
+#            {last_seen} {online} {idle} {frozen} {history} {rank}
+#  others    {index} {time} {seconds} {self} {reached} {milestones}
+#            {milestones_next} {milestones_next_threshold}
+#            {milestones_next_percent} {bar} {percent} {state} {milestone}
+#            {threshold} {remaining}
+#  admin     {players} {tracked} {queued_writes} {writes} {last_save}
+#            {dirty} {milestone-awards} {display-mode}
+# =====================================================================

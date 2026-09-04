@@ -13,6 +13,8 @@ coverage/
 htmlcov/
 
 # Logs and temp files
+__pycache__/
+*.pyc
 *.log
 *.tmp
 *.swp
@@ -58,3 +60,10 @@ SwiftTPA/swifttpa.db*
 smoke-classes/
 # RapidHoppers
 RapidHoppers/target/
+
+# HourGlass
+HourGlass/target/
+HourGlass/players/
+HourGlass/data/
+HourGlass/exports/
+HourGlass/*.csv
