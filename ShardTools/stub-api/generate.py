@@ -71,7 +71,6 @@ package org.bukkit;
 public interface Registry<T extends Keyed> {
     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = null;
     Registry<Sound> SOUND_EVENT = null;
-    Registry<Particle> PARTICLE_TYPE = null;
     T get(NamespacedKey key);
 }
 """)
@@ -94,7 +93,11 @@ public class NamespacedKey {
 
 write("org/bukkit/Particle.java", """
 package org.bukkit;
-public enum Particle { PORTAL, END_ROD, WITCH, DUST, TOTEM }
+public enum Particle implements Keyed {
+    PORTAL, END_ROD, WITCH, DUST, TOTEM;
+    @Override
+    public NamespacedKey getKey() { return null; }
+}
 """)
 
 write("org/bukkit/Color.java", """
@@ -252,6 +255,7 @@ public final class Bukkit {
     public static Inventory createInventory(InventoryHolder owner, int size, Component title) { return null; }
     public static org.bukkit.command.CommandSender getConsoleSender() { return null; }
     public static boolean dispatchCommand(org.bukkit.command.CommandSender sender, String command) { return true; }
+    public static World getWorld(String name) { return null; }
 }
 """)
 
@@ -447,8 +451,10 @@ public abstract class Enchantment implements Keyed {
 
 write("org/bukkit/potion/PotionEffectType.java", """
 package org.bukkit.potion;
-public class PotionEffectType {
+public class PotionEffectType implements org.bukkit.Keyed {
     public static final PotionEffectType HASTE = new PotionEffectType();
+    @Override
+    public org.bukkit.NamespacedKey getKey() { return null; }
 }
 """)
 
@@ -774,6 +780,7 @@ public interface ConfigurationSection {
     default boolean getBoolean(String path, boolean def) { return def; }
     default boolean contains(String path) { return false; }
     default ConfigurationSection getConfigurationSection(String path) { return null; }
+    default ConfigurationSection createSection(String path) { return null; }
     default Set<String> getKeys(boolean deep) { return Set.of(); }
     default void set(String path, Object value) {}
     default void setDefaults(ConfigurationSection defaults) {}

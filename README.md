@@ -185,7 +185,10 @@ DonutSMP-style **Shards** currency and **Shard Tools** for Minecraft **26.2** (P
 Purpur / Folia). Every player earns **5 Shards every 5 minutes** (configurable); the
 Shard Shop GUI sells the **Shard Pickaxe / Axe / Shovel** (3×3 mining, whole-tree
 felling, Silk Touch & Fortune III variants, Eff 5 / Unb 3 / Mending, 3,000 shards
-each), the **Shard Potion of Haste** (24 h Haste II, 6,000) and DonutSMP's full
+each), the **Shard Potion of Haste** (24 h Haste II, 6,000), the **Void Totem**
+(1,000 shards — consumed to rescue its holder from a lethal void hit: teleport back
+to safety, full heal, Resistance + Slow Falling; the only item with the custom
+Blockbench model from the bundled resource pack) and DonutSMP's full
 enchanted-netherite catalog, styled exactly like DonutSMP's **amethyst** items:
 **purple star** currency icon, light-purple names, **amethyst chime + purple portal
 particles** when mining/equipping, and a tree-felling axe that clears logs *and*

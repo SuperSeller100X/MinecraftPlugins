@@ -5,8 +5,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.bukkit.Attribute;
-import org.bukkit.AttributeInstance;
 import org.bukkit.Bukkit;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
@@ -16,6 +14,8 @@ import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -200,14 +200,28 @@ public final class VoidListener implements Listener {
 
     /** Health straight back to maximum, absorption and fall distance gone. */
     private void fullHeal(Player player) {
-        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
-        double max = maxHealth != null ? maxHealth.getValue() : 20.0D;
         try {
-            player.setHealth(max);
+            player.setHealth(maxHealth(player));
         } catch (Throwable error) {
             plugin.getLogger().warning("Could not fully heal after void rescue: " + error.getMessage());
         }
         player.setAbsorptionAmount(0);
+    }
+
+    /**
+     * The player's max health via the attribute. The attribute constant was
+     * renamed across versions (GENERIC_MAX_HEALTH -> MAX_HEALTH), so it is
+     * looked up by name with a plain-20 fallback instead of a hard enum
+     * reference that could break on a rename.
+     */
+    private double maxHealth(Player player) {
+        for (Attribute attribute : Attribute.values()) {
+            if ("MAX_HEALTH".equals(attribute.name()) || "GENERIC_MAX_HEALTH".equals(attribute.name())) {
+                AttributeInstance instance = player.getAttribute(attribute);
+                return instance != null ? instance.getValue() : 20.0D;
+            }
+        }
+        return 20.0D;
     }
 
     private void clearHarmful(Player player) {

@@ -280,8 +280,15 @@ stubs with `python3 stub-api/generate.py`, compile with the Eclipse compiler (EC
 against them on any Java 25 runtime (e.g. `pip install jdk4py`), run the 68
 pure-logic smoke tests in `smoke/SmokeTest.java`, and zip the classes plus
 `src/main/resources` into a jar (stubs must **never** be packaged). The CI workflow's
-smoke step shows the exact `javac` invocation. Note: the offline ECJ used for
-verification is 3.25, so the source is kept Java-15-syntax compatible; the canonical
+smoke step shows the exact `javac` invocation. Verified recipe (ECJ 3.41 on a
+Java 25 runtime):
+
+```
+java -jar ecj.jar -source 17 -target 17 -encoding UTF-8 -nowarn -d classes \
+  $(find src/main/java stub-api/src -name '*.java')
+```
+
+The source stays Java-17-syntax compatible so ECJ can verify it; the canonical
 Maven build compiles the same sources with `release 25`.
 
 ## Installation

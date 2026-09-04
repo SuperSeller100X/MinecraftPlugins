@@ -16,6 +16,7 @@ public interface ConfigurationSection {
     default boolean getBoolean(String path, boolean def) { return def; }
     default boolean contains(String path) { return false; }
     default ConfigurationSection getConfigurationSection(String path) { return null; }
+    default ConfigurationSection createSection(String path) { return null; }
     default Set<String> getKeys(boolean deep) { return Set.of(); }
     default void set(String path, Object value) {}
     default void setDefaults(ConfigurationSection defaults) {}
