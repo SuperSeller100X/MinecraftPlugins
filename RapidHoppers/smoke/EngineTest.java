@@ -25,6 +25,7 @@ public final class EngineTest {
         testSettings();
         testInventoryOps();
         testTransferClock();
+        testDropperIntoHopper();
         testStats();
         System.out.println("EngineTest: " + checks + " checks passed");
     }
@@ -198,6 +199,62 @@ public final class EngineTest {
         yes(TransferClock.entityKey(null) == null, "null entity id is safe");
     }
 
+    /**
+     * Regression: a dropper pointed straight into a hopper.
+     *
+     * <p>Vanilla fires a dropper on a redstone pulse and it ejects exactly ONE
+     * item. The old engine treated droppers as an accelerated container family
+     * with an items-per-transfer of 8, so a single pulse shoved 8 items into
+     * the hopper and, worse, the engine ticked droppers on its own clock and
+     * drained them with no redstone at all.</p>
+     *
+     * <p>Droppers are now not a container family and the engine never ticks
+     * them. The only way RapidHoppers can touch a dropper's contents is as the
+     * generic single-item move below, which is capped at one item.</p>
+     */
+    private static void testDropperIntoHopper() {
+        // Droppers are no longer an accelerated container family at all.
+        yes(ContainerType.byName("dropper") == null, "dropper is not a container family");
+        for (ContainerType type : ContainerType.values()) {
+            no("dropper".equals(type.path()), "no dropper in ContainerType: " + type);
+            no("dispenser".equals(type.path()), "no dispenser in ContainerType: " + type);
+        }
+
+        FakeInventory dropper = new FakeInventory(9, org.bukkit.event.inventory.InventoryType.DROPPER);
+        FakeInventory hopper = new FakeInventory(5, org.bukkit.event.inventory.InventoryType.HOPPER);
+        dropper.setItem(0, new ItemStack(Material.STONE, 64));
+
+        // Even asking for a move explicitly can only ever transfer one item.
+        eq(1, InventoryOps.moveOne(dropper, hopper), "dropper -> hopper moves exactly one item");
+        eq(63, dropper.getItem(0).getAmount(), "dropper lost exactly one item");
+        eq(1, hopper.total(Material.STONE), "hopper received exactly one item, not 8");
+
+        // The same holds for the vanilla-transfer replacement path.
+        eq(1, InventoryOps.moveOneSimilar(dropper, hopper, new ItemStack(Material.STONE, 1)),
+                "dropper -> hopper similar move is also a single item");
+        eq(62, dropper.getItem(0).getAmount(), "dropper lost one more item");
+        eq(2, hopper.total(Material.STONE), "hopper total is 2 after two transfers");
+
+        // And the amount is hard-capped in the math, whatever a caller requests.
+        eq(1, TransferMath.moveAmount(8, 64, 64), "a request for 8 items yields 1");
+        eq(1, TransferMath.moveAmount(64, 64, 64), "a request for a full stack yields 1");
+
+        // A dropper is still a valid *destination* (a hopper may feed one),
+        // and that insert is a single item too.
+        FakeInventory feeder = new FakeInventory(5, org.bukkit.event.inventory.InventoryType.HOPPER);
+        feeder.setItem(0, new ItemStack(Material.STONE, 10));
+        FakeInventory target = new FakeInventory(9, org.bukkit.event.inventory.InventoryType.DROPPER);
+        eq(1, InventoryOps.moveOne(feeder, target), "hopper -> dropper moves one item");
+        eq(1, target.total(Material.STONE), "dropper received a single item");
+
+        // The dropper's own pulse is vanilla's business: observing it must only
+        // charge the cooldown, never move anything extra.
+        TransferClock clock = new TransferClock();
+        String hopperKey = TransferClock.blockKey("world", 0, 64, 0);
+        clock.stamp(hopperKey);
+        no(clock.isReady(hopperKey, 4), "hopper fed by a dropper waits out its cooldown");
+    }
+
     private static void testStats() {
         Stats stats = new Stats();
         stats.recordTransfer(8);
@@ -245,9 +302,15 @@ public final class EngineTest {
     /** Minimal in-memory inventory backed by the compile stubs. */
     static final class FakeInventory implements org.bukkit.inventory.Inventory {
         private final ItemStack[] items;
+        private final org.bukkit.event.inventory.InventoryType type;
 
         FakeInventory(int size) {
+            this(size, org.bukkit.event.inventory.InventoryType.HOPPER);
+        }
+
+        FakeInventory(int size, org.bukkit.event.inventory.InventoryType type) {
             this.items = new ItemStack[size];
+            this.type = type;
         }
 
         int total(Material material) {
@@ -267,7 +330,7 @@ public final class EngineTest {
 
         @Override
         public org.bukkit.event.inventory.InventoryType getType() {
-            return org.bukkit.event.inventory.InventoryType.HOPPER;
+            return type;
         }
 
         @Override
