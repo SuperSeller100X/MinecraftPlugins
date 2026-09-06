@@ -7,7 +7,9 @@ import dev.superseller.rapidhoppers.config.Messages;
 import dev.superseller.rapidhoppers.config.Settings;
 import dev.superseller.rapidhoppers.engine.HopperEngine;
 import dev.superseller.rapidhoppers.engine.Stats;
+import dev.superseller.rapidhoppers.engine.TransferClock;
 import dev.superseller.rapidhoppers.engine.ThrottleMonitor;
+import dev.superseller.rapidhoppers.engine.TransferMath;
 import dev.superseller.rapidhoppers.gui.ControlPanel;
 import dev.superseller.rapidhoppers.listener.TransferListener;
 import dev.superseller.rapidhoppers.scheduler.PlatformScheduler;
@@ -29,6 +31,7 @@ public final class RapidHoppersPlugin extends JavaPlugin {
     private Messages messages;
     private Sounds sounds;
     private Stats stats;
+    private TransferClock clock;
     private ThrottleMonitor throttle;
     private HopperEngine engine;
     private ControlPanel panel;
@@ -48,13 +51,14 @@ public final class RapidHoppersPlugin extends JavaPlugin {
 
         sounds = new Sounds(this, settings());
         stats = new Stats();
+        clock = new TransferClock();
         throttle = new ThrottleMonitor(this, settings());
-        engine = new HopperEngine(this, settings(), throttle, stats);
+        engine = new HopperEngine(this, settings(), throttle, stats, clock);
         panel = new ControlPanel(this);
 
         getServer().getPluginManager().registerEvents(panel, this);
         getServer().getPluginManager().registerEvents(
-                new TransferListener(settings(), throttle, stats), this);
+                new TransferListener(stats, clock), this);
 
         registerCommands();
 
@@ -63,9 +67,8 @@ public final class RapidHoppersPlugin extends JavaPlugin {
         startGuiRefresh();
 
         getLogger().info("RapidHoppers v" + VERSION + " enabled on " + PlatformScheduler.platformName()
-                + " — interval " + settings().getIntervalTicks() + " ticks ("
-                + settings().speedFactor() + "x vanilla), "
-                + settings().getItemsPerTransfer() + " items per transfer.");
+                + " — one item every " + settings().getIntervalTicks() + " ticks ("
+                + TransferMath.round1(settings().speedFactor()) + "x vanilla hopper speed).");
     }
 
     @Override
@@ -145,6 +148,10 @@ public final class RapidHoppersPlugin extends JavaPlugin {
 
     public Stats stats() {
         return stats;
+    }
+
+    public TransferClock clock() {
+        return clock;
     }
 
     public ThrottleMonitor throttle() {

@@ -11,7 +11,6 @@ public final class Permissions {
     public static final String ADMIN_RELOAD = "rapidhoppers.admin.reload";
     public static final String ADMIN_TOGGLE = "rapidhoppers.admin.toggle";
     public static final String ADMIN_SPEED = "rapidhoppers.admin.speed";
-    public static final String ADMIN_STACK = "rapidhoppers.admin.stack";
     public static final String ADMIN_WORLD = "rapidhoppers.admin.world";
     public static final String ADMIN_THROTTLE = "rapidhoppers.admin.throttle";
     public static final String ADMIN_LIMIT = "rapidhoppers.admin.limit";

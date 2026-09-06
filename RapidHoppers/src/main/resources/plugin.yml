@@ -5,7 +5,7 @@ api-version: '26.2'
 folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPlugins
-description: Configurable high-speed hoppers, hopper minecarts, droppers and dispensers with TPS-aware throttling.
+description: Makes hoppers and hopper minecarts run their vanilla transfer faster, with TPS-aware throttling. One item per transfer, exactly like vanilla.
 
 commands:
   rapidhoppers:
@@ -15,7 +15,7 @@ commands:
     permission: rapidhoppers.use
   rapidhoppersadmin:
     description: RapidHoppers administration
-    usage: /rapidhoppersadmin <reload|toggle|speed|stack|world|throttle|limit|debug|stats|gui>
+    usage: /rapidhoppersadmin <reload|toggle|speed|world|throttle|limit|debug|stats|gui>
     aliases: [rhadmin, rha]
     permission: rapidhoppers.admin
 
@@ -39,7 +39,6 @@ permissions:
       rapidhoppers.admin.reload: true
       rapidhoppers.admin.toggle: true
       rapidhoppers.admin.speed: true
-      rapidhoppers.admin.stack: true
       rapidhoppers.admin.world: true
       rapidhoppers.admin.throttle: true
       rapidhoppers.admin.limit: true
@@ -51,13 +50,10 @@ permissions:
     description: Reload configuration
     default: op
   rapidhoppers.admin.toggle:
-    description: Enable/disable the acceleration engine or single container types
+    description: Enable/disable the acceleration engine or single container types (hopper, hopper-minecart)
     default: op
   rapidhoppers.admin.speed:
-    description: Change the transfer interval at runtime
-    default: op
-  rapidhoppers.admin.stack:
-    description: Change the items-per-transfer amount at runtime
+    description: Change the hopper transfer interval (speed) at runtime
     default: op
   rapidhoppers.admin.world:
     description: Enable/disable acceleration per world

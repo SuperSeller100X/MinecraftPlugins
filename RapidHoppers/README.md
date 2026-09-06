@@ -1,10 +1,9 @@
 # ⚡ RapidHoppers
 
-**Hoppers that actually keep up.** RapidHoppers makes every item-moving block
-and entity in Minecraft dramatically faster — hoppers, hopper minecarts, chest
-minecarts, droppers and (optionally) dispensers — with a full configuration
-file, an in-game GUI, admin commands, permissions, tab completion, sound
-effects and a TPS-aware safety net so the speed never costs you your server.
+**Hoppers that actually keep up.** RapidHoppers makes hoppers and hopper
+minecarts run their **vanilla transfer more often** — and changes nothing else.
+Same one item per transfer, same source, same destination, same rules. Only the
+clock is faster.
 
 - **Version:** 1.0.0
 - **Target:** Minecraft **26.2** (released 16 Jun 2026) — **Paper / Purpur / Folia**
@@ -21,33 +20,64 @@ Vanilla hoppers move **1 item every 8 ticks** (2.5 items per second). That is
 the single biggest bottleneck in storage systems, item sorters, auto-farms and
 shop backends.
 
-RapidHoppers adds an **acceleration engine** that runs alongside vanilla logic
-and performs *extra* transfers:
+RapidHoppers shortens that 8-tick cooldown — and does nothing else:
 
-| Setting | Default | Vanilla | Effect |
-| --- | --- | --- | --- |
-| `engine.interval-ticks` | `2` | 8 | transfers happen 4× more often |
-| `engine.items-per-transfer` | `8` | 1 | 8 items move per transfer |
-| **Result** | **32× vanilla throughput** by default | 2.5 items/s | ~80 items/s |
+| | Vanilla | RapidHoppers (default) |
+| --- | --- | --- |
+| Items per transfer | 1 | **1** (not configurable, on purpose) |
+| Ticks between transfers | 8 | `engine.interval-ticks`, default **2** |
+| Throughput | 2.5 items/s | **10 items/s** (4× vanilla) |
+| Sources & destinations | above / faced block | **identical** |
 
-Because vanilla behaviour is never replaced — only supplemented — comparators,
-redstone item sorters, filtered hoppers, locked hoppers and every other
-contraption keep working exactly as before. They just run much faster.
+### Speed is the only thing that changes
+
+This is the whole design, and it is enforced in three places:
+
+1. **One item per transfer.** There is no `items-per-transfer` setting. A
+   hopper moving 8 or 64 items at once is not a fast hopper, it is a *different*
+   hopper: comparators read wrong, item sorters overshoot their filter slot,
+   and single-item redstone clocks break. RapidHoppers only ever moves one.
+
+2. **A shared clock, so the plugin never stacks on top of vanilla.** Vanilla's
+   own transfers are observed via `InventoryMoveItemEvent` and stamped into the
+   same per-container cooldown the engine uses. The configured rate is a
+   **ceiling**, not a bonus: at `interval-ticks: 2` a hopper moves 10 items per
+   second total, not vanilla's 2.5 *plus* the plugin's. This is what removes
+   the old burst-and-race behaviour.
+
+3. **Only vanilla's own destinations.** A hopper pulls from the inventory
+   directly above and pushes into the inventory it faces. The engine never
+   invents a destination, never reaches sideways into a neighbouring container,
+   and never inserts into a block vanilla would not insert into.
+
+Because of this, comparators, redstone item sorters, filtered hoppers, locked
+hoppers and every other contraption behave *exactly* as they do in vanilla.
+They just run sooner.
 
 ### Accelerated containers
 
-| Container | Config key | Default | What is boosted |
+| Container | Config key | Default | What is accelerated |
 | --- | --- | --- | --- |
-| Hopper | `containers.hopper` | ✅ on | pulling from above, pushing into the faced container, picking up dropped items |
-| Hopper minecart | `containers.hopper-minecart` | ✅ on | pulling from containers above, pushing into containers below |
-| Chest / storage minecart | `containers.chest-minecart` | ✅ on | draining into the hopper it sits on |
-| Dropper | `containers.dropper` | ✅ on | pushing into the container it faces |
-| Dispenser | `containers.dispenser` | ⛔ off | same as dropper (off by default, since dispensers usually *shoot* items) |
+| Hopper | `containers.hopper` | ✅ on | pulling one item from the inventory above, pushing one item into the faced inventory |
+| Hopper minecart | `containers.hopper-minecart` | ✅ on | pulling one item from the inventory above |
+
+**Not handled at all — and deliberately so:**
+
+| Container | Why it is left to vanilla |
+| --- | --- |
+| Dropper / dispenser | They fire on a **redstone pulse**, not on a hopper clock. There is no transfer rate to speed up, so "accelerating" them means ejecting items nothing asked to be ejected. |
+| Chest minecart | It has no transfer logic of its own; the hopper underneath drains it, and *that* hopper is already accelerated. Draining it separately just double-moves. |
+| Hopper-minecart push-down | Vanilla hopper minecarts do not push into the block below. The hopper below pulls from them — again, already accelerated. |
+| Furnaces, brewing stands, crafters, … | They have slot rules (fuel, result slots) that a generic insert would bypass. Untouched. |
+
+Item-entity pickup is also not accelerated: vanilla hoppers already scan for
+dropped items **every single tick**, so there is nothing to improve.
 
 ### Performance & safety
 
-- **TPS auto-throttle** — below `soft-tps` (default 18) the engine slows down;
-  below `hard-tps` (default 14) it pauses entirely until the server recovers.
+- **TPS auto-throttle** — below `soft-tps` (default 18) hoppers step back
+  towards vanilla speed; below `hard-tps` (default 14) acceleration stops
+  entirely and hoppers run at pure vanilla speed until the server recovers.
 - **Per-chunk limit** — at most `max-containers-per-chunk` (default 96)
   accelerated containers per chunk, so a 4 000-hopper sorter can't melt a chunk.
 - **Per-world limit** and a **global per-tick transfer budget**.
@@ -55,6 +85,8 @@ contraption keep working exactly as before. They just run much faster.
   skipped entirely (configurable, `0` = process every loaded chunk).
 - **Live statistics** — tracked containers, total transfers, transfers/second
   and current TPS via `/rh stats` or the GUI.
+- **Bounded memory** — the per-container cooldown map prunes entries that have
+  not moved anything for a minute.
 
 ### Platform support
 
@@ -90,7 +122,7 @@ Aliases: **`/rhoppers`**, **`/rh`** · Permission: `rapidhoppers.use` (default: 
 
 | Command | Short | Permission | Description |
 | --- | --- | --- | --- |
-| `/rh info` | `/rh i` | `rapidhoppers.info` | engine state, interval, speed factor, stack size, world mode, version/platform |
+| `/rh info` | `/rh i` | `rapidhoppers.info` | engine state, interval, speed factor, items/second, world mode, version/platform |
 | `/rh stats` | `/rh s` | `rapidhoppers.stats` | tracked containers, total transfers, transfers/second, TPS |
 | `/rh gui` | `/rh g` | `rapidhoppers.gui` | open the control panel (read-only without `rapidhoppers.admin`) |
 | `/rh help` | `/rh h` | `rapidhoppers.use` | command list |
@@ -105,9 +137,8 @@ Aliases: **`/rhadmin`**, **`/rha`** · Permission: `rapidhoppers.admin` (default
 | --- | --- | --- | --- |
 | `/rha reload` | `/rha rl` | `rapidhoppers.admin.reload` | reload `config.yml` + `messages.yml` and restart the engine |
 | `/rha toggle` | `/rha t` | `rapidhoppers.admin.toggle` | enable/disable the whole engine |
-| `/rha toggle <type>` | `/rha t <type>` | `rapidhoppers.admin.toggle` | toggle one container family (`hopper`, `hopper-minecart`, `chest-minecart`, `dropper`, `dispenser`) |
-| `/rha speed <1-8>` | `/rha sp <1-8>` | `rapidhoppers.admin.speed` | transfer interval in ticks (1 = fastest) |
-| `/rha stack <1-64>` | `/rha st <1-64>` | `rapidhoppers.admin.stack` | items moved per transfer |
+| `/rha toggle <type>` | `/rha t <type>` | `rapidhoppers.admin.toggle` | toggle one container family (`hopper`, `hopper-minecart`) |
+| `/rha speed <1-8>` | `/rha sp <1-8>` | `rapidhoppers.admin.speed` | ticks between transfers (1 = fastest, 8 = vanilla) |
 | `/rha world [world]` | `/rha w [world]` | `rapidhoppers.admin.world` | toggle a world in the world list (defaults to your current world) |
 | `/rha throttle [on\|off]` | `/rha th` | `rapidhoppers.admin.throttle` | toggle the TPS auto-throttle |
 | `/rha throttle soft <tps>` | `/rha th soft <tps>` | `rapidhoppers.admin.throttle` | set the soft (slow-down) threshold |
@@ -128,7 +159,7 @@ Both commands implement `TabCompleter`:
 
 - sub-commands (long **and** short forms) at argument 1;
 - container types for `toggle`, loaded world names for `world`,
-  sensible value suggestions for `speed`, `stack`, `limit`, and
+  sensible value suggestions for `speed`, `limit`, and
   `on/off/soft/hard` plus TPS values for `throttle`.
 - The admin completer returns nothing at all for players without
   `rapidhoppers.admin`, so the command surface stays invisible to them.
@@ -147,7 +178,6 @@ Both commands implement `TabCompleter`:
 | `rapidhoppers.admin.reload` | op | `/rha reload` |
 | `rapidhoppers.admin.toggle` | op | `/rha toggle [type]` |
 | `rapidhoppers.admin.speed` | op | `/rha speed` |
-| `rapidhoppers.admin.stack` | op | `/rha stack` |
 | `rapidhoppers.admin.world` | op | `/rha world` |
 | `rapidhoppers.admin.throttle` | op | `/rha throttle` |
 | `rapidhoppers.admin.limit` | op | `/rha limit` |
@@ -167,8 +197,7 @@ players with only `rapidhoppers.gui` see the same panel read-only.
 | Slot | Item | Left click | Right click |
 | --- | --- | --- | --- |
 | Engine | Hopper / Barrier | toggle the engine on/off | — |
-| Transfer interval | Clock | faster (−1 tick) | slower (+1 tick) |
-| Items per transfer | Chest | +1 (shift: +8) | −1 (shift: −8) |
+| Hopper speed | Clock | faster (−1 tick) | slower (+1 tick) |
 | Container types | Minecart | cycle to the next type and toggle it | — |
 | TPS auto-throttle | Redstone torch | toggle the throttle | — |
 | Per-chunk limit | Iron bars | +8 | −8 |
@@ -206,9 +235,9 @@ ignored gracefully instead of throwing.
 enabled: true
 
 engine:
-  interval-ticks: 2            # 1-8, vanilla is 8
-  items-per-transfer: 8        # 1-64, vanilla is 1
-  boost-vanilla-transfers: true
+  interval-ticks: 2            # 1-8 ticks between transfers, vanilla is 8
+                               # 8 = vanilla · 4 = 2x · 2 = 4x · 1 = 8x
+                               # (there is no items-per-transfer: always 1)
   scan-interval-ticks: 100
   player-activity-radius-chunks: 6   # 0 = every loaded chunk
 
@@ -217,19 +246,12 @@ containers:
     enabled: true
     pull-from-above: true
     push-to-facing: true
-    pickup-items: true
   hopper-minecart:
     enabled: true
     pull-from-above: true
-    push-to-container: true
-  chest-minecart:
-    enabled: true
-  dropper:
-    enabled: true
-    interval-multiplier: 2
-  dispenser:
-    enabled: false
-    interval-multiplier: 2
+
+# Droppers, dispensers and chest minecarts are intentionally not handled -
+# they do not run on a hopper clock, so there is no rate to accelerate.
 
 worlds:
   mode: BLACKLIST              # or WHITELIST
@@ -238,9 +260,9 @@ worlds:
 performance:
   throttle:
     enabled: true
-    soft-tps: 18.0             # slow down below this
-    hard-tps: 14.0             # pause below this
-    interval-multiplier: 3
+    soft-tps: 18.0             # step back towards vanilla below this
+    hard-tps: 14.0             # pure vanilla speed below this
+    interval-multiplier: 3     # capped at vanilla's 8 ticks
     check-interval-seconds: 5
     log-state-changes: true
   max-containers-per-chunk: 96 # 0 = unlimited
@@ -273,12 +295,13 @@ and lore (lore lines are separated with `|`).
 
 ### Recommended presets
 
-| Server type | interval | items | throttle | per-chunk limit |
+| Server type | `interval-ticks` | Speed | throttle | per-chunk limit |
 | --- | --- | --- | --- | --- |
-| Small survival / friends | `4` | `4` | on | `96` |
-| Public survival (default) | `2` | `8` | on | `96` |
-| Skyblock / heavy automation | `1` | `16` | on, soft 19 | `64` |
-| Creative / build server | `1` | `64` | off | `0` |
+| Vanilla parity (plugin idle) | `8` | 2.5 items/s | on | `96` |
+| Small survival / friends | `4` | 5 items/s (2×) | on | `96` |
+| Public survival (default) | `2` | 10 items/s (4×) | on | `96` |
+| Skyblock / heavy automation | `1` | 20 items/s (8×) | on, soft 19 | `64` |
+| Creative / build server | `1` | 20 items/s (8×) | off | `0` |
 
 ---
 
@@ -315,8 +338,8 @@ compilation — they are never shipped or referenced by the Maven build.
 
 | Suite | Checks |
 | --- | --- |
-| `smoke/EngineTest.java` | transfer math, interval/throttle calculations, config clamping and world modes, inventory move semantics, statistics counters (50 assertions) |
-| `smoke/CommandTest.java` | tab-completion filtering, message placeholders, and cross-file consistency between `plugin.yml`, `config.yml`, `messages.yml` and `pom.xml` (39 assertions) |
+| `smoke/EngineTest.java` | transfer math, interval/throttle calculations, the per-container cooldown clock, config clamping and world modes, single-item move semantics, statistics counters (97 assertions) |
+| `smoke/CommandTest.java` | tab-completion filtering, message placeholders, cross-file consistency between `plugin.yml`, `config.yml`, `messages.yml` and `pom.xml`, and a guard that no `items-per-transfer` setting can creep back in (40 assertions) |
 
 A GitHub Actions workflow is included at `.github/workflows/build.yml` — copy it
 to the repository root `.github/workflows/` to activate it. It runs the offline
@@ -338,9 +361,9 @@ RapidHoppers/
     │   ├── RapidHoppersPlugin.java      # bootstrap, wiring, reload
     │   ├── command/                     # player + admin commands, tab completion, permissions
     │   ├── config/                      # Settings, ConfigService, Messages
-    │   ├── engine/                      # HopperEngine, TransferMath, InventoryOps, ThrottleMonitor, Stats
+    │   ├── engine/                      # HopperEngine, TransferClock, TransferMath, InventoryOps, ThrottleMonitor, Stats
     │   ├── gui/                         # ControlPanel, PanelHolder
-    │   ├── listener/                    # TransferListener (boosts vanilla transfers)
+    │   ├── listener/                    # TransferListener (observes vanilla transfers, never alters them)
     │   ├── scheduler/                   # PlatformScheduler (Folia/Bukkit bridge)
     │   └── util/                        # Sounds
     └── resources/                       # plugin.yml, config.yml, messages.yml
@@ -351,14 +374,22 @@ RapidHoppers/
 ## ❓ FAQ
 
 **Does this break item sorters?**
-No. Vanilla hopper logic still runs; RapidHoppers only adds extra transfers on
-top. Comparator readings, locked hoppers and filtered designs are unchanged.
+No. Every transfer is a single item to a vanilla destination, and the plugin
+shares a cooldown with vanilla rather than adding transfers on top of it.
+Comparator readings, locked hoppers and filtered designs are unchanged.
+
+**Can I make hoppers move whole stacks at once?**
+No, and that is intentional. Moving more than one item per transfer is what
+breaks comparators and item sorters, and is what caused items to end up in
+containers nobody meant to fill. Use a lower `interval-ticks` instead — at `1`
+a hopper moves 20 items/second, one at a time.
 
 **Will it lag my server?**
-It is designed not to. The throttle pauses the engine before TPS collapses, the
-per-chunk and per-tick budgets bound the worst case, and chunks far from any
-player are skipped. If you still see impact, raise `interval-ticks`, lower
-`items-per-transfer` or reduce `player-activity-radius-chunks`.
+It is designed not to. The throttle returns hoppers to vanilla speed before TPS
+collapses, the per-chunk and per-tick budgets bound the worst case, and chunks
+far from any player are skipped. If you still see impact, raise
+`interval-ticks` (towards 8 = vanilla) or reduce
+`player-activity-radius-chunks`.
 
 **Does it work on Folia?**
 Yes — `folia-supported: true`, and all block/entity access is dispatched onto

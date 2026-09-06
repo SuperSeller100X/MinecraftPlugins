@@ -6,4 +6,5 @@ public interface Entity {
     World getWorld();
     boolean isDead();
     void remove();
+    java.util.UUID getUniqueId();
 }

@@ -19,10 +19,14 @@ public final class Settings {
     /** Vanilla hoppers move one item every 8 ticks. */
     public static final int VANILLA_INTERVAL_TICKS = 8;
 
+    /**
+     * Items moved per transfer. Always one, exactly like vanilla — RapidHoppers
+     * changes the hopper <em>rate</em>, never the amount.
+     */
+    public static final int ITEMS_PER_TRANSFER = 1;
+
     public static final int MIN_INTERVAL = 1;
     public static final int MAX_INTERVAL = 8;
-    public static final int MIN_STACK = 1;
-    public static final int MAX_STACK = 64;
 
     /** World handling mode. */
     public enum WorldMode {
@@ -41,13 +45,16 @@ public final class Settings {
         }
     }
 
-    /** Accelerated container families. */
+    /**
+     * Accelerated container families.
+     *
+     * <p>Only containers that vanilla ticks on a hopper clock are listed.
+     * Droppers and dispensers fire on a redstone pulse, so there is no rate to
+     * accelerate — they are left entirely to vanilla.</p>
+     */
     public enum ContainerType {
         HOPPER("hopper", "Hopper"),
-        HOPPER_MINECART("hopper-minecart", "Hopper minecart"),
-        CHEST_MINECART("chest-minecart", "Chest minecart"),
-        DROPPER("dropper", "Dropper"),
-        DISPENSER("dispenser", "Dispenser");
+        HOPPER_MINECART("hopper-minecart", "Hopper minecart");
 
         private final String path;
         private final String display;
@@ -85,19 +92,13 @@ public final class Settings {
 
     private boolean enabled = true;
     private int intervalTicks = 2;
-    private int itemsPerTransfer = 8;
-    private boolean boostVanillaTransfers = true;
     private int scanIntervalTicks = 100;
     private int playerActivityRadiusChunks = 6;
 
     private final boolean[] containerEnabled = new boolean[ContainerType.values().length];
     private boolean hopperPullFromAbove = true;
     private boolean hopperPushToFacing = true;
-    private boolean hopperPickupItems = true;
     private boolean minecartPullFromAbove = true;
-    private boolean minecartPushToContainer = true;
-    private int dropperMultiplier = 2;
-    private int dispenserMultiplier = 2;
 
     private WorldMode worldMode = WorldMode.BLACKLIST;
     private final List<String> worldList = new ArrayList<>();
@@ -125,26 +126,16 @@ public final class Settings {
         enabled = cfg.getBoolean("enabled", true);
 
         intervalTicks = clamp(cfg.getInt("engine.interval-ticks", 2), MIN_INTERVAL, MAX_INTERVAL);
-        itemsPerTransfer = clamp(cfg.getInt("engine.items-per-transfer", 8), MIN_STACK, MAX_STACK);
-        boostVanillaTransfers = cfg.getBoolean("engine.boost-vanilla-transfers", true);
         scanIntervalTicks = clamp(cfg.getInt("engine.scan-interval-ticks", 100), 20, 12000);
         playerActivityRadiusChunks = clamp(cfg.getInt("engine.player-activity-radius-chunks", 6), 0, 64);
 
         containerEnabled[ContainerType.HOPPER.ordinal()] = cfg.getBoolean("containers.hopper.enabled", true);
         containerEnabled[ContainerType.HOPPER_MINECART.ordinal()] =
                 cfg.getBoolean("containers.hopper-minecart.enabled", true);
-        containerEnabled[ContainerType.CHEST_MINECART.ordinal()] =
-                cfg.getBoolean("containers.chest-minecart.enabled", true);
-        containerEnabled[ContainerType.DROPPER.ordinal()] = cfg.getBoolean("containers.dropper.enabled", true);
-        containerEnabled[ContainerType.DISPENSER.ordinal()] = cfg.getBoolean("containers.dispenser.enabled", false);
 
         hopperPullFromAbove = cfg.getBoolean("containers.hopper.pull-from-above", true);
         hopperPushToFacing = cfg.getBoolean("containers.hopper.push-to-facing", true);
-        hopperPickupItems = cfg.getBoolean("containers.hopper.pickup-items", true);
         minecartPullFromAbove = cfg.getBoolean("containers.hopper-minecart.pull-from-above", true);
-        minecartPushToContainer = cfg.getBoolean("containers.hopper-minecart.push-to-container", true);
-        dropperMultiplier = clamp(cfg.getInt("containers.dropper.interval-multiplier", 2), 1, 16);
-        dispenserMultiplier = clamp(cfg.getInt("containers.dispenser.interval-multiplier", 2), 1, 16);
 
         worldMode = WorldMode.parse(cfg.getString("worlds.mode", "BLACKLIST"), WorldMode.BLACKLIST);
         worldList.clear();
@@ -190,6 +181,11 @@ public final class Settings {
         return (double) VANILLA_INTERVAL_TICKS / (double) intervalTicks;
     }
 
+    /** Items moved per second by one hopper at the configured interval. */
+    public double itemsPerSecond() {
+        return 20.0D / (double) intervalTicks;
+    }
+
     /** True when acceleration applies in the given world. */
     public boolean appliesToWorld(String worldName) {
         boolean listed = false;
@@ -228,16 +224,9 @@ public final class Settings {
         this.intervalTicks = clamp(intervalTicks, MIN_INTERVAL, MAX_INTERVAL);
     }
 
+    /** Always 1: RapidHoppers changes the rate, not the amount. */
     public int getItemsPerTransfer() {
-        return itemsPerTransfer;
-    }
-
-    public void setItemsPerTransfer(int itemsPerTransfer) {
-        this.itemsPerTransfer = clamp(itemsPerTransfer, MIN_STACK, MAX_STACK);
-    }
-
-    public boolean isBoostVanillaTransfers() {
-        return boostVanillaTransfers;
+        return ITEMS_PER_TRANSFER;
     }
 
     public int getScanIntervalTicks() {
@@ -256,24 +245,8 @@ public final class Settings {
         return hopperPushToFacing;
     }
 
-    public boolean isHopperPickupItems() {
-        return hopperPickupItems;
-    }
-
     public boolean isMinecartPullFromAbove() {
         return minecartPullFromAbove;
-    }
-
-    public boolean isMinecartPushToContainer() {
-        return minecartPushToContainer;
-    }
-
-    public int getDropperMultiplier() {
-        return dropperMultiplier;
-    }
-
-    public int getDispenserMultiplier() {
-        return dispenserMultiplier;
     }
 
     public WorldMode getWorldMode() {

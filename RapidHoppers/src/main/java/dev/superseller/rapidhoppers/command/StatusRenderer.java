@@ -26,8 +26,8 @@ public final class StatusRenderer {
         plugin.messages().sendPlain(sender, "status.interval", Map.of(
                 "interval", String.valueOf(settings.getIntervalTicks()),
                 "speed", String.valueOf(TransferMath.round1(settings.speedFactor()))));
-        plugin.messages().sendPlain(sender, "status.stack",
-                Map.of("stack", String.valueOf(settings.getItemsPerTransfer())));
+        plugin.messages().sendPlain(sender, "status.rate",
+                Map.of("rate", String.valueOf(TransferMath.round1(settings.itemsPerSecond()))));
         plugin.messages().sendPlain(sender, "status.worlds", Map.of(
                 "mode", settings.getWorldMode().name(),
                 "count", String.valueOf(settings.getWorldList().size())));

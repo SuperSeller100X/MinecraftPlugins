@@ -2,6 +2,11 @@
 #  RapidHoppers - configuration
 #  Minecraft 26.2 (Paper / Purpur / Folia) - Java 25
 #
+#  RapidHoppers changes ONE thing: how often a hopper performs its transfer.
+#  The transfer itself stays exactly vanilla - one item, from the inventory
+#  above into the hopper, or from the hopper into the inventory it faces.
+#  Amounts, destinations and contraption behaviour are never changed.
+#
 #  Everything in this file can be changed in-game with /rha ... or the GUI
 #  (/rha gui). Values written by commands/GUI are saved back to this file.
 # ---------------------------------------------------------------------------
@@ -10,18 +15,13 @@
 enabled: true
 
 engine:
-  # How often (in server ticks) accelerated containers perform a transfer.
-  # Vanilla hoppers move 1 item every 8 ticks. 1 = every tick (8x faster).
-  # Allowed: 1 - 8
+  # How often (in server ticks) a hopper may move ONE item.
+  # Vanilla is 8 ticks (2.5 items/second).
+  #   8 = vanilla speed   4 = 2x (5/s)   2 = 4x (10/s)   1 = 8x (20/s)
+  # Allowed: 1 - 8. There is no "items per transfer" setting on purpose:
+  # moving more than one item at a time is what breaks comparators, item
+  # sorters and filtered hoppers.
   interval-ticks: 2
-
-  # How many items are moved per transfer operation (vanilla: 1).
-  # Allowed: 1 - 64. 64 moves whole stacks at once.
-  items-per-transfer: 8
-
-  # Also boost transfers that vanilla itself triggers (InventoryMoveItemEvent).
-  # This makes even non-tracked / edge-case movements move full amounts.
-  boost-vanilla-transfers: true
 
   # Scan interval (ticks) for (re)discovering containers in loaded chunks.
   # Higher = cheaper, but newly placed containers start faster a bit later.
@@ -34,31 +34,22 @@ engine:
 containers:
   hopper:
     enabled: true
-    # Pull items from the inventory above the hopper.
+    # Pull one item from the inventory directly above the hopper.
     pull-from-above: true
-    # Push items into the container the hopper faces.
+    # Push one item into the container the hopper faces.
     push-to-facing: true
-    # Pick up dropped item entities that sit on top of the hopper.
-    pickup-items: true
   hopper-minecart:
     enabled: true
-    # Also accelerate hopper minecarts pulling from containers/hoppers above.
+    # Pull one item from the inventory directly above the minecart. This is
+    # the only container interaction vanilla gives a hopper minecart, so it is
+    # the only one that is accelerated.
     pull-from-above: true
-    # Push into a container the minecart is standing on/inside of.
-    push-to-container: true
-  chest-minecart:
-    # Accelerate hoppers feeding/draining storage minecarts on top of them.
-    enabled: true
-  dropper:
-    enabled: true
-    # When a dropper is pulsed, move items-per-transfer into the container it
-    # faces instead of vanilla's single item. Droppers are never ticked on
-    # their own — that would dump the inventory without redstone.
-    interval-multiplier: 2
-  dispenser:
-    # Same pulse-boost as droppers, off by default (dispensers usually shoot).
-    enabled: false
-    interval-multiplier: 2
+
+# Note: droppers, dispensers and chest minecarts are intentionally NOT handled.
+# They fire on a redstone pulse (or are drained by a hopper below them) rather
+# than running on a hopper clock, so there is no transfer rate to speed up -
+# moving items for them would mean moving items nothing asked to be moved.
+# They keep pure vanilla behaviour.
 
 worlds:
   # Mode: BLACKLIST (accelerate everywhere except 'list') or
@@ -70,11 +61,13 @@ performance:
   # --- TPS aware auto throttle -------------------------------------------
   throttle:
     enabled: true
-    # Below this TPS the engine slows down step by step.
+    # Below this TPS hoppers step back towards vanilla speed.
     soft-tps: 18.0
-    # Below this TPS the engine pauses completely until the server recovers.
+    # Below this TPS acceleration stops completely (pure vanilla speed) until
+    # the server recovers.
     hard-tps: 14.0
-    # Interval multiplier applied while throttled (interval * this).
+    # Interval multiplier applied while throttled (interval * this, capped at
+    # vanilla's 8 ticks).
     interval-multiplier: 3
     # Seconds between throttle re-evaluations.
     check-interval-seconds: 5
@@ -136,4 +129,4 @@ gui:
 debug: false
 
 # Do not edit: used to migrate configs between plugin versions.
-config-version: 1
+config-version: 2

@@ -38,7 +38,6 @@ public final class ConfigService {
         FileConfiguration cfg = plugin.getConfig();
         cfg.set("enabled", settings.isEnabled());
         cfg.set("engine.interval-ticks", settings.getIntervalTicks());
-        cfg.set("engine.items-per-transfer", settings.getItemsPerTransfer());
         for (Settings.ContainerType type : Settings.ContainerType.values()) {
             cfg.set(type.configKey(), settings.isContainerEnabled(type));
         }

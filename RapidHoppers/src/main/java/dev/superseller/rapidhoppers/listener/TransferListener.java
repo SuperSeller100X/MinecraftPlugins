@@ -1,115 +1,82 @@
 package dev.superseller.rapidhoppers.listener;
 
-import dev.superseller.rapidhoppers.config.Settings;
-import dev.superseller.rapidhoppers.config.Settings.ContainerType;
 import dev.superseller.rapidhoppers.engine.InventoryOps;
 import dev.superseller.rapidhoppers.engine.Stats;
-import dev.superseller.rapidhoppers.engine.ThrottleMonitor;
-import dev.superseller.rapidhoppers.engine.TransferMath;
+import dev.superseller.rapidhoppers.engine.TransferClock;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
-import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.InventoryHolder;
 
 /**
- * Boosts the transfers vanilla itself performs.
+ * Keeps the engine's clock in sync with the transfers vanilla performs itself.
  *
- * <p>When a hopper (or dropper / dispenser inserting into a container) would
- * move a single item, this listener <em>replaces</em> that transfer with one
- * of {@code engine.items-per-transfer} items of the same type.</p>
+ * <p>This listener <em>observes only</em>. It never cancels an event, never
+ * changes an amount and never moves an item. Its single job is to stamp the
+ * source container's {@link TransferClock} entry whenever vanilla moves
+ * something, so the engine knows that hopper has just transferred and must wait
+ * out its cooldown before RapidHoppers gives it another turn.</p>
  *
- * <p>The vanilla event is cancelled and the plugin performs the whole move.
- * Adding extra items on top of an uncancelled event is the classic hopper
- * dupe: the plugin takes the last item, then vanilla still deposits its
- * clone into the destination.</p>
+ * <p>Without this, the plugin's transfers would be added <em>on top of</em>
+ * vanilla's instead of replacing them: hoppers would exceed the configured
+ * rate, move items in bursts, and race vanilla for the same item — the
+ * behaviour that made items land in containers nobody intended to fill.</p>
  */
 public final class TransferListener implements Listener {
 
-    private final Settings settings;
-    private final ThrottleMonitor throttle;
     private final Stats stats;
+    private final TransferClock clock;
 
-    /** Prevents re-entrant move events from stacking transfers. */
-    private final ThreadLocal<Boolean> replacing = ThreadLocal.withInitial(() -> Boolean.FALSE);
-
-    public TransferListener(Settings settings, ThrottleMonitor throttle, Stats stats) {
-        this.settings = settings;
-        this.throttle = throttle;
+    public TransferListener(Stats stats, TransferClock clock) {
         this.stats = stats;
+        this.clock = clock;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /** Vanilla moved an item between two containers — charge the cooldown. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(InventoryMoveItemEvent event) {
-        if (Boolean.TRUE.equals(replacing.get())) {
-            return;
-        }
-        if (!settings.isEnabled() || !settings.isBoostVanillaTransfers() || throttle.isPaused()) {
-            return;
-        }
-        Inventory source = event.getSource();
-        Inventory destination = event.getDestination();
-        if (source == null || destination == null || InventoryOps.sameInventory(source, destination)) {
-            return;
-        }
-        if (!InventoryOps.isSimpleStorage(source) || !InventoryOps.isSimpleStorage(destination)) {
-            return;
-        }
-        if (!typeEnabled(source.getType()) && !typeEnabled(destination.getType())) {
-            return;
-        }
-        Location location = destination.getLocation() != null ? destination.getLocation() : source.getLocation();
-        if (location != null && location.getWorld() != null
-                && !settings.appliesToWorld(location.getWorld().getName())) {
-            return;
-        }
-        ItemStack moving = event.getItem();
-        if (moving == null || moving.getType().isAir() || moving.getAmount() <= 0) {
-            return;
-        }
-        int wanted = TransferMath.replaceAmount(
-                settings.getItemsPerTransfer(),
-                moving.getAmount(),
-                InventoryOps.countSimilar(source, moving),
-                InventoryOps.freeSpaceFor(destination, moving),
-                moving.getMaxStackSize());
-        if (wanted <= 0) {
-            return;
-        }
-        // Replacing vanilla's 1-item move with the same 1 item is a no-op.
-        if (wanted <= moving.getAmount()) {
-            return;
-        }
-
-        replacing.set(Boolean.TRUE);
-        try {
-            int moved = InventoryOps.moveSimilar(source, destination, moving, wanted);
-            if (moved > 0) {
-                // Vanilla still holds a clone it will deposit unless we cancel.
-                event.setCancelled(true);
-                stats.recordTransfer(moved);
-            }
-        } finally {
-            replacing.set(Boolean.FALSE);
+        // The "initiator" is the hopper doing the work: it pulls from a chest
+        // above, or pushes into the container it faces. Either way it is the
+        // container whose clock must be stamped.
+        Inventory initiator = event.getInitiator();
+        String key = keyOf(initiator != null ? initiator : event.getSource());
+        if (key != null) {
+            clock.stamp(key);
+            stats.recordTransfer(1);
         }
     }
 
-    private boolean typeEnabled(InventoryType type) {
-        if (type == null) {
-            return false;
+    /** Vanilla hopper picked a dropped item up — that is a transfer too. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPickup(InventoryPickupItemEvent event) {
+        String key = keyOf(event.getInventory());
+        if (key != null) {
+            clock.stamp(key);
         }
-        return switch (type) {
-            case HOPPER -> settings.isContainerEnabled(ContainerType.HOPPER)
-                    || settings.isContainerEnabled(ContainerType.HOPPER_MINECART);
-            case DROPPER -> settings.isContainerEnabled(ContainerType.DROPPER);
-            case DISPENSER -> settings.isContainerEnabled(ContainerType.DISPENSER);
-            default -> false;
-        };
+    }
+
+    /** Clock key for whichever container backs this inventory. */
+    private String keyOf(Inventory inventory) {
+        if (inventory == null || !InventoryOps.isSimpleStorage(inventory)) {
+            return null;
+        }
+        InventoryHolder holder = inventory.getHolder();
+        if (holder instanceof Entity entity) {
+            return TransferClock.entityKey(entity.getUniqueId());
+        }
+        Location location = inventory.getLocation();
+        if (location == null || location.getWorld() == null) {
+            return null;
+        }
+        return TransferClock.blockKey(location.getWorld().getName(),
+                location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     /** Utility used by the GUI to close viewers safely. */

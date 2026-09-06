@@ -10,9 +10,14 @@ import org.bukkit.event.inventory.InventoryType;
 /**
  * Low level, null-safe inventory moves shared by every accelerated container.
  *
- * <p>Every path that adds items also subtracts <em>exactly</em> that many from
- * the source. Partial {@code addItem} leftovers used to leave the extra copy
- * in the destination — that is a dupe, and it is no longer possible.</p>
+ * <p>Every move here is a <em>single item</em>, exactly like a vanilla hopper
+ * transfer. RapidHoppers only changes how often a transfer happens, never how
+ * much moves, so no contraption ever sees an amount it could not have seen in
+ * vanilla.</p>
+ *
+ * <p>Every path that adds an item also subtracts <em>exactly</em> that many from
+ * the source, and nothing is ever moved into a container type vanilla would not
+ * insert into.</p>
  */
 public final class InventoryOps {
 
@@ -20,89 +25,74 @@ public final class InventoryOps {
     }
 
     /**
-     * Moves up to {@code amount} items of the first movable stack from
-     * {@code from} into {@code to}.
+     * Moves a single item from the first movable slot of {@code from} into
+     * {@code to}, exactly like one vanilla hopper transfer.
      *
-     * @return the number of items actually moved (0 when nothing could move)
+     * @return 1 when an item moved, 0 otherwise
      */
-    public static int moveOneStack(Inventory from, Inventory to, int amount) {
-        if (!canMove(from, to, amount)) {
+    public static int moveOne(Inventory from, Inventory to) {
+        if (!canMove(from, to)) {
             return 0;
         }
         int size = from.getSize();
         for (int slot = 0; slot < size; slot++) {
             ItemStack stack = from.getItem(slot);
-            if (!isMovable(stack)) {
+            if (!isMovable(stack) || !accepts(to, stack)) {
                 continue;
             }
-            if (isShulkerBox(stack) && isShulkerInventory(to)) {
-                continue;
-            }
-            int moved = transferSlot(from, to, slot, stack, amount);
-            if (moved > 0) {
-                return moved;
+            if (transferSlot(from, to, slot, stack) > 0) {
+                return 1;
             }
         }
         return 0;
     }
 
     /**
-     * Moves up to {@code amount} items similar to {@code probe} from
-     * {@code from} into {@code to}. Used when replacing a vanilla transfer so
-     * only the item type vanilla already selected is touched.
+     * Moves a single item similar to {@code probe} out of {@code from} into
+     * {@code to}. Used when replacing a vanilla transfer so only the item type
+     * vanilla already selected is touched.
+     *
+     * @return 1 when an item moved, 0 otherwise
      */
-    public static int moveSimilar(Inventory from, Inventory to, ItemStack probe, int amount) {
-        if (!canMove(from, to, amount) || probe == null || probe.getType().isAir()) {
+    public static int moveOneSimilar(Inventory from, Inventory to, ItemStack probe) {
+        if (!canMove(from, to) || !isMovable(probe) || !accepts(to, probe)) {
             return 0;
         }
-        if (isShulkerBox(probe) && isShulkerInventory(to)) {
-            return 0;
-        }
-        int remaining = amount;
-        int movedTotal = 0;
         int size = from.getSize();
-        for (int slot = 0; slot < size && remaining > 0; slot++) {
+        for (int slot = 0; slot < size; slot++) {
             ItemStack stack = from.getItem(slot);
             if (!isMovable(stack) || !stack.isSimilar(probe)) {
                 continue;
             }
-            int moved = transferSlot(from, to, slot, stack, remaining);
-            if (moved > 0) {
-                movedTotal += moved;
-                remaining -= moved;
+            if (transferSlot(from, to, slot, stack) > 0) {
+                return 1;
             }
         }
-        return movedTotal;
+        return 0;
     }
 
     /**
-     * Adds up to {@code amount} items of {@code stack} into {@code to}.
-     * Does not mutate {@code stack}; the caller is responsible for shrinking
-     * the source (item entity, slot, …) by the returned count.
+     * Adds a single item of {@code stack}'s type into {@code to}.
+     * Does not mutate {@code stack}; the caller shrinks the source (item
+     * entity, slot, …) by the returned count.
+     *
+     * @return 1 when an item was added, 0 otherwise
      */
-    public static int addUpTo(Inventory to, ItemStack stack, int amount) {
-        if (to == null || !isMovable(stack) || amount <= 0) {
+    public static int addOne(Inventory to, ItemStack stack) {
+        if (to == null || !isMovable(stack) || !accepts(to, stack)) {
             return 0;
         }
-        if (isShulkerBox(stack) && isShulkerInventory(to)) {
-            return 0;
-        }
-        int free = freeSpaceFor(to, stack);
-        int move = TransferMath.moveAmount(amount, stack.getAmount(), free, stack.getMaxStackSize());
-        if (move <= 0) {
+        if (freeSpaceFor(to, stack) <= 0) {
             return 0;
         }
         ItemStack moving = stack.clone();
-        moving.setAmount(move);
-        return deposited(to.addItem(moving), move);
+        moving.setAmount(1);
+        return deposited(to.addItem(moving), 1);
     }
 
     /** How many more items of {@code probe}'s type fit into {@code inv}. */
     public static int freeSpaceFor(Inventory inv, ItemStack probe) {
-        if (inv == null || probe == null) {
-            return 0;
-        }
-        if (isShulkerBox(probe) && isShulkerInventory(inv)) {
+        if (inv == null || probe == null || !accepts(inv, probe)) {
             return 0;
         }
         int max = Math.max(1, probe.getMaxStackSize());
@@ -163,8 +153,10 @@ public final class InventoryOps {
 
     /**
      * Hoppers, chests, barrels, shulkers, droppers and dispensers. Furnaces,
-     * brewers, crafters and similar have slot rules {@code addItem} would
-     * bypass (pulling fuel, stuffing the result slot, …).
+     * brewers, crafters, jukeboxes, lecterns, chiseled bookshelves and similar
+     * have slot rules {@code addItem} would happily bypass (pulling fuel,
+     * stuffing the result slot, inserting items the block cannot hold), so
+     * RapidHoppers leaves them entirely to vanilla.
      */
     public static boolean isSimpleStorage(Inventory inv) {
         if (inv == null) {
@@ -178,6 +170,22 @@ public final class InventoryOps {
             case "CHEST", "BARREL", "SHULKER_BOX", "HOPPER", "DROPPER", "DISPENSER" -> true;
             default -> false;
         };
+    }
+
+    /**
+     * Vanilla's insertion rules for the item/destination pair.
+     *
+     * <p>Shulker boxes never accept another shulker box, and nothing that is
+     * not simple storage accepts anything at all.</p>
+     */
+    public static boolean accepts(Inventory to, ItemStack stack) {
+        if (to == null || stack == null) {
+            return false;
+        }
+        if (!isSimpleStorage(to)) {
+            return false;
+        }
+        return !(isShulkerBox(stack) && isShulkerInventory(to));
     }
 
     public static boolean sameInventory(Inventory a, Inventory b) {
@@ -226,8 +234,8 @@ public final class InventoryOps {
 
     // --- internals ----------------------------------------------------------
 
-    private static boolean canMove(Inventory from, Inventory to, int amount) {
-        return from != null && to != null && amount > 0
+    private static boolean canMove(Inventory from, Inventory to) {
+        return from != null && to != null
                 && !sameInventory(from, to)
                 && isSimpleStorage(from)
                 && isSimpleStorage(to);
@@ -238,12 +246,11 @@ public final class InventoryOps {
     }
 
     /**
-     * Moves items out of one source slot, shrinking that slot by however many
-     * the destination actually accepted.
+     * Moves one item out of a source slot, shrinking that slot by however many
+     * the destination actually accepted (0 or 1).
      */
-    private static int transferSlot(Inventory from, Inventory to, int slot, ItemStack stack, int amount) {
-        int free = freeSpaceFor(to, stack);
-        int move = TransferMath.moveAmount(amount, stack.getAmount(), free, stack.getMaxStackSize());
+    private static int transferSlot(Inventory from, Inventory to, int slot, ItemStack stack) {
+        int move = TransferMath.moveAmount(1, stack.getAmount(), freeSpaceFor(to, stack));
         if (move <= 0) {
             return 0;
         }
