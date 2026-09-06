@@ -1,0 +1,409 @@
+# =====================================================================
+#  HourGlass — real playtime tracking
+#  Minecraft 26.2 · Paper / Purpur / Folia · Java 25
+#
+#  Commands are /playtime (short: /pt) and /playtimeadmin (short: /pta).
+#  Reload after editing with /pta reload  (hourglass.admin.reload).
+#  Docs: README.md in the plugin folder.
+# =====================================================================
+config-version: 1
+
+general:
+  # What /playtime, the GUI headline and %hourglass_primary% report.
+  #   total  = every second the player was connected (realtime, AFK included)
+  #   active = only seconds in which the player was doing something
+  primary-metric: total
+
+  # Time zone used for "first joined" / "last seen" stamps.
+  #   system | utc | any Java zone id, e.g. Europe/Berlin, America/New_York
+  # Rendering is identical on Linux, Windows and macOS — the host locale is
+  # never consulted, so nobody gets a surprise 12/07 vs 07/12 date.
+  time-zone: system
+
+  # Pattern for absolute stamps (java.time format). "auto" picks a pattern from
+  # clock-24h below. Set e.g. "dd.MM.yyyy HH:mm" or "EEE HH:mm".
+  date-format: auto
+  clock-24h: true
+
+  # Stamp placeholders (used in /pt history and the GUI) as absolute text.
+  # When false, times are still shown relative ("3 days ago") where possible.
+  relative-times: true
+
+storage:
+  # Playtime lives in plugins/HourGlass/players/<uuid>.yml — one tiny, hand-editable
+  # file per player, written from a background thread so the server never blocks on
+  # disk. Backing playtime up means copying that folder.
+  # How often dirty records are flushed. 0 disables autosaving (records are then
+  # only written on logout, on admin edits and at shutdown). Minimum 1 minute.
+  autosave-minutes: 5
+
+  # Write the record when a player logs out (recommended).
+  save-on-quit: true
+
+  # Flush everything still pending when the server stops.
+  flush-on-disable: true
+
+  # How many finished sessions to remember per player (0 disables history).
+  # More history = a slightly bigger file per player.
+  history-size: 10
+
+  # Safety valve for very large databases: read at most N player files at
+  # startup (0 = read everything). Excess files are simply not cached until you
+  # raise this again; they are never deleted.
+  max-players: 0
+
+tracking:
+  # Measure "active" time separately from the total by pausing it while nobody
+  # moves, chats or interacts. total is always measured, idle or not.
+  idle-detection: true
+
+  # Seconds without any action before a player counts as idle.
+  idle-seconds: 300
+
+  # Do /playtimeadmin set|add|remove also move the active counter? Players with
+  # hourglass.bypass.idle are never idle, and /pt display still works either way.
+  admin-edits-count-as-active: true
+
+  # A single timer tick may never add more than this many seconds. This is what
+  # stops a suspended server (VM pause, laptop sleep, SIGSTOP) from gifting a
+  # week of playtime after it wakes up. 300 = 5 minutes.
+  max-tick-gap-seconds: 300
+
+  # Worlds where time is not counted at all (case-insensitive names), e.g. a
+  # lobby or a creative build world.
+  ignore-worlds: []
+
+leaderboard:
+  enabled: true
+
+  # Which number the board ranks by: total | active | primary (follows
+  # general.primary-metric).
+  metric: total
+
+  # Rows per page, in chat and in the GUI. 1..45.
+  per-page: 10
+
+  # The cached board is rebuilt at most this often (seconds). Lower = fresher
+  # ranks, more work on the main thread.
+  refresh-seconds: 60
+
+  # Rank offline players too (they keep their position between logins).
+  include-offline: true
+
+  # Cache at most N rows (0 = every tracked player). Lookups beyond the limit
+  # still work, they are simply not in the cached board.
+  limit: 500
+
+  # Highlight the reader's own row in chat (/pt top).
+  self-highlight: true
+
+display:
+  # Optional live timer. Players can override it per person with /pt display.
+  #   none | bossbar | actionbar
+  mode: none
+
+  # Which number the live timer shows: primary | total | active | session |
+  # session-active.
+  metric: primary
+
+  # How often it is refreshed, in seconds. 1 is plenty; the value is derived
+  # from the wall clock, so a slower interval never loses time.
+  update-seconds: 1
+
+  bossbar:
+    # Any BossBar colour: PINK BLUE RED GREEN YELLOW PURPLE WHITE
+    color: PURPLE
+    # SOLID SEGMENTED_6 SEGMENTED_10 SEGMENTED_12 NOTCHED_6 NOTCHED_10
+    # NOTCHED_12 NOTCHED_20
+    overlay: NOTCHED_10
+    # How the bar is filled:
+    #   day       = your playtime today (0% at midnight, 100% 24 h later)
+    #   week      = your playtime this week
+    #   milestone = progress towards your next milestone
+    #   none      = always full
+    progress: day
+
+join:
+  # Greet every player with their own playtime summary once.
+  summary-enabled: true
+  # Wait this long after /login-style joins so the message is not lost in the
+  # spam of join messages. 0 = immediately.
+  summary-delay-seconds: 3
+  # Play the "join" sound together with the summary (see sounds.events.join).
+  sound: true
+
+quit:
+  # Broadcast a short session summary to staff (needs hourglass.notify.staff).
+  staff-broadcast: false
+
+milestones:
+  # Fire rewards / announcements when a player crosses a playtime threshold.
+  enabled: true
+
+  # Count against which thresholds are compared: total | active | primary.
+  metric: total
+
+  # How often thresholds are re-checked, in seconds (also checked on join and
+  # right after an admin changes somebody's time).
+  check-seconds: 30
+
+  # Announce a reached milestone to everyone, or only to the player.
+  broadcast: true
+
+  # Also show the player a screen title.
+  show-title: true
+
+  # The list itself. Each entry needs a duration and may override anything.
+  # Every milestone is awarded once per player and remembered in their file, so
+  # restarting or editing numbers never double-rewards.
+  #   name     unique id (defaults to the key)
+  #   hours / minutes / days / seconds / duration   the threshold
+  #   message  messages.yml key override (optional)
+  #   commands console commands, %player% %uuid% %milestone% %hours% are replaced
+  #   sound    a sounds.events.* key override (optional)
+  #   broadcast / title  per-milestone overrides
+  # Shorthand is allowed too: "- 1" means one hour, "- 25h" also works.
+  list:
+      first-hour:
+        hours: 1
+        commands: []
+      one-day:
+        hours: 24
+      first-week:
+        days: 7
+      one-hundred-hours:
+        hours: 100
+        commands:
+          - "lp user %player% parent add veteran"
+      one-thousand-hours:
+        hours: 1000
+        broadcast: true
+        commands:
+          - "give %player% diamond 1"
+
+gui:
+  # Fill unused slots with a grey pane.
+  fill: true
+
+  # Close an open HourGlass GUI as soon as the player walks away.
+  close-on-move: false
+
+  # Use real player heads on the leaderboard. Heads of players who have never
+  # been on this server fall back to the generic skull.
+  leaderboard-heads: true
+
+  # Let non-admins click another player's head to see their public summary.
+  allow-view-others: true
+
+  # Which screen /pt gui opens with no argument: stats | leaderboard | milestones
+  default-gui: stats
+
+  # Progress bar used on the milestone screen (any characters work).
+  progress-bar:
+    filled: "█"
+    empty: "░"
+    length: 12
+
+# Every GUI detail — titles, sizes, materials, slots, names, lore and which
+# action a button performs — lives in gui.yml next to this file.
+
+export:
+  # /pta export writes playtime-<date>-<timestamp>.csv into this folder
+  # (relative to plugins/HourGlass/).
+  directory: exports
+
+  # CSV line endings: system | lf | crlf. CRLF is what Excel on Windows wants.
+  line-endings: system
+
+  # Write a UTF-8 BOM so Excel opens accented player names correctly.
+  add-bom: true
+
+  # Include players who are offline right now.
+  include-offline: true
+
+  # Row order: total | active | name | last-seen
+  sort: total
+
+admin:
+  # /pta reset (and the reset button in the admin GUI) wipes totals, history and
+  # awarded milestones. The first-join stamp is kept by default so a reset player
+  # is not suddenly treated as brand new; set false to clear that as well.
+  reset-keeps-first-join: true
+
+purge:
+  # Default "how many days inactive" for /pta purge when no number is given.
+  default-days: 180
+
+placeholders:
+  # Register PlaceholderAPI expansions when that plugin is installed.
+  enabled: true
+
+  # %hourglass_total%, %playtime_total%, %hg_total% ... one expansion per alias.
+  aliases:
+    - hourglass
+    - playtime
+    - hg
+
+commands:
+  # Allow running the commands from the console (GUI-only actions are skipped).
+  allow-console: true
+
+  # Cap the number of tab-completion suggestions.
+  tab-limit: 50
+
+  # Accept the short aliases of sub-commands (/pt t, /pt lb, /pta rl). Turn this
+  # off if a one-letter alias ever collides with another plugin's habit.
+  short-aliases: true
+
+# Text lives in messages.yml; everything a player can read is editable there
+# (MiniMessage tags plus legacy & codes are both supported).
+
+# --------------------------------------------------------------------- sounds
+# Every sound the plugin can play. Set enabled: false on a single event, or on
+# sounds.enabled for all of them. Names accept the CONSTANT form
+# (ENTITY_PLAYER_LEVELUP), the key form (minecraft:entity.player.levelup) or any
+# sound a datapack adds.
+sounds:
+  enabled: true
+  volume: 0.7
+  pitch: 1.0
+  events:
+    gui-open:
+      sound: BLOCK_CHEST_OPEN
+      volume: 0.5
+      pitch: 1.1
+      category: MASTER
+      enabled: true
+    gui-close:
+      sound: BLOCK_CHEST_CLOSE
+      volume: 0.5
+      pitch: 1.0
+      category: MASTER
+      enabled: true
+    gui-click:
+      sound: UI_BUTTON_CLICK
+      volume: 0.45
+      pitch: 1.4
+      category: MASTER
+      enabled: true
+    gui-back:
+      sound: BLOCK_WOODEN_DOOR_CLOSE
+      volume: 0.4
+      pitch: 1.0
+      category: MASTER
+      enabled: true
+    gui-page:
+      sound: BLOCK_NOTE_BLOCK_HAT
+      volume: 0.6
+      pitch: 1.2
+      category: MASTER
+      enabled: true
+    gui-error:
+      sound: ENTITY_VILLAGER_NO
+      volume: 0.7
+      pitch: 1.0
+      category: MASTER
+      enabled: true
+    command-ok:
+      sound: ENTITY_EXPERIENCE_ORB_PICKUP
+      volume: 0.5
+      pitch: 1.6
+      category: MASTER
+      enabled: true
+    command-error:
+      sound: BLOCK_NOTE_BLOCK_BASS
+      volume: 0.8
+      pitch: 0.8
+      category: MASTER
+      enabled: true
+    admin-edit:
+      sound: BLOCK_ANVIL_USE
+      volume: 0.5
+      pitch: 1.0
+      category: MASTER
+      enabled: true
+    admin-reset:
+      sound: ENTITY_ITEM_BREAK
+      volume: 0.7
+      pitch: 0.9
+      category: MASTER
+      enabled: true
+    admin-purge:
+      sound: ENTITY_GENERIC_EXPLODE
+      volume: 0.5
+      pitch: 0.8
+      category: MASTER
+      enabled: true
+    admin-export:
+      sound: BLOCK_BEACON_ACTIVATE
+      volume: 0.5
+      pitch: 1.2
+      category: MASTER
+      enabled: true
+    milestone:
+      sound: UI_TOAST_CHALLENGE_COMPLETE
+      volume: 0.9
+      pitch: 1.0
+      category: MASTER
+      enabled: true
+    join:
+      sound: BLOCK_AMETHYST_BLOCK_CHIME
+      volume: 0.7
+      pitch: 1.4
+      category: MASTER
+      enabled: true
+    display-on:
+      sound: BLOCK_NOTE_BLOCK_PLING
+      volume: 0.6
+      pitch: 1.5
+      category: MASTER
+      enabled: true
+    display-off:
+      sound: BLOCK_NOTE_BLOCK_PLING
+      volume: 0.6
+      pitch: 0.8
+      category: MASTER
+      enabled: true
+
+# --------------------------------------------------------------------- format
+# How a duration is written everywhere in the plugin.
+format:
+  # units   -> 1y 3d 4h
+  # words   -> 1 year, 3 days, 4 hours
+  # digital -> 8772:04:00
+  # clock   -> 3d 04:00:00
+  # compact -> 1y3d4h
+  # seconds -> 315817200
+  style: units
+
+  # Show at most this many units (0 = all of them). 3 -> "1y 3d 4h".
+  max-units: 3
+
+  # Set false to drop seconds (3d 4h 12m30s becomes 3d 4h 12m — truncated, never
+  # rounded up). Durations under a minute still show their seconds, so a brand
+  # new player never sees an empty string.
+  include-seconds: true
+
+  # Text between units in the "units" style.
+  separator: " "
+
+  # What 0 seconds reads as, e.g. right after a first join.
+  zero-text: "a brand new player"
+
+  # Unit names: the first entry is the short form used by units/compact/digital,
+  # the last is the word used by the "words" style.
+  units:
+    year: "y,year,years"
+    month: "mo,month,months"
+    week: "w,week,weeks"
+    day: "d,day,days"
+    hour: "h,hour,hours"
+    minute: "m,minute,minutes"
+    second: "s,second,seconds"
+
+  parse:
+    # Unit assumed when a command argument is a bare number: seconds | minutes.
+    # /pta add Notch 3600  ->  1 hour (seconds) or 1 minute (minutes)
+    default-unit: seconds
+
+debug: false

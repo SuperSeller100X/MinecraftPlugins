@@ -1,0 +1,138 @@
+name: HourGlass
+version: '${project.version}'
+main: dev.superseller.hourglass.HourGlassPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Real playtime tracking - see your total and active time on the server, with a leaderboard, milestones, GUIs, sounds and admin tools. Paper / Purpur / Folia 26.2.
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  playtime:
+    description: Show your playtime on this server (total, active, session, leaderboard, GUI).
+    usage: /<command> [total|active|session|first|top|rank|player|history|milestones|gui|display|info|reload|help]
+    aliases: [pt, hg, hourglass, ptime, playtimes]
+    permission: hourglass.use
+    permission-message: You do not have permission to view playtime.
+  playtimeadmin:
+    description: Read and correct tracked playtime, purge old records, export data.
+    usage: /<command> [info|set|add|remove|reset|freeze|list|top|purge|export|stats|gui|reload|help]
+    aliases: [pta, ptadmin, hga, hourglassadmin, hgadmin]
+    permission: hourglass.admin
+    permission-message: You do not have permission to manage playtime.
+
+permissions:
+  hourglass.use:
+    description: Base access to /playtime.
+    default: true
+  hourglass.total:
+    description: View your total realtime playtime.
+    default: true
+  hourglass.active:
+    description: View your active (non-idle) playtime.
+    default: true
+  hourglass.session:
+    description: View the length of your current session.
+    default: true
+  hourglass.first-join:
+    description: View when you first joined the server.
+    default: true
+  hourglass.rank:
+    description: View your leaderboard rank.
+    default: true
+  hourglass.top:
+    description: View the playtime leaderboard.
+    default: true
+  hourglass.history:
+    description: View your finished sessions.
+    default: true
+  hourglass.milestones:
+    description: View your milestone progress.
+    default: true
+  hourglass.gui:
+    description: Open the playtime GUIs.
+    default: true
+  hourglass.display:
+    description: Choose your own live timer display (boss bar or action bar).
+    default: true
+  hourglass.see.others:
+    description: Look up another player's playtime.
+    default: true
+  hourglass.notify.self:
+    description: Receive your playtime summary when you join.
+    default: true
+  hourglass.notify.staff:
+    description: See session summaries of players who log out (quit.staff-broadcast).
+    default: op
+  hourglass.bypass.idle:
+    description: Never count as idle - active time keeps running while you are away.
+    default: op
+  hourglass.bypass.untimed:
+    description: Your playtime is not measured at all (staff, bots, build teams).
+    default: op
+  hourglass.admin:
+    description: Access to /playtimeadmin.
+    default: op
+  hourglass.admin.info:
+    description: Inspect any player's tracked playtime.
+    default: op
+  hourglass.admin.edit:
+    description: Set, add, remove or reset a player's playtime.
+    default: op
+  hourglass.admin.freeze:
+    description: Pause or resume measuring a player.
+    default: op
+  hourglass.admin.list:
+    description: List the playtime of everyone online.
+    default: op
+  hourglass.admin.leaderboard:
+    description: Rebuild and browse the leaderboard cache.
+    default: op
+  hourglass.admin.purge:
+    description: Delete records of long-inactive players.
+    default: op
+  hourglass.admin.export:
+    description: Write a CSV export of all tracked playtime.
+    default: op
+  hourglass.admin.stats:
+    description: View storage, timer and cache statistics.
+    default: op
+  hourglass.admin.gui:
+    description: Open the admin GUI.
+    default: op
+  hourglass.admin.reload:
+    description: Reload config.yml, messages.yml and gui.yml at runtime.
+    default: op
+  hourglass.*:
+    description: All HourGlass permissions, including every admin node.
+    default: op
+    children:
+      hourglass.use: true
+      hourglass.total: true
+      hourglass.active: true
+      hourglass.session: true
+      hourglass.first-join: true
+      hourglass.rank: true
+      hourglass.top: true
+      hourglass.history: true
+      hourglass.milestones: true
+      hourglass.gui: true
+      hourglass.display: true
+      hourglass.see.others: true
+      hourglass.notify.self: true
+      hourglass.notify.staff: true
+      hourglass.bypass.idle: true
+      hourglass.bypass.untimed: true
+      hourglass.admin: true
+      hourglass.admin.info: true
+      hourglass.admin.edit: true
+      hourglass.admin.freeze: true
+      hourglass.admin.list: true
+      hourglass.admin.leaderboard: true
+      hourglass.admin.purge: true
+      hourglass.admin.export: true
+      hourglass.admin.stats: true
+      hourglass.admin.gui: true
+      hourglass.admin.reload: true

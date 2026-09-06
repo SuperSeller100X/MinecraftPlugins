@@ -251,3 +251,33 @@ Configurable **high-speed item transport** for Minecraft **26.2** (Paper / Purpu
 - Clickable GUI control panel with live stats, full `rapidhoppers.*` permission tree, TabCompleter, configurable sounds, MiniMessage messages — no dependencies, everything configurable, changes saved back to `config.yml`
 
 See [RapidHoppers/README.md](RapidHoppers/README.md). Build with `mvn -B clean package` in `RapidHoppers/` (JDK 25 required); an offline stub build + smoke tests run via `./build.sh`.
+## HourGlass ⌛
+
+Real **playtime tracking** for Minecraft **26.2** (Paper / Purpur / Folia), Java 25.
+HourGlass counts both the **realtime** total since your first join and the **active**
+time when you were actually doing something (idle is filtered out), and lets you pick
+which of the two is the headline number. Stored as plain per-player **YAML** — no
+database, no shading, no async driver surprises.
+
+- `/playtime` (`/pt`, `/ptime`, `/hg`, `/hourglass`) — `total` (`t`) · `active` (`a`) · `session` (`s`) ·
+  `first` (`fi`, `joined`) · `top` (`lb`, `leaderboard`) · `rank` (`r`) · `player` (`p`, `other`) ·
+  `history` (`h`) · `milestones` (`m`) · `gui` (`g`) · `display` (`d`) · `info` (`i`) · `reload` (`rl`)
+- `/playtimeadmin` (`/pta`, `/ptadmin`, `/hga`, `/hgadmin`, `/hourglassadmin`) — `info` · `set` · `add` ·
+  `remove` · `reset` · `freeze` · `list` · `top` · `purge` · `export` · `stats` · `gui` · `reload`
+- Session timer, first join, last seen, offline lookups, cached leaderboard with
+  stable tie-breaking, configurable milestones (commands + title + sound), paginated
+  admin GUI with ±time buttons and shift-click reset, live **boss bar / action bar**
+  timer per player, 16 configurable sound events, CSV export tuned for Excel on
+  Windows *and* LibreOffice on Linux
+- Full `hourglass.*` permission tree with `.*` parent and explicit children, TabCompleter
+  everywhere, MiniMessage `messages.yml`, `gui.yml` for every screen, `%playtime_*%`
+  PlaceholderAPI placeholders, `HourGlassApi` + `PlayerMilestoneReachEvent` for other plugins
+- Folia-safe single 20-tick timer via a region-aware scheduler, monotonic clock so NTP
+  jumps and lag spikes can neither invent nor lose time, byte-identical behaviour on
+  Linux, Windows and macOS
+
+See [HourGlass/README.md](HourGlass/README.md). Build with `mvn -B clean verify` in
+`HourGlass/` (JDK 25 required). A CI workflow that runs `tools/check_consistency.py`
+plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
+`HourGlass/.github/workflows/build.yml`; copy `HourGlass/ci/root-workflow.yml` to
+`.github/workflows/hourglass-build.yml` to activate it.
