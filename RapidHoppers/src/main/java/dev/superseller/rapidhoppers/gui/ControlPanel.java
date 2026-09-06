@@ -30,15 +30,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 /**
  * The in-game control panel ({@code /rh gui}, {@code /rha gui}).
  *
- * <p>Admins can toggle the engine, tune interval and stack size, flip
+ * <p>Admins can toggle the engine, tune the transfer interval, flip
  * container types and worlds, switch the throttle and reload the plugin.
  * Players with only {@code rapidhoppers.gui} see the same panel read-only.</p>
  */
 public final class ControlPanel implements Listener {
 
     public static final int SLOT_ENGINE = 10;
-    public static final int SLOT_SPEED = 12;
-    public static final int SLOT_STACK = 14;
+    public static final int SLOT_SPEED = 13;
     public static final int SLOT_CONTAINERS = 16;
     public static final int SLOT_THROTTLE = 28;
     public static final int SLOT_LIMIT = 30;
@@ -88,17 +87,12 @@ public final class ControlPanel implements Listener {
 
         set(inv, SLOT_SPEED, Material.CLOCK, "gui.item.speed-name", "gui.item.speed-lore",
                 Map.of("interval", String.valueOf(settings.getIntervalTicks()),
-                        "speed", format(settings.speedFactor())));
-
-        set(inv, SLOT_STACK, Material.CHEST, "gui.item.stack-name", "gui.item.stack-lore",
-                Map.of("stack", String.valueOf(settings.getItemsPerTransfer())));
+                        "speed", format(settings.speedFactor()),
+                        "rate", format(settings.itemsPerSecond())));
 
         set(inv, SLOT_CONTAINERS, Material.MINECART, "gui.item.containers-name", "gui.item.containers-lore",
                 Map.of("hopper", stateTag(settings.isContainerEnabled(ContainerType.HOPPER)),
-                        "hopper_minecart", stateTag(settings.isContainerEnabled(ContainerType.HOPPER_MINECART)),
-                        "chest_minecart", stateTag(settings.isContainerEnabled(ContainerType.CHEST_MINECART)),
-                        "dropper", stateTag(settings.isContainerEnabled(ContainerType.DROPPER)),
-                        "dispenser", stateTag(settings.isContainerEnabled(ContainerType.DISPENSER))));
+                        "hopper_minecart", stateTag(settings.isContainerEnabled(ContainerType.HOPPER_MINECART))));
 
         set(inv, SLOT_THROTTLE, Material.REDSTONE_TORCH, "gui.item.throttle-name", "gui.item.throttle-lore",
                 Map.of("state", stateTag(settings.isThrottleEnabled()),
@@ -164,7 +158,6 @@ public final class ControlPanel implements Listener {
             return;
         }
 
-        boolean shift = event.isShiftClick();
         ClickType click = event.getClick();
         boolean right = click == ClickType.RIGHT || click == ClickType.SHIFT_RIGHT;
 
@@ -182,14 +175,8 @@ public final class ControlPanel implements Listener {
                 plugin.sounds().play(player, Sounds.GUI_CLICK);
                 plugin.configService().save();
             }
-            case SLOT_STACK -> {
-                int step = shift ? 8 : 1;
-                settings.setItemsPerTransfer(settings.getItemsPerTransfer() + (right ? -step : step));
-                plugin.sounds().play(player, Sounds.GUI_CLICK);
-                plugin.configService().save();
-            }
             case SLOT_CONTAINERS -> {
-                ContainerType type = cycle(settings);
+                ContainerType type = cycle();
                 settings.setContainerEnabled(type, !settings.isContainerEnabled(type));
                 plugin.sounds().playToggle(player, settings.isContainerEnabled(type));
                 plugin.configService().save();
@@ -242,7 +229,7 @@ public final class ControlPanel implements Listener {
 
     // --- helpers ------------------------------------------------------------
 
-    private ContainerType cycle(Settings settings) {
+    private ContainerType cycle() {
         ContainerType[] types = ContainerType.values();
         int index = plugin.nextContainerCursor(types.length);
         return types[index];

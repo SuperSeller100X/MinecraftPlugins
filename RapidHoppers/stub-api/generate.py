@@ -225,6 +225,7 @@ public interface Entity {
     World getWorld();
     boolean isDead();
     void remove();
+    java.util.UUID getUniqueId();
 }
 """,
 "org/bukkit/entity/Item.java": """
@@ -437,15 +438,39 @@ import org.bukkit.inventory.ItemStack;
 public class InventoryMoveItemEvent extends Event implements Cancellable {
     private final Inventory source;
     private final Inventory destination;
+    private final Inventory initiator;
     private ItemStack item;
     private boolean cancelled;
     public InventoryMoveItemEvent(Inventory source, ItemStack item, Inventory destination) {
-        this.source = source; this.item = item; this.destination = destination;
+        this(source, item, destination, destination);
     }
+    public InventoryMoveItemEvent(Inventory source, ItemStack item, Inventory destination, Inventory initiator) {
+        this.source = source; this.item = item; this.destination = destination; this.initiator = initiator;
+    }
+    public Inventory getInitiator() { return initiator; }
     public Inventory getSource() { return source; }
     public Inventory getDestination() { return destination; }
     public ItemStack getItem() { return item; }
     public void setItem(ItemStack item) { this.item = item; }
+    public boolean isCancelled() { return cancelled; }
+    public void setCancelled(boolean cancel) { this.cancelled = cancel; }
+}
+""",
+"org/bukkit/event/inventory/InventoryPickupItemEvent.java": """
+package org.bukkit.event.inventory;
+import org.bukkit.entity.Item;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
+import org.bukkit.inventory.Inventory;
+public class InventoryPickupItemEvent extends Event implements Cancellable {
+    private final Inventory inventory;
+    private final Item item;
+    private boolean cancelled;
+    public InventoryPickupItemEvent(Inventory inventory, Item item) {
+        this.inventory = inventory; this.item = item;
+    }
+    public Inventory getInventory() { return inventory; }
+    public Item getItem() { return item; }
     public boolean isCancelled() { return cancelled; }
     public void setCancelled(boolean cancel) { this.cancelled = cancel; }
 }

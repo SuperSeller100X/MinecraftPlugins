@@ -60,15 +60,20 @@ public final class CommandTest {
             EngineTest.yes(pluginYml.contains(alias.replace("]", "")), "alias declared: " + alias);
         }
         for (String node : List.of("rapidhoppers.use", "rapidhoppers.gui", "rapidhoppers.admin",
-                "rapidhoppers.admin.reload", "rapidhoppers.admin.speed", "rapidhoppers.admin.stack",
+                "rapidhoppers.admin.reload", "rapidhoppers.admin.speed",
                 "rapidhoppers.admin.world", "rapidhoppers.admin.throttle", "rapidhoppers.admin.limit",
                 "rapidhoppers.admin.debug")) {
             EngineTest.yes(pluginYml.contains(node), "permission declared: " + node);
         }
-        for (String key : List.of("engine.interval-ticks", "items-per-transfer", "max-containers-per-chunk",
+        for (String key : List.of("interval-ticks", "max-containers-per-chunk",
                 "soft-tps", "hard-tps", "sounds:", "gui:")) {
-            EngineTest.yes(configYml.contains(key.replace("engine.", "")), "config key present: " + key);
+            EngineTest.yes(configYml.contains(key), "config key present: " + key);
         }
+        // The amount moved per transfer must not be configurable: one item per
+        // transfer is what keeps sorters and comparators behaving like vanilla.
+        EngineTest.no(configYml.contains("items-per-transfer"), "no items-per-transfer setting");
+        EngineTest.no(pluginYml.contains("rapidhoppers.admin.stack"), "no stack permission");
+        EngineTest.no(messagesYml.contains("stack-set"), "no stack message");
         for (String key : List.of("general.no-permission".substring(8), "status.enabled".substring(7),
                 "gui.item.engine-name".substring(9), "help:")) {
             EngineTest.yes(messagesYml.contains(key), "message key present: " + key);

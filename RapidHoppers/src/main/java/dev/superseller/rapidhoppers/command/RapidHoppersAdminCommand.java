@@ -29,7 +29,7 @@ import org.bukkit.entity.Player;
 public final class RapidHoppersAdminCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBS = List.of(
-            "reload", "rl", "toggle", "t", "speed", "sp", "stack", "st",
+            "reload", "rl", "toggle", "t", "speed", "sp",
             "world", "w", "throttle", "th", "limit", "l", "debug", "d",
             "info", "i", "stats", "s", "gui", "g", "help", "h");
 
@@ -110,21 +110,8 @@ public final class RapidHoppersAdminCommand implements CommandExecutor, TabCompl
                 plugin.configService().save();
                 plugin.messages().send(sender, "admin.speed-set", Map.of(
                         "interval", String.valueOf(settings.getIntervalTicks()),
-                        "speed", String.valueOf(TransferMath.round1(settings.speedFactor()))));
-                success(sender);
-            }
-            case "stack", "st" -> {
-                if (denied(sender, Permissions.ADMIN_STACK)) {
-                    return true;
-                }
-                Integer value = parseInt(sender, args, 1, Settings.MIN_STACK, Settings.MAX_STACK);
-                if (value == null) {
-                    return true;
-                }
-                settings.setItemsPerTransfer(value);
-                plugin.configService().save();
-                plugin.messages().send(sender, "admin.stack-set",
-                        Map.of("stack", String.valueOf(settings.getItemsPerTransfer())));
+                        "speed", String.valueOf(TransferMath.round1(settings.speedFactor())),
+                        "rate", String.valueOf(TransferMath.round1(settings.itemsPerSecond()))));
                 success(sender);
             }
             case "world", "w" -> {
@@ -340,9 +327,6 @@ public final class RapidHoppersAdminCommand implements CommandExecutor, TabCompl
                 }
                 case "speed", "sp" -> {
                     return RapidHoppersCommand.filter(List.of("1", "2", "3", "4", "6", "8"), args[1]);
-                }
-                case "stack", "st" -> {
-                    return RapidHoppersCommand.filter(List.of("1", "4", "8", "16", "32", "64"), args[1]);
                 }
                 case "world", "w" -> {
                     List<String> worlds = new ArrayList<>();

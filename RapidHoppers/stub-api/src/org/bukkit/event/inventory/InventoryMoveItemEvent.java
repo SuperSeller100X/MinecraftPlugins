@@ -6,11 +6,16 @@ import org.bukkit.inventory.ItemStack;
 public class InventoryMoveItemEvent extends Event implements Cancellable {
     private final Inventory source;
     private final Inventory destination;
+    private final Inventory initiator;
     private ItemStack item;
     private boolean cancelled;
     public InventoryMoveItemEvent(Inventory source, ItemStack item, Inventory destination) {
-        this.source = source; this.item = item; this.destination = destination;
+        this(source, item, destination, destination);
     }
+    public InventoryMoveItemEvent(Inventory source, ItemStack item, Inventory destination, Inventory initiator) {
+        this.source = source; this.item = item; this.destination = destination; this.initiator = initiator;
+    }
+    public Inventory getInitiator() { return initiator; }
     public Inventory getSource() { return source; }
     public Inventory getDestination() { return destination; }
     public ItemStack getItem() { return item; }
