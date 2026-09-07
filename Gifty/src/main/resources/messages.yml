@@ -55,7 +55,7 @@ admin:
   info-pages: '{prefix}&7Inbox pages: &f{pages}'
 
 prompt:
-  money: '{prefix}&eType the amount of money to include &7(or &fcancel&7 / &f0&7)&e:'
+  money: '{prefix}&eType the amount of money to include &7(or &fcancel&7 / &f0&7). &7Short forms work: &f1.5k&7, &f2m&7, &f1q&7&e:'
   message: '{prefix}&eType your message &7(or &fnone&7 to remove it, &fcancel&7 to keep)&e:'
   cancelled: '{prefix}&7Cancelled.'
   invalid: '{prefix}&cThat''s not a valid amount.'

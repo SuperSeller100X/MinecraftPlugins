@@ -2,6 +2,7 @@ package dev.superseller.playerbank.command;
 
 import dev.superseller.playerbank.PlayerBankPlugin;
 import dev.superseller.playerbank.model.BankAccount;
+import dev.superseller.playerbank.util.MoneyAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -73,17 +74,12 @@ public final class BankAdminCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-        double amount;
-        try {
-            amount = Double.parseDouble(args[2]);
-        } catch (NumberFormatException e) {
+        Double parsed = MoneyAmount.parse(args[2]);
+        if (parsed == null) {
             plugin.messages().send(sender, "invalid-amount");
             return true;
         }
-        if (amount < 0) {
-            plugin.messages().send(sender, "invalid-amount");
-            return true;
-        }
+        double amount = parsed;
         amount = plugin.bankConfig().roundMoney(amount);
         BankAccount acc = plugin.storage().getOrCreate(target.getUniqueId(), args[1]);
         switch (sub) {

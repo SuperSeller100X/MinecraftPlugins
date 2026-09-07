@@ -60,7 +60,7 @@ Running `/xp` with no arguments opens the GUI (or shows your balance if you lack
 | `/xp reload` | `rl` | Reload config & messages | `xpbank.admin.reload` |
 
 **Amounts** accept plain numbers (`100`), grouped numbers (`1,000`), suffixes
-(`1k`, `2.5m`, `1b`, `1t`), and the keywords **`all`** / **`max`** and **`half`**.
+(`1k`, `2.5m`, `1b`, `1t`, `1q`), and the keywords **`all`** / **`max`** and **`half`**.
 
 ### Admin command
 

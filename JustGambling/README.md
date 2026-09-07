@@ -76,7 +76,7 @@ The primary command is `/justgambling`; aliases are `/jg`, `/gamble`, and
 | Command | Short form | Description |
 |---|---|---|
 | `/jg` | `/jg menu` or `/jg g` | Open the casino GUI. |
-| `/jg play <game> <amount> [risk] [choice]` | `/jg p ...` | Play directly. Amounts support `100`, `1.5k`, `2m`, `all`. |
+| `/jg play <game> <amount> [risk] [choice]` | `/jg p ...` | Play directly. Amounts support `100`, `1.5k`, `2m`, `1b`, `1q`, `all`. |
 | `/jg games` | `/jg l` | List games and whether each is enabled. |
 | `/jg balance` | `/jg b` | Show the active economy balance and provider. |
 | `/jg history [page]` | `/jg h [page]` | Open paginated personal history. |

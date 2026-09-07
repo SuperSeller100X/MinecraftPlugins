@@ -63,7 +63,8 @@ safely on all three platforms.
 2. Put your items into the gift slot(s), then press **ESC**
 3. The confirm screen shows what's included. Click **Money** or
    **Message** to add extras (type them in chat), then click
-   **Send Gift**
+   **Send Gift**. Money amounts accept short forms: `1.5k`, `2m`,
+   `1b`, `3t`, `1q` (thousand, million, billion, trillion, quadrillion).
 4. Steve gets notified and can claim the gift in `/inbox`
 
 **Receiving**

@@ -57,6 +57,9 @@ public final class SmokeTest {
         checkEquals("parse 10K", 10000L, Numbers.parse("10K"));
         checkEquals("parse 1.2m", 1200000L, Numbers.parse("1.2m"));
         checkEquals("parse 3b", 3000000000L, Numbers.parse("3b"));
+        checkEquals("parse 4t", 4000000000000L, Numbers.parse("4t"));
+        checkEquals("parse 5q", 5000000000000000L, Numbers.parse("5q"));
+        checkEquals("parse 2.5Q", 2500000000000000L, Numbers.parse("2.5Q"));
         check("parse negative rejected", Numbers.parse("-5") == null);
         check("parse garbage rejected", Numbers.parse("abc") == null);
         check("parse empty rejected", Numbers.parse("") == null);
@@ -66,6 +69,7 @@ public final class SmokeTest {
         checkEquals("compact million", "1.5M", Numbers.compact(1500000L));
         checkEquals("compact small", "300", Numbers.compact(300L));
         checkEquals("compact ten-k", "10k", Numbers.compact(10000L));
+        checkEquals("compact quadrillion", "2Q", Numbers.compact(2_000_000_000_000_000L));
     }
 
     private static void testTimeWords() {

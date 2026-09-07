@@ -29,6 +29,7 @@ public final class Numbers {
                 case 'm' -> 1_000_000.0;
                 case 'b' -> 1_000_000_000.0;
                 case 't' -> 1_000_000_000_000.0;
+                case 'q' -> 1_000_000_000_000_000.0;
                 default -> 1.0;
             };
             if (multiplier != 1.0) {
@@ -102,6 +103,9 @@ public final class Numbers {
 
     public static String compact(double amount) {
         double absolute = Math.abs(amount);
+        if (absolute >= 1_000_000_000_000_000.0) {
+            return format(amount / 1_000_000_000_000_000.0, 2) + "q";
+        }
         if (absolute >= 1_000_000_000_000.0) {
             return format(amount / 1_000_000_000_000.0, 2) + "t";
         }
