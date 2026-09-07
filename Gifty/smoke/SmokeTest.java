@@ -53,8 +53,20 @@ public final class SmokeTest {
         check("1.5K", Numbers.format(1500).equals("1.5K"));
         check("2.1M", Numbers.format(2_100_000).equals("2.1M"));
         check("1B", Numbers.format(1_000_000_000).equals("1B"));
+        check("2Q", Numbers.format(2_000_000_000_000_000d).equals("2Q"));
         check("plain", Numbers.format(42).equals("42"));
         check("duration", Numbers.duration(65).equals("1m 5s"));
+        System.out.println("money parsing:");
+        check("parse 500", Double.valueOf(500.0d).equals(Numbers.parseMoney("500")));
+        check("parse 1.5k", Double.valueOf(1_500.0d).equals(Numbers.parseMoney("1.5k")));
+        check("parse 2M", Double.valueOf(2_000_000.0d).equals(Numbers.parseMoney("2M")));
+        check("parse 3b", Double.valueOf(3_000_000_000.0d).equals(Numbers.parseMoney("3b")));
+        check("parse 4t", Double.valueOf(4_000_000_000_000.0d).equals(Numbers.parseMoney("4t")));
+        check("parse 5q", Double.valueOf(5_000_000_000_000_000.0d).equals(Numbers.parseMoney("5q")));
+        check("parse $1,000", Double.valueOf(1_000.0d).equals(Numbers.parseMoney("$1,000")));
+        check("parse garbage null", Numbers.parseMoney("abc") == null);
+        check("parse negative null", Numbers.parseMoney("-5") == null);
+        check("parse empty null", Numbers.parseMoney("") == null);
     }
 
     private static void testMiniYaml() {

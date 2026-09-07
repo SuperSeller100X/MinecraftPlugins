@@ -106,6 +106,7 @@ friendly and supports:
 | `1.5m` | 1,500,000 |
 | `2b` | 2,000,000,000 |
 | `3t` | 3,000,000,000,000 |
+| `5q` / `2.5Q` | 5,000,000,000,000,000 / 2,500,000,000,000,000 |
 | `all` | The player’s available balance |
 
 Invalid, non-positive, or unaffordable amounts are rejected with a clear

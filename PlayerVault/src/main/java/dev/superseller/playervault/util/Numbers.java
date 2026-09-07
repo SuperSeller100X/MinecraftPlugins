@@ -7,7 +7,7 @@ import java.util.OptionalDouble;
  * Number parsing and formatting helpers.
  *
  * <p>Money values in {@code config.yml} may use the suffixes {@code k}, {@code m},
- * {@code b} and {@code t} so server owners can write {@code 10k} instead of
+ * {@code b}, {@code t} and {@code q} so server owners can write {@code 10k} instead of
  * {@code 10000}. Parsing is deliberately lenient: commas and spaces are ignored and
  * the suffix is case-insensitive.
  */
@@ -38,6 +38,7 @@ public final class Numbers {
                 case 'm' -> factor = 1_000_000.0d;
                 case 'b' -> factor = 1_000_000_000.0d;
                 case 't' -> factor = 1_000_000_000_000.0d;
+                case 'q' -> factor = 1_000_000_000_000_000.0d;
                 default -> {
                     return OptionalDouble.empty();
                 }

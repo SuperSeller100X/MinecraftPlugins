@@ -249,7 +249,7 @@ public final class TeleportSignsCommand implements CommandExecutor, TabCompleter
             plugin.messages().send(player, "usage-cost");
             return true;
         }
-        Double amount = Numbers.parseDouble(args[1]);
+        Double amount = Numbers.parseMoney(args[1]);
         if (amount == null || amount.doubleValue() < 0.0d) {
             plugin.messages().send(player, "invalid-number", Map.of("input", args[1]));
             return true;

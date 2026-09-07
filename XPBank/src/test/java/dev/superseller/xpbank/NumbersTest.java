@@ -21,6 +21,9 @@ class NumbersTest {
         assertEquals(1_000L, Numbers.parseAmount("1k"));
         assertEquals(2_500_000L, Numbers.parseAmount("2.5m"));
         assertEquals(1_000_000_000L, Numbers.parseAmount("1b"));
+        assertEquals(4_000_000_000_000L, Numbers.parseAmount("4t"));
+        assertEquals(5_000_000_000_000_000L, Numbers.parseAmount("5q"));
+        assertEquals(2_500_000_000_000_000L, Numbers.parseAmount("2.5Q"));
     }
 
     @Test
@@ -44,5 +47,6 @@ class NumbersTest {
         assertEquals("1.23M", Numbers.compact(1_234_567L));
         assertEquals("999", Numbers.compact(999L));
         assertEquals("1.5k", Numbers.compact(1_500L));
+        assertEquals("2Q", Numbers.compact(2_000_000_000_000_000L));
     }
 }

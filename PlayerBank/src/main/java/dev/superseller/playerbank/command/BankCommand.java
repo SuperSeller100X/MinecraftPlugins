@@ -4,6 +4,7 @@ import dev.superseller.playerbank.PlayerBankPlugin;
 import dev.superseller.playerbank.config.BankConfig;
 import dev.superseller.playerbank.model.BankAccount;
 import dev.superseller.playerbank.model.BankLogEntry;
+import dev.superseller.playerbank.util.MoneyAmount;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -278,15 +279,11 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
         if (raw.equalsIgnoreCase("all") || raw.equalsIgnoreCase("max")) {
             return allValue;
         }
-        try {
-            double v = Double.parseDouble(raw.replace(",", ""));
-            if (v <= 0 || Double.isNaN(v) || Double.isInfinite(v)) {
-                return null;
-            }
-            return v;
-        } catch (NumberFormatException e) {
+        Double v = MoneyAmount.parse(raw);
+        if (v == null || v <= 0.0d) {
             return null;
         }
+        return v;
     }
 
     private static boolean isInt(String s) {

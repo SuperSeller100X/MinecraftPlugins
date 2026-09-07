@@ -12,7 +12,7 @@ public final class Numbers {
     }
 
     /**
-     * Parses an amount such as "1500", "2.5k", "10K", "1.2m" or "3b".
+     * Parses an amount such as "1500", "2.5k", "10K", "1.2m", "3b", "4t" or "5q".
      *
      * @return the value in shards, or {@code null} if the input is invalid or negative.
      */
@@ -23,23 +23,32 @@ public final class Numbers {
         String text = input.trim().toLowerCase(Locale.ROOT);
         long multiplier = 1L;
         char last = text.charAt(text.length() - 1);
-        if (last == 'k' || last == 'm' || last == 'b' || last == 't') {
-            multiplier = last == 'k' ? 1_000L : last == 'm' ? 1_000_000L : last == 'b' ? 1_000_000_000L : 1_000_000_000_000L;
+        if (last == 'k' || last == 'm' || last == 'b' || last == 't' || last == 'q') {
+            multiplier = switch (last) {
+                case 'k' -> 1_000L;
+                case 'm' -> 1_000_000L;
+                case 'b' -> 1_000_000_000L;
+                case 't' -> 1_000_000_000_000L;
+                default -> 1_000_000_000_000_000L; // q = quadrillion
+            };
             text = text.substring(0, text.length() - 1);
         }
         if (text.isEmpty()) {
             return null;
         }
         try {
-            double value;
+            long result;
             if (text.indexOf('.') >= 0 || multiplier != 1L && text.length() > 3) {
-                value = Double.parseDouble(text);
+                double value = Double.parseDouble(text) * multiplier;
+                if (value >= 9.0e18d || !Double.isFinite(value)) {
+                    return null; // beyond the long range we can represent
+                }
+                result = (long) Math.floor(value);
             } else {
-                value = Long.parseLong(text);
+                result = Math.multiplyExact(Long.parseLong(text), multiplier);
             }
-            long result = (long) Math.floor(value * multiplier);
             return result < 0 ? null : result;
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException | ArithmeticException ignored) {
             return null;
         }
     }
@@ -62,6 +71,12 @@ public final class Numbers {
     public static String compact(long value) {
         long abs = Math.abs(value);
         String sign = value < 0 ? "-" : "";
+        if (abs >= 1_000_000_000_000_000L) {
+            return sign + trimDecimal(abs / 1_000_000_000_000_000.0) + "Q";
+        }
+        if (abs >= 1_000_000_000_000L) {
+            return sign + trimDecimal(abs / 1_000_000_000_000.0) + "T";
+        }
         if (abs >= 1_000_000_000L) {
             return sign + trimDecimal(abs / 1_000_000_000.0) + "B";
         }

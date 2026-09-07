@@ -278,7 +278,7 @@ Safety rules enforced by the click handler:
 | `max-rows-per-purchase` | `25` | Cap for a single `/pv upgrade <n>` |
 | `confirm-threshold` | `5` | Ask for confirmation from this many rows; `0` disables |
 
-Money values accept the suffixes `k`, `m`, `b` and `t`, so `10k` means `10000`.
+Money values accept the suffixes `k`, `m`, `b`, `t` and `q`, so `10k` means `10000`.
 
 ### `economy`
 
