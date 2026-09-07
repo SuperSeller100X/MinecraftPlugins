@@ -6,7 +6,10 @@ import dev.superseller.playerbank.model.BankAccount;
 import dev.superseller.playerbank.model.BankLogEntry;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,9 +93,9 @@ public final class BankStorage {
             String path = "accounts." + acc.uuid();
             yaml.set(path + ".name", acc.lastName());
             yaml.set(path + ".balance", acc.balance());
-            java.util.List<java.util.Map<String, Object>> logs = new java.util.ArrayList<>();
+            List<Map<String, Object>> logs = new ArrayList<>();
             for (BankLogEntry e : acc.logs()) {
-                java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                Map<String, Object> m = new LinkedHashMap<>();
                 m.put("time", e.time());
                 m.put("type", e.type());
                 m.put("amount", e.amount());

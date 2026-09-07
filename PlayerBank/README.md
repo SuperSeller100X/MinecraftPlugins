@@ -112,6 +112,7 @@ gui:
     icons: { ... }      # every button material
   sounds:
     enabled: true
+    # key form (ui.button.click) or legacy enum form (UI_BUTTON_CLICK)
     open: BLOCK_ENDER_CHEST_OPEN
     click: UI_BUTTON_CLICK
     deposit: ENTITY_EXPERIENCE_ORB_PICKUP

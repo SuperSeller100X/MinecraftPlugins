@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -254,8 +256,9 @@ public final class BankConfig {
 
     /** Icon material for a chest menu button; falls back to a sensible default. */
     public Material chestIcon(String key) {
-        return material(plugin.getConfig().getString("gui.chest.icons." + key, defaultIcon(key)),
-                defaultIcon(key));
+        Material fallback = defaultIcon(key);
+        String raw = plugin.getConfig().getString("gui.chest.icons." + key);
+        return raw == null || raw.isBlank() ? fallback : material(raw, fallback);
     }
 
     private Material defaultIcon(String key) {
@@ -280,7 +283,11 @@ public final class BankConfig {
         return soundsEnabled;
     }
 
-    /** Sound for a GUI event key, or null when blank/unparseable. */
+    /**
+     * Sound for a GUI event key, or null when blank/disabled/unknown. Accepts
+     * both the key form ({@code ui.button.click}, {@code custom:pack.sound})
+     * and the legacy enum spelling ({@code UI_BUTTON_CLICK}).
+     */
     public Sound sound(String key) {
         String name = switch (key) {
             case "open" -> soundOpen;
@@ -293,11 +300,42 @@ public final class BankConfig {
         if (!soundsEnabled || name == null || name.isBlank() || "none".equalsIgnoreCase(name)) {
             return null;
         }
-        try {
-            return Sound.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
+        Sound resolved = lookupSound(name);
+        if (resolved == null) {
             plugin.getLogger().warning("Unknown sound '" + name + "' (gui.sounds." + key + ").");
-            return null;
         }
+        return resolved;
+    }
+
+    /**
+     * Resolves a sound name through the sound registry — {@link Sound#valueOf}
+     * is deprecated for removal. Falls back to comparing the legacy enum
+     * spelling with separators stripped, because enum names do not map 1:1
+     * onto key names ({@code UI_BUTTON_CLICK} is {@code ui.button.click}).
+     */
+    private Sound lookupSound(String raw) {
+        String name = raw.trim().toLowerCase(Locale.ROOT);
+        try {
+            NamespacedKey key = name.indexOf(':') >= 0
+                    ? NamespacedKey.fromString(name)
+                    : NamespacedKey.minecraft(name);
+            if (key != null) {
+                Sound direct = Registry.SOUNDS.get(key);
+                if (direct != null) {
+                    return direct;
+                }
+            }
+            String wanted = name.replace("_", "").replace(".", "");
+            for (Sound sound : Registry.SOUNDS) {
+                NamespacedKey soundKey = Registry.SOUNDS.getKey(sound);
+                if (soundKey != null
+                        && soundKey.value().replace("_", "").replace(".", "").equals(wanted)) {
+                    return sound;
+                }
+            }
+        } catch (Throwable t) {
+            // A bad sound name must never break a reload.
+        }
+        return null;
     }
 }

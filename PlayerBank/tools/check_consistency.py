@@ -79,6 +79,7 @@ def main() -> int:
     check_resource_filtering(sources)
     check_dialog_keys(sources)
     check_imports(sources)
+    check_external_imports(sources)
     return report()
 
 
@@ -239,8 +240,6 @@ def check_imports(sources: dict[Path, str]) -> None:
         if match:
             simple_names.setdefault(path.stem, match.group(1))
 
-    strip_pattern = re.compile(
-        r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"', re.DOTALL)
     missing = []
     for path, text in sources.items():
         match = re.search(r"^package\s+([\w.]+);", text, re.MULTILINE)
@@ -260,6 +259,109 @@ def check_imports(sources: dict[Path, str]) -> None:
         fail(message)
     if not missing:
         print(f"  cross-package references: all {len(simple_names)} project classes imported")
+
+
+# Strips comments and string literals so name scans only see real code.
+strip_pattern = re.compile(
+    r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"', re.DOTALL)
+
+
+# Classes from java.lang never need an import.
+JAVA_LANG = {
+    "String", "System", "Math", "Object", "Runnable", "Thread", "Class", "Package",
+    "Enum", "Record", "Override", "Deprecated", "SuppressWarnings", "FunctionalInterface",
+    "SafeVarargs", "Iterable", "Comparable", "Cloneable", "Void", "Integer", "Long",
+    "Double", "Float", "Boolean", "Character", "Byte", "Short", "Number", "StringBuilder",
+    "StringBuffer", "CharSequence", "Exception", "RuntimeException", "Error", "Throwable",
+    "IllegalArgumentException", "IllegalStateException", "NullPointerException",
+    "UnsupportedOperationException", "NumberFormatException", "ArithmeticException",
+    "IndexOutOfBoundsException", "ClassCastException", "AutoCloseable", "Process",
+    "Runtime", "ThreadLocal",
+}
+
+# Commonly used external classes. The vocabulary is seeded with these so a
+# class nobody imports anywhere (a missing import in *every* using file) is
+# still caught.
+SEED_FQCNS = [
+    "java.util.ArrayList", "java.util.ArrayDeque", "java.util.Deque", "java.util.HashMap",
+    "java.util.HashSet", "java.util.List", "java.util.Locale", "java.util.Map", "java.util.Set",
+    "java.util.UUID", "java.time.Instant", "java.time.ZoneId",
+    "java.time.format.DateTimeFormatter",
+    "net.kyori.adventure.key.Key", "net.kyori.adventure.text.Component",
+    "net.kyori.adventure.text.TextComponent",
+    "net.kyori.adventure.text.format.NamedTextColor",
+    "net.kyori.adventure.text.format.TextDecoration",
+    "net.kyori.adventure.text.minimessage.MiniMessage",
+    "org.bukkit.Bukkit", "org.bukkit.Location", "org.bukkit.Material", "org.bukkit.NamespacedKey",
+    "org.bukkit.OfflinePlayer", "org.bukkit.Registry", "org.bukkit.Sound", "org.bukkit.World",
+    "org.bukkit.command.Command", "org.bukkit.command.CommandExecutor",
+    "org.bukkit.command.CommandSender", "org.bukkit.command.PluginCommand",
+    "org.bukkit.command.TabCompleter",
+    "org.bukkit.configuration.ConfigurationSection",
+    "org.bukkit.configuration.file.FileConfiguration",
+    "org.bukkit.configuration.file.YamlConfiguration",
+    "org.bukkit.entity.Player",
+    "org.bukkit.event.EventHandler", "org.bukkit.event.Listener",
+    "org.bukkit.event.inventory.InventoryClickEvent", "org.bukkit.event.inventory.InventoryDragEvent",
+    "org.bukkit.inventory.Inventory", "org.bukkit.inventory.InventoryHolder",
+    "org.bukkit.inventory.ItemStack", "org.bukkit.inventory.meta.ItemMeta",
+    "org.bukkit.plugin.Plugin", "org.bukkit.plugin.RegisteredServiceProvider",
+    "org.bukkit.plugin.java.JavaPlugin", "org.bukkit.scheduler.BukkitTask",
+    "io.papermc.paper.connection.PlayerGameConnection", "io.papermc.paper.dialog.Dialog",
+    "io.papermc.paper.dialog.DialogResponseView",
+    "io.papermc.paper.event.player.PlayerCustomClickEvent",
+    "io.papermc.paper.registry.data.dialog.ActionButton",
+    "io.papermc.paper.registry.data.dialog.DialogBase",
+    "io.papermc.paper.registry.data.dialog.action.DialogAction",
+    "io.papermc.paper.registry.data.dialog.body.DialogBody",
+    "io.papermc.paper.registry.data.dialog.input.DialogInput",
+    "io.papermc.paper.registry.data.dialog.type.DialogType",
+]
+
+
+def check_external_imports(sources: dict[Path, str]) -> None:
+    """A file using an external simple name (Player, ItemStack, ...) must
+    import it — the bug class behind the missing Player import in DialogMenu.
+
+    The vocabulary is every import across the project plus a seed list of the
+    external APIs this plugin uses; java.lang names and fully-qualified usages
+    (java.util.Map.of) are exempt.
+    """
+    vocab: dict[str, str] = {}
+    for fqcn in SEED_FQCNS:
+        vocab.setdefault(fqcn.rsplit(".", 1)[1], fqcn)
+    for text in sources.values():
+        body = strip_pattern.sub("", text)
+        for m in re.finditer(r"^import\s+(?:static\s+)?([\w.]+)\s*;", body, re.MULTILINE):
+            fqcn = m.group(1)
+            if not fqcn.endswith(".*"):
+                vocab.setdefault(fqcn.rsplit(".", 1)[1], fqcn)
+
+    # Fully-qualified class references (java.util.Map.of) compile without an
+    # import — replace whole package+classname runs so only bare simple names
+    # are left to scan.
+    mask_fq = re.compile(r"\b(?:[a-z_][\w]*\.)+[A-Z]\w*")
+    missing = []
+    for path, text in sources.items():
+        body = strip_pattern.sub("", text)
+        imported = set()
+        for m in re.finditer(r"^import\s+(?:static\s+)?([\w.]+)\s*;", body, re.MULTILINE):
+            imported.add(m.group(1))
+        # Mask package / receiver prefixes (java.util., player.getScheduler().)
+        # so only plain simple-name usages are left to scan.
+        usage = mask_fq.sub("", body)
+        own = re.search(r"^package\s+([\w.]+);", text, re.MULTILINE)
+        own_pkg = own.group(1) if own else ""
+        for simple, fqcn in vocab.items():
+            if simple in JAVA_LANG or not re.search(rf"\b{simple}\b", usage):
+                continue
+            if fqcn in imported or fqcn.startswith(f"{own_pkg}."):
+                continue
+            missing.append(f"{path.name} uses {fqcn} without importing it")
+    for message in sorted(set(missing)):
+        fail(message)
+    if not missing:
+        print(f"  external references: all {len(vocab)} known API classes imported")
 
 
 def report() -> int:

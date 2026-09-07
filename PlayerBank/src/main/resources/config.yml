@@ -74,7 +74,8 @@ gui:
   sounds:
     # Master switch for menu sounds.
     enabled: true
-    # Vanilla sound names; use "none" to disable a single sound.
+    # Sound names in key form (ui.button.click, entity.villager.no) or the
+    # legacy enum form (UI_BUTTON_CLICK). Use "none" to disable a single sound.
     open: BLOCK_ENDER_CHEST_OPEN
     click: UI_BUTTON_CLICK
     deposit: ENTITY_EXPERIENCE_ORB_PICKUP

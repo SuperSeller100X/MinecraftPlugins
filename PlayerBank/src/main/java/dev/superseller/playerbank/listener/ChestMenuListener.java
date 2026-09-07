@@ -8,6 +8,7 @@ import dev.superseller.playerbank.gui.ChestLayout;
 import dev.superseller.playerbank.gui.ChestMenu;
 import dev.superseller.playerbank.gui.MenuStyle;
 import dev.superseller.playerbank.util.Sounds;
+import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -110,11 +111,11 @@ public final class ChestMenuListener implements Listener {
         Sounds.play(plugin.bankConfig(), player, "click");
         if (!menu.setPlayerStyle(player, target)) {
             plugin.messages().send(player, "gui-style-locked",
-                    java.util.Map.of("style", current.label()));
+                    Map.of("style", current.label()));
             return;
         }
         plugin.messages().send(player, "gui-style-set",
-                java.util.Map.of("style", target.label()));
+                Map.of("style", target.label()));
         menu.open(player, target);
     }
 

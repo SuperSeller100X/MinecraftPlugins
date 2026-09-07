@@ -22,6 +22,7 @@ import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import org.bukkit.entity.Player;
 
 /**
  * The native Minecraft menu screens (Paper dialogs): a main menu with balance

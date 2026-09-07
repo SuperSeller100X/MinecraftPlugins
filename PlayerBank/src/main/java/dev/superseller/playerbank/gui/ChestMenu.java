@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.kyori.adventure.text.Component;
@@ -227,7 +228,7 @@ public final class ChestMenu {
 
     private Map<String, String> commonPlaceholders(Player player, BankAccount acc) {
         BankConfig cfg = plugin.bankConfig();
-        Map<String, String> ph = new java.util.HashMap<>();
+        Map<String, String> ph = new HashMap<>();
         ph.put("player", player.getName());
         ph.put("bank", plugin.vault().format(acc.balance()));
         ph.put("wallet", plugin.vault().format(plugin.vault().wallet(player)));

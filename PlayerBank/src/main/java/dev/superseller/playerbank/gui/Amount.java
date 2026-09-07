@@ -1,5 +1,7 @@
 package dev.superseller.playerbank.gui;
 
+import java.math.BigDecimal;
+
 /**
  * A parsed transfer amount: an exact number, "all", "half", or a percentage of
  * the available balance.
@@ -145,6 +147,6 @@ public final class Amount {
         }
         // BigDecimal keeps tiny values like 0.00001 out of E-notation, which
         // would produce characters that are illegal inside a dialog action key.
-        return new java.math.BigDecimal(String.valueOf(v)).stripTrailingZeros().toPlainString();
+        return new BigDecimal(String.valueOf(v)).stripTrailingZeros().toPlainString();
     }
 }
