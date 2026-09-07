@@ -26,6 +26,11 @@ public final class Messages {
         if (!file.exists()) {
             plugin.saveResource("messages.yml", false);
         }
+        int added = ResourceMerger.merge(plugin, "messages.yml", file);
+        if (added > 0) {
+            plugin.getLogger().info("Update: added " + added
+                    + " new message key(s) to messages.yml (existing texts kept).");
+        }
         yaml = YamlConfiguration.loadConfiguration(file);
     }
 

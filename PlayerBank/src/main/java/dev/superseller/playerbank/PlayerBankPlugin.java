@@ -5,6 +5,7 @@ import dev.superseller.playerbank.command.BankAdminCommand;
 import dev.superseller.playerbank.command.BankCommand;
 import dev.superseller.playerbank.config.BankConfig;
 import dev.superseller.playerbank.config.Messages;
+import dev.superseller.playerbank.config.ResourceMerger;
 import dev.superseller.playerbank.economy.VaultHook;
 import dev.superseller.playerbank.gui.BankMenu;
 import dev.superseller.playerbank.interest.InterestService;
@@ -79,12 +80,23 @@ public final class PlayerBankPlugin extends JavaPlugin {
     }
 
     public void reloadAll() {
+        mergeConfigUpdates();
         reloadConfig();
         bankConfig.load();
         messages.load();
         vault.hook();
         storage.reloadPath();
         interest.restart();
+    }
+
+    /** Adds config keys introduced by an update into the existing config.yml. */
+    private void mergeConfigUpdates() {
+        int added = ResourceMerger.merge(this, "config.yml",
+                new java.io.File(getDataFolder(), "config.yml"));
+        if (added > 0) {
+            getLogger().info("Update: added " + added
+                    + " new config key(s) to config.yml (existing settings kept).");
+        }
     }
 
     public BankConfig bankConfig() {

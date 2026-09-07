@@ -176,6 +176,11 @@ storage:
 
 All chat strings are in `messages.yml` (MiniMessage).
 
+**Updating from an earlier PlayerBank?** New config/message keys are merged
+into your existing `config.yml` / `messages.yml` automatically on startup and
+`/bank refresh` — your customized values are never overwritten. (You can also
+delete the two files to get pristine copies.)
+
 ## How interest works
 
 Each interval, every account with at least `min-balance` receives:

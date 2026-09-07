@@ -283,6 +283,8 @@ JAVA_LANG = {
 # class nobody imports anywhere (a missing import in *every* using file) is
 # still caught.
 SEED_FQCNS = [
+    "java.io.File", "java.io.IOException", "java.io.InputStream",
+    "java.io.InputStreamReader", "java.nio.charset.StandardCharsets",
     "java.util.ArrayList", "java.util.ArrayDeque", "java.util.Deque", "java.util.HashMap",
     "java.util.HashSet", "java.util.List", "java.util.Locale", "java.util.Map", "java.util.Set",
     "java.util.UUID", "java.time.Instant", "java.time.ZoneId",
