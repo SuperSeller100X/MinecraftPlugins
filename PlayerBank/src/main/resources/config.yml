@@ -36,6 +36,51 @@ logs:
   # Lines shown per /bank logs page.
   page-size: 8
 
+gui:
+  # Which menu /bank gui opens:
+  #   AUTO   - native menu screens when this server supports them, else chest
+  #   DIALOG - the native Minecraft menu screens (Paper dialogs)
+  #   CHEST  - the classic chest inventory menu
+  type: AUTO
+  # Let players pick their own style with /bank gui <chest|dialog> and the
+  # style button inside both menus. false fixes the style above for everyone.
+  player-choice: true
+  # One-click buttons offered by both styles. Plain numbers, "half", "all"
+  # and percentages like "25%"; k/m/b/t suffixes work (1k, 2.5m). Max 7.
+  quick-amounts: ["100", "1000", "half", "all"]
+
+  chest:
+    # Rows of the chest menu (clamped to 4..6).
+    rows: 4
+    # Chest title (MiniMessage).
+    title: "<dark_gray>Bank"
+    # Material filling the unused slots.
+    filler-material: GRAY_STAINED_GLASS_PANE
+    # Icon materials for the buttons.
+    icons:
+      info: GOLD_INGOT
+      deposit: EMERALD
+      deposit-all: EMERALD_BLOCK
+      withdraw: GOLD_NUGGET
+      withdraw-all: GOLD_BLOCK
+      interest: CLOCK
+      logs: BOOK
+      log-entry: PAPER
+      close: BARRIER
+      style: COMPARATOR
+      previous-page: ARROW
+      next-page: ARROW
+
+  sounds:
+    # Master switch for menu sounds.
+    enabled: true
+    # Vanilla sound names; use "none" to disable a single sound.
+    open: BLOCK_ENDER_CHEST_OPEN
+    click: UI_BUTTON_CLICK
+    deposit: ENTITY_EXPERIENCE_ORB_PICKUP
+    withdraw: ENTITY_PLAYER_LEVELUP
+    error: ENTITY_VILLAGER_NO
+
 storage:
   # YAML file under plugins/PlayerBank/
   file: data.yml

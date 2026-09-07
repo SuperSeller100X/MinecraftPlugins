@@ -19,6 +19,7 @@ public final class BankStorage {
     private final PlayerBankPlugin plugin;
     private final BankConfig config;
     private final Map<UUID, BankAccount> accounts = new ConcurrentHashMap<>();
+    private final Map<UUID, String> menuPreferences = new ConcurrentHashMap<>();
     private File file;
     private BukkitTask autosave;
     private volatile boolean dirty;
@@ -69,6 +70,16 @@ public final class BankStorage {
                 }
             }
         }
+        ConfigurationSection prefs = yaml.getConfigurationSection("menu-preferences");
+        if (prefs != null) {
+            for (String key : prefs.getKeys(false)) {
+                try {
+                    menuPreferences.put(UUID.fromString(key), prefs.getString(key, ""));
+                } catch (IllegalArgumentException ignored) {
+                    plugin.getLogger().warning("Skipping invalid menu preference key: " + key);
+                }
+            }
+        }
         startAutosave();
         plugin.getLogger().info("Loaded " + accounts.size() + " bank accounts.");
     }
@@ -89,6 +100,9 @@ public final class BankStorage {
                 logs.add(m);
             }
             yaml.set(path + ".logs", logs);
+        }
+        for (Map.Entry<UUID, String> entry : menuPreferences.entrySet()) {
+            yaml.set("menu-preferences." + entry.getKey(), entry.getValue());
         }
         try {
             File parent = file.getParentFile();
@@ -123,6 +137,16 @@ public final class BankStorage {
     }
 
     public void markDirty() {
+        dirty = true;
+    }
+
+    /** Personal menu style ("chest"/"dialog"), or null when unset. */
+    public String menuPreference(UUID uuid) {
+        return menuPreferences.get(uuid);
+    }
+
+    public void setMenuPreference(UUID uuid, String style) {
+        menuPreferences.put(uuid, style);
         dirty = true;
     }
 

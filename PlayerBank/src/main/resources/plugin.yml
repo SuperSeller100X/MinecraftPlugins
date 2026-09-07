@@ -12,8 +12,8 @@ softdepend: [Vault, Essentials]
 
 commands:
   bank:
-    description: Deposit, withdraw, view interest, logs, and refresh the bank.
-    usage: /bank <deposit|withdraw|interest|logs|refresh|balance|help> [args]
+    description: Deposit, withdraw, open the GUI, view interest, logs, and refresh the bank.
+    usage: /bank <gui|deposit|withdraw|interest|logs|refresh|balance|help> [args]
     aliases: [playerbank, pb]
     permission: playerbank.use
   bankadmin:
@@ -41,6 +41,9 @@ permissions:
   playerbank.balance:
     description: View your bank balance
     default: true
+  playerbank.gui:
+    description: Open the bank GUI (/bank gui) and pick a menu style
+    default: true
   playerbank.logs.others:
     description: View another player's bank logs
     default: op
@@ -57,6 +60,7 @@ permissions:
       playerbank.refresh: true
       playerbank.logs.others: true
       playerbank.balance.others: true
+      playerbank.gui: true
       playerbank.admin.reload: true
       playerbank.admin.set: true
       playerbank.admin.give: true

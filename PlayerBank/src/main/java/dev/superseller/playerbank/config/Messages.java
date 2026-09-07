@@ -71,6 +71,23 @@ public final class Messages {
         return mini.deserialize(miniMessage);
     }
 
+    /**
+     * GUI text (item names, lore, dialog labels): the raw string with
+     * placeholders applied, deserialized without the chat prefix.
+     */
+    public Component gui(String key, Map<String, String> placeholders) {
+        return mini.deserialize(apply(raw(key), placeholders));
+    }
+
+    /** List-form GUI text (lore lines), deserialized without the chat prefix. */
+    public List<Component> guiList(String key, Map<String, String> placeholders) {
+        List<Component> out = new ArrayList<>();
+        for (String line : yaml.getStringList(key)) {
+            out.add(mini.deserialize(apply(line, placeholders)));
+        }
+        return out;
+    }
+
     public static String apply(String template, Map<String, String> placeholders) {
         String s = template;
         if (placeholders != null) {
