@@ -4,23 +4,27 @@ import dev.superseller.playerbank.PlayerBankPlugin;
 import dev.superseller.playerbank.config.BankConfig;
 import dev.superseller.playerbank.model.BankAccount;
 import dev.superseller.playerbank.model.BankLogEntry;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.scheduler.BukkitTask;
 
 public final class BankStorage {
 
     private final PlayerBankPlugin plugin;
     private final BankConfig config;
     private final Map<UUID, BankAccount> accounts = new ConcurrentHashMap<>();
+    private final Map<UUID, String> menuPreferences = new ConcurrentHashMap<>();
     private File file;
-    private BukkitTask autosave;
+    private ScheduledTask autosave;
     private volatile boolean dirty;
 
     public BankStorage(PlayerBankPlugin plugin, BankConfig config) {
@@ -61,7 +65,7 @@ public final class BankStorage {
                         double amount = toDouble(map.get("amount"));
                         Object rawNote = map.get("note");
                         String note = rawNote == null ? "" : String.valueOf(rawNote);
-                        acc.logs().addLast(new BankLogEntry(time, type, amount, note));
+                        acc.appendLoadedLog(new BankLogEntry(time, type, amount, note));
                     }
                     accounts.put(uuid, acc);
                 } catch (IllegalArgumentException ignored) {
@@ -69,19 +73,37 @@ public final class BankStorage {
                 }
             }
         }
+        ConfigurationSection prefs = yaml.getConfigurationSection("menu-preferences");
+        if (prefs != null) {
+            for (String key : prefs.getKeys(false)) {
+                try {
+                    menuPreferences.put(UUID.fromString(key), prefs.getString(key, ""));
+                } catch (IllegalArgumentException ignored) {
+                    plugin.getLogger().warning("Skipping invalid menu preference key: " + key);
+                }
+            }
+        }
         startAutosave();
         plugin.getLogger().info("Loaded " + accounts.size() + " bank accounts.");
     }
 
+    /**
+     * Saves all accounts. Thread-safe: takes a tiny synchronized snapshot of
+     * each account first, so it can run from the async scheduler (autosave),
+     * the main/global thread (disable, reload) or an admin command without
+     * blocking region threads.
+     */
     public void save() {
+        List<AccountSnapshot> snapshots = snapshotAccounts();
+        Map<UUID, String> prefs = new LinkedHashMap<>(menuPreferences);
         YamlConfiguration yaml = new YamlConfiguration();
-        for (BankAccount acc : accounts.values()) {
+        for (AccountSnapshot acc : snapshots) {
             String path = "accounts." + acc.uuid();
-            yaml.set(path + ".name", acc.lastName());
+            yaml.set(path + ".name", acc.name());
             yaml.set(path + ".balance", acc.balance());
-            java.util.List<java.util.Map<String, Object>> logs = new java.util.ArrayList<>();
+            List<Map<String, Object>> logs = new ArrayList<>();
             for (BankLogEntry e : acc.logs()) {
-                java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                Map<String, Object> m = new LinkedHashMap<>();
                 m.put("time", e.time());
                 m.put("type", e.type());
                 m.put("amount", e.amount());
@@ -89,6 +111,9 @@ public final class BankStorage {
                 logs.add(m);
             }
             yaml.set(path + ".logs", logs);
+        }
+        for (Map.Entry<UUID, String> entry : prefs.entrySet()) {
+            yaml.set("menu-preferences." + entry.getKey(), entry.getValue());
         }
         try {
             File parent = file.getParentFile();
@@ -100,6 +125,20 @@ public final class BankStorage {
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save bank data: " + e.getMessage());
         }
+    }
+
+    /** Immutable, consistent view of one account, taken under its lock. */
+    public record AccountSnapshot(UUID uuid, String name, double balance, List<BankLogEntry> logs) {
+    }
+
+    private List<AccountSnapshot> snapshotAccounts() {
+        List<AccountSnapshot> out = new ArrayList<>(accounts.size());
+        for (BankAccount acc : accounts.values()) {
+            synchronized (acc) {
+                out.add(new AccountSnapshot(acc.uuid(), acc.lastName(), acc.balance(), acc.logSnapshot()));
+            }
+        }
+        return out;
     }
 
     public BankAccount getOrCreate(UUID uuid, String name) {
@@ -126,6 +165,16 @@ public final class BankStorage {
         dirty = true;
     }
 
+    /** Personal menu style ("chest"/"dialog"), or null when unset. */
+    public String menuPreference(UUID uuid) {
+        return menuPreferences.get(uuid);
+    }
+
+    public void setMenuPreference(UUID uuid, String style) {
+        menuPreferences.put(uuid, style);
+        dirty = true;
+    }
+
     public void log(BankAccount acc, String type, double amount, String note) {
         acc.addLog(new BankLogEntry(System.currentTimeMillis(), type, amount, note), config.maxLogEntries());
         dirty = true;
@@ -141,11 +190,14 @@ public final class BankStorage {
             return;
         }
         long ticks = seconds * 20L;
-        autosave = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-            if (dirty) {
-                save();
-            }
-        }, ticks, ticks);
+        // Folia-safe: the repeating check runs on the global region thread and
+        // only reads a volatile flag; the disk write itself is async.
+        autosave = plugin.getServer().getGlobalRegionScheduler()
+                .runAtFixedRate(plugin, timer -> {
+                    if (dirty) {
+                        plugin.getServer().getAsyncScheduler().runNow(plugin, task -> save());
+                    }
+                }, ticks, ticks);
     }
 
     private static long toLong(Object o) {

@@ -3,16 +3,22 @@ package dev.superseller.playerbank.interest;
 import dev.superseller.playerbank.PlayerBankPlugin;
 import dev.superseller.playerbank.config.BankConfig;
 import dev.superseller.playerbank.model.BankAccount;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 
+/**
+ * Periodic compound interest. Folia-safe: the repeating task runs on the
+ * global region scheduler and only touches plugin data (accounts are
+ * synchronized) — never world or entity state. Player notifications are
+ * hopped onto the owning player's region thread via the entity scheduler.
+ */
 public final class InterestService {
 
     private final PlayerBankPlugin plugin;
-    private BukkitTask task;
-    private long nextRunAt;
+    private ScheduledTask task;
+    private volatile long nextRunAt;
 
     public InterestService(PlayerBankPlugin plugin) {
         this.plugin = plugin;
@@ -27,7 +33,8 @@ public final class InterestService {
         }
         long ticks = cfg.intervalTicks();
         nextRunAt = System.currentTimeMillis() + cfg.intervalMillis();
-        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, ticks, ticks);
+        task = plugin.getServer().getGlobalRegionScheduler()
+                .runAtFixedRate(plugin, timer -> tick(), ticks, ticks);
     }
 
     public void stop() {
@@ -60,6 +67,11 @@ public final class InterestService {
         return s + "s";
     }
 
+    /**
+     * Applies one interest pass. Runs on the global region thread from the
+     * timer, or on the caller's thread when an admin forces it — both are
+     * safe because every account access is synchronized.
+     */
     public int tick() {
         BankConfig cfg = plugin.bankConfig();
         nextRunAt = System.currentTimeMillis() + cfg.intervalMillis();
@@ -93,11 +105,16 @@ public final class InterestService {
             if (cfg.notifyPlayers()) {
                 Player player = Bukkit.getPlayer(acc.uuid());
                 if (player != null && player.isOnline()) {
-                    plugin.messages().send(player, "interest-received", Map.of(
-                            "amount", plugin.vault().format(payout),
-                            "rate", String.valueOf(cfg.ratePercent()),
-                            "bank", plugin.vault().format(acc.balance())
-                    ));
+                    double payoutFinal = payout;
+                    double balanceFinal = acc.balance();
+                    String rateText = String.valueOf(cfg.ratePercent());
+                    // Hop to the player's owning region thread before touching
+                    // the economy formatter or sending chat.
+                    player.getScheduler().run(plugin, task -> plugin.messages().send(player,
+                            "interest-received", Map.of(
+                                    "amount", plugin.vault().format(payoutFinal),
+                                    "rate", rateText,
+                                    "bank", plugin.vault().format(balanceFinal))), null);
                 }
             }
         }

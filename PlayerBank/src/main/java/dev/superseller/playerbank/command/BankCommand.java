@@ -1,7 +1,12 @@
 package dev.superseller.playerbank.command;
 
 import dev.superseller.playerbank.PlayerBankPlugin;
+import dev.superseller.playerbank.bank.TransferResult;
 import dev.superseller.playerbank.config.BankConfig;
+import dev.superseller.playerbank.gui.Amount;
+import dev.superseller.playerbank.gui.AmountParser;
+import dev.superseller.playerbank.gui.BankMenu;
+import dev.superseller.playerbank.gui.MenuStyle;
 import dev.superseller.playerbank.model.BankAccount;
 import dev.superseller.playerbank.model.BankLogEntry;
 import java.time.Instant;
@@ -47,6 +52,7 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             case "withdraw", "wd", "take" -> withdraw(sender, args);
             case "interest", "rate" -> interest(sender);
             case "logs", "log", "history" -> logs(sender, args);
+            case "gui", "menu" -> gui(sender, args);
             case "refresh", "reload" -> refresh(sender);
             default -> {
                 plugin.messages().sendHelp(sender);
@@ -102,40 +108,13 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             plugin.messages().sendHelp(sender);
             return true;
         }
-        BankConfig cfg = plugin.bankConfig();
-        double wallet = plugin.vault().wallet(player);
-        Double parsed = parseAmount(args[1], wallet);
-        if (parsed == null) {
+        Amount amount = AmountParser.parse(args[1]);
+        if (amount == null) {
             plugin.messages().send(player, "invalid-amount");
             return true;
         }
-        boolean allKeyword = args[1].equalsIgnoreCase("all") || args[1].equalsIgnoreCase("max");
-        // "all" must round down: half-up rounding could exceed the wallet and fail.
-        double amount = allKeyword ? cfg.floorMoney(parsed) : cfg.roundMoney(parsed);
-        if (amount < cfg.minTransaction()) {
-            plugin.messages().send(player, "below-min", Map.of("amount", plugin.vault().format(cfg.minTransaction())));
-            return true;
-        }
-        if (cfg.maxDeposit() > 0 && amount > cfg.maxDeposit()) {
-            plugin.messages().send(player, "above-max", Map.of("amount", plugin.vault().format(cfg.maxDeposit())));
-            return true;
-        }
-        if (amount > wallet + 1e-9) {
-            plugin.messages().send(player, "insufficient-wallet", Map.of("amount", plugin.vault().format(wallet)));
-            return true;
-        }
-        if (!plugin.vault().takeWallet(player, amount)) {
-            plugin.messages().send(player, "not-enough-wallet");
-            return true;
-        }
-        BankAccount acc = plugin.storage().getOrCreate(player.getUniqueId(), player.getName());
-        acc.add(amount);
-        plugin.storage().log(acc, "DEPOSIT", amount, "wallet → bank");
-        String key = "all".equalsIgnoreCase(args[1]) ? "deposit-all" : "deposit-success";
-        plugin.messages().send(player, key, Map.of(
-                "amount", plugin.vault().format(amount),
-                "bank", plugin.vault().format(acc.balance())
-        ));
+        TransferResult result = plugin.transactor().deposit(player, amount);
+        plugin.messages().send(player, result.messageKey(), result.placeholders());
         return true;
     }
 
@@ -156,39 +135,13 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             plugin.messages().sendHelp(sender);
             return true;
         }
-        BankConfig cfg = plugin.bankConfig();
-        BankAccount acc = plugin.storage().getOrCreate(player.getUniqueId(), player.getName());
-        Double parsed = parseAmount(args[1], acc.balance());
-        if (parsed == null) {
+        Amount amount = AmountParser.parse(args[1]);
+        if (amount == null) {
             plugin.messages().send(player, "invalid-amount");
             return true;
         }
-        boolean allKeyword = args[1].equalsIgnoreCase("all") || args[1].equalsIgnoreCase("max");
-        // "all" must round down: half-up rounding could exceed the balance and fail.
-        double amount = allKeyword ? cfg.floorMoney(parsed) : cfg.roundMoney(parsed);
-        if (amount < cfg.minTransaction()) {
-            plugin.messages().send(player, "below-min", Map.of("amount", plugin.vault().format(cfg.minTransaction())));
-            return true;
-        }
-        if (cfg.maxWithdraw() > 0 && amount > cfg.maxWithdraw()) {
-            plugin.messages().send(player, "above-max", Map.of("amount", plugin.vault().format(cfg.maxWithdraw())));
-            return true;
-        }
-        if (!acc.subtract(amount)) {
-            plugin.messages().send(player, "insufficient-bank", Map.of("amount", plugin.vault().format(acc.balance())));
-            return true;
-        }
-        if (!plugin.vault().giveWallet(player, amount)) {
-            acc.add(amount);
-            plugin.messages().send(player, "not-enough-bank");
-            return true;
-        }
-        plugin.storage().log(acc, "WITHDRAW", amount, "bank → wallet");
-        String key = "all".equalsIgnoreCase(args[1]) ? "withdraw-all" : "withdraw-success";
-        plugin.messages().send(player, key, Map.of(
-                "amount", plugin.vault().format(amount),
-                "bank", plugin.vault().format(acc.balance())
-        ));
+        TransferResult result = plugin.transactor().withdraw(player, amount);
+        plugin.messages().send(player, result.messageKey(), result.placeholders());
         return true;
     }
 
@@ -271,22 +224,33 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private static Double parseAmount(String raw, double allValue) {
-        if (raw == null) {
-            return null;
+    private boolean gui(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            plugin.messages().send(sender, "player-only");
+            return true;
         }
-        if (raw.equalsIgnoreCase("all") || raw.equalsIgnoreCase("max")) {
-            return allValue;
+        if (!player.hasPermission("playerbank.gui")) {
+            plugin.messages().send(sender, "no-permission");
+            return true;
         }
-        try {
-            double v = Double.parseDouble(raw.replace(",", ""));
-            if (v <= 0 || Double.isNaN(v) || Double.isInfinite(v)) {
-                return null;
+        BankMenu menu = plugin.bankMenu();
+        if (args.length >= 2) {
+            MenuStyle target = MenuStyle.parse(args[1]);
+            if (target == null) {
+                plugin.messages().send(player, "gui-style-invalid", Map.of("input", args[1]));
+                return true;
             }
-            return v;
-        } catch (NumberFormatException e) {
-            return null;
+            if (!menu.setPlayerStyle(player, target)) {
+                plugin.messages().send(player, "gui-style-locked",
+                        Map.of("style", menu.resolve(player).label()));
+                return true;
+            }
+            plugin.messages().send(player, "gui-style-set", Map.of("style", target.label()));
+            menu.open(player, target);
+            return true;
         }
+        menu.open(player);
+        return true;
     }
 
     private static boolean isInt(String s) {
@@ -302,7 +266,8 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
-            for (String s : List.of("deposit", "withdraw", "interest", "logs", "refresh", "balance", "help")) {
+            for (String s : List.of("gui", "deposit", "withdraw", "interest", "logs", "balance",
+                    "refresh", "help")) {
                 if (s.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     out.add(s);
                 }
@@ -311,6 +276,13 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
             out.add("all");
             out.add("100");
             out.add("1000");
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("gui") || args[0].equalsIgnoreCase("menu"))
+                && sender.hasPermission("playerbank.gui")) {
+            for (String s : List.of("chest", "dialog")) {
+                if (s.startsWith(args[1].toLowerCase(Locale.ROOT))) {
+                    out.add(s);
+                }
+            }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("logs") && sender.hasPermission("playerbank.logs.others")) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getName().toLowerCase(Locale.ROOT).startsWith(args[1].toLowerCase(Locale.ROOT))) {

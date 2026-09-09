@@ -1,11 +1,16 @@
 package dev.superseller.playerbank;
 
+import dev.superseller.playerbank.bank.Transactor;
 import dev.superseller.playerbank.command.BankAdminCommand;
 import dev.superseller.playerbank.command.BankCommand;
 import dev.superseller.playerbank.config.BankConfig;
 import dev.superseller.playerbank.config.Messages;
+import dev.superseller.playerbank.config.ResourceMerger;
 import dev.superseller.playerbank.economy.VaultHook;
+import dev.superseller.playerbank.gui.BankMenu;
 import dev.superseller.playerbank.interest.InterestService;
+import dev.superseller.playerbank.listener.ChestMenuListener;
+import dev.superseller.playerbank.listener.DialogMenuListener;
 import dev.superseller.playerbank.storage.BankStorage;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,6 +22,8 @@ public final class PlayerBankPlugin extends JavaPlugin {
     private VaultHook vault;
     private BankStorage storage;
     private InterestService interest;
+    private Transactor transactor;
+    private BankMenu menu;
 
     @Override
     public void onEnable() {
@@ -40,6 +47,11 @@ public final class PlayerBankPlugin extends JavaPlugin {
         interest = new InterestService(this);
         interest.start();
 
+        transactor = new Transactor(this);
+        menu = new BankMenu(this);
+        getServer().getPluginManager().registerEvents(new ChestMenuListener(this, menu), this);
+        getServer().getPluginManager().registerEvents(new DialogMenuListener(this, menu), this);
+
         BankCommand bankCommand = new BankCommand(this);
         PluginCommand bank = getCommand("bank");
         if (bank != null) {
@@ -54,7 +66,7 @@ public final class PlayerBankPlugin extends JavaPlugin {
         }
 
         getLogger().info("PlayerBank enabled. Interest " + bankConfig.ratePercent() + "% every "
-                + bankConfig.intervalDescription() + ".");
+                + bankConfig.intervalDescription() + ". Menu: " + bankConfig.guiType() + ".");
     }
 
     @Override
@@ -68,12 +80,23 @@ public final class PlayerBankPlugin extends JavaPlugin {
     }
 
     public void reloadAll() {
+        mergeConfigUpdates();
         reloadConfig();
         bankConfig.load();
         messages.load();
         vault.hook();
         storage.reloadPath();
         interest.restart();
+    }
+
+    /** Adds config keys introduced by an update into the existing config.yml. */
+    private void mergeConfigUpdates() {
+        int added = ResourceMerger.merge(this, "config.yml",
+                new java.io.File(getDataFolder(), "config.yml"));
+        if (added > 0) {
+            getLogger().info("Update: added " + added
+                    + " new config key(s) to config.yml (existing settings kept).");
+        }
     }
 
     public BankConfig bankConfig() {
@@ -94,5 +117,13 @@ public final class PlayerBankPlugin extends JavaPlugin {
 
     public InterestService interest() {
         return interest;
+    }
+
+    public Transactor transactor() {
+        return transactor;
+    }
+
+    public BankMenu bankMenu() {
+        return menu;
     }
 }

@@ -79,9 +79,9 @@ Build with `mvn -B clean package` in `ChunkVoter/` (JDK 25 required).
 
 ## PlayerBank 🏦
 
-Isolated bank accounts for Minecraft **26.2** (Paper). Deposit and withdraw via Vault, compound interest (default 2.5% every 10 real minutes). Bank money cannot be used by `/pay`, shops, or other plugins until withdrawn.
+Isolated bank accounts for Minecraft **26.2** (Paper / Purpur / Folia). Deposit and withdraw via Vault, compound interest (default 2.5% every 10 real minutes). Bank money cannot be used by `/pay`, shops, or other plugins until withdrawn. `/bank gui` opens a full bank menu — **configurable between the classic chest inventory and the new native Minecraft menu screens** (Paper dialogs), with quick amounts, custom entry, interest details, paginated logs, and per-player style choice. Folia-safe scheduling (global-region interest timer, entity-scheduler message hops, async autosave, synchronized accounts).
 
-See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/`.
+See [PlayerBank/README.md](PlayerBank/README.md). Build with `mvn -B clean package` in `PlayerBank/` (JDK 25 required). An offline check script and a CI workflow that runs the consistency checks, the smoke tests and `mvn clean verify` on Temurin 25 are included (`.github/workflows/build.yml` — copy it to the repo root `.github/workflows/` to activate it).
 
 ## XPBank 🏦✨
 

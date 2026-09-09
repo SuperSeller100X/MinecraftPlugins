@@ -2,9 +2,7 @@ name: PlayerBank
 version: ${project.version}
 main: dev.superseller.playerbank.PlayerBankPlugin
 api-version: '26.2'
-# NOTE: not Folia-compatible — InterestService and BankStorage use the legacy
-# BukkitScheduler, which Folia rejects at runtime. Re-add folia-supported only
-# after migrating to the global-region/async schedulers.
+folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPluginsTest
 description: Isolated player bank with Vault / EssentialsX deposits, withdrawals, and compound interest.
@@ -12,8 +10,8 @@ softdepend: [Vault, Essentials]
 
 commands:
   bank:
-    description: Deposit, withdraw, view interest, logs, and refresh the bank.
-    usage: /bank <deposit|withdraw|interest|logs|refresh|balance|help> [args]
+    description: Deposit, withdraw, open the GUI, view interest, logs, and refresh the bank.
+    usage: /bank <gui|deposit|withdraw|interest|logs|refresh|balance|help> [args]
     aliases: [playerbank, pb]
     permission: playerbank.use
   bankadmin:
@@ -41,6 +39,9 @@ permissions:
   playerbank.balance:
     description: View your bank balance
     default: true
+  playerbank.gui:
+    description: Open the bank GUI (/bank gui) and pick a menu style
+    default: true
   playerbank.logs.others:
     description: View another player's bank logs
     default: op
@@ -57,6 +58,7 @@ permissions:
       playerbank.refresh: true
       playerbank.logs.others: true
       playerbank.balance.others: true
+      playerbank.gui: true
       playerbank.admin.reload: true
       playerbank.admin.set: true
       playerbank.admin.give: true
