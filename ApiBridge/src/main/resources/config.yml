@@ -1,0 +1,75 @@
+# ApiBridge secure backend-to-Minecraft API configuration.
+# Safe default: disabled and bound only to loopback. Enable only after creating
+# authenticated clients and placing the Minecraft server behind a private network
+# or trusted reverse proxy/firewall.
+
+enabled: false
+
+http:
+  # Bind address controls which local interfaces accept TCP connections.
+  # Keep 127.0.0.1 for reverse-proxy or same-host backend deployments.
+  # Use 0.0.0.0 only on a private network or with firewall rules.
+  bind-host: "127.0.0.1"
+  port: 8765
+  advertised-url: ""
+  backlog: 64
+  worker-threads: 4
+  max-active-requests: 64
+  max-request-bytes: 1048576
+  max-header-bytes: 16384
+  request-timeout-millis: 5000
+  shutdown-grace-millis: 3000
+  require-json-content-type: true
+  log-request-bodies: false
+
+  # TLS may be terminated by a trusted HTTPS reverse proxy in front of this
+  # loopback listener. Direct Java TLS is supported with a local PKCS12/JKS
+  # keystore path; never commit private keys or certificates.
+  tls:
+    enabled: false
+    key-store-path: ""
+    key-store-password-env: "APIBRIDGE_TLS_KEYSTORE_PASSWORD"
+    key-store-type: "PKCS12"
+
+  # CORS is disabled by default because the intended flow is backend-to-backend.
+  # Do not use wildcard origins together with browser-accessible credentials.
+  cors:
+    enabled: false
+    allowed-origins: []
+    allowed-methods: ["GET", "POST", "DELETE", "OPTIONS"]
+    allowed-headers: ["Authorization", "X-Api-Key", "X-Request-Id", "Content-Type"]
+    max-age-seconds: 600
+
+authentication:
+  # Clients are keyed by id and sha256 hashes of API keys. Generate a key with a
+  # cryptographically secure password manager, then store only its SHA-256 hex here.
+  # API keys may be supplied as Authorization: Bearer <key> or X-Api-Key: <key>.
+  clients: []
+  # Example structure (do not keep real secrets in source control):
+  # clients:
+  #   - id: "website-backend"
+  #     enabled: true
+  #     key-sha256: "<64 lowercase hex chars>"
+  #     scopes: ["status:read"]
+  #     rate-limit:
+  #       capacity: 120
+  #       refill-per-minute: 120
+  # Environment override for containerized deployments. Format:
+  # clientId:rawApiKey:scope1,scope2;clientId2:rawApiKey2:scope
+  clients-env: "APIBRIDGE_CLIENTS"
+
+rate-limit:
+  enabled: true
+  capacity: 60
+  refill-per-minute: 60
+  max-buckets: 2048
+  bucket-idle-ttl-seconds: 900
+
+metrics:
+  recent-error-capacity: 50
+
+integrations:
+  playerbank:
+    # Registers read-only PlayerBank endpoints when PlayerBank is installed:
+    # GET /api/v1/playerbank/balance?uuid=<player-uuid>
+    enabled: true

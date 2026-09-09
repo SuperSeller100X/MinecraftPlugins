@@ -1,0 +1,21 @@
+name: ApiBridge
+version: ${project.version}
+main: dev.superseller.apibridge.ApiBridgePlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Secure, extensible HTTP API bridge for backend-to-Minecraft integrations.
+softdepend: [PlayerBank]
+
+commands:
+  apibridge:
+    description: Inspect and reload the Minecraft API bridge.
+    usage: /apibridge <status|endpoints|metrics|errors|reload|clients>
+    aliases: [mcapi, apib]
+    permission: apibridge.admin
+
+permissions:
+  apibridge.admin:
+    description: Inspect and reload ApiBridge diagnostics.
+    default: op

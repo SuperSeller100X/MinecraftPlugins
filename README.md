@@ -2,6 +2,17 @@
 
 A collection of Minecraft plugins.
 
+## ApiBridge 🔌
+
+Secure backend-to-Minecraft HTTP API bridge for Minecraft **26.2** (Paper / Purpur / Folia), Java 25. ApiBridge lets trusted external backends call explicitly registered, versioned plugin actions through authenticated API keys, authorization scopes, strict validation, rate limiting, request IDs, JSON envelopes, metrics, diagnostics, configurable bind/TLS/CORS, graceful shutdown, and Folia-aware execution options. It intentionally does **not** expose arbitrary command execution.
+
+- Reusable endpoint registration API for other plugins: `POST /api/v1/...`
+- Safe defaults: disabled, loopback bind, no tracked credentials, request-body logging off
+- Built-in `/api/v1/status` and `/api/v1/metrics`; optional read-only PlayerBank balance integration
+- `/apibridge` diagnostics for status, endpoints, metrics, recent sanitized errors, clients, reload
+
+See [ApiBridge/README.md](ApiBridge/README.md). Build with `mvn -B clean verify` in `ApiBridge/` (JDK 25 required).
+
 ## SwiftTPA ⚡
 
 A fast, fully configurable teleport-request suite for Minecraft **26.2** (Paper /
