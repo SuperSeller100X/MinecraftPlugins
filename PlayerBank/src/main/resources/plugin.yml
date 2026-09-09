@@ -2,9 +2,7 @@ name: PlayerBank
 version: ${project.version}
 main: dev.superseller.playerbank.PlayerBankPlugin
 api-version: '26.2'
-# NOTE: not Folia-compatible — InterestService and BankStorage use the legacy
-# BukkitScheduler, which Folia rejects at runtime. Re-add folia-supported only
-# after migrating to the global-region/async schedulers.
+folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPluginsTest
 description: Isolated player bank with Vault / EssentialsX deposits, withdrawals, and compound interest.

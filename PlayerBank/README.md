@@ -195,6 +195,23 @@ That payout is added to the **bank**, then logged as `INTEREST`. The timer uses 
 
 YAML file `plugins/PlayerBank/data.yml` — UUID, last known name, bank balance, log ring buffer, and (when players pick one) their preferred GUI style. Autosave is configurable.
 
+## Folia
+
+PlayerBank runs on Paper, Purpur and Folia (`folia-supported: true`):
+
+- **Interest timer** runs on the **global region scheduler** and only touches
+  plugin data — never world or entity state.
+- **Player notifications** (interest received, GUI actions) hop onto the
+  player's **owning region thread** via the entity scheduler.
+- **Autosave** checks a flag on the global thread and writes the YAML file on
+  the **async scheduler**, so disk I/O never blocks a region thread.
+- **Accounts are synchronized** — deposits/withdrawals run on region threads
+  while interest runs on the global thread; every balance/log access is
+  guarded, and saving works from tiny consistent snapshots.
+- Chest-menu clicks and dialog actions already arrive on the correct region
+  thread; no legacy `BukkitScheduler` calls remain (the offline checker
+  enforces this).
+
 ## License
 
 Same as the rest of this repository.

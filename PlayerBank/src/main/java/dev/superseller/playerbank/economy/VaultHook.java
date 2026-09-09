@@ -41,7 +41,9 @@ public final class VaultHook implements Listener {
         }
         hook();
         // EssentialsX / Vault often finish registering one tick after onEnable.
-        plugin.getServer().getScheduler().runTaskLater(plugin, this::hook, 1L);
+        // Folia-safe: delayed task on the global region scheduler, which only
+        // reads the services registry (no world or entity state).
+        plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> hook(), 1L);
     }
 
     public void hook() {

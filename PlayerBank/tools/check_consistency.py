@@ -80,16 +80,19 @@ def main() -> int:
     check_dialog_keys(sources)
     check_imports(sources)
     check_external_imports(sources)
+    check_folia_safety(sources)
     return report()
 
 
 def check_plugin_yml(plugin_yml: dict) -> None:
-    required = ("name", "version", "main", "api-version")
+    required = ("name", "version", "main", "api-version", "folia-supported")
     for key in required:
         if key not in plugin_yml:
             fail(f"plugin.yml is missing '{key}'")
     if plugin_yml.get("api-version") != "26.2":
         fail(f"plugin.yml api-version should be '26.2', found {plugin_yml.get('api-version')!r}")
+    if plugin_yml.get("folia-supported") is not True:
+        fail("plugin.yml must set 'folia-supported: true' — the plugin is Folia-safe")
     main_class = plugin_yml.get("main", "")
     main_path = SRC / (main_class.replace(".", "/") + ".java")
     if not main_path.is_file():
@@ -364,6 +367,25 @@ def check_external_imports(sources: dict[Path, str]) -> None:
         fail(message)
     if not missing:
         print(f"  external references: all {len(vocab)} known API classes imported")
+
+
+def check_folia_safety(sources: dict[Path, str]) -> None:
+    """The legacy BukkitScheduler throws on Folia. Only the global region,
+    async, region and entity schedulers are allowed. Player/entity
+    getScheduler() is the Folia entity scheduler and fine; any
+    getServer().getScheduler() or Bukkit.getScheduler() use is legacy."""
+    legacy = re.compile(
+        r"(?:getServer\(\)|Bukkit)\s*\.\s*getScheduler\(\)")
+    offenders = []
+    for path, text in sources.items():
+        body = strip_pattern.sub("", text)
+        if legacy.search(body):
+            offenders.append(f"{path.name}: uses the legacy BukkitScheduler"
+                             " — use the global region / async / entity scheduler instead")
+    for message in sorted(set(offenders)):
+        fail(message)
+    if not offenders:
+        print("  folia-safety: no legacy BukkitScheduler calls")
 
 
 def report() -> int:
