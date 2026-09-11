@@ -67,3 +67,6 @@ HourGlass/players/
 HourGlass/data/
 HourGlass/exports/
 HourGlass/*.csv
+
+# MinecraftWiki
+MinecraftWiki/target/

@@ -1,0 +1,132 @@
+# ===========================================================================
+#  MinecraftWiki - config.yml
+#
+#  Plugin behaviour, search, caching, performance and logging.
+#  Appearance lives in gui.yml, categories in categories.yml, wording in
+#  messages.yml, permission node names in permissions.yml and server-supplied
+#  articles in articles.yml.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Language
+#
+# English is bundled as messages.yml. Add another language by copying that file
+# to lang/<code>.yml and translating it - no other change is needed. Translations
+# are never generated: a language only appears once somebody has written it.
+# ---------------------------------------------------------------------------
+language:
+  default: en
+  # Let players pick their own language with /wiki lang <code>.
+  per-player: true
+  # Fall back to the default language for any key a translation is missing.
+  fallback-to-default: true
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+search:
+  # Hard cap on the number of results kept for one query.
+  max-results: 45
+  # Seconds a player must wait between searches. 0 disables the cooldown.
+  cooldown-seconds: 2.0
+  minimum-query-length: 1
+  maximum-query-length: 64
+  # Allow "/wiki search <query> <category>" and the in-GUI category filter.
+  category-filter: true
+  # How the plugin asks a player for a search string. Paper 26.2 exposes no text-input
+  # dialog in its public API, so input is taken from chat: the previous menu is remembered
+  # and reopened when the prompt ends, and a command line is never treated as a query.
+  input:
+    # Typed on its own while a prompt is open, this cancels and reopens the previous menu.
+    cancel-word: cancel
+    # Seconds before an open prompt is dropped and the previous menu restored.
+    timeout-seconds: 30
+    # true: a line starting with "/" keeps the prompt open and is explained to the player.
+    # false: the prompt is dropped and the line is passed through untouched.
+    reject-commands: true
+  # Relevance weights. Exact matches outrank prefixes, prefixes outrank partial
+  # matches, and titles outrank keywords, categories and summaries.
+  score:
+    exact-title: 1000
+    prefix-title: 600
+    contains-title: 300
+    exact-keyword: 250
+    prefix-keyword: 150
+    contains-keyword: 75
+    category: 40
+    summary: 20
+
+# ---------------------------------------------------------------------------
+# Content, caching and performance
+# ---------------------------------------------------------------------------
+content:
+  cache:
+    # Article bodies are resolved from live server data and then cached.
+    enabled: true
+    # Number of resolved article bodies to keep. Older entries are evicted.
+    size: 1024
+  index:
+    # Rebuild the search index off the main thread after a reload. The index is
+    # built from an immutable snapshot, never from live server objects, so this
+    # is safe; the very first index at startup is always built synchronously so
+    # the wiki is usable the moment the server finishes starting.
+    rebuild-async: true
+  # Content providers. Each one reads real data from the running server, so a
+  # provider that is switched off simply removes that category's articles.
+  providers:
+    blocks: true
+    items: true
+    entities: true
+    enchantments: true
+    effects: true
+    potions: true
+    biomes: true
+    dimensions: true
+    structures: true
+    sounds: true
+    particles: true
+    attributes: true
+    damage-types: true
+    game-events: true
+    gamerules: true
+    commands: true
+    tags: true
+    villager-professions: true
+    recipes: true
+    custom-articles: true
+    # Advancements depend on the server having loaded its datapacks and are only
+    # meaningful once a world has started, so they are opt-in.
+    advancements: false
+
+# ---------------------------------------------------------------------------
+# Navigation
+# ---------------------------------------------------------------------------
+navigation:
+  # How many menus are remembered for the Back button.
+  history-size: 12
+  # After /wiki reload, reopen the wiki for players who had it open.
+  reopen-after-reload: true
+  # Keep the session (and its history) when the inventory closes, so reopening
+  # the wiki returns to the last page. When false the session is discarded.
+  keep-session-open: false
+
+# ---------------------------------------------------------------------------
+# Behaviour
+# ---------------------------------------------------------------------------
+behaviour:
+  # "/wiki" with no arguments opens the GUI.
+  open-on-empty-arguments: true
+  # Show the server's Minecraft version on article headers.
+  show-version-on-articles: true
+  # Tell the player when an unknown subcommand was used instead of doing nothing.
+  unknown-command-feedback: true
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+debug: false
+
+logging:
+  # Print the article / category / index counts once at startup.
+  startup-summary: true
+  prefix: "[Wiki]"

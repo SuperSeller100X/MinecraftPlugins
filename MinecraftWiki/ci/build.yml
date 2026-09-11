@@ -1,0 +1,52 @@
+# MinecraftWiki CI workflow.
+#
+# This file is kept here rather than in .github/workflows/ because the automation
+# account that pushes this branch is a GitHub App without the "workflows"
+# permission, and GitHub refuses App pushes that create or modify files under
+# .github/workflows/. To activate it, copy it to the repository root:
+#
+#     cp MinecraftWiki/ci/build.yml .github/workflows/minecraftwiki-build.yml
+#
+# The paths: filters below already assume the repository root as their base.
+
+name: MinecraftWiki build
+
+on:
+  push:
+    paths:
+      - 'MinecraftWiki/**'
+      - '.github/workflows/minecraftwiki-build.yml'
+  pull_request:
+    paths:
+      - 'MinecraftWiki/**'
+      - '.github/workflows/minecraftwiki-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MinecraftWiki
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Verify dependencies resolve
+        run: mvn -B -ntp dependency:resolve
+
+      - name: Build and test
+        run: mvn -B -ntp clean verify
+
+      - name: Upload the plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinecraftWiki
+          path: MinecraftWiki/target/*.jar
+          if-no-files-found: error

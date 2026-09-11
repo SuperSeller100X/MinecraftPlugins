@@ -1,0 +1,135 @@
+# ===========================================================================
+# MinecraftWiki - articles.yml
+#
+# This file is for content that a server owner writes by hand: server rules,
+# event guides, a custom mechanic, anything the live registries cannot know
+# about. Everything the game itself already describes - blocks, items, mobs,
+# biomes, enchantments, effects, potions, structures, sounds, particles,
+# attributes, damage types, game events, game rules, commands, tags, villager
+# professions, dimensions, advancements and recipes - is generated at startup
+# from the running server by the providers toggled in config.yml, so there is
+# deliberately nothing here to duplicate it.
+#
+# The file ships empty on purpose: this plugin does not invent wiki content.
+# Uncomment the skeleton below and fill it in with your own articles.
+#
+# Every article id must be unique. Ids are lower-cased and spaces become
+# underscores, so "My Guide" and "my_guide" are the same article.
+# ===========================================================================
+
+# No "articles:" key is present, which is the shipped default: the provider
+# treats a file without that key as "nothing hand-written here" and stays
+# silent. Adding an empty "articles:" section is equally fine and loads zero
+# articles.
+#
+# ---------------------------------------------------------------------------
+# Full schema, commented out. Delete the "#" characters to use it.
+#
+# articles:
+#
+#   # The map key is the article id. Use lowercase words separated by
+#   # underscores; it is what "/wiki article <id>" and the article url accept.
+#   my_first_article:
+#
+#     # Required. The category id must exist in categories.yml and be enabled,
+#     # otherwise the article is unreachable and startup logs an error naming
+#     # both the article and the category.
+#     category: game-mechanics
+#
+#     # Displayed in the category list and the article header. MiniMessage.
+#     title: "My first article"
+#
+#     # One line shown under the title and in search results. MiniMessage.
+#     summary: "A short sentence about what this page covers."
+#
+#     # Icon material. Any Bukkit Material name is accepted; an unknown name
+#     # falls back to BOOK and logs a warning instead of failing the load.
+#     icon: BOOK
+#
+#     # What kind of page this is. The kind only chooses how the automatic
+#     # body is resolved, so CUSTOM is right for hand-written pages. Valid
+#     # values: BLOCK, ITEM, ENTITY, ENCHANTMENT, EFFECT, POTION, BIOME,
+#     # DIMENSION, STRUCTURE, SOUND, PARTICLE, ATTRIBUTE, DAMAGE_TYPE,
+#     # GAME_EVENT, GAMERULE, COMMAND, TAG, VILLAGER_PROFESSION, RECIPE,
+#     # ADVANCEMENT, CUSTOM.
+#     kind: CUSTOM
+#
+#     # Extra words the search index matches that are not in the title or
+#     # summary. Useful for synonyms and misspellings.
+#     keywords:
+#       - "guide"
+#       - "getting started"
+#
+#     # Free-form labels shown on the article, not the registry tags used by
+#     # the generated pages.
+#     tags:
+#       - "beginner"
+#
+#     # Readers need this permission node to open the article. Leave the whole
+#     # line out for a public page. The node is not registered automatically,
+#     # so grant it with your permissions plugin.
+#     permission: myserver.wiki.my-first-article
+#
+#     # false hides the article from menus and search while keeping it
+#     # loadable, which is handy while a page is being written.
+#     visible: true
+#
+#     # Lower sorts first inside its category. The default is 100, so use 0-99
+#     # to pin a page to the top.
+#     order: 100
+#
+#     # Free text recorded with the article, for example the game version the
+#     # page was written for. Defaults to the running server version.
+#     version: "26.2"
+#
+#     # Ids of other articles shown in the article's "related" row. Unknown ids
+#     # are reported at startup and skipped.
+#     related:
+#       - "some_other_article"
+#
+#     # Pages, in order. The first page is what opens; the rest are reachable
+#     # through the page buttons. A page without sections renders its own text.
+#     pages:
+#       overview:
+#         title: "Overview"
+#         # Sections, in order. Each has a heading and a list of MiniMessage
+#         # lines. Sections may nest through "subsections".
+#         sections:
+#           intro:
+#             heading: "Introduction"
+#             lines:
+#               - "<gray>Write your first paragraph here."
+#               - "<gray>MiniMessage is supported: <white>bold</white>, <aqua>colour</aqua>,
+#                  <hover:show_text:'<gray>Hover text'>hover</hover>."
+#             subsections:
+#               details:
+#                 heading: "Details"
+#                 lines:
+#                   - "<gray>A nested subsection."
+#       advanced:
+#         title: "Advanced"
+#         sections:
+#           tuning:
+#             heading: "Tuning"
+#             lines:
+#               - "<gray>Second page content."
+#
+#     # References to live game data. Each entry is the name the server knows,
+#     # for example DIAMOND_SWORD, minecraft:zombie or give. A reference that
+#     # does not exist on this server is reported at startup and left out of
+#     # the page rather than showing a broken icon.
+#     refs:
+#       items:
+#         - DIAMOND
+#       blocks:
+#         - CRAFTING_TABLE
+#       entities:
+#         - minecraft:villager
+#       commands:
+#         - give
+#       recipes:
+#         - DIAMOND_SWORD
+#       tags:
+#         - minecraft:logs
+#       sounds:
+#         - entity.player.levelup
