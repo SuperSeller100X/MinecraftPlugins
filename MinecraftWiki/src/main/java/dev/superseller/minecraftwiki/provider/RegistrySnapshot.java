@@ -145,63 +145,121 @@ public final class RegistrySnapshot {
         builder.minecraftVersion = safeVersion();
         if (enabledProviders.contains(ProviderIds.BLOCKS) || enabledProviders.contains(ProviderIds.ITEMS)
                 || enabledProviders.contains("materials") || enabledProviders.contains(ProviderIds.RECIPES)) {
-            builder.captureMaterials(issues);
+            step("materials", issues, () -> builder.captureMaterials(issues));
         }
         if (enabledProviders.contains(ProviderIds.TAGS)) {
-            builder.captureTags(issues);
+            step("tags", issues, () -> builder.captureTags(issues));
         }
         if (enabledProviders.contains(ProviderIds.ENTITIES)) {
-            builder.captureEntities(issues);
+            step("entities", issues, () -> builder.captureEntities(issues));
         }
         if (enabledProviders.contains(ProviderIds.ENCHANTMENTS)) {
-            builder.enchantments = captureEnchantments(issues);
+            builder.enchantments = supply("enchantments", Map.of(), () -> captureEnchantments(issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.EFFECTS)) {
-            builder.effects = captureEffects(issues);
+            builder.effects = supply("effects", Map.of(), () -> captureEffects(issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.POTIONS)) {
-            builder.potions = captureKeyed(RegistryKey.POTION, "potion", issues);
+            builder.potions = supply("potions", Map.of(),
+                    () -> captureKeyed(RegistryKey.POTION, "potion", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.BIOMES)) {
-            builder.biomes = captureKeyed(RegistryKey.BIOME, "biome", issues);
+            builder.biomes = supply("biomes", Map.of(),
+                    () -> captureKeyed(RegistryKey.BIOME, "biome", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.STRUCTURES)) {
-            builder.structures = captureKeyed(RegistryKey.STRUCTURE, "structure", issues);
+            builder.structures = supply("structures", Map.of(),
+                    () -> captureKeyed(RegistryKey.STRUCTURE, "structure", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.PARTICLES)) {
-            builder.particles = captureKeyed(RegistryKey.PARTICLE_TYPE, "particle", issues);
+            builder.particles = supply("particles", Map.of(),
+                    () -> captureKeyed(RegistryKey.PARTICLE_TYPE, "particle", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.SOUNDS)) {
-            builder.sounds = captureSounds(issues);
+            builder.sounds = supply("sounds", Map.of(), () -> captureSounds(issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.ATTRIBUTES)) {
-            builder.attributes = captureAttributes(issues);
+            builder.attributes = supply("attributes", Map.of(), () -> captureAttributes(issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.DAMAGE_TYPES)) {
-            builder.damageTypes = captureKeyed(RegistryKey.DAMAGE_TYPE, "damage type", issues);
+            builder.damageTypes = supply("damage types", Map.of(),
+                    () -> captureKeyed(RegistryKey.DAMAGE_TYPE, "damage type", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.GAME_EVENTS)) {
-            builder.gameEvents = captureKeyed(RegistryKey.GAME_EVENT, "game event", issues);
+            builder.gameEvents = supply("game events", Map.of(),
+                    () -> captureKeyed(RegistryKey.GAME_EVENT, "game event", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.VILLAGER_PROFESSIONS)) {
-            builder.villagerProfessions = captureKeyed(RegistryKey.VILLAGER_PROFESSION, "villager profession", issues);
+            builder.villagerProfessions = supply("villager professions", Map.of(),
+                    () -> captureKeyed(RegistryKey.VILLAGER_PROFESSION, "villager profession", issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.GAMERULES)) {
-            builder.gamerules = captureGameRules(issues);
+            builder.gamerules = supply("gamerules", Map.of(), () -> captureGameRules(issues), issues);
         }
         if (enabledProviders.contains(ProviderIds.COMMANDS)) {
-            builder.captureCommands(issues);
+            step("commands", issues, () -> builder.captureCommands(issues));
         }
         if (enabledProviders.contains(ProviderIds.DIMENSIONS)) {
-            builder.captureDimensions(issues);
+            step("dimensions", issues, () -> builder.captureDimensions(issues));
         }
         if (enabledProviders.contains(ProviderIds.RECIPES)) {
-            builder.captureRecipes(issues);
+            step("recipes", issues, () -> builder.captureRecipes(issues));
         }
         if (enabledProviders.contains(ProviderIds.ADVANCEMENTS)) {
-            builder.captureAdvancements(issues);
+            step("advancements", issues, () -> builder.captureAdvancements(issues));
         }
         return new RegistrySnapshot(builder);
+    }
+
+    /**
+     * Runs one capture step in isolation.
+     *
+     * <p>Each step reads a different part of the server, and any one of them can fail on a server
+     * version or platform this was not tested against. Losing one category is survivable; losing
+     * the plugin is not. The failure is recorded as an error issue naming the step and the exact
+     * line inside this plugin, so nothing is swallowed silently.</p>
+     */
+    private static void step(String what, ConfigIssues issues, Runnable body) {
+        try {
+            body.run();
+        } catch (Throwable error) {
+            issues.add(ConfigIssue.error("registry", what, describe(error)
+                    + " - that content is unavailable until the cause is fixed"));
+        }
+    }
+
+    /** {@link #step} for capture methods that return the map instead of filling the builder. */
+    private static <T> T supply(String what, T fallback, java.util.function.Supplier<T> body,
+                                ConfigIssues issues) {
+        try {
+            return body.get();
+        } catch (Throwable error) {
+            issues.add(ConfigIssue.error("registry", what, describe(error)
+                    + " - that content is unavailable until the cause is fixed"));
+            return fallback;
+        }
+    }
+
+    /** Names the exception and the first frame inside this plugin, without dumping the trace. */
+    private static String describe(Throwable error) {
+        for (StackTraceElement frame : error.getStackTrace()) {
+            if (frame.getClassName().startsWith("dev.superseller.minecraftwiki")) {
+                return "failed with " + error + " at " + frame.getClassName()
+                        .substring("dev.superseller.minecraftwiki.".length())
+                        + ":" + frame.getLineNumber();
+            }
+        }
+        return "failed with " + error;
+    }
+
+    /**
+     * A snapshot with no content.
+     *
+     * <p>Used when capture itself fails, so the plugin can still start, report every problem it
+     * found and be reloaded once the cause is fixed, instead of being left disabled.</p>
+     */
+    public static RegistrySnapshot empty() {
+        return new RegistrySnapshot(new Builder());
     }
 
     private static String safeVersion() {
@@ -272,10 +330,16 @@ public final class RegistrySnapshot {
                     continue;
                 }
                 String key = material.getKey().getKey();
+                // Already sorted in tagsByMaterial, and never mutated here: the fallback for a
+                // material with no tags is an immutable empty list.
                 List<String> materialTags = tagsByMaterial.getOrDefault(key, List.of());
-                Collections.sort(materialTags);
                 materials.put(key, new MaterialInfo(key, material, block, item,
                         materialFacts(material, block, item), List.copyOf(materialTags)));
+            }
+            // Sort once per material list rather than per material, and only while the lists are
+            // still the mutable ArrayLists they were built as.
+            for (List<String> values : tagsByMaterial.values()) {
+                Collections.sort(values);
             }
             captureMillis += (System.nanoTime() - start) / 1_000_000L;
         }

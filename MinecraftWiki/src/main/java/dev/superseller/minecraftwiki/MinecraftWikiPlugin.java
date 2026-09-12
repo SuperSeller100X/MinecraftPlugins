@@ -149,27 +149,36 @@ public final class MinecraftWikiPlugin extends JavaPlugin implements MenuFactory
 
     @Override
     public void onDisable() {
-        // Close every open wiki first so no inventory is left pointing at a disposed menu.
-        for (Player player : getServer().getOnlinePlayers()) {
-            WikiSession session = navigation.peek(player.getUniqueId());
-            if (session == null) {
-                continue;
-            }
-            WikiMenu menu = session.current();
-            if (menu != null && !menu.disposed()) {
-                if (player.isOnline() && player.getOpenInventory() != null
-                        && player.getOpenInventory().getTopInventory() == menu.inventory()) {
-                    player.closeInventory();
+        // Enable can abort partway through - a failing snapshot capture, an unreadable config -
+        // and Bukkit still calls onDisable. Nothing here may assume a field was ever assigned,
+        // and a cleanup failure must not mask whatever actually went wrong.
+        try {
+            // Close every open wiki first so no inventory is left pointing at a disposed menu.
+            if (navigation != null) {
+                for (Player player : getServer().getOnlinePlayers()) {
+                    WikiSession session = navigation.peek(player.getUniqueId());
+                    if (session == null) {
+                        continue;
+                    }
+                    WikiMenu menu = session.current();
+                    if (menu != null && !menu.disposed()) {
+                        if (player.getOpenInventory() != null
+                                && player.getOpenInventory().getTopInventory() == menu.inventory()) {
+                            player.closeInventory();
+                        }
+                        menu.dispose();
+                    }
                 }
-                menu.dispose();
+                navigation.clear();
             }
-        }
-        navigation.clear();
-        if (search != null) {
-            search.clearCooldowns();
-        }
-        if (content != null) {
-            content.clear();
+            if (search != null) {
+                search.clearCooldowns();
+            }
+            if (content != null) {
+                content.clear();
+            }
+        } catch (Throwable error) {
+            getLogger().warning(PREFIX_GUI + "cleanup during disable failed: " + error);
         }
         PlatformScheduler.cancelTasks();
         MinecraftWikiApi.unregister();
@@ -216,7 +225,17 @@ public final class MinecraftWikiPlugin extends JavaPlugin implements MenuFactory
     /** Rebuilds snapshot, catalogue, index and services. */
     private void rebuildAll(boolean async) {
         long begin = System.nanoTime();
-        snapshot = RegistrySnapshot.capture(settings.content().enabledProviders(), issues);
+        try {
+            snapshot = RegistrySnapshot.capture(settings.content().enabledProviders(), issues);
+        } catch (Throwable error) {
+            // Every individual capture step is already isolated; this is the net for the snapshot
+            // itself. Starting with an empty wiki and a loud error beats leaving the plugin off.
+            issues.add(ConfigIssue.error("registry", "snapshot",
+                    "could not be captured: " + error + " - the wiki starts empty"));
+            getLogger().severe(PREFIX_CONFIG + "registry snapshot failed, the wiki starts empty: "
+                    + error);
+            snapshot = RegistrySnapshot.empty();
+        }
         providers.clear();
         providers.addAll(buildProviders());
 

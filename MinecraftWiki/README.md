@@ -192,10 +192,11 @@ What was actually run on this checkout:
 | Type-check of all 7 test sources | same harness + JUnit API stubs | 0 errors |
 | Execution of the shipped unit tests (34) against the compiled plugin classes | a reflective runner in `/tmp`, since no JUnit jar is obtainable here | 34 passed, 0 failed, 1 not runnable |
 | `mvn clean verify` | - | **never run**: no Maven in the sandbox and `repo.papermc.io` / Maven Central are unreachable from it |
-| Loading the plugin on a server, any GUI, any click, any command in game | - | **never done** |
+| Loading the plugin on a server | Paper 26.2 build 112 | **one attempt: it failed to enable.** The crash and the two follow-on problems are fixed in this checkout; the plugin has not been loaded again since |
+| Any GUI, any click, any command in game | - | **never done** |
 | MiniMessage tag rendering | - | **not executed here** - Adventure is a named module and its sealed `Tag.Argument` permits a type from another package, which is illegal in the unnamed module ECJ compiles in. `Text.mini` type-checks but was never rendered. |
 
-The 34 tests cover `Pagination` (empty, exact-multiple, partial and clamped pages, and the
+The 37 tests cover `Pagination` (empty, exact-multiple, partial and clamped pages, and the
 `total`/list-size mismatch), `Text` (sanitising, folding, prettifying, joining, namespace
 stripping), `SearchQuery` (folding, terms, blank and null input, category filter),
 `SearchScore` (relevance ordering, non-matches score zero, every-term-must-match, configurable
@@ -205,7 +206,15 @@ searchable; querying does not grow the index) and `SearchService` (EMPTY/TOO_SHO
 /COOLDOWN/OK, relevance order, both-terms matching, category filter, result cap, cooldown
 expiry, bypass, `forget`, NO_RESULTS, and in-place index swap on reload).
 
-Three real bugs were found this way and fixed:
+The first live load (Paper `26.2` build 112) crashed in `RegistrySnapshot.captureMaterials` with an
+`UnsupportedOperationException` - the code sorted the shared `List.of()` fallback used for a material
+with no tags - and then `onDisable` threw a second `NullPointerException` because it assumed enable had
+finished. Both are fixed, along with a duplicate `alive` key in `gui.yml` that made SnakeYAML warn on
+every load. Since the crash happened at the *first* material, nothing after material capture has ever
+executed on a real server; each capture step now runs in isolation, so one failure reports itself under
+`[Wiki/Config]` and costs one category instead of the whole plugin.
+
+Three further bugs were found by running the search and pagination code, and fixed:
 
 1. `Pagination.slice` could return entries beyond the declared `total`, disagreeing with `shown(page)`.
 2. `Text.fold` lowercased but did not normalise whitespace, so `"diamond  sword"` failed to match the title `Diamond Sword`.

@@ -431,7 +431,6 @@ labels:
   spawn_category: "Spawn category"
   entity_class: "Class"
   spawnable: "Spawnable"
-  alive: "Living entity"
 
   # Recipes.
   recipe_type: "Type"
