@@ -83,7 +83,7 @@ public final class ItemFactory {
     private static ItemStack finish(ItemStack item, ItemMeta meta, boolean glowing) {
         meta.setUnbreakable(true);
         meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES,
-                ItemFlag.HIDE_DESTROYS, ItemFlag.HIDE_PLACED_ON, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+                ItemFlag.HIDE_DESTROYS, ItemFlag.HIDE_PLACED_ON);
         if (glowing) {
             applyGlint(meta);
         }

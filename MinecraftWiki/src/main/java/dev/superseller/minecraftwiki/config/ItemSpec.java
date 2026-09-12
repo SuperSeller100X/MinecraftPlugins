@@ -24,13 +24,14 @@ public record ItemSpec(Material material, String name, List<String> lore, boolea
         return new ItemSpec(material, name, List.of(), false);
     }
 
-    /** True when the spec carries no display name at all (used for border filler). */
     /** Returns a copy that draws a different material, keeping the configured text. */
     public ItemSpec withMaterial(Material replacement) {
         return replacement == null || replacement == material
                 ? this
                 : new ItemSpec(replacement, name, lore, glowing);
     }
+
+    /** True when the spec carries no display name at all (used for border filler). */
 
     public boolean unnamed() {
         return name.isEmpty();

@@ -82,7 +82,7 @@ public final class WikiAdminCommand implements CommandExecutor {
             return true;
         }
         Map<String, String> placeholders = new LinkedHashMap<>();
-        placeholders.put("version", plugin.getDescription().getVersion());
+        placeholders.put("version", plugin.getPluginMeta().getVersion());
         placeholders.put("platform", PlatformScheduler.platformName()
                 + (PlatformScheduler.isFolia() ? " (regionised)" : ""));
         placeholders.put("minecraft", plugin.snapshot().minecraftVersion());

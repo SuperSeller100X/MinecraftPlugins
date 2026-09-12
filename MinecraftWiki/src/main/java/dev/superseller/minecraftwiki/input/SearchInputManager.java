@@ -45,10 +45,10 @@ import io.papermc.paper.event.player.AsyncChatEvent;
  */
 public final class SearchInputManager implements Listener {
 
-    /** One outstanding chat request. */
     /** Used when the configured cancel word is blank. */
     private static final String DEFAULT_CANCEL_WORD = "cancel";
 
+    /** One outstanding chat request. */
     private static final class Pending {
 
         private final WikiMenu returnTo;

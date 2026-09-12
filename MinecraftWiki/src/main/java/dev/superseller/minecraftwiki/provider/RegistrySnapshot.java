@@ -21,7 +21,6 @@ import org.bukkit.attribute.Attributable;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -395,10 +394,8 @@ public final class RegistrySnapshot {
             facts.when("flammable", "Yes", safe(material::isFlammable, false));
             facts.when("burnable", "Yes", safe(material::isBurnable, false));
             facts.when("solid", "Yes", safe(material::isSolid, false));
-            facts.when("transparent", "Yes", safe(material::isTransparent, false));
             facts.when("occluding", "Yes", safe(material::isOccluding, false));
             facts.when("gravity", "Yes", safe(material::hasGravity, false));
-            facts.when("interactable", "Yes", safe(material::isInteractable, false));
             facts.when("music_disc", "Yes", safe(material::isRecord, false));
             facts.when("compostable", "Yes", safe(material::isCompostable, false));
             Material remaining = safe(material::getCraftingRemainingItem, null);
@@ -423,7 +420,6 @@ public final class RegistrySnapshot {
             for (EntityType type : iterate(Registry.ENTITY_TYPE, issues, "entity type")) {
                 String key = keyOf(type.getKey());
                 Facts facts = new Facts();
-                facts.put("type_id", Integer.toString(safe(() -> (int) type.getTypeId(), 0)));
                 facts.when("alive", "Yes", safe(type::isAlive, false));
                 facts.when("spawnable", "Yes", safe(type::isSpawnable, false));
                 facts.put("spawn_category", Text.prettify(safe(() -> type.getSpawnCategory().name(), "")));
@@ -431,7 +427,7 @@ public final class RegistrySnapshot {
                 if (entityClass != null) {
                     facts.put("entity_class", entityClass.getSimpleName());
                 }
-                facts.put("translation_key", safe(type::getTranslationKey, null));
+                facts.put("translation_key", safe(type::translationKey, null));
                 List<AttributeValue> defaults = new ArrayList<>();
                 try {
                     if (safe(type::hasDefaultAttributes, false)) {
@@ -671,18 +667,33 @@ public final class RegistrySnapshot {
 
     // ---------------------------------------------------------------- registries
 
+    /** The enchantment registry through the current API, or null with a warning. */
+    private static Registry<Enchantment> enchantmentRegistry(ConfigIssues issues) {
+        try {
+            Registry<Enchantment> registry =
+                    RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
+            if (registry != null) {
+                return registry;
+            }
+            issues.add(ConfigIssue.warning("registry", "enchantment",
+                    "the registry is not present on this server"));
+        } catch (Throwable error) {
+            issues.add(ConfigIssue.warning("registry", "enchantment",
+                    "the registry could not be read: " + error));
+        }
+        return null;
+    }
+
     private static Map<String, RegistryEntry> captureEnchantments(ConfigIssues issues) {
         Map<String, RegistryEntry> out = new TreeMap<>();
-        for (Enchantment enchantment : iterate(Registry.ENCHANTMENT, issues, "enchantment")) {
+        // getItemTarget()/isTreasure() are deliberately not read: enchantment groupings are
+        // tag-managed now, Paper makes getItemTarget() throw, and the real tag membership is
+        // already listed on every article and in the tags category.
+        for (Enchantment enchantment : iterate(enchantmentRegistry(issues), issues, "enchantment")) {
             String key = keyOf(enchantment.getKey());
             Facts facts = new Facts();
             facts.put("max_level", Integer.toString(safe(enchantment::getMaxLevel, 0)));
             facts.put("start_level", Integer.toString(safe(enchantment::getStartLevel, 0)));
-            EnchantmentTarget target = safe(enchantment::getItemTarget, null);
-            if (target != null) {
-                facts.put("item_target", Text.prettify(target.name().toLowerCase(Locale.ROOT)));
-            }
-            facts.when("treasure", "Yes", safe(enchantment::isTreasure, false));
             facts.when("cursed", "Yes", safe(enchantment::isCursed, false));
             facts.when("tradeable", "Yes", safe(enchantment::isTradeable, false));
             facts.when("discoverable", "Yes", safe(enchantment::isDiscoverable, false));
@@ -698,7 +709,6 @@ public final class RegistrySnapshot {
             Facts facts = new Facts();
             facts.when("instant", "Yes", safe(effect::isInstant, false));
             facts.put("category", Text.prettify(safe(() -> effect.getCategory().name(), "")));
-            facts.number("duration_modifier", safe(effect::getDurationModifier, 0d));
             org.bukkit.Color color = safe(effect::getColor, null);
             if (color != null) {
                 facts.put("colour", String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue()));
@@ -723,7 +733,7 @@ public final class RegistrySnapshot {
     private static Map<String, RegistryEntry> captureSounds(ConfigIssues issues) {
         Map<String, RegistryEntry> out = new TreeMap<>();
         for (org.bukkit.Sound sound : iterate(Registry.SOUNDS, issues, "sound")) {
-            String key = keyOf(sound.getKey());
+            String key = keyOf(Registry.SOUNDS.getKey(sound));
             out.put(key, new RegistryEntry(key, Text.prettify(key), new Facts().build()));
         }
         return out;

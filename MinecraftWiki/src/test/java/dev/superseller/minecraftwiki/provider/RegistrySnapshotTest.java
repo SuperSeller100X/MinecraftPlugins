@@ -23,9 +23,10 @@ class RegistrySnapshotTest {
         // This is the exact call that took the plugin down at startup: a material with no tags
         // falls back to List.of(), and the JDK refuses to sort an immutable list. Any capture code
         // that sorts must copy first.
+        List<String> noTags = List.of();
         boolean threw = false;
         try {
-            Collections.sort(List.of());
+            Collections.sort(noTags);
         } catch (UnsupportedOperationException expected) {
             threw = true;
         }

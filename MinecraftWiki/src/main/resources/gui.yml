@@ -395,9 +395,7 @@ labels:
   flammable: "Flammable"
   fuel: "Fuel"
   solid: "Solid"
-  transparent: "Transparent"
   occluding: "Occluding"
-  interactable: "Interactable"
   gravity: "Affected by gravity"
   slipperiness: "Slipperiness"
   edible: "Edible"
@@ -409,15 +407,12 @@ labels:
   # Enchantments.
   max_level: "Maximum level"
   start_level: "Starting level"
-  item_target: "Applies to"
-  treasure: "Treasure only"
   cursed: "Cursed"
   tradeable: "Tradeable"
   discoverable: "Discoverable in loot"
 
   # Effects and potions.
   instant: "Instant"
-  duration_modifier: "Duration modifier"
   colour: "Colour"
   sentiment: "Sentiment"
 
@@ -427,7 +422,6 @@ labels:
   category: "Category"
   kind: "Kind"
   namespace: "Namespace"
-  type_id: "Numeric id"
   spawn_category: "Spawn category"
   entity_class: "Class"
   spawnable: "Spawnable"
