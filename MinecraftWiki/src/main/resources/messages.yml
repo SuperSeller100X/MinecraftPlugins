@@ -1,0 +1,100 @@
+# ===========================================================================
+#  MinecraftWiki - messages.yml
+#
+#  Every message the plugin sends to a player or the console, MiniMessage
+#  formatted. Placeholders are written <like_this>.
+#
+#  To add a language: copy this file to lang/<code>.yml (for example
+#  lang/de.yml), translate the values and let players pick it with
+#  /wiki lang <code>. Keys a translation is missing fall back to this file.
+#  No language other than English is bundled, because translations are never
+#  generated automatically.
+# ===========================================================================
+
+# Prepended to chat messages. Set to "" for no prefix.
+prefix: "<dark_gray>[<gradient:#4f9cf9:#a56bff>Wiki</gradient><dark_gray>]</dark_gray> "
+
+# --- access -----------------------------------------------------------------
+no-permission: "<red>You do not have permission to do that."
+players-only: "<red>Only a player can open the wiki. Use <white>/wiki search <query></white> from the console."
+unknown-subcommand: "<gray>Unknown subcommand. Type <white>/wiki help</white> for the list."
+
+# --- help -------------------------------------------------------------------
+help-header: "<gradient:#4f9cf9:#a56bff>Minecraft Wiki</gradient> <dark_gray>- <gray>commands"
+help-lines:
+  - "<white>/wiki</white> <dark_gray>\u2014 <gray>open the wiki"
+  - "<white>/wiki search <query></white> <dark_gray>\u2014 <gray>search the wiki"
+  - "<white>/wiki category <name></white> <dark_gray>\u2014 <gray>open a category"
+  - "<white>/wiki article <id></white> <dark_gray>\u2014 <gray>open one article"
+  - "<white>/wiki lang [code]</white> <dark_gray>\u2014 <gray>your language"
+  - "<white>/wiki help</white> <dark_gray>\u2014 <gray>this list"
+help-admin-line: "<white>/wiki reload</white> <dark_gray>\u2014 <gray>reload the configuration"
+
+# --- search -----------------------------------------------------------------
+search-empty: "<gray>Type something to search for: <white>/wiki search diamond</white>"
+search-too-short: "<red>Search at least <white><min></white> character(s)."
+search-too-long: "<red>Searches are limited to <white><max></white> characters."
+search-cooldown: "<gray>You can search again in <white><seconds>s</white>."
+search-no-results: "<gray>Nothing matched <white>\u201C<query>\u201D</white><gray>. Try a shorter word or browse a category."
+search-results-console:
+  - "<gray>Found <white><count></white> article(s) for <white>\u201C<query>\u201D</white><gray>:"
+search-result-line: "<gray> <dark_gray>\u2022 <white><title> <dark_gray>(<gray><category><dark_gray>) <dark_gray><id>"
+search-category-unknown: "<red>Unknown category <white><input></white><red>. Use <white>/wiki category list</white>."
+
+# --- categories -------------------------------------------------------------
+category-unknown: "<red>Unknown category <white>\u201C<input>\u201D</white><red>."
+category-disabled: "<red>The category <white>\u201C<name>\u201D</white><red> is disabled."
+category-empty: "<gray>The category <white>\u201C<name>\u201D</white><gray> has no articles yet."
+category-no-permission: "<red>You may not browse <white>\u201C<name>\u201D</white><red>."
+category-list-header: "<gradient:#4f9cf9:#a56bff>Wiki categories</gradient>"
+category-list-line: "<gray> <dark_gray>\u2022 <white><title> <dark_gray>(<gray><count> articles<dark_gray>) <gray><id>"
+
+# --- articles ---------------------------------------------------------------
+article-unknown: "<red>Unknown article <white>\u201C<input>\u201D</white><red>."
+article-no-permission: "<red>You may not read <white>\u201C<title>\u201D</white><red>."
+article-hidden: "<red>That article is not visible."
+
+# --- language ---------------------------------------------------------------
+lang-current: "<gray>Your wiki language is <white><language></white><gray>."
+lang-set: "<gray>Wiki language set to <white><language></white><gray>."
+lang-disabled: "<red>Per-player languages are disabled on this server."
+lang-unknown: "<red>There is no language file for <white>\u201C<language>\u201D</white><red>."
+lang-available-header: "<gradient:#4f9cf9:#a56bff>Available languages</gradient>"
+lang-available-line: "<gray> <dark_gray>\u2022 <white><code> <dark_gray><current>"
+
+# --- gui --------------------------------------------------------------------
+gui-disabled: "<red>The wiki GUI is currently unavailable."
+gui-empty: "<gray>The wiki has no articles. Enable a content provider in <white>config.yml</white>."
+input-prompt: "<gray>Type your search in chat, or <white><cancel></white> to cancel. Times out in <white><timeout>s</white>."
+input-cancelled: "<gray>Search cancelled."
+input-timeout: "<gray>Search timed out."
+input-command-ignored: "<gray>That looked like a command, not a search. Type plain words, or <white><cancel></white> to cancel."
+
+# --- reload -----------------------------------------------------------------
+reload-start: "<gray>Reloading MinecraftWiki\u2026"
+reload-done: "<gray>Reloaded <white><categories></white> categories and <white><articles></white> articles in <white><ms>ms</white>."
+reload-failed: "<red>Reload finished with <white><errors></white> configuration error(s). Check the console."
+
+# --- admin ------------------------------------------------------------------
+admin-header: "<gradient:#4f9cf9:#a56bff>MinecraftWiki</gradient> <dark_gray>- <gray>information"
+admin-lines:
+  - "<gray>Version: <white><version>"
+  - "<gray>Server: <white><platform> <dark_gray>(<gray><minecraft><dark_gray>)"
+  - "<gray>Articles: <white><articles> <dark_gray>\u2022 <gray>Categories: <white><categories>"
+  - "<gray>Index: <white><tokens></white> tokens <dark_gray>\u2022 <gray>built in <white><index-ms>ms"
+  - "<gray>Providers: <white><providers> <dark_gray>\u2022 <gray>Cached bodies: <white><cache>"
+  - "<gray>Sessions: <white><sessions> <dark_gray>\u2022 <gray>Debug: <white><debug>"
+admin-rebuild: "<gray>Rebuilt the catalogue and search index in <white><ms>ms</white> (<white><articles></white> articles)."
+admin-debug-on: "<gray>Debug logging <white>enabled</white><gray>."
+admin-debug-off: "<gray>Debug logging <white>disabled</white><gray>."
+admin-provider-header: "<gradient:#4f9cf9:#a56bff>Content providers</gradient>"
+admin-provider-line: "<gray> <dark_gray>\u2022 <white><id> <dark_gray>- <gray><articles> articles <dark_gray>(<gray><state><dark_gray>)"
+admin-article-header: "<gradient:#4f9cf9:#a56bff>Article <id></gradient>"
+admin-article-lines:
+  - "<gray>Title: <white><title>"
+  - "<gray>Category: <white><category> <dark_gray>\u2022 <gray>Kind: <white><kind>"
+  - "<gray>Icon: <white><icon> <dark_gray>\u2022 <gray>Order: <white><order>"
+  - "<gray>Visible: <white><visible> <dark_gray>\u2022 <gray>Permission: <white><permission>"
+  - "<gray>Keywords: <white><keywords>"
+  - "<gray>Related: <white><related>"
+  - "<gray>Content: <white><content>"

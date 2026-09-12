@@ -1,0 +1,74 @@
+name: MinecraftWiki
+version: ${project.version}
+main: dev.superseller.minecraftwiki.MinecraftWikiPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: In-game Minecraft encyclopedia. Paginated GUI wiki with indexed search, category browsing, article/recipe/entity viewers and per-player languages.
+
+commands:
+  wiki:
+    description: Open the MinecraftWiki interface
+    usage: |-
+      /wiki - open the wiki
+      /wiki search <query> - search the wiki
+      /wiki category <category> - open a category
+      /wiki article <id> - open an article
+      /wiki lang [code] - show or set your language
+      /wiki reload - reload configuration (permission required)
+      /wiki help - command help
+    aliases: [mcwiki, encyclopedia]
+    permission: minecraftwiki.use
+  wikiadmin:
+    description: MinecraftWiki administration
+    usage: |-
+      /wikiadmin reload|info|rebuild|debug [on|off]|article <id>|provider <id>|stats
+    aliases: [mwikiadmin, wikia]
+    permission: minecraftwiki.admin
+
+permissions:
+  minecraftwiki.use:
+    description: Open the wiki and browse articles
+    default: true
+  minecraftwiki.search:
+    description: Use /wiki search and the in-GUI search
+    default: true
+  minecraftwiki.lang:
+    description: Change your own wiki language
+    default: true
+  minecraftwiki.reload:
+    description: Reload the wiki configuration with /wiki reload
+    default: op
+  minecraftwiki.admin:
+    description: Full administration access to /wikiadmin
+    default: op
+    children:
+      minecraftwiki.admin.reload: true
+      minecraftwiki.admin.info: true
+      minecraftwiki.admin.rebuild: true
+      minecraftwiki.admin.debug: true
+      minecraftwiki.admin.article: true
+      minecraftwiki.admin.provider: true
+      minecraftwiki.reload: true
+  minecraftwiki.admin.reload:
+    description: Reload configuration and rebuild caches
+    default: op
+  minecraftwiki.admin.info:
+    description: Show plugin/runtime information
+    default: op
+  minecraftwiki.admin.rebuild:
+    description: Rebuild the article catalog and search index
+    default: op
+  minecraftwiki.admin.debug:
+    description: Toggle debug logging at runtime
+    default: op
+  minecraftwiki.admin.article:
+    description: Open any article, ignoring visibility and permission requirements
+    default: op
+  minecraftwiki.admin.provider:
+    description: Inspect content providers
+    default: op
+  minecraftwiki.bypass.cooldown:
+    description: Ignore the configured search cooldown
+    default: op

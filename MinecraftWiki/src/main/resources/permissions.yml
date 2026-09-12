@@ -1,0 +1,42 @@
+# ===========================================================================
+#  MinecraftWiki - permissions.yml
+#
+#  Permission node names. Changing a node here changes it everywhere: command
+#  checks, category gating and article gating all read from this file.
+#
+#  The nodes are also declared in plugin.yml with their defaults. If you rename
+#  a node here you should give it out with your permissions plugin, because a
+#  node that is not registered defaults to "op" in Bukkit.
+#
+#  Category permissions
+#    minecraftwiki.category.<id> is registered automatically for every category
+#    in categories.yml and defaults to true, so browsing works out of the box.
+#    Set "permission" on a category to use a different node.
+#
+#  Article permissions
+#    minecraftwiki.article.<id> is only enforced for articles that declare a
+#    "permission" of their own in articles.yml. It is deliberately not enforced
+#    for generated articles: an unregistered node defaults to "op" in Bukkit,
+#    which would lock the whole wiki away from non-operators.
+# ===========================================================================
+
+nodes:
+  use: minecraftwiki.use
+  search: minecraftwiki.search
+  lang: minecraftwiki.lang
+  reload: minecraftwiki.reload
+  admin: minecraftwiki.admin
+  bypass-cooldown: minecraftwiki.bypass.cooldown
+
+  # Prepended with a category id, e.g. minecraftwiki.category.blocks
+  category-prefix: minecraftwiki.category.
+  # Prepended with an article id, e.g. minecraftwiki.article.blocks:diamond_ore
+  article-prefix: minecraftwiki.article.
+
+  # Sub-nodes of the admin permission, used by /wikiadmin.
+  admin-reload: minecraftwiki.admin.reload
+  admin-info: minecraftwiki.admin.info
+  admin-rebuild: minecraftwiki.admin.rebuild
+  admin-debug: minecraftwiki.admin.debug
+  admin-article: minecraftwiki.admin.article
+  admin-provider: minecraftwiki.admin.provider

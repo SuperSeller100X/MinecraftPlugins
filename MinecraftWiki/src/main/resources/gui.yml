@@ -1,0 +1,436 @@
+# ===========================================================================
+#  MinecraftWiki - gui.yml
+#
+#  Every screen, every button, every icon and every title in the wiki GUI.
+#  All text supports MiniMessage: https://docs.advntr.dev/minimessage
+#  Placeholders shown as <name> are filled in at render time.
+#
+#  Nothing here is required: any missing key falls back to the default below
+#  and the fallback is written to the console under [Wiki/Config].
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Inventory sizes (must be a multiple of 9, between 27 and 54)
+# ---------------------------------------------------------------------------
+size:
+  home: 54
+  category: 54
+  article: 54
+  search-results: 54
+  recipe: 54
+
+# ---------------------------------------------------------------------------
+# Inventory titles
+# ---------------------------------------------------------------------------
+titles:
+  home: "<gradient:#4f9cf9:#a56bff>Minecraft Wiki</gradient>"
+  category: "<dark_aqua>Wiki <dark_gray>\u00BB <white><category>"
+  article: "<dark_aqua>Wiki <dark_gray>\u00BB <white><title>"
+  search-results: "<dark_aqua>Search <dark_gray>\u00BB <white><query>"
+  recipe: "<dark_aqua>Recipes <dark_gray>\u00BB <white><item>"
+
+# ---------------------------------------------------------------------------
+# Layout
+#
+# content-rows / content-columns are inclusive ranges of the 9 wide grid.
+# The defaults leave column 0 and column 8 free for a subtle border, which is
+# what gives the menus their spacing instead of filling every slot.
+# ---------------------------------------------------------------------------
+layout:
+  content-rows: "1-4"
+  content-columns: "1-7"
+  # Header (breadcrumb) row and navigation row, counted from 0.
+  header-row: 0
+  nav-row: 5
+  # Breadcrumb bar inside the header row. Crumbs are separated by one slot
+  # holding the separator item; older crumbs are dropped when it overflows.
+  breadcrumb-start: 2
+  breadcrumb-max: 3
+
+filler:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+  name: ""
+  # Only the header and navigation rows are filled; the content grid is never
+  # padded, so large catalogues stay readable.
+  header: true
+  navigation: true
+  sides: true
+
+separator:
+  material: LIGHT_GRAY_STAINED_GLASS_PANE
+  name: "<dark_gray>\u00BB"
+
+# ---------------------------------------------------------------------------
+# Navigation buttons (bottom row). Set a slot to -1 to hide that button.
+# ---------------------------------------------------------------------------
+navigation:
+  slots:
+    back: 45
+    previous: 46
+    page-info: 47
+    next: 48
+    search: 50
+    categories: 51
+    related: 52
+    help: 53
+  header:
+    home: 0
+    close: 8
+
+items:
+  home:
+    material: BOOK
+    name: "<white>Home"
+    lore:
+      - "<gray>Back to the wiki home"
+  back:
+    material: ARROW
+    name: "<white>Back"
+    lore:
+      - "<gray>Return to <white><previous></white>"
+  close:
+    material: BARRIER
+    name: "<red>Close"
+    lore:
+      - "<gray>Close the wiki"
+  previous:
+    material: SPECTRAL_ARROW
+    name: "<white>Previous page"
+    lore:
+      - "<gray>Page <white><page></white><gray> of <white><pages></white>"
+  next:
+    material: SPECTRAL_ARROW
+    name: "<white>Next page"
+    lore:
+      - "<gray>Page <white><page></white><gray> of <white><pages></white>"
+  page-info:
+    material: PAPER
+    name: "<white>Page <page> <dark_gray>/ <pages>"
+    lore:
+      - "<gray>Showing <white><shown></white><gray> of <white><total></white>"
+  page-info-single:
+    material: PAPER
+    name: "<white><total> <gray>entries"
+    lore: []
+  search:
+    material: COMPASS
+    name: "<white>Search the wiki"
+    lore:
+      - "<gray>Find any block, item, mob,"
+      - "<gray>enchantment or mechanic"
+    glowing: true
+  categories:
+    material: CHEST
+    name: "<white>All categories"
+    lore:
+      - "<gray>Browse the wiki by category"
+  related:
+    material: NAME_TAG
+    name: "<white>Related articles"
+    lore:
+      - "<gray><count> linked article(s)"
+  help:
+    material: OAK_SIGN
+    name: "<white>Wiki help"
+    lore:
+      - "<gray>Commands and shortcuts"
+
+# ---------------------------------------------------------------------------
+# Category tiles on the home screen
+# ---------------------------------------------------------------------------
+category:
+  name: "<white><title>"
+  lore:
+    - "<gray><description>"
+    - ""
+    - "<dark_gray>\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    - "<gray>Articles: <white><count>"
+    - "<yellow>\u25B6 Click to browse"
+  show-empty: false
+  glowing: false
+
+# ---------------------------------------------------------------------------
+# Article entries inside a category listing
+# ---------------------------------------------------------------------------
+entry:
+  name: "<white><title>"
+  lore:
+    - "<gray><summary>"
+    - ""
+    - "<gray>Category: <white><category>"
+    - "<yellow>\u25B6 Click to read"
+  lore-without-summary:
+    - "<gray>Category: <white><category>"
+    - "<yellow>\u25B6 Click to read"
+
+# ---------------------------------------------------------------------------
+# Article viewer
+# ---------------------------------------------------------------------------
+article:
+  title-item:
+    name: "<white><title>"
+    lore:
+      - "<gray><summary>"
+      - ""
+      - "<gray>Type: <white><kind>"
+      - "<gray>Category: <white><category>"
+      - "<gray>Version: <white><version>"
+      - "<gray>Id: <dark_gray><id>"
+  section:
+    material: WRITABLE_BOOK
+    name: "<aqua><heading>"
+    lore:
+      - "<gray><lines>"
+  text:
+    material: PAPER
+    name: "<white><heading>"
+    lore:
+      - "<gray><lines>"
+  page-header:
+    material: BOOK
+    name: "<white>Page <page> <dark_gray>- <gray><title>"
+    lore: []
+  item-ref:
+    name: "<white><label>"
+    lore:
+      - "<gray>Item reference"
+      - "<yellow>\u25B6 Click to open"
+  entity-ref:
+    name: "<white><label>"
+    lore:
+      - "<gray>Entity reference"
+      - "<yellow>\u25B6 Click to open"
+  command-ref:
+    material: COMMAND_BLOCK
+    name: "<white><label>"
+    lore:
+      - "<gray>Command reference"
+      - "<yellow>\u25B6 Click to put it in chat"
+  recipe-ref:
+    material: CRAFTING_TABLE
+    name: "<white><label>"
+    lore:
+      - "<gray>Recipe reference"
+      - "<yellow>\u25B6 Click to view recipes"
+  tag-ref:
+    material: STRING
+    name: "<white><label>"
+    lore:
+      - "<gray>Registry tag"
+      - "<yellow>\u25B6 Click to list its values"
+  sound-ref:
+    material: NOTE_BLOCK
+    name: "<white><label>"
+    lore:
+      - "<gray>Sound event"
+      - "<yellow>\u25B6 Click to play it"
+  article-ref:
+    material: ENDER_EYE
+    name: "<white><label>"
+    lore:
+      - "<gray>See also"
+      - "<yellow>\u25B6 Click to open"
+  empty:
+    material: BARRIER
+    name: "<red>No content"
+    lore:
+      - "<gray>This article has no body for the"
+      - "<gray>running server version."
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+search:
+  result:
+    material: SPYGLASS
+    name: "<white><title>"
+    lore:
+      - "<gray><summary>"
+      - ""
+      - "<gray>Matched: <white><match>"
+      - "<gray>Score: <white><score>"
+      - "<gray>Category: <white><category>"
+      - "<yellow>\u25B6 Click to read"
+  result-icon-uses-article-icon: true
+  # MiniMessage applied to the matched characters inside the result title.
+  highlight: "<color:#ffd166><bold>"
+  highlight-end: "</bold></color>"
+  no-results:
+    material: BARRIER
+    name: "<red>No results for \u201C<query>\u201D"
+    lore:
+      - "<gray>Try a shorter word, a plural,"
+      - "<gray>or browse a category instead."
+  prompt:
+    material: WRITABLE_BOOK
+    name: "<white>Type your search in chat"
+    lore:
+      - "<gray>Then press enter. Type <white>cancel</white><gray> to abort."
+      - "<gray>Times out after <white><timeout>s</white><gray>."
+
+# ---------------------------------------------------------------------------
+# Recipe viewer
+#
+# A shaped recipe is drawn as a 3x3 grid; single-ingredient recipes use the
+# centre slot. Slots are absolute inventory slots.
+# ---------------------------------------------------------------------------
+recipe:
+  grid-slots: [10, 11, 12, 19, 20, 21, 28, 29, 30]
+  single-slot: 20
+  arrow-slot: 23
+  result-slot: 25
+  info-slot: 4
+  empty-slot-material: LIGHT_GRAY_STAINED_GLASS_PANE
+  empty-slot-name: ""
+  arrow:
+    material: ARROW
+    name: "<white>Results in"
+    lore:
+      - "<gray><result>"
+  info:
+    material: CRAFTING_TABLE
+    name: "<white><result>"
+    lore:
+      - "<gray>Type: <white><type>"
+      - "<gray>Recipes: <white><index> <dark_gray>/ <gray><count>"
+      - "<yellow>\u25B6 Use the arrows to switch"
+  ingredient:
+    name: "<white><label>"
+    lore:
+      - "<gray>Ingredient"
+  none:
+    material: BARRIER
+    name: "<red>No recipes"
+    lore:
+      - "<gray>The server has no recipe that"
+      - "<gray>produces <white><result></white><gray>."
+
+# ---------------------------------------------------------------------------
+# Sounds. Leave a key empty to silence that event.
+# ---------------------------------------------------------------------------
+sounds:
+  open:
+    key: ui.button.click
+    volume: 0.5
+    pitch: 1.2
+  click:
+    key: ui.button.click
+    volume: 0.4
+    pitch: 1.0
+  back:
+    key: ui.button.click
+    volume: 0.4
+    pitch: 0.8
+  page:
+    key: item.book.page_turn
+    volume: 0.6
+    pitch: 1.0
+  search:
+    key: entity.experience_orb.pickup
+    volume: 0.4
+    pitch: 1.4
+  error:
+    key: block.note_block.bass
+    volume: 0.6
+    pitch: 0.7
+  close:
+    key: ui.button.click
+    volume: 0.3
+    pitch: 0.6
+
+# ---------------------------------------------------------------------------
+# Animation. Every animation is bounded, tracked and cancelled when the menu
+# closes or the plugin disables, so it can never leak a task.
+# ---------------------------------------------------------------------------
+animation:
+  page-transition:
+    enabled: true
+    # Number of border pulses drawn after a page or menu change.
+    steps: 3
+    interval-ticks: 1
+  idle-border:
+    enabled: false
+    interval-ticks: 20
+
+# ---------------------------------------------------------------------------
+# Labels for the machine keys that content resolvers emit.
+#
+# A resolver never hardcodes wording: it produces a stable key such as
+# "max_level" and this section turns it into text. Any key that is missing here
+# is rendered by prettifying the key itself ("max_level" becomes "Max level"),
+# so a property added by a newer server version still shows up instead of
+# breaking the article. Values are MiniMessage.
+# ---------------------------------------------------------------------------
+labels-format: "<gray><label> <dark_gray>\u00BB <white><value>"
+labels:
+  # Section headings.
+  properties: "Properties"
+  details: "Details"
+  tags: "Tags"
+  recipes: "Recipes"
+  recipe: "Recipe"
+  default_attributes: "Default attributes"
+
+  # Generic facts.
+  count: "Count"
+  more: "More values"
+  values: "Values"
+  registry: "Registry"
+  registry_key: "Key"
+  translation_key: "Translation key"
+  description: "Description"
+  usage: "Usage"
+  aliases: "Aliases"
+  permission: "Permission"
+  value_type: "Value type"
+  default_value: "Default"
+  environment: "Environment"
+
+  # Blocks and items.
+  stack_size: "Max stack size"
+  hardness: "Hardness"
+  blast_resistance: "Blast resistance"
+  burnable: "Burnable"
+  flammable: "Flammable"
+  fuel: "Fuel"
+  solid: "Solid"
+  occluding: "Occluding"
+  gravity: "Affected by gravity"
+  slipperiness: "Slipperiness"
+  edible: "Edible"
+  compostable: "Compostable"
+  durability: "Durability"
+  equipment_slot: "Equipment slot"
+  music_disc: "Music disc"
+
+  # Enchantments.
+  max_level: "Maximum level"
+  start_level: "Starting level"
+  cursed: "Cursed"
+  tradeable: "Tradeable"
+  discoverable: "Discoverable in loot"
+
+  # Effects and potions.
+  instant: "Instant"
+  colour: "Colour"
+  sentiment: "Sentiment"
+
+  # Entities.
+  alive: "Living entity"
+  crafting_remaining: "Crafting remainder"
+  category: "Category"
+  kind: "Kind"
+  namespace: "Namespace"
+  spawn_category: "Spawn category"
+  entity_class: "Class"
+  spawnable: "Spawnable"
+
+  # Recipes.
+  recipe_type: "Type"
+  recipe_group: "Group"
+  recipe_shape: "Shape"
+  cook_time_ticks: "Cook time"
+  experience: "Experience"
+  ingredients: "Ingredients"
+  result: "Result"

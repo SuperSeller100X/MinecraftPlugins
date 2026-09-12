@@ -1,0 +1,259 @@
+# ===========================================================================
+#  MinecraftWiki - categories.yml
+#
+#  Every category on the wiki home. Each one is independent: enable or disable
+#  it, rename it, re-order it, change its icon, restrict it with a permission.
+#
+#  A category is only shown when it is enabled AND (unless category.show-empty
+#  is true in gui.yml) it actually contains at least one article. Categories
+#  marked "data source" are filled automatically from the running server by a
+#  content provider. The topic categories have no automatic source: they appear
+#  as soon as you add articles for them in articles.yml.
+#
+#  This file ships without any article of its own - it describes the wiki, it
+#  does not invent content.
+# ===========================================================================
+
+categories:
+
+  # --- filled from the server -------------------------------------------
+
+  blocks:
+    enabled: true            # data source: the material registry (blocks)
+    title: "Blocks"
+    description: "Every placeable block in the game"
+    icon: GRASS_BLOCK
+    order: 10
+
+  items:
+    enabled: true            # data source: the material registry (items)
+    title: "Items"
+    description: "Tools, materials, food and every other item"
+    icon: DIAMOND
+    order: 20
+
+  mobs:
+    enabled: true            # data source: the entity type registry (living)
+    title: "Mobs"
+    description: "Hostile, passive and neutral creatures"
+    icon: CREEPER_HEAD
+    order: 30
+
+  entities:
+    enabled: true            # data source: the entity type registry (all)
+    title: "Entities"
+    description: "Every entity type, including projectiles and vehicles"
+    icon: COW_SPAWN_EGG
+    order: 40
+
+  biomes:
+    enabled: true            # data source: the biome registry
+    title: "Biomes"
+    description: "Climate, terrain and generation"
+    icon: OAK_SAPLING
+    order: 50
+
+  dimensions:
+    enabled: true            # data source: world environments
+    title: "Dimensions"
+    description: "The worlds a player can travel to"
+    icon: END_PORTAL_FRAME
+    order: 60
+
+  enchantments:
+    enabled: true            # data source: the enchantment registry
+    title: "Enchantments"
+    description: "Levels, targets and conflicts"
+    icon: ENCHANTED_BOOK
+    order: 70
+
+  potions:
+    enabled: true            # data source: the potion registry
+    title: "Potions"
+    description: "Brewable potion types"
+    icon: POTION
+    order: 80
+
+  effects:
+    enabled: true            # data source: the mob effect registry
+    title: "Status Effects"
+    description: "Buffs and debuffs applied to living entities"
+    icon: GLISTERING_MELON_SLICE
+    order: 90
+
+  recipes:
+    enabled: true            # data source: the server recipe book
+    title: "Recipes"
+    description: "Crafting, smelting and other recipes"
+    icon: KNOWLEDGE_BOOK
+    order: 100
+
+  commands:
+    enabled: true            # data source: the live command map
+    title: "Commands"
+    description: "Every command registered on this server"
+    icon: COMMAND_BLOCK
+    order: 110
+
+  gamerules:
+    enabled: true            # data source: the game rule registry
+    title: "Game Rules"
+    description: "Tunable world rules"
+    icon: COMPARATOR
+    order: 120
+
+  structures:
+    enabled: true            # data source: the structure registry
+    title: "Structures"
+    description: "Generated structures and their keys"
+    icon: CHISELED_STONE_BRICKS
+    order: 130
+
+  tags:
+    enabled: true            # data source: registry tags
+    title: "Tags"
+    description: "Registry tags used by the game and datapacks"
+    icon: ITEM_FRAME
+    order: 140
+
+  sounds:
+    enabled: true            # data source: the sound registry
+    title: "Sounds"
+    description: "Every sound event the server knows"
+    icon: NOTE_BLOCK
+    order: 150
+
+  particles:
+    enabled: true            # data source: the particle registry
+    title: "Particles"
+    description: "Particle types for effects and commands"
+    icon: GLOWSTONE_DUST
+    order: 160
+
+  attributes:
+    enabled: true            # data source: the attribute registry
+    title: "Attributes"
+    description: "Numeric entity attributes"
+    icon: GOLDEN_CARROT
+    order: 170
+
+  damage-types:
+    enabled: true            # data source: the damage type registry
+    title: "Damage Types"
+    description: "Sources of damage and their ids"
+    icon: IRON_SWORD
+    order: 180
+
+  game-events:
+    enabled: true            # data source: the game event registry
+    title: "Game Events"
+    description: "Vibrations detected by sculk"
+    icon: SCULK_SENSOR
+    order: 190
+
+  villager-professions:
+    enabled: true            # data source: the villager profession registry
+    title: "Villager Professions"
+    description: "Workstations and profession ids"
+    icon: EMERALD
+    order: 200
+
+  advancements:
+    enabled: true            # data source: advancement provider (off by default)
+    title: "Advancements"
+    description: "Advancements registered by this server"
+    icon: GOLD_BLOCK
+    order: 210
+
+  materials:
+    enabled: false           # duplicates blocks and items; enable if you want one combined list
+    title: "Materials"
+    description: "Blocks and items in one list"
+    icon: BRICKS
+    order: 215
+
+  villager-trades:
+    enabled: false           # trades are generated per villager at runtime, not a registry
+    title: "Villager Trades"
+    description: "Requires articles in articles.yml"
+    icon: GOLD_INGOT
+    order: 220
+
+  # --- topic categories, filled from articles.yml ------------------------
+
+  game-mechanics:
+    enabled: false
+    title: "Game Mechanics"
+    description: "How the game works under the hood"
+    icon: REDSTONE
+    order: 300
+
+  redstone:
+    enabled: false
+    title: "Redstone"
+    description: "Signals, components and circuits"
+    icon: REDSTONE_TORCH
+    order: 310
+
+  farming:
+    enabled: false
+    title: "Farming"
+    description: "Crops, animals and harvesting"
+    icon: WHEAT
+    order: 320
+
+  combat:
+    enabled: false
+    title: "Combat"
+    description: "Weapons, armour and damage"
+    icon: DIAMOND_SWORD
+    order: 330
+
+  transportation:
+    enabled: false
+    title: "Transportation"
+    description: "Getting around the world"
+    icon: MINECART
+    order: 340
+
+  nether:
+    enabled: false
+    title: "The Nether"
+    description: "The nether dimension"
+    icon: NETHERRACK
+    order: 350
+
+  end:
+    enabled: false
+    title: "The End"
+    description: "The end dimension"
+    icon: END_STONE
+    order: 360
+
+  brewing:
+    enabled: false
+    title: "Brewing"
+    description: "Brewing stands, ingredients and potions"
+    icon: BREWING_STAND
+    order: 370
+
+  fishing:
+    enabled: false
+    title: "Fishing"
+    description: "Rods, loot and water"
+    icon: FISHING_ROD
+    order: 380
+
+  mining:
+    enabled: false
+    title: "Mining"
+    description: "Ores, tools and depths"
+    icon: IRON_PICKAXE
+    order: 390
+
+  crafting:
+    enabled: false
+    title: "Crafting"
+    description: "Recipes and crafting mechanics"
+    icon: CRAFTING_TABLE
+    order: 400
