@@ -221,18 +221,12 @@ public final class GuiSessionManager {
         }
         Draft draft = session.draft;
         if (kind == ChatInputManager.Kind.MONEY) {
-            double amount;
-            try {
-                amount = Double.parseDouble(input.replace(",", ".").replace("$", "").trim());
-            } catch (NumberFormatException e) {
+            Double parsed = Numbers.parseMoney(input);
+            if (parsed == null) {
                 player.sendMessage(config.format("prompt.invalid"));
                 return;
             }
-            if (amount < 0) {
-                player.sendMessage(config.format("prompt.invalid"));
-                return;
-            }
-            amount = Math.floor(amount * 100) / 100d;
+            double amount = Math.floor(parsed * 100) / 100d;
             draft.money = amount;
         } else {
             if (input.equalsIgnoreCase("none") || input.equalsIgnoreCase("remove")) {

@@ -9,6 +9,9 @@ class MoneyAmountParserTest {
     assertEquals(1_000d, MoneyAmountParser.parse("1k", 0, true));
     assertEquals(1_500_000d, MoneyAmountParser.parse("1.5M", 0, true));
     assertEquals(2_000_000_000d, MoneyAmountParser.parse("2b", 0, true));
+    assertEquals(4_000_000_000_000d, MoneyAmountParser.parse("4t", 0, true));
+    assertEquals(5_000_000_000_000_000d, MoneyAmountParser.parse("5q", 0, true));
+    assertEquals(1_500_000_000_000_000d, MoneyAmountParser.parse("1.5Q", 0, true));
     assertEquals(1_500d, MoneyAmountParser.parse("1,500", 0, true));
   }
   @Test void supportsAllAndRejectsInvalidValues() {

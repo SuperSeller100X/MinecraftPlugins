@@ -15,8 +15,9 @@ public final class MoneyAmountParser {
       else if (value.endsWith("m")) { multiplier=1_000_000; value=value.substring(0,value.length()-1); }
       else if (value.endsWith("b")) { multiplier=1_000_000_000; value=value.substring(0,value.length()-1); }
       else if (value.endsWith("t")) { multiplier=1_000_000_000_000d; value=value.substring(0,value.length()-1); }
+      else if (value.endsWith("q")) { multiplier=1_000_000_000_000_000d; value=value.substring(0,value.length()-1); }
       double parsed=Double.parseDouble(value)*multiplier;
-      return Double.isFinite(parsed) ? parsed : -1;
+      return Double.isFinite(parsed) && parsed >= 0 ? parsed : -1;
     } catch (RuntimeException ignored) { return -1; }
   }
 }

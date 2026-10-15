@@ -55,7 +55,7 @@ Aliases: `/ts` `/tpsign` `/tpsigns` `/telesign`
 | `/ts unset` | `/ts u` | Alias of remove | `teleportsigns.remove` |
 | `/ts info` | `/ts i` | Show destination / cost / creator | `teleportsigns.info` |
 | `/ts list [radius]` | `/ts l` | List nearby teleport signs | `teleportsigns.list` |
-| `/ts cost <amount>` | `/ts c` | Set a per-sign teleport price | `teleportsigns.cost` |
+| `/ts cost <amount>` | `/ts c` | Set a per-sign teleport price (`2.5k`, `1m`, `1q` all work) | `teleportsigns.cost` |
 | `/ts reload` | `/ts rl` | Reload config, messages, and index | `teleportsigns.reload` |
 
 Examples:

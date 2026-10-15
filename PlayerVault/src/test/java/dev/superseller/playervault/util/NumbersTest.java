@@ -18,12 +18,14 @@ class NumbersTest {
     private static final double DELTA = 0.0001d;
 
     @Test
-    @DisplayName("k, m, b and t suffixes expand to powers of a thousand")
+    @DisplayName("k, m, b, t and q suffixes expand to powers of a thousand")
     void suffixesExpand() {
         assertEquals(10_000.0d, Numbers.amount("10k", 0), DELTA);
         assertEquals(1_500_000.0d, Numbers.amount("1.5m", 0), DELTA);
         assertEquals(2_000_000_000.0d, Numbers.amount("2b", 0), DELTA);
         assertEquals(3_000_000_000_000.0d, Numbers.amount("3t", 0), DELTA);
+        assertEquals(4_000_000_000_000_000.0d, Numbers.amount("4q", 0), DELTA);
+        assertEquals(2_500_000_000_000_000.0d, Numbers.amount("2.5Q", 0), DELTA);
     }
 
     @Test

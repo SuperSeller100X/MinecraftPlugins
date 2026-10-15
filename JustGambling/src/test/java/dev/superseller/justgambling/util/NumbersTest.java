@@ -10,6 +10,10 @@ class NumbersTest {
     void parsesHumanFriendlyAmounts() {
         assertEquals(1_000.0, Numbers.parseAmount("1k", 0).orElseThrow());
         assertEquals(1_500_000.0, Numbers.parseAmount("1.5m", 0).orElseThrow());
+        assertEquals(2_000_000_000.0, Numbers.parseAmount("2b", 0).orElseThrow());
+        assertEquals(3_000_000_000_000.0, Numbers.parseAmount("3t", 0).orElseThrow());
+        assertEquals(4_000_000_000_000_000.0, Numbers.parseAmount("4q", 0).orElseThrow());
+        assertEquals(2_500_000_000_000_000.0, Numbers.parseAmount("2.5Q", 0).orElseThrow());
         assertEquals(42.0, Numbers.parseAmount("all", 42).orElseThrow());
     }
 

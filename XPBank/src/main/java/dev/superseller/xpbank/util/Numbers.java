@@ -37,7 +37,7 @@ public final class Numbers {
         if (abs < 1_000L) {
             return Long.toString(value);
         }
-        String[] suffix = {"", "k", "M", "B", "T"};
+        String[] suffix = {"", "k", "M", "B", "T", "Q"};
         double v = value;
         int idx = 0;
         while (Math.abs(v) >= 1000.0 && idx < suffix.length - 1) {
@@ -49,8 +49,8 @@ public final class Numbers {
 
     /**
      * Parses a user-supplied amount. Accepts plain integers, grouped values
-     * ({@code 1,000}), suffixed values ({@code 1k}, {@code 2.5m}, {@code 1b}),
-     * and the keywords {@code all}/{@code max} and {@code half}. Returns
+     * ({@code 1,000}), suffixed values ({@code 1k}, {@code 2.5m}, {@code 1b},
+     * {@code 1q}), and the keywords {@code all}/{@code max} and {@code half}. Returns
      * {@link #ALL}, {@link #HALF} or {@link #INVALID} sentinels where relevant.
      */
     public static long parseAmount(String raw) {
@@ -74,6 +74,7 @@ public final class Numbers {
             case 'm' -> multiplier = 1_000_000.0;
             case 'b' -> multiplier = 1_000_000_000.0;
             case 't' -> multiplier = 1_000_000_000_000.0;
+            case 'q' -> multiplier = 1_000_000_000_000_000.0;
             default -> {
                 // no suffix
             }

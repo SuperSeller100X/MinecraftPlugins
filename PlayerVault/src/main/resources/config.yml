@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────
 #  PlayerVault — configuration
 #  All money values accept suffixes: k (thousand), m (million),
-#  b (billion), t (trillion). Example: 10k == 10000
+#  b (billion), t (trillion), q (quadrillion). Example: 10k == 10000
 #  Every text string lives in messages.yml and uses MiniMessage.
 # ─────────────────────────────────────────────────────────────
 

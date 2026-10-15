@@ -49,6 +49,12 @@ The jar is `target/PlayerBank-1.0.0.jar`. Drop it in `plugins/` next to Essentia
 
 Aliases: `/playerbank`, `/pb`, `/pba`.
 
+**Amounts** accept plain numbers (`100`), grouped numbers (`1,000`) and the
+short suffixes `k`, `m`, `b`, `t` and `q` (thousand, million, billion,
+trillion, quadrillion) — so `/bank deposit 2.5k` deposits 2,500. The keywords
+**`all`** / **`max`** deposit or withdraw the full relevant balance. The same
+formats work for `/bankadmin set | give | take <player> <amount>`.
+
 ## Permissions
 
 | Permission | Default | Meaning |
