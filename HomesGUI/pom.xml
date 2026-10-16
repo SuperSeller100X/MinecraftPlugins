@@ -6,7 +6,7 @@
 
     <groupId>dev.superseller</groupId>
     <artifactId>HomesGUI</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>HomesGUI</name>
     <description>A configurable, Folia-safe homes GUI with paid home slots for Minecraft 26.2.</description>
