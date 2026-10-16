@@ -1,0 +1,4 @@
+# HomesGUI player data.
+# Shape: <player-uuid> -> homes -> <numeric-slot> -> world/x/y/z/yaw/pitch.
+# Homes are created on first save. Paid/admin-granted slot counts are stored beside
+# the homes section so deleting a location never removes an unlocked slot.

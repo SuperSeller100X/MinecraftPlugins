@@ -2,6 +2,16 @@
 
 A collection of Minecraft plugins.
 
+## HomesGUI 🏠
+
+Personal homes for Minecraft **26.2** (Paper / Purpur / Folia), Java 25. Players start with homes **1–4** and can save, visit, manage, and buy more from a paginated GUI. Paid slots use Vault economy by default and cost **$1,000, $1,250, $1,562.50…** (25% compounding).
+
+- `/home` (`/h`) GUI · `/home <slot>` teleport · `/sethome` (`/sh`) · `/delhome` (`/dh`) · `/buyhome` (`/bh`)
+- `/homesadmin` (`/ha`) — reload, inspect, grant/set/remove slots, manage homes, and teleport
+- Folia-aware scheduling and `teleportAsync`, permissions, tab completion, configurable GUI/sounds/messages, UUID-based YAML storage
+
+See [HomesGUI/README.md](HomesGUI/README.md) for full commands, permissions, configuration, and data details. Build with `mvn -B clean verify` in `HomesGUI/` (JDK 25 required).
+
 ## SwiftTPA ⚡
 
 A fast, fully configurable teleport-request suite for Minecraft **26.2** (Paper /

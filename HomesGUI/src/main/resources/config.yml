@@ -1,0 +1,113 @@
+# HomesGUI defaults. Edit this file, then use /homesadmin reload (or /ha rl).
+
+homes:
+  # Homes 1..4 are available to everyone. They are slots, not pre-created locations.
+  free-slots: 4
+  # -1 means there is no configured global cap. Existing saved homes are always preserved.
+  max-total: -1
+  # Maximum number of slots in one /buyhome purchase.
+  max-bulk-purchase: 25
+  # Permission nodes homesgui.slots.<n> grant n additional free slots (for example .3).
+  permission-slot-prefix: "homesgui.slots."
+  allow-setting: true
+  allow-deleting: true
+  allow-purchases: true
+
+  pricing:
+    # First paid slot (normally home 5): $1,000. Each paid slot after that costs 1.25x the last.
+    first-extra-slot: 1000.0
+    multiplier: 1.25
+    decimal-places: 2
+    currency-symbol: "$"
+
+  economy:
+    enabled: true
+    # Never silently give paid slots away when Vault/provider is missing.
+    free-if-unavailable: false
+
+storage:
+  # Save changed home data in the background every N seconds. Set to 0 to disable autosave.
+  autosave-seconds: 300
+  save-on-quit: true
+
+gui:
+  enabled: true
+  title: "&8&lYour Homes"
+  # Inventory rows, 2..6. The last row is reserved for controls.
+  rows: 6
+  # Home cards per page, clamped to the content rows (default 45).
+  homes-per-page: 45
+  fill-empty: true
+  filler:
+    material: BLACK_STAINED_GLASS_PANE
+    name: " "
+    lore: []
+
+  home:
+    material: LODESTONE
+    name: "&6Home #%slot%"
+    lore:
+      - "&7World: &f%world%"
+      - "&7Position: &f%x%, %y%, %z%"
+      - ""
+      - "&aLeft-click: teleport"
+      - "&eRight-click: update this home"
+      - "&cShift-left-click: delete this home"
+
+  empty:
+    material: MAP
+    name: "&eSet home #%slot%"
+    lore:
+      - "&7This slot is available."
+      - ""
+      - "&aClick to save your current location"
+
+  controls:
+    # These are positions within the bottom row, from 0 to 8.
+    previous-slot: 0
+    info-slot: 3
+    buy-slot: 4
+    close-slot: 5
+    next-slot: 8
+
+    previous:
+      material: ARROW
+      name: "&ePrevious page"
+      lore:
+        - "&7Page %page% of %pages%"
+    info:
+      material: BOOK
+      name: "&bHome information"
+      lore:
+        - "&7Saved homes: &f%saved%"
+        - "&7Available slots: &f%available%"
+        - "&7Paid slots: &f%purchased%"
+        - "&7Next slot: &f%next-price%"
+    buy:
+      material: EMERALD
+      name: "&aBuy a home slot"
+      lore:
+        - "&7Next home slot costs: &f%next-price%"
+        - "&eClick to buy one slot"
+    close:
+      material: BARRIER
+      name: "&cClose"
+      lore:
+        - "&7Close this menu"
+    next:
+      material: ARROW
+      name: "&eNext page"
+      lore:
+        - "&7Page %page% of %pages%"
+
+sounds:
+  enabled: true
+  volume: 0.8
+  pitch: 1.0
+  gui-open: BLOCK_CHEST_OPEN
+  gui-click: UI_BUTTON_CLICK
+  teleport: ENTITY_ENDERMAN_TELEPORT
+  set: BLOCK_NOTE_BLOCK_PLING
+  delete: BLOCK_GRINDSTONE_USE
+  purchase: ENTITY_PLAYER_LEVELUP
+  failure: ENTITY_VILLAGER_NO

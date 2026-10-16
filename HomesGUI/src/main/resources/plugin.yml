@@ -1,0 +1,96 @@
+name: HomesGUI
+version: '${project.version}'
+main: dev.superseller.homesgui.HomesGUIPlugin
+api-version: '26.2'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: Personal homes, a clickable homes GUI, and configurable paid home slots for Paper, Purpur, and Folia.
+softdepend: [Vault, VaultUnlocked]
+
+commands:
+  home:
+    description: Open your homes GUI or teleport to a home.
+    usage: /<command> [slot|gui|set|delete|buy|price|info|help]
+    aliases: [h]
+  sethome:
+    description: Set or update one of your homes.
+    usage: /<command> [slot]
+    aliases: [sh]
+  delhome:
+    description: Delete one of your homes.
+    usage: /<command> <slot>
+    aliases: [dh]
+  buyhome:
+    description: Buy one or more extra home slots.
+    usage: /<command> [amount]
+    aliases: [bh]
+  homesadmin:
+    description: Administer player home slots and saved homes.
+    usage: /<command> [reload|info|list|grant|setlimit|remove|delete|clear|reset|tp|help]
+    aliases: [ha]
+
+permissions:
+  homesgui.use:
+    description: Teleport to your saved homes.
+    default: true
+  homesgui.gui:
+    description: Open the homes GUI.
+    default: true
+  homesgui.set:
+    description: Set and update your homes.
+    default: true
+  homesgui.delete:
+    description: Delete your homes.
+    default: true
+  homesgui.buy:
+    description: Buy extra home slots.
+    default: true
+  homesgui.info:
+    description: View your home slot and purchase information.
+    default: true
+  homesgui.price:
+    description: Preview home slot prices.
+    default: true
+  homesgui.bypass.cost:
+    description: Buy home slots without paying.
+    default: false
+  homesgui.bypass.limit:
+    description: Ignore the configured maximum number of home slots.
+    default: false
+  homesgui.admin:
+    description: Access the HomesGUI administration commands.
+    default: op
+    children:
+      homesgui.admin.reload: true
+      homesgui.admin.info: true
+      homesgui.admin.slots: true
+      homesgui.admin.data: true
+      homesgui.admin.teleport: true
+  homesgui.admin.reload:
+    description: Reload HomesGUI configuration and messages.
+    default: op
+  homesgui.admin.info:
+    description: Inspect and list another player's homes.
+    default: op
+  homesgui.admin.slots:
+    description: Grant, remove, or set another player's bonus home slots.
+    default: op
+  homesgui.admin.data:
+    description: Delete, clear, or reset another player's home data.
+    default: op
+  homesgui.admin.teleport:
+    description: Teleport to another player's saved home.
+    default: op
+  homesgui.*:
+    description: All HomesGUI player and admin permissions, except bypass perks.
+    default: op
+    children:
+      homesgui.use: true
+      homesgui.gui: true
+      homesgui.set: true
+      homesgui.delete: true
+      homesgui.buy: true
+      homesgui.info: true
+      homesgui.price: true
+      homesgui.admin: true
