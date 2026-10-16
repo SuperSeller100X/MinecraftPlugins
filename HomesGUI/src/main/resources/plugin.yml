@@ -13,6 +13,10 @@ commands:
     description: Open your homes GUI or teleport to a home.
     usage: /<command> [slot|gui|set|delete|buy|price|info|help]
     aliases: [h]
+  homes:
+    description: Open your homes GUI.
+    usage: /<command>
+    aliases: [hs]
   sethome:
     description: Set or update one of your homes.
     usage: /<command> [slot]
@@ -52,12 +56,6 @@ permissions:
   homesgui.price:
     description: Preview home slot prices.
     default: true
-  homesgui.bypass.cost:
-    description: Buy home slots without paying.
-    default: false
-  homesgui.bypass.limit:
-    description: Ignore the configured maximum number of home slots.
-    default: false
   homesgui.admin:
     description: Access the HomesGUI administration commands.
     default: op
@@ -83,7 +81,7 @@ permissions:
     description: Teleport to another player's saved home.
     default: op
   homesgui.*:
-    description: All HomesGUI player and admin permissions, except bypass perks.
+    description: All HomesGUI player and admin permissions.
     default: op
     children:
       homesgui.use: true

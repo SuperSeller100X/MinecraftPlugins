@@ -67,6 +67,7 @@ public final class HomesGUIPlugin extends JavaPlugin {
     private void registerCommands() {
         HomeCommand homeCommand = new HomeCommand(this, homeService, menu);
         bind("home", homeCommand);
+        bind("homes", homeCommand);
         bind("sethome", homeCommand);
         bind("delhome", homeCommand);
         bind("buyhome", homeCommand);

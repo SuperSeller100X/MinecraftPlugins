@@ -44,7 +44,7 @@ gui:
     lore: []
 
   home:
-    material: LODESTONE
+    material: BLUE_BED
     name: "&6Home #%slot%"
     lore:
       - "&7World: &f%world%"
@@ -55,7 +55,7 @@ gui:
       - "&cShift-left-click: delete this home"
 
   empty:
-    material: MAP
+    material: GRAY_BED
     name: "&eSet home #%slot%"
     lore:
       - "&7This slot is available."
