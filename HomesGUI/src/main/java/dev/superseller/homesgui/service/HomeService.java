@@ -40,20 +40,19 @@ public final class HomeService {
     }
 
     public int availableSlots(Player player) {
-        return availableSlots(profile(player.getUniqueId()), permissionBonus(player),
-                player.hasPermission("homesgui.bypass.limit"));
+        return availableSlots(profile(player.getUniqueId()), permissionBonus(player));
     }
 
     /** Capacity without online permission bonuses, useful for offline admin views. */
     public int availableSlots(UUID owner) {
-        return availableSlots(profile(owner), 0, false);
+        return availableSlots(profile(owner), 0);
     }
 
-    private int availableSlots(PlayerHomes data, int permissionBonus, boolean bypassLimit) {
+    private int availableSlots(PlayerHomes data, int permissionBonus) {
         HomesSettings.Homes homes = plugin.settings().homes();
         long total = (long) homes.freeSlots() + data.purchasedSlots() + data.bonusSlots() + permissionBonus;
         total = Math.clamp(total, 0L, HomesSettings.ABSOLUTE_MAX_HOMES);
-        if (!bypassLimit && homes.maxTotal() >= 0) {
+        if (homes.maxTotal() >= 0) {
             total = Math.min(total, homes.maxTotal());
         }
         return (int) total;
@@ -206,11 +205,9 @@ public final class HomeService {
         }
 
         synchronized (data) {
-            int currentCapacity = availableSlots(data, permissionBonus(player),
-                    player.hasPermission("homesgui.bypass.limit"));
+            int currentCapacity = availableSlots(data, permissionBonus(player));
             long resultingCapacity = (long) currentCapacity + count;
-            boolean bypassLimit = player.hasPermission("homesgui.bypass.limit");
-            int configuredMaximum = bypassLimit || homeSettings.maxTotal() < 0
+            int configuredMaximum = homeSettings.maxTotal() < 0
                     ? HomesSettings.ABSOLUTE_MAX_HOMES : homeSettings.maxTotal();
             if (resultingCapacity > configuredMaximum || resultingCapacity > HomesSettings.ABSOLUTE_MAX_HOMES) {
                 plugin.messages().send(player, "buy-limit", "%max%", Integer.toString(configuredMaximum));
@@ -220,10 +217,7 @@ public final class HomeService {
 
             HomePriceCalculator calculator = calculator(settings);
             double total = calculator.total(data.purchasedSlots(), count);
-            boolean bypassCost = player.hasPermission("homesgui.bypass.cost");
-            if (bypassCost) {
-                total = 0.0;
-            } else if (total > 0.0 && (!settings.economy().enabled() || !economy.available())) {
+            if (total > 0.0 && (!settings.economy().enabled() || !economy.available())) {
                 if (settings.economy().freeIfUnavailable()) {
                     total = 0.0;
                 } else {
@@ -249,8 +243,7 @@ public final class HomeService {
 
             data.addPurchasedSlots(count);
             storage.markDirty();
-            int resultingAvailable = availableSlots(data, permissionBonus(player),
-                    player.hasPermission("homesgui.bypass.limit"));
+            int resultingAvailable = availableSlots(data, permissionBonus(player));
             plugin.messages().send(player, "buy-success", "%count%", Integer.toString(count),
                     "%price%", formatMoney(total), "%available%", Integer.toString(resultingAvailable));
             SoundPlayer.play(plugin, player, "purchase");

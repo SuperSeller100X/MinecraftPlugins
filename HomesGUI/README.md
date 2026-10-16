@@ -53,6 +53,7 @@ Every root command has a short alias, and every multi-word action also has a sho
 | Command | Short form | Description | Permission |
 |---|---|---|---|
 | `/home` | `/h` | Open the homes GUI | `homesgui.gui` |
+| `/homes` | `/hs` | Open the homes GUI | `homesgui.gui` |
 | `/home <slot>` | `/h <slot>` | Teleport to a saved home | `homesgui.use` |
 | `/home gui` | `/h g` | Open the GUI | `homesgui.gui` |
 | `/home set [slot]` | `/h s [slot]` | Save/update the current location; with no slot, use the first empty unlocked slot | `homesgui.set` |
@@ -83,8 +84,8 @@ The menu shows all currently available home slots and keeps existing saved homes
 
 - **Left-click a saved home:** teleport.
 - **Click an empty unlocked slot:** save your current location there.
-- **Right-click a saved home:** update it to your current location.
-- **Shift-click a saved home:** delete it.
+- **Right-click a saved home:** open a confirmation dialog before updating it.
+- **Shift-click a saved home:** open a confirmation dialog before deleting it.
 - Item movement and dragging are cancelled while the menu is open; GUI items cannot be taken or moved.
 
 The slot cards, lore, materials, menu title, row count, page size, filler, and control positions are configurable in `config.yml`. Actions still check the same permissions and configuration switches as commands.
@@ -141,11 +142,9 @@ Admin data commands accept an online player, a cached player name, or a UUID. To
 | `homesgui.admin.slots` | Operators | Grant, remove, or set admin bonus slots |
 | `homesgui.admin.data` | Operators | Delete, clear, or reset player home data |
 | `homesgui.admin.teleport` | Operators | Teleport to a player's home |
-| `homesgui.bypass.cost` | Nobody | Buy slots without charging money; slots are still recorded as purchased |
-| `homesgui.bypass.limit` | Nobody | Ignore the configured cap (the plugin still enforces its one-million-slot safety ceiling) |
-| `homesgui.*` | Operators | All normal player and admin permissions, but **not** the two bypass perks |
+| `homesgui.*` | Operators | All normal player and admin permissions |
 
-Permission-based slots are added to the player's configured free, paid, and admin-granted slots. A global `homes.max-total` cap still applies unless the player has `homesgui.bypass.limit`.
+Permission-based slots are added to the player's configured free, paid, and admin-granted slots. A global `homes.max-total` cap still applies.
 
 ## Configuration
 

@@ -35,6 +35,32 @@ public final class HomeMenu {
         open(player, 0);
     }
 
+    public void openConfirm(Player player, int slot, boolean delete, int page) {
+        HomeConfirmHolder holder = new HomeConfirmHolder(player.getUniqueId(), slot, delete, page);
+        String title = delete ? "&cDelete home #" + slot + "?" : "&eUpdate home #" + slot + "?";
+        Inventory inventory = Bukkit.createInventory(holder, 9, Messages.deserialize(title));
+        holder.inventory(inventory);
+
+        ItemStack confirm = new ItemStack(org.bukkit.Material.LIME_WOOL);
+        org.bukkit.inventory.meta.ItemMeta confirmMeta = confirm.getItemMeta();
+        if (confirmMeta != null) {
+            confirmMeta.displayName(Messages.deserialize("&aConfirm"));
+            confirm.setItemMeta(confirmMeta);
+        }
+        inventory.setItem(3, confirm);
+
+        ItemStack cancel = new ItemStack(org.bukkit.Material.RED_WOOL);
+        org.bukkit.inventory.meta.ItemMeta cancelMeta = cancel.getItemMeta();
+        if (cancelMeta != null) {
+            cancelMeta.displayName(Messages.deserialize("&cCancel"));
+            cancel.setItemMeta(cancelMeta);
+        }
+        inventory.setItem(5, cancel);
+
+        player.openInventory(inventory);
+        SoundPlayer.play(plugin, player, "gui-click");
+    }
+
     /** Must be called on the viewer's owning entity/region thread. */
     public void open(Player player, int requestedPage) {
         HomesSettings.Gui gui = plugin.settings().gui();

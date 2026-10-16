@@ -262,7 +262,7 @@ public final class AdminCommand implements CommandExecutor, TabCompleter {
     private boolean withinLimit(CommandSender sender, long total) {
         int maximum = plugin.settings().homes().maxTotal();
         return total <= HomesSettings.ABSOLUTE_MAX_HOMES
-                && (maximum < 0 || total <= maximum || sender.hasPermission("homesgui.bypass.limit"));
+                && (maximum < 0 || total <= maximum);
     }
 
     private void sendHelp(CommandSender sender) {

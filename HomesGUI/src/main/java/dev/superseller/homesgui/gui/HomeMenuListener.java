@@ -30,6 +30,45 @@ public final class HomeMenuListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {
         Inventory top = event.getView().getTopInventory();
+        if (top.getHolder() instanceof HomeConfirmHolder confirmHolder) {
+            event.setCancelled(true);
+            if (!(event.getWhoClicked() instanceof Player player)
+                    || !confirmHolder.viewer().equals(player.getUniqueId())) {
+                return;
+            }
+            int rawSlot = event.getRawSlot();
+            if (rawSlot < 0 || rawSlot >= top.getSize()) {
+                return;
+            }
+            ClickType click = event.getClick();
+            if (click == ClickType.DOUBLE_CLICK || click == ClickType.UNKNOWN
+                    || click == ClickType.NUMBER_KEY || click == ClickType.SWAP_OFFHAND
+                    || click == ClickType.DROP || click == ClickType.CONTROL_DROP
+                    || click == ClickType.MIDDLE) {
+                return;
+            }
+            if (rawSlot == 3) {
+                SoundPlayer.play(plugin, player, "gui-click");
+                if (confirmHolder.delete()) {
+                    if (player.hasPermission("homesgui.delete")) {
+                        service.deleteHome(player, confirmHolder.slot());
+                    } else {
+                        plugin.messages().send(player, "no-permission");
+                    }
+                } else {
+                    if (player.hasPermission("homesgui.set")) {
+                        service.setHome(player, confirmHolder.slot());
+                    } else {
+                        plugin.messages().send(player, "no-permission");
+                    }
+                }
+                menu.open(player, confirmHolder.page());
+            } else if (rawSlot == 5) {
+                SoundPlayer.play(plugin, player, "gui-click");
+                menu.open(player, confirmHolder.page());
+            }
+            return;
+        }
         if (!(top.getHolder() instanceof HomeMenuHolder holder)) {
             return;
         }
@@ -68,7 +107,8 @@ public final class HomeMenuListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof HomeMenuHolder) {
+        if (event.getView().getTopInventory().getHolder() instanceof HomeMenuHolder
+                || event.getView().getTopInventory().getHolder() instanceof HomeConfirmHolder) {
             event.setCancelled(true);
         }
     }
@@ -105,20 +145,7 @@ public final class HomeMenuListener implements Listener {
     private void handleHome(Player player, HomeMenuHolder holder, int slot, ClickType click) {
         var data = service.profile(player.getUniqueId());
         boolean exists = data.hasHome(slot);
-        if (click.isShiftClick()) {
-            if (!exists) {
-                return;
-            }
-            if (!player.hasPermission("homesgui.delete")) {
-                plugin.messages().send(player, "no-permission");
-                return;
-            }
-            if (service.deleteHome(player, slot)) {
-                menu.open(player, holder.page());
-            }
-            return;
-        }
-        if (click.isRightClick() || !exists) {
+        if (!exists) {
             if (!player.hasPermission("homesgui.set")) {
                 plugin.messages().send(player, "no-permission");
                 return;
@@ -126,6 +153,22 @@ public final class HomeMenuListener implements Listener {
             if (service.setHome(player, slot)) {
                 menu.open(player, holder.page());
             }
+            return;
+        }
+        if (click.isShiftClick()) {
+            if (!player.hasPermission("homesgui.delete")) {
+                plugin.messages().send(player, "no-permission");
+                return;
+            }
+            menu.openConfirm(player, slot, true, holder.page());
+            return;
+        }
+        if (click.isRightClick()) {
+            if (!player.hasPermission("homesgui.set")) {
+                plugin.messages().send(player, "no-permission");
+                return;
+            }
+            menu.openConfirm(player, slot, false, holder.page());
             return;
         }
         if (click.isLeftClick()) {
