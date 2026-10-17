@@ -34,11 +34,28 @@ of Haste**, enchanted **netherite armor & gear**, and a GUI **Shard Shop** — f
 | Shard Potion of Haste | 500 ✦ | — | **Haste II for 1 hour** when drunk (a portable beacon) | **24 h real time** |
 | Void Totem | 1,000 ✦ | — | **Rescues you from a lethal void hit** — consumed, teleports you back to safety, full heal + Resistance & Slow Falling | permanent |
 
-Tools that support it (`enchant-choice:` in config.yml — shard pickaxe/axe/shovel and
-the netherite pickaxe by default) let the buyer **choose between Fortune III and Silk
-Touch** right in the purchase dialog: click the enchanted book to switch, then confirm.
-`/sta give` hands out the first alternative unless you pass the enchant name as the last
-argument (e.g. `/sta give Steve shard_pickaxe 1 silk_touch`).
+### Enchantment Picker (mcpvp.club style)
+Every weapon, tool, and armor piece in the shop now opens a **full enchantment picker**
+when clicked — just like [mcpvp.club](http://mcpvp.club). All available enchantments
+are shown at their max level and start **selected by default**. Click any enchantment
+to toggle it on or off:
+- **Enchanted book** = enabled (green)
+- **Plain book** = disabled (grayed out)
+- **Incompatible enchantments auto-deselect** — e.g. enabling Infinity on a bow
+  automatically disables Mending (and vice versa), Fortune disables Silk Touch, etc.
+- The picker also shows extra time controls for expiring items, so you can configure
+  everything in one screen.
+
+Configured via `selectable-enchants:` in config.yml. The legacy `enchant-choice:` system
+still works for items that only need a single pick-one-of-two choice.
+
+### Netherite Spear
+The **Netherite Spear** (2,000 ✦) from the Mounts of Mayhem update is now in the shop:
+- **Jab attack** — quick low-damage strike with knockback
+- **Charge attack** — hold to charge; damage scales with your movement speed
+- Enchantable with **Lunge** (exclusive to the spear) — propels you forward on jab
+- Available with selectable enchants: Lunge III, Sharpness V, Fire Aspect II,
+  Knockback II, Looting III, Unbreaking III, Mending
 
 Area breaking details (all configurable):
 - Silk Touch / Fortune are applied to **every** broken block, not just the centre one.
@@ -57,7 +74,7 @@ Area breaking details (all configurable):
 
 ### Enchanted vanilla gear — no gimmicks
 Shop items **without an ability** (`behavior: NONE` — the netherite armor, sword, hoe,
-mace, bow, crossbow, …) are handed out as **plain vanilla items with only their
+mace, bow, crossbow, netherite spear, …) are handed out as **plain vanilla items with only their
 enchantments applied**: no custom name, no color, no rarity change, no lore, no plugin
 data. The `name`/`lore` in config.yml only style their **shop icon**. All shop icons
 render **non-italic** (Minecraft's default italics for custom names are disabled).
