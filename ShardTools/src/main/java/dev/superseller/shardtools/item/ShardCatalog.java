@@ -31,31 +31,40 @@ public final class ShardCatalog {
         private final List<String> lore;
         private final String command;
         private final List<EnchantSpec> enchantChoices;
+        private final List<EnchantSpec> selectableEnchants;
         private final String itemModel;
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore) {
             this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, null,
-                    new ArrayList<EnchantSpec>());
+                    new ArrayList<EnchantSpec>(), new ArrayList<EnchantSpec>(), null);
         }
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
                      String command) {
             this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, command,
-                    new ArrayList<EnchantSpec>());
+                    new ArrayList<EnchantSpec>(), new ArrayList<EnchantSpec>(), null);
         }
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
                      String command, List<EnchantSpec> enchantChoices) {
             this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, command,
-                    enchantChoices, null);
+                    enchantChoices, new ArrayList<EnchantSpec>(), null);
         }
 
         public Entry(String id, String material, String displayName, long defaultPrice,
                      long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
                      String command, List<EnchantSpec> enchantChoices, String itemModel) {
+            this(id, material, displayName, defaultPrice, lifetimeMs, behavior, enchants, lore, command,
+                    enchantChoices, new ArrayList<EnchantSpec>(), itemModel);
+        }
+
+        public Entry(String id, String material, String displayName, long defaultPrice,
+                     long lifetimeMs, Behavior behavior, List<EnchantSpec> enchants, List<String> lore,
+                     String command, List<EnchantSpec> enchantChoices,
+                     List<EnchantSpec> selectableEnchants, String itemModel) {
             this.id = id;
             this.material = material;
             this.displayName = displayName;
@@ -66,6 +75,7 @@ public final class ShardCatalog {
             this.lore = lore;
             this.command = command;
             this.enchantChoices = enchantChoices;
+            this.selectableEnchants = selectableEnchants;
             this.itemModel = itemModel;
         }
 
@@ -122,6 +132,16 @@ public final class ShardCatalog {
         /** True when the shop should show a chooser (two or more alternatives). */
         public boolean hasEnchantChoice() {
             return enchantChoices.size() >= 2;
+        }
+
+        /** Enchantments the buyer can individually toggle on/off (mcpvp.club-style picker). */
+        public List<EnchantSpec> selectableEnchants() {
+            return selectableEnchants;
+        }
+
+        /** True when the shop should open the full enchantment picker dialog. */
+        public boolean hasSelectableEnchants() {
+            return !selectableEnchants.isEmpty();
         }
 
         /**
@@ -183,13 +203,20 @@ public final class ShardCatalog {
                     choices.add(parsed);
                 }
             }
+            List<EnchantSpec> selectable = new ArrayList<>();
+            for (String spec : section.getStringList("selectable-enchants")) {
+                EnchantSpec parsed = EnchantSpec.parse(spec);
+                if (parsed != null) {
+                    selectable.add(parsed);
+                }
+            }
             String itemModel = section.getString("item-model");
             if (itemModel != null && itemModel.isBlank()) {
                 itemModel = null;
             }
             Entry entry = new Entry(id.toLowerCase(Locale.ROOT), material.toUpperCase(Locale.ROOT),
                     name, price, lifetimeHours * 3_600_000L, behavior, enchants, lore, command, choices,
-                    itemModel);
+                    selectable, itemModel);
             catalog.byId.put(entry.id(), entry);
             catalog.ordered.add(entry);
         }
