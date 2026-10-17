@@ -6,7 +6,7 @@
 
     <groupId>dev.superseller</groupId>
     <artifactId>ShardTools</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
     <name>ShardTools</name>
     <description>DonutSMP-style Shard currency, self-destructing Shard Tools, armor and shard shop. Minecraft 26.2 (Paper / Purpur / Folia).</description>
