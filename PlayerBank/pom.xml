@@ -6,7 +6,7 @@
 
     <groupId>dev.superseller</groupId>
     <artifactId>PlayerBank</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <name>PlayerBank</name>
     <description>Isolated player bank with Vault / EssentialsX deposits, withdrawals, and compound interest.</description>

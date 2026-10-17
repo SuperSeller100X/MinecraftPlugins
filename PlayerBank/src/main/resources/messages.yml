@@ -22,6 +22,7 @@ withdraw-all: "<green>Withdrew your entire bank (<white>{amount}</white>)."
 
 interest-lookup: "<gray>Rate: <white>{rate}%</white> every <white>{interval}</white> (compound). Next tick in <white>{next}</white>."
 interest-disabled: "<gray>Interest is currently disabled."
+interest-online-only: "<gray>You only earn interest while you are <white>online</white>. Offline time pays nothing."
 interest-received: "<green>Bank interest: +<white>{amount}</white> ({rate}%). New balance: <white>{bank}"
 interest-forced: "<green>Forced an interest tick. Accounts updated: <white>{count}"
 

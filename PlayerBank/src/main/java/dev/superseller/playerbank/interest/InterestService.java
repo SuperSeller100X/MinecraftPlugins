@@ -71,7 +71,15 @@ public final class InterestService {
             return 0;
         }
         int updated = 0;
+        int skippedOffline = 0;
         for (BankAccount acc : plugin.storage().all()) {
+            Player player = Bukkit.getPlayer(acc.uuid());
+            boolean online = player != null && player.isOnline();
+            if (cfg.onlineOnly() && !online) {
+                // Offline players earn nothing for this tick — no catch-up later.
+                skippedOffline++;
+                continue;
+            }
             if (acc.balance() < cfg.minBalance()) {
                 continue;
             }
@@ -90,20 +98,18 @@ public final class InterestService {
             acc.balance(next);
             plugin.storage().log(acc, "INTEREST", payout, cfg.ratePercent() + "% compound");
             updated++;
-            if (cfg.notifyPlayers()) {
-                Player player = Bukkit.getPlayer(acc.uuid());
-                if (player != null && player.isOnline()) {
-                    plugin.messages().send(player, "interest-received", Map.of(
-                            "amount", plugin.vault().format(payout),
-                            "rate", String.valueOf(cfg.ratePercent()),
-                            "bank", plugin.vault().format(acc.balance())
-                    ));
-                }
+            if (cfg.notifyPlayers() && online) {
+                plugin.messages().send(player, "interest-received", Map.of(
+                        "amount", plugin.vault().format(payout),
+                        "rate", String.valueOf(cfg.ratePercent()),
+                        "bank", plugin.vault().format(acc.balance())
+                ));
             }
         }
         if (updated > 0) {
             plugin.storage().markDirty();
-            plugin.getLogger().info("Applied compound interest to " + updated + " accounts.");
+            String suffix = skippedOffline > 0 ? " (" + skippedOffline + " offline skipped)" : "";
+            plugin.getLogger().info("Applied compound interest to " + updated + " accounts" + suffix + ".");
         }
         return updated;
     }

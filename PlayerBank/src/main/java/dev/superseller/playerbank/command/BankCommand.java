@@ -208,6 +208,9 @@ public final class BankCommand implements CommandExecutor, TabCompleter {
                 "interval", cfg.intervalDescription(),
                 "next", plugin.interest().nextRunHuman()
         ));
+        if (cfg.onlineOnly()) {
+            plugin.messages().send(sender, "interest-online-only");
+        }
         return true;
     }
 

@@ -11,6 +11,7 @@ public final class BankConfig {
     private boolean interestEnabled;
     private double ratePercent;
     private long intervalMillis;
+    private boolean onlineOnly;
     private double minBalance;
     private double maxBalance;
     private int decimalPlaces;
@@ -44,6 +45,7 @@ public final class BankConfig {
             intervalMinutes = 10;
         }
         intervalMillis = totalMs;
+        onlineOnly = c.getBoolean("bank.interest.online-only", true);
         minBalance = c.getDouble("bank.interest.min-balance", 0.01);
         maxBalance = c.getDouble("bank.interest.max-balance", 0);
         decimalPlaces = Math.max(0, c.getInt("bank.interest.decimal-places", 2));
@@ -75,6 +77,11 @@ public final class BankConfig {
 
     public long intervalTicks() {
         return Math.max(1L, intervalMillis / 50L);
+    }
+
+    /** When true, only players online at tick time receive interest. */
+    public boolean onlineOnly() {
+        return onlineOnly;
     }
 
     public double minBalance() {

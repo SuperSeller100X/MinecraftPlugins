@@ -11,6 +11,7 @@ Wallet money stays in the normal economy: **EssentialsX** (directly, or through 
 - **EssentialsX** wallet support (with or without Vault)
 - **Vault** support for any other economy plugin
 - **Compound interest** (default **2.5%** every **10 real-time minutes**)
+- **Online-only interest** — players only earn interest while they are logged in; offline time pays nothing (`online-only: true`, toggleable)
 - Interest interval is real-world **hours / minutes / seconds** in `config.yml`
 - Transaction **logs**
 - **Refresh** reloads config and restarts the interest timer
@@ -29,7 +30,7 @@ cd PlayerBank
 mvn -B clean package
 ```
 
-The jar is `target/PlayerBank-1.0.0.jar`. Drop it in `plugins/` next to EssentialsX and/or Vault.
+The jar is `target/PlayerBank-1.1.0.jar`. Drop it in `plugins/` next to EssentialsX and/or Vault.
 
 ## Commands
 
@@ -95,6 +96,7 @@ bank:
       hours: 0
       minutes: 10              # real time
       seconds: 0
+    online-only: true          # offline players earn nothing
     min-balance: 0.01
     max-balance: 0             # 0 = unlimited
     decimal-places: 2
@@ -119,6 +121,8 @@ Each interval, every account with at least `min-balance` receives:
 `payout = round(bankBalance * ratePercent / 100)`
 
 That payout is added to the **bank**, then logged as `INTEREST`. The timer uses real wall-clock hours/minutes/seconds, not Minecraft day cycles.
+
+With `online-only: true` (the default) a player must be **online at the moment the tick fires** to receive it. Ticks that happen while they are offline are simply skipped — there is no catch-up payout on login. Set `online-only: false` to pay every stored account regardless of online status.
 
 `/bank refresh` reloads YAML and reschedules that timer. `/bankadmin forceinterest` applies one tick immediately.
 

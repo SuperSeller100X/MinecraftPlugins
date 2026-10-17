@@ -2,6 +2,9 @@ package dev.superseller.playerbank.config;
 
 import dev.superseller.playerbank.PlayerBankPlugin;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,15 +30,30 @@ public final class Messages {
             plugin.saveResource("messages.yml", false);
         }
         yaml = YamlConfiguration.loadConfiguration(file);
+        // Fall back to the bundled messages.yml so keys added in newer versions
+        // still resolve on servers that keep an older, user-edited file.
+        InputStream bundled = plugin.getResource("messages.yml");
+        if (bundled != null) {
+            try (InputStreamReader reader = new InputStreamReader(bundled, StandardCharsets.UTF_8)) {
+                yaml.setDefaults(YamlConfiguration.loadConfiguration(reader));
+            } catch (java.io.IOException ignored) {
+                // Defaults are a nicety; missing keys just echo their name.
+            }
+        }
     }
 
+    /** Looks up a message in the user's file, then the bundled defaults, then echoes the key. */
     public String raw(String key) {
-        return yaml.getString(key, key);
+        String value = yaml.getString(key);
+        return value != null ? value : key;
     }
 
     public Component component(String key, Map<String, String> placeholders) {
-        String prefix = yaml.getString("prefix", "");
-        String body = yaml.getString(key, key);
+        String prefix = yaml.getString("prefix");
+        if (prefix == null) {
+            prefix = "";
+        }
+        String body = raw(key);
         String combined = prefix + apply(body, placeholders);
         return mini.deserialize(combined);
     }
