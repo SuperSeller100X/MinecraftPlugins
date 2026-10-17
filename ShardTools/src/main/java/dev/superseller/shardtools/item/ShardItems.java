@@ -160,6 +160,17 @@ public final class ShardItems {
      * entry's enchant-choice alternatives (e.g. Fortune vs Silk Touch).
      */
     public ItemStack create(ShardCatalog.Entry entry, int amount, long extraMinutes, int choiceIndex) {
+        return create(entry, amount, extraMinutes, choiceIndex, java.util.Collections.emptySet());
+    }
+
+    /**
+     * Creates the item with a set of individually selected enchantments
+     * (the mcpvp.club-style picker). {@code selectedIndices} contains the
+     * indices into the entry's {@code selectableEnchants()} list that the
+     * buyer toggled on. All other selectable enchants are omitted.
+     */
+    public ItemStack create(ShardCatalog.Entry entry, int amount, long extraMinutes,
+                            int choiceIndex, java.util.Set<Integer> selectedIndices) {
         Material material = Material.matchMaterial(entry.material());
         if (material == null) {
             plugin.getLogger().warning("Unknown material '" + entry.material() + "' for item " + entry.id());
@@ -181,7 +192,8 @@ public final class ShardItems {
         final long finalLifetime = lifetimeMs;
         final long finalEffect = effectMinutes;
         final EnchantSpec choice = entry.enchantChoice(choiceIndex);
-        stack.editMeta(meta -> apply(meta, entry, now, null, finalLifetime, finalEffect, choice));
+        final java.util.Set<Integer> finalSelected = selectedIndices;
+        stack.editMeta(meta -> apply(meta, entry, now, null, finalLifetime, finalEffect, choice, finalSelected));
         return stack;
     }
 
@@ -193,7 +205,7 @@ public final class ShardItems {
         }
         ItemStack stack = new ItemStack(material, 1);
         stack.editMeta(meta -> apply(meta, entry, System.currentTimeMillis(),
-                purchaseLore(entry, price), entry.lifetimeMs(), -1L, null));
+                purchaseLore(entry, price), entry.lifetimeMs(), -1L, null, java.util.Collections.emptySet()));
         return stack;
     }
 
@@ -207,6 +219,16 @@ public final class ShardItems {
      */
     public ItemStack previewIcon(ShardCatalog.Entry entry, long price,
                                  long lifetimeMs, long effectMinutes, EnchantSpec choice) {
+        return previewIcon(entry, price, lifetimeMs, effectMinutes, choice, java.util.Collections.emptySet());
+    }
+
+    /**
+     * Preview icon with both a single enchant choice AND a set of
+     * individually selected enchantments from the picker.
+     */
+    public ItemStack previewIcon(ShardCatalog.Entry entry, long price,
+                                 long lifetimeMs, long effectMinutes, EnchantSpec choice,
+                                 java.util.Set<Integer> selectedIndices) {
         Material material = Material.matchMaterial(entry.material());
         if (material == null) {
             material = Material.AIR;
@@ -217,7 +239,7 @@ public final class ShardItems {
                 "%symbol%", plugin.settings().symbol()));
         ItemStack stack = new ItemStack(material, 1);
         stack.editMeta(meta -> apply(meta, entry, System.currentTimeMillis(),
-                extra, lifetimeMs, effectMinutes, choice));
+                extra, lifetimeMs, effectMinutes, choice, selectedIndices));
         return stack;
     }
 
@@ -227,8 +249,20 @@ public final class ShardItems {
         extra.add(plugin.messages().itemLine("shop.price-line",
                 "%price%", dev.superseller.shardtools.util.Numbers.format(price),
                 "%symbol%", settings.symbol()));
+        
+        // List available enchantments for selectable enchants
+        if (entry.hasSelectableEnchants()) {
+            extra.add(plugin.messages().itemLine("picker.available-enchants-header"));
+            for (EnchantSpec spec : entry.selectableEnchants()) {
+                extra.add(plugin.messages().itemLine("picker.available-enchants-line",
+                        "%enchant%", dev.superseller.shardtools.gui.ShopGui.prettyEnchant(spec)));
+            }
+        }
+        
         extra.add(plugin.messages().itemLine("shop.click-to-buy"));
-        if (entry.hasEnchantChoice()) {
+        if (entry.hasSelectableEnchants()) {
+            extra.add(plugin.messages().itemLine("picker.hint"));
+        } else if (entry.hasEnchantChoice()) {
             extra.add(plugin.messages().itemLine("choice.hint"));
         }
         if (extendable(entry)) {
@@ -238,7 +272,8 @@ public final class ShardItems {
     }
 
     private void apply(ItemMeta meta, ShardCatalog.Entry entry, long now, List<Component> extraLore,
-                       long lifetimeMs, long effectMinutes, EnchantSpec choice) {
+                       long lifetimeMs, long effectMinutes, EnchantSpec choice,
+                       java.util.Set<Integer> selectedIndices) {
         boolean shopIcon = extraLore != null;
         // Items without an ability stay plain vanilla when handed out: no
         // custom name, no rarity color, no lore - just the enchantments.
@@ -264,6 +299,19 @@ public final class ShardItems {
             org.bukkit.enchantments.Enchantment enchantment = plugin.enchantResolver().resolve(choice.enchant());
             if (enchantment != null) {
                 meta.addEnchant(enchantment, choice.level(), true);
+            }
+        }
+        // Apply individually selected enchantments from the picker
+        if (selectedIndices != null && !selectedIndices.isEmpty()) {
+            List<EnchantSpec> selectable = entry.selectableEnchants();
+            for (int idx : selectedIndices) {
+                if (idx >= 0 && idx < selectable.size()) {
+                    EnchantSpec spec = selectable.get(idx);
+                    org.bukkit.enchantments.Enchantment enchantment = plugin.enchantResolver().resolve(spec.enchant());
+                    if (enchantment != null) {
+                        meta.addEnchant(enchantment, spec.level(), true);
+                    }
+                }
             }
         }
         if (meta instanceof PotionMeta && entry.behavior() == Behavior.HASTE_POTION) {

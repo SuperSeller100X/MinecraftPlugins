@@ -19,6 +19,7 @@ import org.bukkit.persistence.PersistentDataType;
 import dev.superseller.shardtools.ShardToolsPlugin;
 import dev.superseller.shardtools.item.Behavior;
 import dev.superseller.shardtools.item.EnchantSpec;
+import dev.superseller.shardtools.item.IncompatibilityMap;
 import dev.superseller.shardtools.item.ShardCatalog;
 import dev.superseller.shardtools.util.Numbers;
 import dev.superseller.shardtools.util.TimeWords;
@@ -149,6 +150,84 @@ public final class ShopGui {
 
         public void choice(int choice) {
             this.choice = choice;
+        }
+    }
+
+    /**
+     * Holder for the full enchantment picker dialog (mcpvp.club style).
+     * Every selectable enchantment is a toggleable slot: enchanted book
+     * when on, plain book when off. Incompatible enchantments auto-deselect
+     * when their conflict is enabled (e.g. Mending ↔ Infinity on bows).
+     */
+    public static final class EnchantPickerHolder implements InventoryHolder {
+
+        /** Maximum enchantment slots in the picker (two rows of 7). */
+        public static final int MAX_ENCHANT_SLOTS = 14;
+
+        /** Slot positions for enchantment toggles (rows 1-2 of a 5-row chest). */
+        public static final int[] ENCHANT_SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25
+        };
+
+        public static final int SLOT_MINUS = 37;
+        public static final int SLOT_PREVIEW = 40;
+        public static final int SLOT_PLUS = 43;
+        public static final int SLOT_CANCEL = 36;
+        public static final int SLOT_CONFIRM = 44;
+
+        private Inventory inventory;
+        private final String itemId;
+        private final int backPage;
+        private int steps;
+        /** Indices into the entry's selectableEnchants() list that are currently on. */
+        private final java.util.Set<Integer> selected = new java.util.HashSet<>();
+
+        public EnchantPickerHolder(String itemId, int backPage) {
+            this.itemId = itemId;
+            this.backPage = backPage;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+
+        void inventory(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
+        public String itemId() {
+            return itemId;
+        }
+
+        public int backPage() {
+            return backPage;
+        }
+
+        public int steps() {
+            return steps;
+        }
+
+        public void steps(int steps) {
+            this.steps = steps;
+        }
+
+        public java.util.Set<Integer> selected() {
+            return selected;
+        }
+
+        /** Toggle the enchant at {@code index} in the selectable list. */
+        public void toggle(int index) {
+            if (selected.contains(index)) {
+                selected.remove(index);
+            } else {
+                selected.add(index);
+            }
+        }
+
+        public boolean isSelected(int index) {
+            return selected.contains(index);
         }
     }
 
@@ -359,6 +438,203 @@ public final class ShopGui {
         int max = entry.behavior() == Behavior.HASTE_POTION
                 ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
         return Math.max(0, Math.min(steps, max));
+    }
+
+    // ---------------------------------------------------------------
+    // Enchantment Picker (mcpvp.club style)
+    // ---------------------------------------------------------------
+
+    /**
+     * Opens the full enchantment picker for an item with selectable
+     * enchants. Compatible enchants start selected by default; incompatible
+     * ones are pre-deselected to prevent invalid combinations.
+     */
+    public void openEnchantPicker(Player player, ShardCatalog.Entry entry, int backPage) {
+        EnchantPickerHolder holder = new EnchantPickerHolder(entry.id(), backPage);
+        
+        // Select all enchants that don't conflict with already-selected ones
+        List<EnchantSpec> selectable = entry.selectableEnchants();
+        for (int i = 0; i < selectable.size(); i++) {
+            EnchantSpec spec = selectable.get(i);
+            boolean hasConflict = false;
+            
+            // Check if this enchant conflicts with any already selected
+            for (int selectedIdx : holder.selected()) {
+                if (selectedIdx < selectable.size()) {
+                    EnchantSpec selectedSpec = selectable.get(selectedIdx);
+                    if (IncompatibilityMap.incompatible(spec.enchant(), selectedSpec.enchant())) {
+                        hasConflict = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Only select if no conflict found
+            if (!hasConflict) {
+                holder.selected().add(i);
+            }
+        }
+        
+        Component title = plugin.messages().bare("picker.title", "%item%", entry.displayName());
+        Inventory inventory = Bukkit.createInventory(holder, 45, title);
+        holder.inventory(inventory);
+        renderEnchantPicker(holder, entry);
+        player.openInventory(inventory);
+    }
+
+    /** (Re-)draws the enchantment picker after the selection changed. */
+    public void renderEnchantPicker(EnchantPickerHolder holder, ShardCatalog.Entry entry) {
+        Inventory inventory = holder.getInventory();
+        if (inventory == null) {
+            return;
+        }
+        boolean extendable = plugin.items().extendable(entry);
+
+        // Fill everything with border first
+        ItemStack filler = borderItem();
+        for (int slot = 0; slot < 45; slot++) {
+            inventory.setItem(slot, filler);
+        }
+
+        // Render enchantment toggle slots
+        List<EnchantSpec> selectable = entry.selectableEnchants();
+        for (int i = 0; i < EnchantPickerHolder.ENCHANT_SLOTS.length && i < selectable.size(); i++) {
+            int slot = EnchantPickerHolder.ENCHANT_SLOTS[i];
+            EnchantSpec spec = selectable.get(i);
+            boolean on = holder.isSelected(i);
+            
+            ItemStack book;
+            if (on) {
+                book = button("ENCHANTED_BOOK",
+                        plugin.messages().itemLine("picker.enchant-on",
+                                "%enchant%", prettyEnchant(spec)),
+                        plugin.messages().itemLine("picker.click-toggle-off"));
+                // Actually apply the enchantment to the book so it glows
+                org.bukkit.enchantments.Enchantment enchant = plugin.enchantResolver().resolve(spec.enchant());
+                if (enchant != null) {
+                    book.editMeta(meta -> meta.addEnchant(enchant, spec.level(), true));
+                }
+            } else {
+                book = button("BOOK",
+                        plugin.messages().itemLine("picker.enchant-off",
+                                "%enchant%", prettyEnchant(spec)),
+                        plugin.messages().itemLine("picker.click-toggle-on"));
+            }
+            inventory.setItem(slot, book);
+        }
+
+        // Time extension controls (only if extendable)
+        if (extendable) {
+            boolean potion = entry.behavior() == Behavior.HASTE_POTION;
+            long stepMinutes = potion
+                    ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+            long stepPrice = potion
+                    ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+            int maxSteps = potion
+                    ? plugin.settings().extendPotionMaxSteps() : plugin.settings().extendToolMaxSteps();
+            int steps = clampSteps(entry, holder.steps());
+            holder.steps(steps);
+
+            String stepTime = TimeWords.format(stepMinutes * 60_000L);
+            String stepCost = Numbers.format(stepPrice);
+            if (steps > 0) {
+                inventory.setItem(EnchantPickerHolder.SLOT_MINUS, button("RED_STAINED_GLASS_PANE",
+                        plugin.messages().itemLine("extend.minus",
+                                "%time%", stepTime, "%price%", stepCost,
+                                "%symbol%", plugin.settings().symbol())));
+            }
+            if (steps < maxSteps) {
+                inventory.setItem(EnchantPickerHolder.SLOT_PLUS, button("LIME_STAINED_GLASS_PANE",
+                        plugin.messages().itemLine("extend.plus",
+                                "%time%", stepTime, "%price%", stepCost,
+                                "%symbol%", plugin.settings().symbol())));
+            }
+        }
+
+        // Preview icon in the center
+        EnchantSpec chosen = null; // no old-style choice when using picker
+        Long base = plugin.priceBook().price(entry.id());
+        long basePrice = base == null ? 0L : base;
+        long extraMs = 0L;
+        long totalPrice = basePrice;
+        if (extendable) {
+            boolean potion = entry.behavior() == Behavior.HASTE_POTION;
+            long stepMinutes = potion
+                    ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+            long stepPrice = potion
+                    ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+            extraMs = holder.steps() * stepMinutes * 60_000L;
+            totalPrice = basePrice + holder.steps() * stepPrice;
+        }
+        long baseMs = entry.behavior() == Behavior.HASTE_POTION
+                ? plugin.items().defaultEffectMs() : entry.lifetimeMs();
+
+        ItemStack icon = extendable
+                ? (entry.behavior() == Behavior.HASTE_POTION
+                    ? plugin.items().previewIcon(entry, basePrice,
+                            entry.lifetimeMs(), (baseMs + extraMs) / 60_000L, chosen, holder.selected())
+                    : plugin.items().previewIcon(entry, basePrice,
+                            baseMs + extraMs, -1L, chosen, holder.selected()))
+                : plugin.items().previewIcon(entry, basePrice,
+                        entry.lifetimeMs(), -1L, chosen, holder.selected());
+        ItemMeta iconMeta = icon.getItemMeta();
+        if (iconMeta != null) {
+            List<Component> lore = iconMeta.lore() != null
+                    ? new ArrayList<>(iconMeta.lore()) : new ArrayList<>();
+            if (extendable) {
+                boolean potion = entry.behavior() == Behavior.HASTE_POTION;
+                lore.add(plugin.messages().itemLine(potion ? "extend.effect-line" : "extend.lifetime-line",
+                        "%base%", TimeWords.format(baseMs),
+                        "%extra%", TimeWords.format(extraMs),
+                        "%total%", TimeWords.format(baseMs + extraMs)));
+            }
+            // Show selected enchant count
+            lore.add(plugin.messages().itemLine("picker.selected-count",
+                    "%count%", Integer.toString(holder.selected().size()),
+                    "%total%", Integer.toString(selectable.size())));
+            lore.add(plugin.messages().itemLine("extend.total-line",
+                    "%price%", Numbers.format(totalPrice),
+                    "%symbol%", plugin.settings().symbol()));
+            iconMeta.lore(lore);
+            icon.setItemMeta(iconMeta);
+        }
+        inventory.setItem(EnchantPickerHolder.SLOT_PREVIEW, icon);
+
+        // Confirm / Cancel
+        inventory.setItem(EnchantPickerHolder.SLOT_CONFIRM, button("LIME_STAINED_GLASS_PANE",
+                plugin.messages().itemLine("extend.confirm",
+                        "%price%", Numbers.format(totalPrice),
+                        "%symbol%", plugin.settings().symbol())));
+        inventory.setItem(EnchantPickerHolder.SLOT_CANCEL, button("BARRIER",
+                plugin.messages().itemLine("shop.click-to-cancel")));
+    }
+
+    /**
+     * Called when the user toggles an enchantment in the picker. Enforces
+     * incompatibility rules: enabling an enchant deselects every conflicting
+     * one; disabling just removes it.
+     */
+    public void handleEnchantToggle(EnchantPickerHolder holder, ShardCatalog.Entry entry, int enchantIndex) {
+        List<EnchantSpec> selectable = entry.selectableEnchants();
+        if (enchantIndex < 0 || enchantIndex >= selectable.size()) {
+            return;
+        }
+        boolean wasOn = holder.isSelected(enchantIndex);
+        holder.toggle(enchantIndex);
+        if (!wasOn) {
+            // Just enabled this enchant - deselect incompatible ones
+            String justEnabled = selectable.get(enchantIndex).enchant();
+            java.util.Iterator<Integer> it = holder.selected().iterator();
+            while (it.hasNext()) {
+                int idx = it.next();
+                if (idx != enchantIndex && idx < selectable.size()) {
+                    String other = selectable.get(idx).enchant();
+                    if (IncompatibilityMap.incompatible(justEnabled, other)) {
+                        it.remove();
+                    }
+                }
+            }
+        }
     }
 
     /** "fortune:3" -> "Fortune III", "silk_touch:1" -> "Silk Touch". */

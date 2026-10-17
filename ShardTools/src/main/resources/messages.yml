@@ -3,7 +3,7 @@
 #  Placeholders: %player%, %amount%, %balance%, %item%, %price%,
 #                %time%, %minutes%, %rank%, %symbol%
 # ============================================================
-prefix: "<gray>[</gray><light_purple>ShardTools</light_purple><gray>]</gray> "
+prefix: "<gray>[</gray><light_purple>ShardTools</light_purple><gray>] "
 
 no-permission: "<red>You don't have permission to do that.</red>"
 player-only: "<red>Only players can use this command.</red>"
@@ -66,6 +66,17 @@ choice:
   button: "<yellow>Enchant: <green>%enchant%</green></yellow>"
   switch: "<dark_gray>Click to switch</dark_gray>"
 
+picker:
+  title: "<dark_gray>Enchantments</dark_gray> <gray>-</gray> <white>%item%</white>"
+  hint: "<dark_gray>Click to choose enchantments</dark_gray>"
+  available-enchants-header: "<gray>Available enchantments:</gray>"
+  available-enchants-line: "  <gray>%enchant%</gray>"
+  enchant-on: "<green>%enchant%</green>"
+  enchant-off: "<dark_gray>~~ %enchant% ~~</dark_gray>"
+  click-toggle-off: "<yellow>Click to disable</yellow>"
+  click-toggle-on: "<yellow>Click to enable</yellow>"
+  selected-count: "<gray>Selected: <green>%count%</green><dark_gray>/</dark_gray>%total%</gray>"
+
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"
   received: "<gray>You received <white>%amount%x %item%</white>.</gray>"
@@ -84,7 +95,7 @@ catalog:
   exists: "<red>An item with the id <white>%item%</white> already exists.</red>"
   invalid-material: "<red>Unknown material <white>%material%</white>.</red>"
   invalid-behavior: "<red>Unknown behavior <white>%behavior%</white>. Use NONE, AREA_PICKAXE, AREA_SHOVEL, TREE_AXE, HASTE_POTION or VOID_TOTEM.</red>"
-  invalid-key: "<red>Unknown property <white>%key%</white>. Use name, material, price, lifetime, behavior, enchants, choices or lore.</red>"
+  invalid-key: "<red>Unknown property <white>%key%</white>. Use name, material, price, lifetime, behavior, enchants, choices, selectable or lore.</red>"
   invalid-enchant: "<red>'<white>%enchant%</white>' is not a valid enchant. Use ids like <white>efficiency:5</white>.</red>"
 
 buy:
@@ -145,7 +156,7 @@ admin-help:
   line-items: "<yellow>/sta items</yellow> <dark_gray>(l)</dark_gray> <gray>- list item ids and prices</gray>"
   line-add: "<yellow>/sta add <id> <material> <price> [lifetimeHours] [behavior]</yellow> <dark_gray>(a)</dark_gray> <gray>- add a shop item</gray>"
   line-remove: "<yellow>/sta remove <id></yellow> <dark_gray>(rm)</dark_gray> <gray>- remove a shop item</gray>"
-  line-edit: "<yellow>/sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|lore> <value></yellow> <dark_gray>(e)</dark_gray> <gray>- edit a shop item</gray>"
+  line-edit: "<yellow>/sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|selectable|lore> <value></yellow> <dark_gray>(e)</dark_gray> <gray>- edit a shop item</gray>"
   line-setprice: "<yellow>/sta setprice <item> <price></yellow> <dark_gray>(sp)</dark_gray> <gray>- change a price</gray>"
   line-shards: "<yellow>/sta shards <player> <give|take|set> <amount></yellow> <dark_gray>(sh)</dark_gray> <gray>- edit balances</gray>"
   line-interval: "<yellow>/sta interval <minutes></yellow> <dark_gray>(iv)</dark_gray> <gray>- income interval</gray>"

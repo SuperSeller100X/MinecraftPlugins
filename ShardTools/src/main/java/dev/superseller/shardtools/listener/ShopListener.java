@@ -39,6 +39,9 @@ public final class ShopListener implements Listener {
             } else if (topInv.getHolder() instanceof ShopGui.ExtendHolder) {
                 event.setCancelled(true);
                 handleExtendClick(event, (ShopGui.ExtendHolder) topInv.getHolder());
+            } else if (topInv.getHolder() instanceof ShopGui.EnchantPickerHolder) {
+                event.setCancelled(true);
+                handlePickerClick(event, (ShopGui.EnchantPickerHolder) topInv.getHolder());
             }
             return;
         }
@@ -74,6 +77,11 @@ public final class ShopListener implements Listener {
             plugin.messages().send(player, "no-permission");
             return;
         }
+        if (entry.hasSelectableEnchants()) {
+            // Items with selectable enchants open the full enchant picker
+            plugin.gui().openEnchantPicker(player, entry, holder.page());
+            return;
+        }
         if (plugin.items().extendable(entry) || entry.hasEnchantChoice()) {
             // Expiring shard items, the haste potion and items with an
             // enchant choice open the purchase dialog (it doubles as the
@@ -93,7 +101,8 @@ public final class ShopListener implements Listener {
         Inventory top = event.getView().getTopInventory();
         if (!(top.getHolder() instanceof ShopGui.ShopHolder
                 || top.getHolder() instanceof ShopGui.ConfirmHolder
-                || top.getHolder() instanceof ShopGui.ExtendHolder)) {
+                || top.getHolder() instanceof ShopGui.ExtendHolder
+                || top.getHolder() instanceof ShopGui.EnchantPickerHolder)) {
             return;
         }
         for (int rawSlot : event.getRawSlots()) {
@@ -172,6 +181,59 @@ public final class ShopListener implements Listener {
         }
     }
 
+    /** Clicks inside the enchantment picker dialog. */
+    private void handlePickerClick(InventoryClickEvent event, ShopGui.EnchantPickerHolder holder) {
+        if (!(event.getWhoClicked() instanceof Player)) {
+            return;
+        }
+        Player player = (Player) event.getWhoClicked();
+        Inventory top = event.getView().getTopInventory();
+        if (event.getClickedInventory() != top) {
+            return;
+        }
+        ShardCatalog.Entry entry = plugin.catalog().byId(holder.itemId());
+        if (entry == null) {
+            plugin.gui().open(player, holder.backPage());
+            return;
+        }
+        int slot = event.getRawSlot();
+
+        // Check if it's an enchantment toggle slot
+        int enchantIndex = -1;
+        for (int i = 0; i < ShopGui.EnchantPickerHolder.ENCHANT_SLOTS.length; i++) {
+            if (ShopGui.EnchantPickerHolder.ENCHANT_SLOTS[i] == slot && i < entry.selectableEnchants().size()) {
+                enchantIndex = i;
+                break;
+            }
+        }
+        if (enchantIndex >= 0) {
+            plugin.gui().handleEnchantToggle(holder, entry, enchantIndex);
+            plugin.gui().renderEnchantPicker(holder, entry);
+            return;
+        }
+
+        int delta = event.isShiftClick() ? 5 : 1;
+        switch (slot) {
+            case ShopGui.EnchantPickerHolder.SLOT_MINUS:
+            case ShopGui.EnchantPickerHolder.SLOT_PLUS: {
+                int change = slot == ShopGui.EnchantPickerHolder.SLOT_PLUS ? delta : -delta;
+                int newSteps = plugin.gui().clampSteps(entry, holder.steps() + change);
+                if (newSteps != holder.steps()) {
+                    holder.steps(newSteps);
+                    plugin.gui().renderEnchantPicker(holder, entry);
+                }
+                return;
+            }
+            case ShopGui.EnchantPickerHolder.SLOT_CANCEL:
+                plugin.gui().open(player, holder.backPage());
+                return;
+            case ShopGui.EnchantPickerHolder.SLOT_CONFIRM:
+                purchaseFromPicker(player, entry, holder.backPage(), holder.steps(), holder.selected());
+                return;
+            default:
+        }
+    }
+
     private void purchase(Player player, ShardCatalog.Entry entry, int backPage) {
         purchaseExtended(player, entry, backPage, 0, 0);
     }
@@ -211,6 +273,55 @@ public final class ShopListener implements Listener {
             org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
         } else {
             give(player, plugin.items().create(entry, 1, extraMinutes, choice));
+        }
+        plugin.messages().send(player, "shop.purchased",
+                "%item%", entry.displayName(),
+                "%price%", Numbers.format(price),
+                "%balance%", Numbers.format(newBalance),
+                "%symbol%", plugin.settings().symbol());
+        Sound sound = plugin.soundResolver().resolve(plugin.settings().soundPurchase());
+        if (sound != null) {
+            player.playSound(player.getLocation(), sound, 1.0f, 1.8f);
+        }
+        plugin.effects().equipRing(player);
+        plugin.accounts().saveAsync();
+        plugin.gui().open(player, backPage);
+    }
+
+    /**
+     * Runs a purchase from the enchantment picker with individually selected
+     * enchants and optional extra time steps.
+     */
+    private void purchaseFromPicker(Player player, ShardCatalog.Entry entry, int backPage,
+                                    int steps, java.util.Set<Integer> selected) {
+        Long base = plugin.priceBook().price(entry.id());
+        long price = base == null ? 0L : base;
+        long extraMinutes = 0L;
+        int safeSteps = plugin.gui().clampSteps(entry, steps);
+        if (safeSteps > 0 && plugin.items().extendable(entry)) {
+            boolean potion = entry.behavior() == dev.superseller.shardtools.item.Behavior.HASTE_POTION;
+            long stepMinutes = potion
+                    ? plugin.settings().extendPotionStepMinutes() : plugin.settings().extendToolStepMinutes();
+            long stepPrice = potion
+                    ? plugin.settings().extendPotionStepPrice() : plugin.settings().extendToolStepPrice();
+            extraMinutes = safeSteps * stepMinutes;
+            price += safeSteps * stepPrice;
+        }
+        Long newBalance = plugin.accounts().take(player.getUniqueId(), player.getName(), price);
+        if (newBalance == null) {
+            long balance = plugin.accounts().balance(player.getUniqueId(), player.getName());
+            plugin.messages().send(player, "shop.insufficient",
+                    "%price%", Numbers.format(price),
+                    "%balance%", Numbers.format(balance),
+                    "%symbol%", plugin.settings().symbol());
+            denySound(player);
+            return;
+        }
+        if (entry.isCommandItem()) {
+            String command = entry.command().replace("%player%", player.getName());
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), command);
+        } else {
+            give(player, plugin.items().create(entry, 1, extraMinutes, 0, selected));
         }
         plugin.messages().send(player, "shop.purchased",
                 "%item%", entry.displayName(),

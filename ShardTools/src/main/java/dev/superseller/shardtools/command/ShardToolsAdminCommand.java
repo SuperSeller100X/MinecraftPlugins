@@ -74,7 +74,7 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
     }
 
     private static final List<String> EDIT_KEYS =
-            List.of("name", "material", "price", "lifetime", "behavior", "enchants", "choices", "lore");
+            List.of("name", "material", "price", "lifetime", "behavior", "enchants", "choices", "selectable", "lore");
 
     private final ShardToolsPlugin plugin;
 
@@ -414,6 +414,29 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
                 value = specs.isEmpty() ? "none" : String.join(", ", specs);
                 break;
             }
+            case "selectable": {
+                // Selectable enchantments the buyer toggles on/off individually
+                // (mcpvp.club-style picker), comma-separated "enchant:level"
+                // specs; "none" removes the picker.
+                List<String> specs = new ArrayList<>();
+                if (!value.equalsIgnoreCase("none")) {
+                    for (String part : value.split(",")) {
+                        String spec = part.trim();
+                        if (spec.isEmpty()) {
+                            continue;
+                        }
+                        if (EnchantSpec.parse(spec) == null
+                                || plugin.enchantResolver().resolve(EnchantSpec.parse(spec).enchant()) == null) {
+                            plugin.messages().send(sender, "catalog.invalid-enchant", "%enchant%", spec);
+                            return true;
+                        }
+                        specs.add(spec.toLowerCase(Locale.ROOT));
+                    }
+                }
+                plugin.getConfig().set(path + ".selectable-enchants", specs);
+                value = specs.isEmpty() ? "none" : String.join(", ", specs);
+                break;
+            }
             case "lore": {
                 // MiniMessage lines separated with "|"; "none" clears the lore.
                 List<String> lines = new ArrayList<>();
@@ -681,7 +704,8 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
                     break;
                 case "add":
                     out.addAll(filter(List.of("NETHERITE_PICKAXE", "NETHERITE_AXE", "NETHERITE_SHOVEL",
-                            "NETHERITE_SWORD", "NETHERITE_HOE", "BOW", "CROSSBOW", "MACE", "POTION"),
+                            "NETHERITE_SWORD", "NETHERITE_HOE", "BOW", "CROSSBOW", "MACE", "POTION",
+                            "NETHERITE_SPEAR"),
                             args[2]));
                     break;
                 case "edit":
