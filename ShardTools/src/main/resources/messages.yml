@@ -66,6 +66,15 @@ choice:
   button: "<yellow>Enchant: <green>%enchant%</green></yellow>"
   switch: "<dark_gray>Click to switch</dark_gray>"
 
+picker:
+  title: "<dark_gray>Enchantments</dark_gray> <gray>-</gray> <white>%item%</white>"
+  hint: "<dark_gray>Click to choose enchantments</dark_gray>"
+  enchant-on: "<green>%enchant%</green>"
+  enchant-off: "<dark_gray>~~ %enchant% ~~</dark_gray>"
+  click-toggle-off: "<yellow>Click to disable</yellow>"
+  click-toggle-on: "<yellow>Click to enable</yellow>"
+  selected-count: "<gray>Selected: <green>%count%</green><dark_gray>/</dark_gray>%total%</gray>"
+
 give:
   given: "<gray>Gave <white>%amount%x %item%</white> to <white>%player%</white>.</gray>"
   received: "<gray>You received <white>%amount%x %item%</white>.</gray>"

@@ -46,10 +46,20 @@ award:
 #                 shop icon). Players can pause a tool's ability with
 #                 /st toggle.
 #   enchants      list of "enchant:level" (vanilla ids, e.g. efficiency:5)
+#                 These are ALWAYS applied to every item of this type.
+#   selectable-enchants  optional list of enchant ALTERNATIVES the buyer
+#                 can individually toggle ON or OFF in the shop picker
+#                 (mcpvp.club style). All start selected by default at
+#                 their listed max level. Incompatible enchantments auto-
+#                 deselect when their conflict is enabled (e.g. Fortune ↔
+#                 Silk Touch, Mending ↔ Infinity on bows). When this list
+#                 is non-empty the item opens the full enchantment picker
+#                 instead of the old single-choice dialog.
 #   enchant-choice  optional list of enchant ALTERNATIVES - the buyer picks
 #                 exactly ONE of them in the shop dialog (e.g. Fortune III
 #                 vs Silk Touch). /sta give uses the first one unless an
 #                 enchant name is passed as the last argument.
+#                 (Legacy - prefer selectable-enchants for the full picker.)
 #   item-model    optional custom item model (e.g. "shardtools:void_totem")
 #                 stamped on this item only - it needs the matching entry in
 #                 the ShardTools resource pack (see resourcepack/README.md)
@@ -65,9 +75,11 @@ items:
     price: 3000
     lifetime-hours: 24
     behavior: AREA_PICKAXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
-    # Pick Fortune III or Silk Touch when buying.
-    enchant-choice: ["fortune:3", "silk_touch:1"]
+    enchants: []
+    # All enchants listed here can be individually toggled on/off in the
+    # shop picker (mcpvp.club style). All start selected by default.
+    # Incompatible enchantments auto-deselect (e.g. Fortune ↔ Silk Touch).
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Mines a 3x3 area with every swing.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
@@ -77,8 +89,8 @@ items:
     price: 3000
     lifetime-hours: 24
     behavior: TREE_AXE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
-    enchant-choice: ["fortune:3", "silk_touch:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Fells whole trees, breaks a 3x3 area.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
@@ -88,8 +100,8 @@ items:
     price: 3000
     lifetime-hours: 24
     behavior: AREA_SHOVEL
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
-    enchant-choice: ["fortune:3", "silk_touch:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<gray>Digs a 3x3 area with every swing.</gray>"
       - "<dark_gray>Self-destructs in <red>%time%</red></dark_gray>"
@@ -125,8 +137,8 @@ items:
     price: 1000
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
-    enchant-choice: ["fortune:3", "silk_touch:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_shovel:
@@ -135,7 +147,8 @@ items:
     price: 800
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_axe:
@@ -144,7 +157,8 @@ items:
     price: 600
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_hoe:
@@ -153,7 +167,8 @@ items:
     price: 500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["efficiency:5", "unbreaking:3", "mending:1", "silk_touch:1"]
+    enchants: []
+    selectable-enchants: ["efficiency:5", "unbreaking:3", "mending:1", "fortune:3", "silk_touch:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_helmet:
@@ -162,7 +177,8 @@ items:
     price: 1500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["protection:4", "respiration:3", "aqua_affinity:1", "unbreaking:3"]
+    enchants: []
+    selectable-enchants: ["protection:4", "respiration:3", "aqua_affinity:1", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_chestplate:
@@ -171,7 +187,8 @@ items:
     price: 1500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["protection:4", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["protection:4", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_leggings:
@@ -180,7 +197,8 @@ items:
     price: 1500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["swift_sneak:3", "protection:4", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["swift_sneak:3", "protection:4", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_boots:
@@ -189,7 +207,8 @@ items:
     price: 1500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["protection:4", "feather_falling:4", "soul_speed:3", "depth_strider:3", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["protection:4", "feather_falling:4", "soul_speed:3", "depth_strider:3", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   netherite_sword:
@@ -198,7 +217,8 @@ items:
     price: 1500
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["sharpness:5", "sweeping_edge:3", "fire_aspect:2", "knockback:2", "looting:3", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["sharpness:5", "sweeping_edge:3", "fire_aspect:2", "knockback:2", "looting:3", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   mace:
@@ -207,7 +227,8 @@ items:
     price: 2000
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["wind_burst:3", "density:5", "fire_aspect:2", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["wind_burst:3", "density:5", "fire_aspect:2", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   crossbow:
@@ -216,7 +237,8 @@ items:
     price: 1000
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["piercing:4", "quick_charge:3", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["piercing:4", "quick_charge:3", "multishot:1", "unbreaking:3", "mending:1"]
     lore:
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
   bow:
@@ -225,8 +247,20 @@ items:
     price: 1000
     lifetime-hours: 0
     behavior: NONE
-    enchants: ["power:5", "flame:1", "punch:2", "unbreaking:3", "mending:1"]
+    enchants: []
+    selectable-enchants: ["power:5", "flame:1", "punch:2", "unbreaking:3", "mending:1", "infinity:1"]
     lore:
+      - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
+  netherite_spear:
+    material: NETHERITE_SPEAR
+    name: "Netherite Spear"
+    price: 2000
+    lifetime-hours: 0
+    behavior: NONE
+    enchants: []
+    selectable-enchants: ["lunge:3", "sharpness:5", "fire_aspect:2", "knockback:2", "looting:3", "unbreaking:3", "mending:1"]
+    lore:
+      - "<gray>Jab and charge attacks. Charge damage scales with speed.</gray>"
       - "<dark_gray>Shard Shop item - never expires.</dark_gray>"
 
   # DonutSMP's shard shop also sells spawners (1,500) and crate keys
