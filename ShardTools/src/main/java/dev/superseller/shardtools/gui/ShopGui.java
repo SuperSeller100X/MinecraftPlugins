@@ -446,15 +446,35 @@ public final class ShopGui {
 
     /**
      * Opens the full enchantment picker for an item with selectable
-     * enchants. All selectable enchants start selected by default; the user
-     * can toggle each on/off, and incompatible ones auto-deselect.
+     * enchants. Compatible enchants start selected by default; incompatible
+     * ones are pre-deselected to prevent invalid combinations.
      */
     public void openEnchantPicker(Player player, ShardCatalog.Entry entry, int backPage) {
         EnchantPickerHolder holder = new EnchantPickerHolder(entry.id(), backPage);
-        // All selectable enchants start selected by default
-        for (int i = 0; i < entry.selectableEnchants().size(); i++) {
-            holder.selected().add(i);
+        
+        // Select all enchants that don't conflict with already-selected ones
+        List<EnchantSpec> selectable = entry.selectableEnchants();
+        for (int i = 0; i < selectable.size(); i++) {
+            EnchantSpec spec = selectable.get(i);
+            boolean hasConflict = false;
+            
+            // Check if this enchant conflicts with any already selected
+            for (int selectedIdx : holder.selected()) {
+                if (selectedIdx < selectable.size()) {
+                    EnchantSpec selectedSpec = selectable.get(selectedIdx);
+                    if (IncompatibilityMap.incompatible(spec.enchant(), selectedSpec.enchant())) {
+                        hasConflict = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Only select if no conflict found
+            if (!hasConflict) {
+                holder.selected().add(i);
+            }
         }
+        
         Component title = plugin.messages().bare("picker.title", "%item%", entry.displayName());
         Inventory inventory = Bukkit.createInventory(holder, 45, title);
         holder.inventory(inventory);
