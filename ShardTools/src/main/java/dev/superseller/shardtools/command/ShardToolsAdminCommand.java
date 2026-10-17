@@ -305,14 +305,14 @@ public final class ShardToolsAdminCommand implements CommandExecutor, TabComplet
         return true;
     }
 
-    /** /sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|lore> <value...> */
+    /** /sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|selectable|lore> <value...> */
     private boolean edit(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.MANAGE)) {
             plugin.messages().send(sender, "no-permission");
             return true;
         }
         if (args.length < 4) {
-            usage(sender, "/sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|lore> <value>");
+            usage(sender, "/sta edit <id> <name|material|price|lifetime|behavior|enchants|choices|selectable|lore> <value>");
             return true;
         }
         String id = args[1].toLowerCase(Locale.ROOT);
