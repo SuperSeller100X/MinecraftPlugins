@@ -3,6 +3,7 @@ package dev.superseller.veltryx.smoke;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.XrayStats;
+import dev.superseller.veltryx.punish.BanCommand;
 import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.TimeUtil;
 
@@ -40,6 +41,16 @@ public final class SmokeTest {
         t("time zero", TimeUtil.parseSeconds("0"), TimeUtil.INVALID);
         t("time format", TimeUtil.format(330L), "5m 30s");
         t("time format perm", TimeUtil.format(Long.MAX_VALUE), "perm");
+
+        // /ban argument parsing (BanCommand.parse): duration + free-text reason
+        t("ban parse temp", BanCommand.parse(new String[]{"steve", "7d", "cheating"}).seconds(), 604_800L);
+        t("ban parse temp reason", BanCommand.parse(new String[]{"steve", "7d", "cheating"}).reason(), "cheating");
+        t("ban parse perm", BanCommand.parse(new String[]{"steve", "perm", "griefing"}).seconds(), Long.MAX_VALUE);
+        t("ban parse no-duration", BanCommand.parse(new String[]{"steve", "cheating", "at", "pvp"}).seconds(), Long.MAX_VALUE);
+        t("ban parse no-duration reason", BanCommand.parse(new String[]{"steve", "cheating", "at", "pvp"}).reason(), "cheating at pvp");
+        t("ban parse invalid-duration-is-reason", BanCommand.parse(new String[]{"steve", "xray", "ban"}).reason(), "xray ban");
+        t("ban parse duration-without-reason", BanCommand.parse(new String[]{"steve", "7d"}), null);
+        t("ban parse missing-args", BanCommand.parse(new String[]{"steve"}), null);
         t("time expiry perm", TimeUtil.expiryMillis(1000L, Long.MAX_VALUE), TimeUtil.NEVER);
 
         // PingGuard

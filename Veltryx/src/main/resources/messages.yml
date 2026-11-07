@@ -53,6 +53,11 @@ unban.usage: "<red>Usage: <white>{command} <player|ban-id></white></red>"
 unban.done: "<green>Lifted the ban of <white>{player}</white> <dark_gray>([{id}])</dark_gray>.</green>"
 unban.not-found: "<red>No active ban found for <white>{input}</white>.</red>"
 
+# ------------------------------------------------------------------ ban
+ban.usage: "<red>Usage: <white>{command} <player> [duration] <reason></white> <gray>— duration like 30m, 12h, 7d, 2w or perm (omit for a permanent ban)</gray></red>"
+ban.done: "<green>Banned <white>{player}</white> — <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray></green>"
+ban.staff-note: "<yellow>{staff}</yellow> <gray>banned</gray> <white>{player}</white> <gray>—</gray> <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray>"
+
 # --------------------------------------------------------------- offend
 offend.usage: "<red>Usage: <white>{command} <player> <reason> [details]</white> <gray>(reasons: xray/esp, hacking) — or</gray> <white>{command} <player></white> <gray>to open the ban menu</gray></red>"
 offend.unknown-reason: "<red>Unknown reason <white>{input}</white>. Valid reasons: <white>{reasons}</white>.</red>"

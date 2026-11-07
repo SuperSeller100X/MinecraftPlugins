@@ -15,6 +15,9 @@ commands:
   offend:
     description: Ban a player with a category ban (xray/esp = 30 days, hacking = permanent).
     usage: /<command> <player> <reason> [details]
+  ban:
+    description: Ban a player with the Veltryx ban system (never Minecraft's vanilla ban list).
+    usage: /<command> <player> [duration] <reason>
   bans:
     description: List active bans or the ban history of a player.
     usage: /<command> [player]
@@ -93,6 +96,7 @@ permissions:
       veltryx.anticheat.bypass: true
       veltryx.sus: true
       veltryx.offend: true
+      veltryx.bans.ban: true
       veltryx.bans.manage: true
       veltryx.moderation.*: true
       veltryx.staff.*: true
@@ -132,6 +136,9 @@ permissions:
     default: op
   veltryx.offend:
     description: Use /offend to issue category bans.
+    default: op
+  veltryx.bans.ban:
+    description: Ban players with the custom Veltryx ban system.
     default: op
   veltryx.bans.manage:
     description: View bans, histories and unban players.

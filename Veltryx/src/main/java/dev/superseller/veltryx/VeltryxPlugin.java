@@ -11,6 +11,7 @@ import dev.superseller.veltryx.config.VeltryxConfig;
 import dev.superseller.veltryx.economy.EconomyListener;
 import dev.superseller.veltryx.economy.EconomyService;
 import dev.superseller.veltryx.punish.BanCommands;
+import dev.superseller.veltryx.punish.BanCommand;
 import dev.superseller.veltryx.punish.BanService;
 import dev.superseller.veltryx.punish.MuteCommand;
 import dev.superseller.veltryx.punish.MuteService;
@@ -188,6 +189,8 @@ public final class VeltryxPlugin extends JavaPlugin {
         bind("eco", ecoCommand, ecoCommand);
         OffendCommand offendCommand = new OffendCommand(config, messages, bans, anticheat, offendGui);
         bind("offend", offendCommand, offendCommand);
+        BanCommand banCommand = new BanCommand(messages, bans, anticheat);
+        bind("ban", banCommand, banCommand);
         BanCommands banCommands = new BanCommands(messages, bans);
         bind("bans", banCommands, banCommands);
         bind("unban", banCommands, banCommands);

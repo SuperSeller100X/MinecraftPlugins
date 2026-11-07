@@ -67,6 +67,15 @@ One command, permanent consequences:
                                 and durations — click a reason to ban)
 ```
 
+There is also a general **`/ban`** command using the same custom ban system
+(never Minecraft's vanilla ban list — it shadows vanilla `/ban`):
+
+```
+/ban player1 7d cheating at PvP     →  7 day ban
+/ban player1 griefing               →  permanent ban
+/ban player1 perm cheating          →  permanent ban
+```
+
 - Every ban shows the **custom ban screen**: reason, category, ban ID, expiry,
   staff member and appeal URL.
 - The player's recent anti-cheat flags are attached to the ban automatically.
@@ -114,6 +123,7 @@ A chest GUI listing every online player sorted by **suspicion score**
 |---|---|---|
 | `/eco` (`/bal`, `/balance`, `/money`) | `veltryx.eco.balance` / `.pay` / `.top` / `.admin` | true / op |
 | `/offend` | `veltryx.offend` | op |
+| `/ban` | `veltryx.bans.ban` | op |
 | `/bans` · `/unban` | `veltryx.bans.manage` | op |
 | `/sus` | `veltryx.sus` | op |
 | `/lookup` | `veltryx.moderation.lookup` | op |

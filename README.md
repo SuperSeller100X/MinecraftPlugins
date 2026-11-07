@@ -297,11 +297,13 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**0.0.1-alpha**. More modules (starting with the shop) land in the same plugin; the public
+**vx-0.0.2-alpha**. More modules (starting with the shop) land in the same plugin; the public
 `VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
-- `/offend <player> <reason>` — `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
+- `/ban <player> [duration] <reason>` — general custom bans (permanent when no duration;
+  shadows vanilla `/ban`, never touches Minecraft's ban list) · `/offend <player> <reason>` —
+  `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
   custom ban screen (reason, category, ban ID, expiry, staff, appeal URL) with the player's
   recent anti-cheat flags attached as evidence · `/bans` · `/unban`
 - **Anti-cheat** — movement (fly, speed, jesus, phase, timer), combat (autoclicker, reach,
