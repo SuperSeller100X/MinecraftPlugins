@@ -12,7 +12,7 @@ class MoneyTest {
     @Test
     void parsesPlainAmounts() {
         assertEquals(100_000L, Money.parse("1000"));
-        assertEquals(1_500L, Money.parse("1.5"));
+        assertEquals(150L, Money.parse("1.5"));
         assertEquals(0L, Money.parse("0"));
         assertEquals(25_000L, Money.parse("250"));
     }
@@ -20,8 +20,8 @@ class MoneyTest {
     @Test
     void parsesSuffixesAndSymbols() {
         assertEquals(150_000L, Money.parse("1.5k"));
-        assertEquals(2_000_000L, Money.parse("2m"));
-        assertEquals(1_000_000_000L, Money.parse("1b"));
+        assertEquals(200_000_000L, Money.parse("2m"));
+        assertEquals(100_000_000_000L, Money.parse("1b"));
         assertEquals(100_000L, Money.parse("$1,000"));
     }
 

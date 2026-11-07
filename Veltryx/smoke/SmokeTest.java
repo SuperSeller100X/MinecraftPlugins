@@ -21,6 +21,8 @@ public final class SmokeTest {
         t("money decimal", Money.parse("1.5"), 150L);
         t("money k suffix", Money.parse("1.5k"), 150_000L);
         t("money symbol", Money.parse("$1,000"), 100_000L);
+        t("money m suffix", Money.parse("2m"), 200_000_000L);
+        t("money b suffix", Money.parse("1b"), 100_000_000_000L);
         t("money invalid", Money.parse("abc"), Money.INVALID);
         t("money negative", Money.parse("-5"), Money.INVALID);
         t("money format", Money.format(125_050L), "$1,250.50");

@@ -1,6 +1,7 @@
 package dev.superseller.veltryx.util;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -19,7 +20,9 @@ public final class Money {
     /** Returned by {@link #parse(String)} for every unparseable input. */
     public static final long INVALID = Long.MIN_VALUE;
 
-    private static final NumberFormat FORMAT = new DecimalFormat("#,##0.00");
+    /** Always formats with ROOT symbols (1,250.50) on every host locale. */
+    private static final NumberFormat FORMAT =
+            new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.ROOT));
 
     private Money() {
     }
