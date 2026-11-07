@@ -1,7 +1,7 @@
 name: Veltryx
 version: '${project.version}'
 main: dev.superseller.veltryx.VeltryxPlugin
-api-version: '26.3'
+api-version: '26.2'
 folia-supported: true
 author: SuperSeller100X
 website: https://github.com/SuperSeller100X/MinecraftPlugins

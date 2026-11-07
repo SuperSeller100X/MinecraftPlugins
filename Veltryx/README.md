@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**. More modules (shop, and everything else) land in the same
 plugin in the next versions — the economy API is already built for it.
 
-- Version: **0.0.1-alpha** · api-version `26.3` · `folia-supported: true`
+- Version: **0.0.1-alpha** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
 - Storage: **YAML** (default) or **SQLite** — one config switch
 - No required dependencies. Vault bridge and PlaceholderAPI hooks are planned.
 
@@ -217,6 +217,22 @@ A CI workflow that runs the consistency checks, the unit tests and
 `mvn clean verify` on Temurin 25 is included at
 `Veltryx/.github/workflows/build.yml` (copy it to the repo root
 `.github/workflows/` to activate it).
+
+## 🚑 Troubleshooting
+
+### The plugin name shows red (in `/plugins` or the console)
+
+A red name means the plugin did **not** enable. Check the console — the fix depends on what is printed:
+
+| Console output | Cause | Fix |
+|---|---|---|
+| `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/Veltryx-0.0.1-alpha.jar` (NOT `original-...jar`, not `target/classes`) |
+| `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
+| `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
+| `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
+
+After a successful enable the console shows `[Veltryx] Veltryx 0.0.1-alpha enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 

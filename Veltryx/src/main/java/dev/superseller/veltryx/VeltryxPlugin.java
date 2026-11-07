@@ -34,6 +34,7 @@ import dev.superseller.veltryx.sus.SusCommand;
 import dev.superseller.veltryx.sus.SusGui;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import java.io.File;
+import java.util.logging.Level;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
@@ -67,43 +68,84 @@ public final class VeltryxPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-        saveResource("messages.yml", false);
+        String stage = "resource defaults";
+        try {
+            copyDefaults();
 
-        PlatformScheduler.init(this);
+            stage = "scheduler init";
+            PlatformScheduler.init(this);
 
-        config = new VeltryxConfig(getConfig());
-        messages = new Messages(this);
-        messages.reload();
+            stage = "configuration";
+            config = new VeltryxConfig(getConfig());
+            messages = new Messages(this);
+            messages.reload();
 
-        store = createDataStore();
-        store.load();
+            stage = "storage";
+            store = createDataStore();
+            store.load();
 
-        economy = new EconomyService(store, config);
-        bans = new BanService(store, messages, config);
-        mutes = new MuteService(store);
-        warns = new WarnService(store, config.warnExpirySeconds());
-        anticheat = new AntiCheatService(store, messages, config, bans);
-        obfuscator = new OreObfuscator(config);
-        vanish = new VanishService(this, config.joinVanishRemembers());
-        freeze = new FreezeService();
-        chatListener = new ChatListener(messages, mutes);
-        chatListener.setSlowchatSeconds(0);
-        ReportService reports = new ReportService(store, messages);
-        susGui = new SusGui(anticheat, bans, freeze, config, messages);
+            stage = "services";
+            economy = new EconomyService(store, config);
+            bans = new BanService(store, messages, config);
+            mutes = new MuteService(store);
+            warns = new WarnService(store, config.warnExpirySeconds());
+            anticheat = new AntiCheatService(store, messages, config, bans);
+            obfuscator = new OreObfuscator(config);
+            vanish = new VanishService(this, config.joinVanishRemembers());
+            freeze = new FreezeService();
+            chatListener = new ChatListener(messages, mutes);
+            chatListener.setSlowchatSeconds(0);
+            ReportService reports = new ReportService(store, messages);
+            susGui = new SusGui(anticheat, bans, freeze, config, messages);
 
-        EconomyRegistry.register(economy);
-        anticheat.startTimer();
-        startAutosave();
+            stage = "timers";
+            EconomyRegistry.register(economy);
+            anticheat.startTimer();
+            startAutosave();
 
-        registerCommands(reports);
-        registerListeners(reports);
+            stage = "commands";
+            registerCommands(reports);
 
-        getLogger().info("Veltryx " + getPluginMeta().getVersion() + " enabled on "
-                + (PlatformScheduler.isFolia() ? "Folia" : "Paper/Purpur")
-                + " using " + config.storageType() + " storage. Anti-cheat: "
-                + (config.anticheatEnabled() ? "on" : "off")
-                + ", xray obfuscation: " + (config.xrayObfuscation() ? "on" : "off") + ".");
+            stage = "listeners";
+            registerListeners(reports);
+
+            getLogger().info("Veltryx " + getPluginMeta().getVersion() + " enabled on "
+                    + (PlatformScheduler.isFolia() ? "Folia" : "Paper/Purpur")
+                    + " using " + config.storageType() + " storage. Anti-cheat: "
+                    + (config.anticheatEnabled() ? "on" : "off")
+                    + ", xray obfuscation: " + (config.xrayObfuscation() ? "on" : "off") + ".");
+        } catch (Throwable e) {
+            getLogger().log(Level.SEVERE, "Veltryx failed to enable during stage '" + stage
+                    + "'. Please report this error with the stack trace below.", e);
+            if (e instanceof RuntimeException runtime) {
+                throw runtime;
+            }
+            if (e instanceof Error error) {
+                throw error;
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Copies the default config and messages out of the jar. If the jar was
+     * repacked without its resources, log exactly what is missing instead of
+     * crashing the whole plugin.
+     */
+    private void copyDefaults() {
+        try {
+            saveDefaultConfig();
+        } catch (IllegalArgumentException e) {
+            getLogger().severe("config.yml is missing from the plugin jar! Build the plugin with "
+                    + "'mvn -B clean package' in Veltryx/ and use target/Veltryx-<version>.jar.");
+        }
+        try {
+            saveResource("messages.yml", false);
+        } catch (IllegalArgumentException e) {
+            getLogger().severe("messages.yml is missing from the plugin jar! Build the plugin with "
+                    + "'mvn -B clean package' in Veltryx/ and use target/Veltryx-<version>.jar. "
+                    + "Messages will show as 'Missing message' until this is fixed.");
+        }
     }
 
     @Override
