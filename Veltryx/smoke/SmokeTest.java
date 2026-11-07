@@ -100,6 +100,17 @@ public final class SmokeTest {
         t("merge flat key appended", flatMerged.contains("bans.none"), Boolean.TRUE);
         t("merge flat keeps value", flatMerged.contains("<red>No.</red>"), Boolean.TRUE);
 
+        // SpeedGuard.clampDelta: smooth server authority (no rubber-band)
+        {
+            double[] c1 = dev.superseller.veltryx.anticheat.SpeedGuard.clampDelta(3.0, 4.0, 2.5);
+            t("clamp scales down", Math.abs(Math.sqrt(c1[0] * c1[0] + c1[1] * c1[1]) - 2.5) < 1e-9, Boolean.TRUE);
+            t("clamp keeps direction", Math.abs(c1[0] / c1[1] - 3.0 / 4.0) < 1e-9, Boolean.TRUE);
+            double[] c2 = dev.superseller.veltryx.anticheat.SpeedGuard.clampDelta(0.3, 0.4, 2.5);
+            t("clamp leaves legal moves", c2[0] == 0.3 && c2[1] == 0.4, Boolean.TRUE);
+            double[] c3 = dev.superseller.veltryx.anticheat.SpeedGuard.clampDelta(0.0, 0.0, 1.0);
+            t("clamp zero safe", c3[0] == 0.0 && c3[1] == 0.0, Boolean.TRUE);
+        }
+
         // SpeedGuard: the tolerance must cover the fastest legitimate vanilla
         // movement (sprint-jump chains) and never false-flag it.
         {
@@ -147,6 +158,222 @@ public final class SmokeTest {
             t("sg under hard cap is not rollback",
                     dev.superseller.veltryx.anticheat.SpeedGuard.verdict(11.3, 6.5, 1.75, 2)
                             == dev.superseller.veltryx.anticheat.SpeedGuard.FLAG, Boolean.TRUE);
+        }
+
+        // PriceTable: the pure shop pricing model
+        {
+            String fixture = "ores:\n  display: \"Ores\"\n  icon: DIAMOND\n  items:\n"
+                    + "    DIAMOND: { buy: 8.00, sell: 5.20 }\n"
+                    + "    COAL: { buy: 0.25, sell: 0.16 }\n"
+                    + "junk-line-ignored\n"
+                    + "tools:\n  display: \"Tools\"\n  icon: IRON_PICKAXE\n  items:\n"
+                    + "    IRON_PICKAXE: { buy: 2.65, sell: 1.33 }\n";
+            var table = dev.superseller.veltryx.shop.PriceTable.parse(fixture);
+            t("pt size", table.size(), 3);
+            t("pt buy cents", table.buyCents("DIAMOND"), 800L);
+            t("pt sell cents", table.sellCents("COAL"), 16L);
+            t("pt unknown", table.sellCents("ELYTRA"), -1L);
+            t("pt categories", table.categories().size(), 2);
+            t("pt display name",
+                    dev.superseller.veltryx.shop.PriceTable.displayName("POLISHED_BLACKSTONE_BRICKS")
+                            .equals("Polished Blackstone Bricks"), Boolean.TRUE);
+            t("pt no dup", table.categories().get(0).items().size(), 2);
+        }
+
+        // Real shop.yml: anti-arbitrage is a verified property of the shipped table
+        try {
+            String shopText = new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Path.of("src/main/resources/shop.yml")));
+            var shop = dev.superseller.veltryx.shop.PriceTable.parse(shopText);
+            t("shop has almost all items", shop.size() > 600, Boolean.TRUE);
+
+            boolean sane = true;
+            for (var cat : shop.categories()) {
+                for (var e : cat.items()) {
+                    if (!(e.sellCents() > 0 && e.sellCents() < e.buyCents())) {
+                        sane = false;
+                    }
+                }
+            }
+            t("shop sell < buy everywhere", sane, Boolean.TRUE);
+
+            boolean excluded = true;
+            for (String banned : new String[] {"ELYTRA", "BEDROCK", "COMMAND_BLOCK", "CHAIN_COMMAND_BLOCK",
+                    "REPEATING_COMMAND_BLOCK", "COMMAND_BLOCK_MINECART", "BARRIER", "STRUCTURE_BLOCK",
+                    "STRUCTURE_VOID", "JIGSAW", "KNOWLEDGE_BOOK", "DEBUG_STICK", "PLAYER_HEAD", "DRAGON_EGG"}) {
+                if (shop.get(banned) != null) {
+                    excluded = false;
+                }
+            }
+            t("shop excludes op/elytra items", excluded, Boolean.TRUE);
+
+            // recipes: sell(outputs) must never exceed buy(inputs) — buying
+            // materials, crafting and selling always loses money
+            String[][] recipes = {
+                {"log->planks", "OAK_PLANKS*4", "OAK_LOG*1"},
+                {"planks->sticks", "STICK*4", "OAK_PLANKS*2"},
+                {"torch", "TORCH*4", "COAL*1,STICK*1"},
+                {"bread", "BREAD*1", "WHEAT*3"},
+                {"glass smelt", "GLASS*1", "SAND*1"},
+                {"stone smelt", "STONE*1", "COBBLESTONE*1"},
+                {"clay block", "CLAY*1", "CLAY_BALL*4"},
+                {"bricks 4->1", "BRICKS*1", "BRICK*4"},
+                {"nether bricks 4->4", "NETHER_BRICKS*4", "NETHER_BRICK*4"},
+                {"stone bricks 4->4", "STONE_BRICKS*4", "STONE*4"},
+                {"sandstone 4->4", "SANDSTONE*4", "SAND*4"},
+                {"USER blackstone example", "POLISHED_BLACKSTONE_BRICKS*4", "BLACKSTONE*4"},
+                {"quartz block", "QUARTZ_BLOCK*1", "QUARTZ*4"},
+                {"quartz decompress", "QUARTZ*4", "QUARTZ_BLOCK*1"},
+                {"iron block compress", "IRON_BLOCK*1", "IRON_INGOT*9"},
+                {"iron block decompress", "IRON_INGOT*9", "IRON_BLOCK*1"},
+                {"gold block decompress", "GOLD_INGOT*9", "GOLD_BLOCK*1"},
+                {"diamond block decompress", "DIAMOND*9", "DIAMOND_BLOCK*1"},
+                {"emerald block decompress", "EMERALD*9", "EMERALD_BLOCK*1"},
+                {"coal block decompress", "COAL*9", "COAL_BLOCK*1"},
+                {"lapis block decompress", "LAPIS_LAZULI*9", "LAPIS_BLOCK*1"},
+                {"redstone block decompress", "REDSTONE*9", "REDSTONE_BLOCK*1"},
+                {"raw iron decompress", "RAW_IRON*9", "RAW_IRON_BLOCK*1"},
+                {"netherite block decompress", "NETHERITE_INGOT*9", "NETHERITE_BLOCK*1"},
+                {"gold nugget decompress", "GOLD_NUGGET*9", "GOLD_INGOT*1"},
+                {"gold nugget compress", "GOLD_INGOT*1", "GOLD_NUGGET*9"},
+                {"iron nugget decompress", "IRON_NUGGET*9", "IRON_INGOT*1"},
+                {"netherite ingot", "NETHERITE_INGOT*1", "NETHERITE_SCRAP*4,GOLD_INGOT*4"},
+                {"melon block", "MELON*1", "MELON_SLICE*9"},
+                {"melon decompress max", "MELON_SLICE*7", "MELON*1"},
+                {"snow block", "SNOW_BLOCK*1", "SNOWBALL*4"},
+                {"snow decompress", "SNOWBALL*4", "SNOW_BLOCK*1"},
+                {"kelp block", "DRIED_KELP_BLOCK*1", "DRIED_KELP*9"},
+                {"kelp decompress", "DRIED_KELP*9", "DRIED_KELP_BLOCK*1"},
+                {"hay block", "HAY_BLOCK*1", "WHEAT*9"},
+                {"hay decompress", "WHEAT*9", "HAY_BLOCK*1"},
+                {"slime block", "SLIME_BLOCK*1", "SLIME_BALL*9"},
+                {"slime decompress", "SLIME_BALL*9", "SLIME_BLOCK*1"},
+                {"bone block", "BONE_BLOCK*1", "BONE_MEAL*9"},
+                {"bone decompress", "BONE_MEAL*9", "BONE_BLOCK*1"},
+                {"wart block", "NETHER_WART_BLOCK*1", "NETHER_WART*9"},
+                {"wart decompress", "NETHER_WART*9", "NETHER_WART_BLOCK*1"},
+                {"honeycomb block", "HONEYCOMB_BLOCK*1", "HONEYCOMB*4"},
+                {"honey block + bottles", "HONEY_BLOCK*1,GLASS_BOTTLE*4", "HONEY_BOTTLE*4"},
+                {"glowstone", "GLOWSTONE*1", "GLOWSTONE_DUST*4"},
+                {"glowstone decompress", "GLOWSTONE_DUST*4", "GLOWSTONE*1"},
+                {"string->wool", "WHITE_WOOL*1", "STRING*4"},
+                {"wool->carpet worst", "WHITE_CARPET*3", "WHITE_WOOL*2"},
+                {"bed", "WHITE_BED*1", "WHITE_WOOL*3,OAK_PLANKS*3"},
+                {"banner", "WHITE_BANNER*1", "WHITE_WOOL*6,STICK*1"},
+                {"mushroom stew + bowl", "MUSHROOM_STEW*1,BOWL*1", "BROWN_MUSHROOM*2"},
+                {"rabbit stew + bowl", "RABBIT_STEW*1,BOWL*1", "COOKED_RABBIT*1,CARROT*1,POTATO*1,BROWN_MUSHROOM*1"},
+                {"beetroot soup + bowl", "BEETROOT_SOUP*1,BOWL*1", "BEETROOT*6"},
+                {"cake + buckets", "CAKE*1,BUCKET*3", "MILK_BUCKET*3,SUGAR*2,EGG*1,WHEAT*3"},
+                {"pumpkin pie", "PUMPKIN_PIE*1", "PUMPKIN*1,SUGAR*1,EGG*1"},
+                {"golden apple", "GOLDEN_APPLE*1", "GOLD_INGOT*8,APPLE*1"},
+                {"golden carrot", "GOLDEN_CARROT*1", "GOLD_NUGGET*8,CARROT*1"},
+                {"glistering melon", "GLISTERING_MELON_SLICE*1", "GOLD_NUGGET*8,MELON_SLICE*1"},
+                {"paper", "PAPER*3", "SUGAR_CANE*3"},
+                {"book", "BOOK*1", "PAPER*3,LEATHER*1"},
+                {"bookshelf", "BOOKSHELF*1", "OAK_PLANKS*6,BOOK*3"},
+                {"enchanting table", "ENCHANTING_TABLE*1", "OBSIDIAN*4,DIAMOND*2,BOOK*1"},
+                {"beacon", "BEACON*1", "GLASS*5,NETHER_STAR*1,OBSIDIAN*3"},
+                {"conduit", "CONDUIT*1", "NAUTILUS_SHELL*8,HEART_OF_THE_SEA*1"},
+                {"tnt", "TNT*1", "GUNPOWDER*5,SAND*4"},
+                {"bow", "BOW*1", "STRING*3,STICK*3"},
+                {"shield", "SHIELD*1", "OAK_PLANKS*6,IRON_INGOT*1"},
+                {"bucket", "BUCKET*1", "IRON_INGOT*3"},
+                {"anvil", "ANVIL*1", "IRON_BLOCK*3,IRON_INGOT*4"},
+                {"hopper", "HOPPER*1", "IRON_INGOT*5,CHEST*1"},
+                {"observer", "OBSERVER*1", "COBBLESTONE*6,REDSTONE*2,QUARTZ*1"},
+                {"piston", "PISTON*1", "OAK_PLANKS*3,COBBLESTONE*4,IRON_INGOT*1,REDSTONE*1"},
+                {"sticky piston", "STICKY_PISTON*1", "PISTON*1,SLIME_BALL*1"},
+                {"lantern", "LANTERN*1", "IRON_NUGGET*8,TORCH*1"},
+                {"ladder x3", "LADDER*3", "STICK*7"},
+                {"bowl x4", "BOWL*4", "OAK_PLANKS*3"},
+                {"glass bottle x4", "GLASS_BOTTLE*4", "GLASS*3"},
+                {"glass pane x16", "GLASS_PANE*16", "GLASS*6"},
+                {"fire charge x3", "FIRE_CHARGE*3", "COAL*1,BLAZE_POWDER*1,GUNPOWDER*1"},
+                {"blaze powder x2", "BLAZE_POWDER*2", "BLAZE_ROD*1"},
+                {"magma cream", "MAGMA_CREAM*1", "BLAZE_POWDER*1,SLIME_BALL*1"},
+                {"wind charge x4", "WIND_CHARGE*4", "BREEZE_ROD*1"},
+                {"baked potato", "BAKED_POTATO*1", "POTATO*1"},
+                {"cooked beef", "COOKED_BEEF*1", "BEEF*1"},
+                {"charcoal", "CHARCOAL*1", "OAK_LOG*1"},
+                {"nether brick smelt", "NETHER_BRICK*1", "NETHERRACK*1"},
+                {"dried kelp smelt", "DRIED_KELP*1", "KELP*1"},
+                {"smooth stone", "SMOOTH_STONE*1", "STONE*1"},
+                {"stone slab x6", "STONE_SLAB*6", "STONE*3"},
+                {"stone slab back", "STONE*2", "STONE_SLAB*3"},
+                {"stone stairs x4", "STONE_STAIRS*4", "STONE*6"},
+                {"white dye <- meal", "WHITE_DYE*1", "BONE_MEAL*3"},
+                {"meal <- white dye", "BONE_MEAL*3", "WHITE_DYE*1"},
+                {"bone <- meal", "BONE_MEAL*3", "BONE*1"},
+                {"yellow dye <- flower", "YELLOW_DYE*1", "DANDELION*1"},
+                {"orange dye", "ORANGE_DYE*2", "RED_DYE*1,YELLOW_DYE*1"},
+                {"grindstone", "GRINDSTONE*1", "STICK*2,STONE_SLAB*1,OAK_PLANKS*2"},
+                {"fletching table", "FLETCHING_TABLE*1", "FLINT*2,OAK_PLANKS*4"},
+                {"flint and steel", "FLINT_AND_STEEL*1", "IRON_INGOT*1,FLINT*1"},
+                {"shears", "SHEARS*1", "IRON_INGOT*2"},
+                {"turtle helmet", "TURTLE_HELMET*1", "TURTLE_SCUTE*5"},
+                {"wolf armor", "WOLF_ARMOR*1", "ARMADILLO_SCUTE*6"},
+                {"spyglass", "SPYGLASS*1", "COPPER_INGOT*2,AMETHYST_SHARD*1"},
+                {"item frame", "ITEM_FRAME*1", "LEATHER*8,STICK*1"},
+                {"painting", "PAINTING*1", "WHITE_WOOL*8,STICK*1"},
+                {"armor stand", "ARMOR_STAND*1", "STICK*6,SMOOTH_STONE_SLAB*3"},
+                {"flower pot", "FLOWER_POT*1", "BRICK*3"},
+                {"candle", "WHITE_CANDLE*1", "STRING*1,HONEYCOMB*1"},
+                {"campfire", "CAMPFIRE*1", "STICK*3,COAL*1,OAK_LOG*3"},
+                {"brewing stand", "BREWING_STAND*1", "BLAZE_ROD*1,COBBLESTONE*3"},
+                {"cauldron", "CAULDRON*1", "IRON_INGOT*7"},
+                {"map", "MAP*1", "PAPER*8,COMPASS*1"},
+                {"clock", "CLOCK*1", "GOLD_INGOT*4,REDSTONE*1"},
+                {"compass", "COMPASS*1", "IRON_INGOT*4,REDSTONE*1"},
+                {"rail x16", "RAIL*16", "IRON_INGOT*6,STICK*1,REDSTONE*1"},
+                {"powered rail x6", "POWERED_RAIL*6", "GOLD_INGOT*6,STICK*1,REDSTONE*1"},
+                {"crafting table", "CRAFTING_TABLE*1", "OAK_PLANKS*4"},
+                {"chest", "CHEST*1", "OAK_PLANKS*8"},
+                {"smoker", "SMOKER*1", "OAK_LOG*4,FURNACE*1"},
+                {"blast furnace", "BLAST_FURNACE*1", "IRON_INGOT*5,FURNACE*1,SMOOTH_STONE*3"},
+                {"note block", "NOTE_BLOCK*1", "OAK_PLANKS*8,REDSTONE*1"},
+                {"jukebox", "JUKEBOX*1", "OAK_PLANKS*8,DIAMOND*1"},
+                {"lectern", "LECTERN*1", "BOOKSHELF*1,OAK_SLAB*4"},
+                {"composter", "COMPOSTER*1", "OAK_SLAB*7"},
+                {"beehive", "BEEHIVE*1", "OAK_PLANKS*6,HONEYCOMB*3"},
+                {"firework rocket", "FIREWORK_ROCKET*1", "PAPER*1,GUNPOWDER*1"},
+                {"respawn anchor", "RESPAWN_ANCHOR*1", "CRYING_OBSIDIAN*6,GLOWSTONE*3"},
+                {"lodestone", "LODESTONE*1", "CHISELED_STONE_BRICKS*8,NETHERITE_INGOT*1"},
+                {"copper bulb", "COPPER_BULB*1", "COPPER_INGOT*4,BLAZE_POWDER*1"},
+            };
+            boolean closed = true;
+            String worst = "";
+            for (String[] recipe : recipes) {
+                double outValue = 0;
+                for (String part : recipe[1].split(",")) {
+                    String[] mq = part.split("\\*");
+                    long sell = shop.sellCents(mq[0]);
+                    if (sell < 0) {
+                        closed = false;
+                        worst = recipe[0] + " missing " + mq[0];
+                    }
+                    outValue += sell * Integer.parseInt(mq[1]);
+                }
+                double inValue = 0;
+                for (String part : recipe[2].split(",")) {
+                    String[] mq = part.split("\\*");
+                    long buy = shop.buyCents(mq[0]);
+                    if (buy < 0) {
+                        closed = false;
+                        worst = recipe[0] + " missing " + mq[0];
+                    }
+                    inValue += buy * Integer.parseInt(mq[1]);
+                }
+                if (outValue > inValue + 0.001) {
+                    closed = false;
+                    worst = recipe[0] + " sells " + outValue + " for inputs worth " + inValue;
+                }
+            }
+            t("shop no buy-craft-sell exploit (" + recipes.length + " recipes)", closed, Boolean.TRUE);
+            if (!closed) {
+                System.out.println("   exploit: " + worst);
+            }
+        } catch (java.io.IOException e) {
+            t("shop.yml readable", Boolean.FALSE, Boolean.TRUE);
         }
 
         // Real templates: self-merge is a no-op and upgrades stay idempotent

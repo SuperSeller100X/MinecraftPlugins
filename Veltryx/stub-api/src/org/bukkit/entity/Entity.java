@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Vector;
 
 public interface Entity {
     UUID getUniqueId();
@@ -16,5 +17,7 @@ public interface Entity {
     boolean isGliding();
     boolean isRiptiding();
     float getFallDistance();
+    void setVelocity(Vector velocity);
+    Vector getVelocity();
     Server getServer();
 }

@@ -18,6 +18,11 @@ import dev.superseller.veltryx.punish.MuteService;
 import dev.superseller.veltryx.punish.OffendCommand;
 import dev.superseller.veltryx.punish.WarnCommand;
 import dev.superseller.veltryx.punish.WarnService;
+import dev.superseller.veltryx.shop.SellCommand;
+import dev.superseller.veltryx.shop.SellGui;
+import dev.superseller.veltryx.shop.ShopCommand;
+import dev.superseller.veltryx.shop.ShopGui;
+import dev.superseller.veltryx.shop.ShopService;
 import dev.superseller.veltryx.staff.ChatListener;
 import dev.superseller.veltryx.staff.FreezeService;
 import dev.superseller.veltryx.staff.LookupCommand;
@@ -68,6 +73,9 @@ public final class VeltryxPlugin extends JavaPlugin {
     private ChatListener chatListener;
     private SusGui susGui;
     private OffendGui offendGui;
+    private ShopService shopService;
+    private ShopGui shopGui;
+    private SellGui sellGui;
 
     @Override
     public void onEnable() {
@@ -102,6 +110,9 @@ public final class VeltryxPlugin extends JavaPlugin {
             offendGui = new OffendGui(config, messages, bans, anticheat);
             susGui = new SusGui(anticheat, bans, freeze, config, messages, offendGui);
             offendGui.attach(susGui);
+            shopService = new ShopService(economy, getDataFolder().toPath().resolve("shop.yml"));
+            shopGui = new ShopGui(shopService, messages);
+            sellGui = new SellGui(shopService, messages);
 
             stage = "timers";
             EconomyRegistry.register(economy);
@@ -146,6 +157,7 @@ public final class VeltryxPlugin extends JavaPlugin {
     public void syncResources() {
         mergeResource("config.yml");
         mergeResource("messages.yml");
+        mergeResource("shop.yml");
     }
 
     private void mergeResource(String name) {
@@ -196,6 +208,9 @@ public final class VeltryxPlugin extends JavaPlugin {
     /** Reloads config, messages and the anti-cheat plans (/veltryx reload). */
     public void reloadEverything() {
         syncResources();
+        if (shopService != null) {
+            shopService.reload();
+        }
         reloadConfig();
         config.reload(getConfig());
         messages.reload();
@@ -218,6 +233,10 @@ public final class VeltryxPlugin extends JavaPlugin {
     private void registerCommands(ReportService reports) {
         EcoCommand ecoCommand = new EcoCommand(economy, messages, config);
         bind("eco", ecoCommand, ecoCommand);
+        ShopCommand shopCommand = new ShopCommand(shopGui, shopService, messages);
+        bind("shop", shopCommand, shopCommand);
+        SellCommand sellCommand = new SellCommand(sellGui, messages);
+        bind("sell", sellCommand, sellCommand);
         OffendCommand offendCommand = new OffendCommand(config, messages, bans, anticheat, offendGui);
         bind("offend", offendCommand, offendCommand);
         BanCommand banCommand = new BanCommand(messages, bans, anticheat);
@@ -264,6 +283,8 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(freeze);
         register(susGui);
         register(offendGui);
+        register(shopGui);
+        register(sellGui);
     }
 
     private void startAutosave() {

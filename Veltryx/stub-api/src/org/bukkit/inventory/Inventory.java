@@ -3,5 +3,6 @@ public interface Inventory {
     void setItem(int index, ItemStack item);
     ItemStack getItem(int index);
     int getSize();
+    ItemStack[] getContents();
     InventoryHolder getHolder();
 }

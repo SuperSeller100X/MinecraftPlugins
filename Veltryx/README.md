@@ -29,6 +29,25 @@ restarts and shared by every future Veltryx module through the public
 - Starting balance for new players, configurable minimum transfer, saturated
   math (balances can never overflow or go negative)
 
+### 🛛️ Shop & selling (`/shop`, `/sell`)
+
+- **`/shop` (`/store`)** — a category GUI with **almost every obtainable item**
+  (970+): blocks, woods, ores, tools, armor, food, redstone, mob drops and
+  more. Elytra and operator-only items (command blocks, barriers, …) are not
+  sold. Left-click buys 1, shift-click buys a stack; every item shows buy and
+  sell price plus your balance.
+- **`/sell`** — a GUI listing everything sellable in your inventory with its
+  payout. Click an item to sell all of it, or sell everything with one button.
+  Sell prices are always below shop buy prices (~65% for gathered resources,
+  ~50% for crafted items).
+- **Fair, exploit-proof prices.** You earn money by *doing something* — mining,
+  farming, hunting — never by market games: buying materials, crafting and
+  selling **always loses money** (verified against 170+ recipes in the smoke
+  tests, including compression/decompression loops like ingot ↔ block). Prices
+  live in `shop.yml`, are editable per server, and new items are added on
+  updates while keeping your values.
+- New players still start with **$100** (`economy.starting-balance`).
+
 ### 🛡️ Anti-cheat
 
 Server-side detections that auto-escalate: **flag → alert staff → kick →
@@ -47,9 +66,11 @@ violation-level decay keep false positives near zero.
 
 - **Server authority (movement):** the server has the last word — movement that
   is impossible for vanilla clients (`speed-hard-cap: 1.75` × the limit) is
-  **rolled back instantly**, so speed and flight hacks physically cannot move.
-  Confirmed flight pulls the player back down. Borderline speeds are tolerated
-  and never rolled back.
+  **clamped smoothly** (the player glides at the cap in their own direction —
+  no rubber-band, no lag feel, no getting stuck), so speed hacks physically
+  cannot outrun the server. Confirmed flight gets a gentle gravity-like pull
+  down that looks like normal falling. Borderline speeds are tolerated and
+  never clamped, and clamped movement never feeds any violation level.
 - **Speed without false flags:** the limit covers the fastest legitimate
   vanilla movement — sprint-jump chains (~7.5–8 b/s, the way everyone moves),
   speed potions, ice, soul speed and slime launches all widen it automatically,
@@ -140,6 +161,8 @@ A chest GUI listing every online player sorted by **suspicion score**
 | Command | Permission | Default |
 |---|---|---|
 | `/eco` (`/bal`, `/balance`, `/money`) | `veltryx.eco.balance` / `.pay` / `.top` / `.admin` | true / op |
+| `/shop` (`/store`) [category] | `veltryx.shop` | true |
+| `/sell` | `veltryx.sell` | true |
 | `/offend` | `veltryx.offend` | op |
 | `/ban` | `veltryx.bans.ban` | op |
 | `/bans` · `/unban` | `veltryx.bans.manage` | op |

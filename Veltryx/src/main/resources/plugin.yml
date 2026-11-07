@@ -12,6 +12,13 @@ commands:
     description: Economy — balance, pay, top and admin money management.
     usage: /<command> [balance|pay|top|give|take|set|reset|help] [player] [amount]
     aliases: [balance, bal, money]
+  shop:
+    description: Buy items at fair prices — almost every obtainable item.
+    usage: /<command> [category]
+    aliases: [store]
+  sell:
+    description: Sell items from your inventory for money (a bit below shop price).
+    usage: /<command>
   offend:
     description: Ban a player with a category ban (xray/esp = 30 days, hacking = permanent).
     usage: /<command> <player> <reason> [details]
@@ -92,6 +99,8 @@ permissions:
     default: op
     children:
       veltryx.eco.*: true
+      veltryx.shop: true
+      veltryx.sell: true
       veltryx.anticheat.alerts: true
       veltryx.anticheat.bypass: true
       veltryx.sus: true
@@ -113,6 +122,12 @@ permissions:
       veltryx.eco.pay: true
       veltryx.eco.top: true
       veltryx.eco.admin: true
+  veltryx.shop:
+    description: Use the /shop GUI to buy items.
+    default: true
+  veltryx.sell:
+    description: Use the /sell GUI to sell items.
+    default: true
   veltryx.eco.balance:
     description: Check your own balance.
     default: true

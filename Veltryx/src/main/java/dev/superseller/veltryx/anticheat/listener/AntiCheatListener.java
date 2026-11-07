@@ -2,6 +2,7 @@ package dev.superseller.veltryx.anticheat.listener;
 
 import dev.superseller.veltryx.anticheat.AntiCheatService;
 import dev.superseller.veltryx.anticheat.SpeedGuard;
+import org.bukkit.util.Vector;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.PlayerTrace;
@@ -237,16 +238,22 @@ public final class AntiCheatListener implements Listener {
                 trace.setSpeedExcessStreak(streak + 1);
                 String detail = String.format(Locale.ROOT, "%.1f b/s (limit %.1f)", horizontal, limit);
                 if (verdict == SpeedGuard.ROLLBACK) {
-                    // Server authority: the server has the last word. Impossible
-                    // movement is rejected and the player is put back where they
-                    // legally were — speed hacks physically cannot move.
+                    // Server authority, smoothly: instead of snapping the player
+                    // back (rubber-band = lag feel), the movement is clamped
+                    // along its own direction to the hard cap. The player glides
+                    // at the limit — speed hacks cannot outrun it and nothing
+                    // ever looks like lag or bugs the player into geometry.
                     if (config.serverAuthority()) {
-                        event.setTo(new Location(from.getWorld(), from.getX(), from.getY(),
-                                from.getZ(), from.getYaw(), from.getPitch()));
-                        trace.recordPosition(from.getX(), from.getY(), from.getZ(), nowNanos);
-                        trace.setSpeedGraceUntilMillis(nowMillis + 450L);
+                        double maxDist = limit * config.speedHardCap() * seconds;
+                        double[] clamped = SpeedGuard.clampDelta(dx, dz, maxDist);
+                        double nx = from.getX() + clamped[0];
+                        double nz = from.getZ() + clamped[1];
+                        event.setTo(new Location(from.getWorld(), nx, to.getY(), nz,
+                                to.getYaw(), to.getPitch()));
+                        trace.recordPosition(nx, to.getY(), nz, nowNanos);
+                        trace.setSpeedGraceUntilMillis(nowMillis + 250L);
                     }
-                    service.flag(player, CheckType.SPEED, streak >= 1 ? 2.5 : 0.8, detail + " — rolled back");
+                    service.flag(player, CheckType.SPEED, streak >= 1 ? 2.5 : 0.8, detail + " — clamped");
                 } else if (verdict == SpeedGuard.FLAG) {
                     service.flag(player, CheckType.SPEED, 1.0 + Math.min(3.0, (horizontal - limit) / 2.0), detail);
                 }
@@ -276,13 +283,15 @@ public final class AntiCheatListener implements Listener {
                         1.2 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
                         String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)",
                                 airborneSeconds, dy));
-                // Server authority: once flight is confirmed (never fires for
-                // legitimate air time), the server pulls the player back down.
+                // Server authority, smoothly: once flight is confirmed (never
+                // fires for legitimate air time), a gentle gravity-like pull
+                // drains the hacked elevation. Velocity is client-predicted, so
+                // this looks and feels like normal falling — no rubber-band
+                // stutter, no "lag in the air", no getting stuck — while the
+                // kick/ban escalation handles anything that keeps defying it.
                 if (config.serverAuthority()) {
-                    event.setTo(new Location(from.getWorld(), from.getX(), from.getY() - 0.35,
-                            from.getZ(), from.getYaw(), from.getPitch()));
-                    trace.recordPosition(from.getX(), from.getY() - 0.35, from.getZ(), nowNanos);
-                    trace.setSpeedGraceUntilMillis(nowMillis + 450L);
+                    Vector velocity = player.getVelocity();
+                    player.setVelocity(new Vector(velocity.getX() * 0.92, -0.32, velocity.getZ() * 0.92));
                 }
             }
         }

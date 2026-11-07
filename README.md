@@ -301,6 +301,12 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
 `VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
+- **`/shop` (`/store`) + `/sell`** — buy/sell GUIs for **almost every obtainable
+  item** (970+, no elytra, no operator-only blocks) with fair buy and sell
+  prices; new players still start with **$100**. The pricing is
+  **exploit-proof**: buying materials, crafting and selling always loses money
+  (verified against 170+ recipes), so money is only earned by doing something —
+  mining, farming, hunting — never by market games. Prices live in `shop.yml`.
 - `/ban <player> [duration] <reason>` — general custom bans (permanent when no duration;
   shadows vanilla `/ban`, never touches Minecraft's ban list) · `/offend <player> <reason>` —
   `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
@@ -317,7 +323,10 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   while ping and TPS are healthy — designed not to false ban. Creative, spectator
   and bypassed players are never checked. Flag → alert → kick → auto-ban
   escalation, fully configurable per check. Anti-xray is client-side and
-  flash-free (ores ride behind the chunk packet).
+  flash-free (ores ride behind the chunk packet). **Server authority without
+  lag feel**: impossible movement is clamped smoothly (no rubber-band, players
+  never bug out) and confirmed flight gets a gentle gravity pull — clamped
+  movement never feeds violation levels, so corrections cannot cause false bans.
 - `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
   levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,

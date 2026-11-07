@@ -66,6 +66,23 @@ public final class SpeedGuard {
     }
 
     /**
+     * Smooth server-authority clamp: scale a horizontal delta so it covers at
+     * most {@code maxDistance} while keeping the movement direction. The
+     * player glides at the cap instead of being snapped back — no rubber-band
+     * stutter, no lag feel, and speed hacks cannot outrun the clamp.
+     *
+     * @return {@code {clampedDx, clampedDz}}
+     */
+    public static double[] clampDelta(double dx, double dz, double maxDistance) {
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance <= maxDistance || distance == 0.0) {
+            return new double[] {dx, dz};
+        }
+        double scale = maxDistance / distance;
+        return new double[] {dx * scale, dz * scale};
+    }
+
+    /**
      * Verdict for one movement sample.
      *
      * @param horizontal        horizontal blocks/s of the sample

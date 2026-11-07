@@ -145,6 +145,19 @@ freeze.notify: "<red>You were frozen by <white>{staff}</white>. Do not move.</re
 vanish.enabled: "<green>You are now vanished.</green>"
 vanish.disabled: "<green>You are visible again.</green>"
 
+# ------------------------------------------------------------- shop
+shop.buy-done: "<green>Bought <white>{amount}x {item}</white> for <white>{price}</white>. <gray>Balance: <white>{balance}</white></gray></green>"
+shop.cannot-afford: "<red>That costs <white>{price}</white> — you only have <white>{balance}</white>.</red>"
+shop.no-space: "<red>Not enough inventory space.</red>"
+shop.no-price: "<red>This item cannot be bought here.</red>"
+shop.sold: "<green>Sold <white>{amount}x {item}</white> for <white>{price}</white>. <gray>Balance: <white>{balance}</white></gray></green>"
+shop.sold-all: "<green>Sold your items for <white>{price}</white>. <gray>Balance: <white>{balance}</white></gray></green>"
+shop.nothing: "<red>Nothing in your inventory can be sold.</red>"
+shop.no-sell: "<red>This item cannot be sold here.</red>"
+shop.players-only: "<red>Only players can use this.</red>"
+shop.no-permission: "<red>You do not have permission.</red>"
+shop.unknown-category: "<red>Unknown category <white>{category}</white>.</red>"
+
 # ------------------------------------------------------------- veltryx
 veltryx.reloaded: "<green>Configuration and messages reloaded.</green>"
 veltryx.version: "<gray>Veltryx version:</gray> <white>{version}</white>"
