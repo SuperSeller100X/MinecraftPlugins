@@ -67,3 +67,7 @@ HourGlass/players/
 HourGlass/data/
 HourGlass/exports/
 HourGlass/*.csv
+
+# Veltryx
+Veltryx/target/
+Veltryx/veltryx.db

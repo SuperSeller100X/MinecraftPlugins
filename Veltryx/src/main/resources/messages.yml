@@ -1,0 +1,148 @@
+# =====================================================================
+#  Veltryx messages — MiniMessage format
+#  https://docs.advntr.dev/minimessage/format.html
+#  Placeholders use {name} and are always inserted unparsed.
+#  Templates may contain \n to span multiple chat lines (ban screen).
+# =====================================================================
+
+prefix: "<gradient:#22d3ee:#a3e635><bold>Veltryx</bold></gradient> <dark_gray>»</dark_gray> "
+
+# ---------------------------------------------------------------- general
+general.no-permission: "<red>You don't have permission to do that.</red>"
+general.players-only: "<red>Only players can use this command.</red>"
+general.player-not-found: "<red>Could not find a player named <white>{input}</white>.</red>"
+general.invalid-amount: "<red><white>{input}</white> is not a valid amount.</red>"
+general.unknown-subcommand: "<red>Unknown sub-command <white>{input}</white>. Try <white>{command} help</white>.</red>"
+
+# --------------------------------------------------------------- economy
+economy.starting-balance: "<green>Welcome! You received a starting balance of <white>{amount}</white>.</green>"
+economy.balance-self: "<gray>Balance:</gray> <green>{amount}</green>"
+economy.balance-other: "<gray>{player}'s balance:</gray> <green>{amount}</green>"
+economy.pay-self: "<red>You cannot pay yourself.</red>"
+economy.pay-sent: "<green>Sent <white>{amount}</white> to <white>{player}</white>.</green>"
+economy.pay-received: "<green>Received <white>{amount}</white> from <white>{player}</white>.</green>"
+economy.below-minimum: "<red>The minimum transfer is <white>{amount}</white>.</red>"
+economy.not-enough: "<red>You don't have <white>{amount}</white>.</red>"
+economy.top-header: "<gray>——— <green>Money top {count}</green> ———</gray>"
+economy.top-entry: "<gray>{position}.</gray> <white>{player}</white> <dark_gray>—</dark_gray> <green>{amount}</green>"
+economy.usage-pay: "<red>Usage: <white>/eco pay <player> <amount></white></red>"
+economy.usage-admin: "<red>Usage: <white>{command} <player> <amount></white></red>"
+economy.admin-given: "<green>Gave <white>{amount}</white> to <white>{player}</white>. Balance: <white>{balance}</white>.</green>"
+economy.admin-taken: "<green>Took <white>{amount}</white> from <white>{player}</white>. Balance: <white>{balance}</white>.</green>"
+economy.admin-set: "<green>Set <white>{player}</white>'s balance to <white>{amount}</white>.</green>"
+economy.admin-reset: "<green>Reset <white>{player}</white>'s balance to zero.</green>"
+economy.help-header: "<gray>——— <green>Economy</green> ———</gray>"
+economy.help-balance: "<white>{command} balance</white> <gray>— check your money</gray>"
+economy.help-pay: "<white>{command} pay <player> <amount></white> <gray>— send money</gray>"
+economy.help-top: "<white>{command} top</white> <gray>— richest players</gray>"
+economy.help-admin: "<white>{command} give|take|set|reset <player> <amount></white> <gray>— manage money</gray>"
+
+# ------------------------------------------------------------- anticheat
+anticheat.alert: "<red><bold>AC</bold></red> <gray>»</gray> <white>{player}</white> <red>failed</red> <white>{check}</white> <gray>(VL {vl}, ping {ping})</gray> <dark_gray>»</dark_gray> <gray>{detail}</gray>"
+anticheat.kick: "<red><bold>You were kicked by the anti-cheat</bold></red>\n<gray>Check:</gray> <white>{check}</white>\n<gray>Reason:</gray> <white>{reason}</white>\n<gray>If you believe this is a mistake, appeal with proof.</gray>"
+anticheat.punished: "<red><bold>AC</bold></red> <gray>»</gray> <white>{player}</white> <red>{action}</red> <gray>—</gray> <white>{check}</white> <dark_gray>(</dark_gray><gray>{duration}</gray><dark_gray>)</dark_gray>"
+
+# --------------------------------------------------------------- bans
+ban-screen.header: "<red><bold>You are banned from this server</bold></red>"
+ban-screen.body: "<gray>Reason:</gray> <white>{reason}</white>\n<gray>Category:</gray> <white>{category}</white>\n<gray>Ban ID:</gray> <white>{id}</white>\n<gray>Expires:</gray> <white>{expires}</white>\n<gray>Staff:</gray> <white>{staff}</white>\n<gray>Appeal:</gray> <white>{appeal}</white>"
+bans.header: "<gray>——— <red>Active bans ({count})</red> ———</gray>"
+bans.entry: "<dark_gray>[{id}]</dark_gray> <white>{player}</white> <gray>—</gray> <red>{category}</red> <gray>»</gray> <white>{reason}</white> <dark_gray>|</dark_gray> <gray>expires {expires}</gray> <dark_gray>|</dark_gray> <gray>by {staff}</gray>"
+bans.none: "<green>There are no active bans.</green>"
+bans.history-header: "<gray>——— <red>Ban history of {player} ({count})</red> ———</gray>"
+bans.no-history: "<green>{player} has no ban history.</green>"
+unban.usage: "<red>Usage: <white>{command} <player|ban-id></white></red>"
+unban.done: "<green>Lifted the ban of <white>{player}</white> <dark_gray>([{id}])</dark_gray>.</green>"
+unban.not-found: "<red>No active ban found for <white>{input}</white>.</red>"
+
+# --------------------------------------------------------------- offend
+offend.usage: "<red>Usage: <white>{command} <player> <reason> [details]</white> <gray>(reasons: xray/esp, hacking)</gray></red>"
+offend.unknown-reason: "<red>Unknown reason <white>{input}</white>. Valid reasons: <white>{reasons}</white>.</red>"
+offend.done: "<green>Banned <white>{player}</white> — <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray></green>"
+offend.staff-note: "<yellow>{staff}</yellow> <gray>offended</gray> <white>{player}</white> <gray>—</gray> <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray>"
+
+# ---------------------------------------------------------------- mutes
+mute.usage: "<red>Usage: <white>{command} <player> [duration] [reason]</white></red>"
+mute.done: "<green>Muted <white>{player}</white> <gray>(</gray><white>{duration}</white><gray>) —</gray> <white>{reason}</white> <dark_gray>[{id}]</dark_gray></green>"
+mute.notify: "<red>You were muted <gray>(</gray><white>{duration}</white><gray>)</gray> by <white>{staff}</white>: <white>{reason}</white></red>"
+mute.blocked: "<red>You are muted: <white>{reason}</white> <gray>(remaining: {remaining})</gray></red>"
+unmute.usage: "<red>Usage: <white>/unmute <player></white></red>"
+unmute.done: "<green>Unmuted <white>{player}</white>.</green>"
+unmute.none: "<red><white>{player}</white> is not muted.</red>"
+
+# --------------------------------------------------------------- warns
+warn.usage: "<red>Usage: <white>{command} <player> <reason></white></red>"
+warn.done: "<green>Warned <white>{player}</white>: <white>{reason}</white> <gray>(active warns: {count})</gray></green>"
+warn.notify: "<red>You were warned by <white>{staff}</white>: <white>{reason}</white> <gray>({count}/{threshold} warnings)</gray></red>"
+warn.threshold-kick: "<red><bold>You were kicked</bold></red>\n<gray>You reached {count} active warnings.</gray>"
+warn.threshold-kicked: "<red><white>{player}</white> was kicked — {count} active warnings.</red>"
+warn.threshold-muted: "<red><white>{player}</white> was muted for 1h — {count} active warnings.</red>"
+warn.threshold-banned: "<red><white>{player}</white> was banned for 24h — {count} active warnings.</red>"
+warns.usage: "<red>Usage: <white>/warns <player></white></red>"
+warns.none: "<green><white>{player}</white> has no active warnings.</green>"
+warns.header: "<gray>——— <yellow>Warnings of {player} ({count})</yellow> ———</gray>"
+warns.entry: "<dark_gray>[{id}]</dark_gray> <white>{reason}</white> <gray>by {staff} at {issued}</gray>"
+
+# ------------------------------------------------------------------ sus
+sus.kicked: "<red>You were kicked by <white>{staff}</white>.</red>"
+sus.kick-done: "<green>Kicked <white>{player}</white>.</green>"
+
+# --------------------------------------------------------------- lookup
+lookup.usage: "<red>Usage: <white>{command} <player></white></red>"
+lookup.header: "<gray>——— <aqua>Lookup: {player}</aqua> ———</gray>"
+lookup.identity: "<gray>UUID:</gray> <white>{uuid}</white> <dark_gray>|</dark_gray> <gray>Name:</gray> <white>{name}</white>"
+lookup.activity: "<gray>First seen:</gray> <white>{first}</white> <dark_gray>|</dark_gray> <gray>Last:</gray> <white>{last}</white> <dark_gray>|</dark_gray> <gray>Playtime:</gray> <white>{playtime}</white> <dark_gray>|</dark_gray> <gray>Joins:</gray> <white>{joins}</white>"
+lookup.unknown: "<gray>No profile recorded yet.</gray>"
+lookup.money: "<gray>Balance:</gray> <green>{amount}</green>"
+lookup.online: "<gray>Ping:</gray> <white>{ping}ms</white> <dark_gray>|</dark_gray> <gray>World:</gray> <white>{world}</white> <dark_gray>|</dark_gray> <gray>Mode:</gray> <white>{gamemode}</white>"
+lookup.moderation: "<gray>Active bans:</gray> <white>{bans}</white> <dark_gray>|</dark_gray> <gray>Mutes:</gray> <white>{mutes}</white> <dark_gray>|</dark_gray> <gray>Warns:</gray> <white>{warns}</white> <dark_gray>|</dark_gray> <gray>Flags:</gray> <white>{flags}</white>"
+
+# ---------------------------------------------------------------- notes
+notes.usage: "<red>Usage: <white>{command} <player> add <text> | list | clear [id]</white></red>"
+notes.added: "<green>Note <dark_gray>[{id}]</dark_gray> added to <white>{player}</white>: <gray>{note}</gray></green>"
+notes.none: "<green><white>{player}</white> has no notes.</green>"
+notes.header: "<gray>——— <aqua>Notes on {player} ({count})</aqua> ———</gray>"
+notes.entry: "<dark_gray>[{id}]</dark_gray> <gray>{issued} by {staff}:</gray> <white>{note}</white>"
+notes.cleared-one: "<green>Removed note <dark_gray>[{id}]</dark_gray>.</green>"
+notes.cleared: "<green>Removed <white>{count}</white> notes from <white>{player}</white>.</green>"
+
+# --------------------------------------------------------------- report
+report.usage: "<red>Usage: <white>{command} <player> <reason></white></red>"
+report.self: "<red>You cannot report yourself.</red>"
+report.filed: "<green>Reported <white>{player}</white>: <white>{reason}</white> <dark_gray>[{id}]</dark_gray>. Staff have been notified.</green>"
+report.filed-staff: "<yellow>Report</yellow> <dark_gray>[{id}]</dark_gray> <gray>from</gray> <white>{reporter}</white> <gray>→</gray> <white>{player}</white> <gray>»</gray> <white>{reason}</white>"
+reports.usage: "<red>Usage: <white>{command} [page|resolve <id>]</white></red>"
+reports.none: "<green>There are no open reports.</green>"
+reports.header: "<gray>——— <yellow>Open reports</yellow> <gray>(page {page}/{pages}, {count} total)</gray> ———</gray>"
+reports.entry: "<dark_gray>[{id}]</dark_gray> <white>{player}</white> <gray>reported by</gray> <white>{reporter}</white> <gray>»</gray> <white>{reason}</white> <dark_gray>|</dark_gray> <gray>{issued}</gray>"
+reports.not-found: "<red>No open report with id <white>{input}</white>.</red>"
+reports.resolved: "<green>Resolved report <dark_gray>[{id}]</dark_gray> on <white>{player}</white>.</green>"
+
+# ------------------------------------------------------------ staff tools
+ping.self: "<gray>Your ping:</gray> <white>{ping}ms</white>"
+ping.other: "<gray>{player}'s ping:</gray> <white>{ping}ms</white>"
+tps.info: "<gray>TPS:</gray> <white>{tps1}</white> <dark_gray>(5m {tps5}, 15m {tps15})</dark_gray>"
+broadcast.usage: "<red>Usage: <white>{command} <message></white></red>"
+clearchat.done: "<green>Chat cleared.</green>"
+clearchat.cleared: "<gray>Chat was cleared by <white>{staff}</white>.</gray>"
+slowchat.usage: "<red>Usage: <white>{command} <seconds|off></white></red>"
+slowchat.enabled: "<green>Slowchat enabled: <white>{seconds}s</white> between messages.</green>"
+slowchat.disabled: "<green>Slowchat disabled.</green>"
+slowchat.status-on: "<gray>Slowchat is on: <white>{seconds}s</white>. Use <white>/slowchat off</white> to disable.</gray>"
+slowchat.status-off: "<gray>Slowchat is off. Use <white>/slowchat <seconds></white> to enable.</gray>"
+slowchat.waiting: "<red>Slowchat: wait <white>{seconds}s</white>.</red>"
+staffchat.usage: "<red>Usage: <white>{command} <message></white> or <white>{command} toggle</white></red>"
+staffchat.format: "<dark_gray>[</dark_gray><red><bold>SC</bold></red><dark_gray>]</dark_gray> <white>{staff}</white><gray>:</gray> <white>{message}</white>"
+staffchat.enabled: "<green>You now receive staff chat.</green>"
+staffchat.disabled: "<green>You no longer receive staff chat.</green>"
+freeze.usage: "<red>Usage: <white>{command} <player></white></red>"
+freeze.frozen: "<green>Froze <white>{player}</white>.</green>"
+freeze.unfrozen: "<green>Unfroze <white>{player}</white>.</green>"
+freeze.notify: "<red>You were frozen by <white>{staff}</white>. Do not move.</red>"
+vanish.enabled: "<green>You are now vanished.</green>"
+vanish.disabled: "<green>You are visible again.</green>"
+
+# ------------------------------------------------------------- veltryx
+veltryx.reloaded: "<green>Configuration and messages reloaded.</green>"
+veltryx.version: "<gray>Veltryx version:</gray> <white>{version}</white>"
+veltryx.info-header: "<gray>——— <green>Veltryx</green> <white>{version}</white> ———</gray>"
+veltryx.info-body: "<gray>Storage:</gray> <white>{storage}</white> <dark_gray>|</dark_gray> <gray>Platform:</gray> <white>{platform}</white> <dark_gray>|</dark_gray> <gray>Players:</gray> <white>{players}</white>"

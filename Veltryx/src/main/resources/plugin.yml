@@ -1,0 +1,206 @@
+name: Veltryx
+version: '${project.version}'
+main: dev.superseller.veltryx.VeltryxPlugin
+api-version: '26.3'
+folia-supported: true
+author: SuperSeller100X
+website: https://github.com/SuperSeller100X/MinecraftPlugins
+description: All-in-one server core — custom economy, anti-cheat with anti-xray, custom bans (/offend), /sus investigation GUI and admin tools.
+
+commands:
+  eco:
+    description: Economy — balance, pay, top and admin money management.
+    usage: /<command> [balance|pay|top|give|take|set|reset|help] [player] [amount]
+    aliases: [balance, bal, money]
+  offend:
+    description: Ban a player with a category ban (xray/esp = 30 days, hacking = permanent).
+    usage: /<command> <player> <reason> [details]
+  bans:
+    description: List active bans or the ban history of a player.
+    usage: /<command> [player]
+    aliases: [banlist]
+  unban:
+    description: Lift an active ban by player name or ban id.
+    usage: /<command> <player|ban-id>
+  sus:
+    description: Open the suspicion GUI — players flagged by the anti-cheat.
+    usage: /<command> [player]
+  lookup:
+    description: Inspect a player — identity, playtime, money and moderation record.
+    usage: /<command> <player>
+    aliases: [whois]
+  notes:
+    description: Staff notes on a player.
+    usage: /<command> <player> [add <text>|list|clear [id]]
+  warn:
+    description: Warn a player.
+    usage: /<command> <player> <reason>
+  warns:
+    description: List the active warnings of a player.
+    usage: /<command> <player>
+  mute:
+    description: Mute a player in chat.
+    usage: /<command> <player> [duration] [reason]
+  unmute:
+    description: Remove a player's chat mute.
+    usage: /<command> <player>
+  freeze:
+    description: Freeze or unfreeze a player in place.
+    usage: /<command> <player>
+  vanish:
+    description: Toggle staff vanish.
+    usage: /<command>
+    aliases: [v]
+  staffchat:
+    description: Send a message to staff chat or toggle receiving it.
+    usage: /<command> [toggle] <message>
+    aliases: [sc]
+  report:
+    description: Report a player to the staff team.
+    usage: /<command> <player> <reason>
+  reports:
+    description: Review open player reports.
+    usage: /<command> [page|resolve <id>]
+  broadcast:
+    description: Broadcast a formatted announcement to the whole server.
+    usage: /<command> <message>
+    aliases: [bc]
+  clearchat:
+    description: Clear the chat for everyone.
+    usage: /<command>
+    aliases: [cc]
+  slowchat:
+    description: Slow down chat for non-staff players.
+    usage: /<command> [seconds|off]
+  ping:
+    description: Show your ping or another player's ping.
+    usage: /<command> [player]
+  tps:
+    description: Show server TPS and MSPT.
+    usage: /<command>
+  veltryx:
+    description: Veltryx administration — reload, version and info.
+    usage: /<command> [reload|version|info]
+    aliases: [vx]
+
+permissions:
+  veltryx.*:
+    description: Grants every Veltryx permission.
+    default: op
+    children:
+      veltryx.eco.*: true
+      veltryx.anticheat.alerts: true
+      veltryx.anticheat.bypass: true
+      veltryx.sus: true
+      veltryx.offend: true
+      veltryx.bans.manage: true
+      veltryx.moderation.*: true
+      veltryx.staff.*: true
+      veltryx.admin.*: true
+      veltryx.ping: true
+      veltryx.ping.others: true
+      veltryx.tps: true
+      veltryx.report: true
+  veltryx.eco.*:
+    description: Grants every economy permission.
+    default: op
+    children:
+      veltryx.eco.balance: true
+      veltryx.eco.pay: true
+      veltryx.eco.top: true
+      veltryx.eco.admin: true
+  veltryx.eco.balance:
+    description: Check your own balance.
+    default: true
+  veltryx.eco.pay:
+    description: Pay money to another player.
+    default: true
+  veltryx.eco.top:
+    description: View the money leaderboard.
+    default: true
+  veltryx.eco.admin:
+    description: Give, take, set and reset player balances.
+    default: op
+  veltryx.anticheat.alerts:
+    description: Receive anti-cheat flag alerts.
+    default: op
+  veltryx.anticheat.bypass:
+    description: Never be checked or flagged by the anti-cheat.
+    default: op
+  veltryx.sus:
+    description: Open the /sus investigation GUI.
+    default: op
+  veltryx.offend:
+    description: Use /offend to issue category bans.
+    default: op
+  veltryx.bans.manage:
+    description: View bans, histories and unban players.
+    default: op
+  veltryx.moderation.*:
+    description: Grants every moderation permission.
+    default: op
+    children:
+      veltryx.moderation.warn: true
+      veltryx.moderation.mute: true
+      veltryx.moderation.freeze: true
+      veltryx.moderation.notes: true
+      veltryx.moderation.lookup: true
+      veltryx.moderation.reports: true
+  veltryx.moderation.warn:
+    description: Warn players and view warnings.
+    default: op
+  veltryx.moderation.mute:
+    description: Mute and unmute players.
+    default: op
+  veltryx.moderation.freeze:
+    description: Freeze and unfreeze players.
+    default: op
+  veltryx.moderation.notes:
+    description: Manage staff notes.
+    default: op
+  veltryx.moderation.lookup:
+    description: Use /lookup on players.
+    default: op
+  veltryx.moderation.reports:
+    description: Review and resolve player reports.
+    default: op
+  veltryx.staff.*:
+    description: Grants every staff-tool permission.
+    default: op
+    children:
+      veltryx.staff.vanish: true
+      veltryx.staff.chat: true
+  veltryx.staff.vanish:
+    description: Toggle staff vanish.
+    default: op
+  veltryx.staff.chat:
+    description: Send and read staff chat.
+    default: op
+  veltryx.admin.*:
+    description: Grants every server-administration permission.
+    default: op
+    children:
+      veltryx.admin.broadcast: true
+      veltryx.admin.chat: true
+      veltryx.admin.reload: true
+  veltryx.admin.broadcast:
+    description: Broadcast announcements.
+    default: op
+  veltryx.admin.chat:
+    description: Clear chat and set slowchat.
+    default: op
+  veltryx.admin.reload:
+    description: Reload the Veltryx configuration and messages.
+    default: op
+  veltryx.ping:
+    description: Check your own ping.
+    default: true
+  veltryx.ping.others:
+    description: Check another player's ping.
+    default: op
+  veltryx.tps:
+    description: View server TPS and MSPT.
+    default: true
+  veltryx.report:
+    description: Report players to the staff team.
+    default: true

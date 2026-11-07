@@ -291,3 +291,35 @@ See [HourGlass/README.md](HourGlass/README.md). Build with `mvn -B clean verify`
 plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 `HourGlass/.github/workflows/build.yml`; copy `HourGlass/ci/root-workflow.yml` to
 `.github/workflows/hourglass-build.yml` to activate it.
+
+## Veltryx ⚡
+
+The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
+custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
+the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
+**0.0.1-alpha**. More modules (starting with the shop) land in the same plugin; the public
+`VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
+
+- `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
+- `/offend <player> <reason>` — `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
+  custom ban screen (reason, category, ban ID, expiry, staff, appeal URL) with the player's
+  recent anti-cheat flags attached as evidence · `/bans` · `/unban`
+- **Anti-cheat** — movement (fly, speed, jesus, phase, timer), combat (autoclicker, reach,
+  multi-aura, aim), interact (fastplace, fastuse, reach) and X-Ray statistics with
+  **block obfuscation** (hidden ores sent as stone). Ping/TPS aware at every step:
+  tolerances scale with lag, checks skip on bad connections and auto kicks/bans only fire
+  while ping and TPS are healthy — designed not to false ban. Flag → alert → kick → auto-ban
+  escalation, fully configurable per check.
+- `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
+  levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
+- Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
+  `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
+  `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`
+- Full `veltryx.*` permission tree, TabCompleter everywhere, MiniMessage `messages.yml`,
+  Folia-safe scheduling, `VeltryxEconomy` developer API
+
+See [Veltryx/README.md](Veltryx/README.md) for full commands, permissions, configuration,
+storage and API details. Build with `mvn -B clean verify` in `Veltryx/` (JDK 25 required);
+an offline stub build + smoke tests run via `./build.sh`. Offline consistency checks:
+`python3 Veltryx/tools/check_consistency.py`. A CI workflow is included at
+`Veltryx/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/` to activate it).

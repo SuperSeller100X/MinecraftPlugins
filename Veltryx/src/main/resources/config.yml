@@ -1,0 +1,119 @@
+# =====================================================================
+#  Veltryx — Minecraft 26.3 (Paper / Purpur / Folia), Java 25
+#  All-in-one server core: economy, anti-cheat, custom bans, staff tools.
+#  Reload with /veltryx reload  (permission: veltryx.admin.reload)
+# =====================================================================
+
+storage:
+  # Where data is stored: "yaml" (flat files) or "sqlite" (single database,
+  # recommended for large servers). Both work on Linux, Windows and macOS.
+  type: yaml
+  # Periodic safety-net flush for the YAML backend (seconds, min 30).
+  autosave-seconds: 300
+
+economy:
+  # Currency display. Balances are stored as exact cents.
+  currency-symbol: "$"
+  currency-name: dollar
+  # Granted once to brand-new players (parses 1k / 2.5m style amounts).
+  starting-balance: 100
+  # Smallest allowed /eco pay amount.
+  min-transfer: 0.01
+  # Entries on /eco top.
+  baltop-size: 10
+
+anticheat:
+  enabled: true
+
+  # Lag awareness — detections are SKIPPED when the connection or the server
+  # is too far gone to judge fairly (prevents false flags and false bans).
+  max-ping: 350        # ms — no checks above this ping
+  min-tps: 18.0        # no checks below this TPS
+  # Punishments (kick/ban) need an even healthier environment:
+  punish-max-ping: 250 # ms
+  punish-min-tps: 19.0
+
+  # Tolerance scaling and decay.
+  join-grace-seconds: 10   # no checks right after join (client sync)
+  decay-per-second: 0.5    # violation level decay (VL/s)
+
+  # Check limits. Tolerances scale automatically with ping and TPS.
+  max-move-speed: 6.5          # blocks/s (walk ~4.3, sprint ~5.6)
+  max-cps: 19.0                # attacks per second
+  max-reach: 3.4               # blocks from eyes to hitbox
+  max-interact-reach: 5.6      # blocks from eyes to block
+  max-breaks-per-second: 25
+  max-places-per-second: 20
+  min-aim-angle: 100.0         # degrees away from the target on a landed hit
+
+  # Escalation per check: alert staff -> kick -> automatic ban.
+  # ban-duration uses s/m/h/d/w or "perm". A check inherits defaults when
+  # its section is omitted.
+  checks:
+    movement:
+      fly:      { enabled: true, alert-vl: 6, kick-vl: 18, ban-vl: 40, ban-duration: 7d, ban-reason: "Hacking (Fly)" }
+      speed:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Speed)" }
+      jesus:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Jesus)" }
+      phase:    { enabled: true, alert-vl: 5, kick-vl: 14, ban-vl: 30, ban-duration: 7d, ban-reason: "Hacking (Phase)" }
+      timer:    { enabled: true, alert-vl: 8, kick-vl: 25, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (Timer)" }
+    combat:
+      autoclicker: { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (AutoClicker)" }
+      reach:       { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Reach)" }
+      multiaura:   { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (MultiAura)" }
+      aim:         { enabled: true, alert-vl: 8, kick-vl: 30, ban-vl: 60, ban-duration: 7d, ban-reason: "Hacking (Aim)" }
+    interact:
+      fastplace:      { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (FastPlace)" }
+      fastuse:        { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (FastUse)" }
+      interact-reach: { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (InteractReach)" }
+    xray:
+      xray: { enabled: true, alert-vl: 4, kick-vl: 12, ban-vl: 25, ban-duration: 30d, ban-reason: "X-Ray" }
+
+  # Anti-xray: hidden ores are sent to clients as stone (client-side only).
+  xray:
+    obfuscation: true
+    radius: 4                  # blocks around the player to protect
+    scan-y-min: -64
+    scan-y-max: 80
+    update-interval-ms: 1000   # scan throttle per player
+    # X-Ray detection statistics (ore hiddenness per mining window).
+    window: 20                 # ores per evaluation window
+    min-hidden-ratio: 0.55     # average hiddenness that raises suspicion
+    min-samples: 6             # ores needed before judging
+
+punishments:
+  # Where banned players are told to appeal (shown on the ban screen).
+  appeal-url: "discord.gg/yourserver"
+  # /offend reasons. "xray"/"esp" = 30 day ban, "hacking" (fly, speed,
+  # killaura, …) = permanent. Every reason has a category for the ban screen.
+  offend-reasons:
+    xray:
+      display: "X-Ray / ESP"
+      category: xray-esp
+      duration: 30d
+      aliases: [esp, "xray/esp", xray-esp, xrayesp, x-raying]
+    hacking:
+      display: "Hacking"
+      category: hacking
+      duration: perm
+      aliases: [fly, flying, speed, killaura, aura, autoclicker, reach,
+                jesus, bhop, scaffold, timer, phase, cheating, cheats, hacks]
+
+moderation:
+  # Warnings expire after this long (parses 30d style values).
+  warn-expiry: 30d
+  # Active warnings that trigger the escalation below.
+  warn-threshold: 3
+  # What happens at the threshold: kick | mute | ban
+  warn-action: kick
+  # Default /mute duration when staff don't pass one.
+  mute-default-duration: 1h
+  # Anti-cheat flags older than this are pruned from /sus evidence.
+  flag-retention: 30d
+
+staff:
+  # /broadcast header (MiniMessage).
+  broadcast-prefix: "<gradient:#f59e0b:#ef4444><bold>ANNOUNCE</bold></gradient> <dark_gray>»</dark_gray> "
+  # Default /slowchat suggestion interval (seconds).
+  slowchat-default-seconds: 5
+  # Keep vanish state when a staff member relogs.
+  vanish-persists: true
