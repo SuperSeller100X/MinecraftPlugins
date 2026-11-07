@@ -73,7 +73,7 @@ public final class VeltryxPlugin extends JavaPlugin {
     public void onEnable() {
         String stage = "resource defaults";
         try {
-            copyDefaults();
+            syncResources();
 
             stage = "scheduler init";
             PlatformScheduler.init(this);
@@ -138,19 +138,49 @@ public final class VeltryxPlugin extends JavaPlugin {
      * repacked without its resources, log exactly what is missing instead of
      * crashing the whole plugin.
      */
-    private void copyDefaults() {
-        try {
-            saveDefaultConfig();
-        } catch (IllegalArgumentException e) {
-            getLogger().severe("config.yml is missing from the plugin jar! Build the plugin with "
+    /**
+     * Creates or updates config.yml and messages.yml from the jar templates:
+     * keys added by a plugin update appear automatically with their defaults,
+     * while every value the user changed is kept exactly as it is.
+     */
+    public void syncResources() {
+        mergeResource("config.yml");
+        mergeResource("messages.yml");
+    }
+
+    private void mergeResource(String name) {
+        File file = new File(getDataFolder(), name);
+        String template = readResource(name);
+        if (template == null) {
+            getLogger().severe(name + " is missing from the plugin jar! Build the plugin with "
                     + "'mvn -B clean package' in Veltryx/ and use target/Veltryx-<version>.jar.");
+            return;
         }
         try {
-            saveResource("messages.yml", false);
-        } catch (IllegalArgumentException e) {
-            getLogger().severe("messages.yml is missing from the plugin jar! Build the plugin with "
-                    + "'mvn -B clean package' in Veltryx/ and use target/Veltryx-<version>.jar. "
-                    + "Messages will show as 'Missing message' until this is fixed.");
+            getDataFolder().mkdirs();
+            if (!file.exists()) {
+                java.nio.file.Files.writeString(file.toPath(), template);
+                return;
+            }
+            String user = java.nio.file.Files.readString(file.toPath());
+            String merged = dev.superseller.veltryx.util.YamlTextMerge.merge(template, user);
+            if (!merged.equals(user)) {
+                java.nio.file.Files.writeString(file.toPath(), merged);
+                getLogger().info("Updated " + name + " with new default settings (your values were kept).");
+            }
+        } catch (java.io.IOException e) {
+            getLogger().log(Level.SEVERE, "Could not update " + name, e);
+        }
+    }
+
+    private String readResource(String name) {
+        try (java.io.InputStream in = getResource(name)) {
+            if (in == null) {
+                return null;
+            }
+            return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (java.io.IOException e) {
+            return null;
         }
     }
 
@@ -165,6 +195,7 @@ public final class VeltryxPlugin extends JavaPlugin {
 
     /** Reloads config, messages and the anti-cheat plans (/veltryx reload). */
     public void reloadEverything() {
+        syncResources();
         reloadConfig();
         config.reload(getConfig());
         messages.reload();

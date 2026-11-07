@@ -207,17 +207,29 @@ public final class AntiCheatListener implements Listener {
             }
         }
 
-        // Fly: staying airborne far longer than any jump, without falling.
-        if (onGround || dy < -0.08) {
+        // Fly: staying airborne far longer than any jump without really falling.
+        // Slow descents (dy >= -0.08) count as flight too — hovering and
+        // drifting must be stopped even without sprinting. Fast descents decay
+        // the counter instead of resetting it, so bobbing cannot evade
+        // detection while real falls never accumulate. Levitation and slow
+        // falling are legitimate air states and high jump-boost levels
+        // legitimately extend air time; creative, spectator, elytra, vehicles
+        // and riptide never reach this check at all.
+        if (onGround || potionAmplifier(player, PotionEffectType.LEVITATION) >= 0
+                || potionAmplifier(player, PotionEffectType.SLOW_FALLING) >= 0) {
             trace.setAirTicks(0);
+        } else if (dy < -0.08) {
+            trace.setAirTicks(Math.max(0, trace.airTicks() - 4));
         } else {
             trace.setAirTicks(trace.airTicks() + 1);
-            double maxAirSeconds = 1.1 * factor;
+            int jumpBoost = potionAmplifier(player, PotionEffectType.JUMP_BOOST);
+            double maxAirSeconds = (1.3 + 0.12 * Math.max(0, jumpBoost)) * factor;
             double airborneSeconds = trace.airTicks() * 0.05;
-            if (airborneSeconds > maxAirSeconds && dy >= -0.03) {
+            if (airborneSeconds > maxAirSeconds) {
                 service.flag(player, CheckType.FLY,
-                        1.0 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
-                        String.format(Locale.ROOT, "hovering for %.1fs (dy=%.2f)", airborneSeconds, dy));
+                        1.2 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
+                        String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)",
+                                airborneSeconds, dy));
             }
         }
 
@@ -461,6 +473,16 @@ public final class AntiCheatListener implements Listener {
             multiplier *= 1.5;
         }
         return Math.min(3.0, multiplier);
+    }
+
+    /** Amplifier of an active potion effect, or -1 when the effect is absent. */
+    private static int potionAmplifier(Player player, PotionEffectType type) {
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            if (effect.getType().equals(type)) {
+                return effect.getAmplifier();
+            }
+        }
+        return -1;
     }
 
     /** Whether the player is wearing an elytra (pre/post glide momentum). */

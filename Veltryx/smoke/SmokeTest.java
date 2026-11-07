@@ -5,6 +5,7 @@ import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.XrayStats;
 import dev.superseller.veltryx.anticheat.xray.OreObfuscator;
 import dev.superseller.veltryx.punish.BanCommand;
+import dev.superseller.veltryx.util.YamlTextMerge;
 import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.TimeUtil;
 
@@ -66,6 +67,56 @@ public final class SmokeTest {
         t("xray pack distinct x", Boolean.valueOf(OreObfuscator.packBlock(-30_000_000, -64, 12) != OreObfuscator.packBlock(-29_999_999, -64, 12)), Boolean.TRUE);
         t("xray pack negative ok", Long.valueOf(OreObfuscator.packBlock(-1, -1, -1)), Long.valueOf(OreObfuscator.packBlock(-1, -1, -1)));
         t("xray chunk pack distinct", Boolean.valueOf(OreObfuscator.packChunk(-5, 7) != OreObfuscator.packChunk(5, 7)), Boolean.TRUE);
+
+        // YamlTextMerge: config auto-update keeps user values, adds new keys
+        String template = "anticheat:\n"
+                + "  xray:\n"
+                + "    obfuscation: true\n"
+                + "    # reveal comment\n"
+                + "    reveal-radius: 5\n"
+                + "    hide-exposed: true\n"
+                + "    scan-y-min: -64\n"
+                + "moderation:\n"
+                + "  warn-expiry: 30d\n";
+        String userCfg = "anticheat:\n"
+                + "  xray:\n"
+                + "    obfuscation: false\n"
+                + "    radius: 4\n"
+                + "    scan-y-min: -64\n";
+        String merged = YamlTextMerge.merge(template, userCfg);
+        t("merge keeps user value", merged.contains("obfuscation: false"), Boolean.TRUE);
+        t("merge keeps old key", merged.contains("radius: 4"), Boolean.TRUE);
+        t("merge adds reveal-radius", merged.contains("reveal-radius: 5"), Boolean.TRUE);
+        t("merge adds hide-exposed", merged.contains("hide-exposed: true"), Boolean.TRUE);
+        t("merge adds comment", merged.contains("# reveal comment"), Boolean.TRUE);
+        t("merge adds missing section", merged.contains("warn-expiry: 30d"), Boolean.TRUE);
+        t("merge inserts in section", merged.indexOf("reveal-radius") > merged.indexOf("xray:")
+                && merged.indexOf("reveal-radius") < merged.indexOf("moderation:"), Boolean.TRUE);
+        t("merge idempotent", YamlTextMerge.merge(template, merged).equals(merged), Boolean.TRUE);
+        t("merge no-op when complete", YamlTextMerge.merge(template, template).equals(template), Boolean.TRUE);
+        String flatUser = "general.no-permission: \"<red>No.</red>\"\n";
+        String flatTemplate = "general.no-permission: \"<red>No.</red>\"\nbans.none: \"<green>None</green>\"\n";
+        String flatMerged = YamlTextMerge.merge(flatTemplate, flatUser);
+        t("merge flat key appended", flatMerged.contains("bans.none"), Boolean.TRUE);
+        t("merge flat keeps value", flatMerged.contains("<red>No.</red>"), Boolean.TRUE);
+
+        // Real templates: self-merge is a no-op and upgrades stay idempotent
+        try {
+            String cfg = new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Path.of("src/main/resources/config.yml")));
+            String msg = new String(java.nio.file.Files.readAllBytes(
+                    java.nio.file.Path.of("src/main/resources/messages.yml")));
+            t("merge real config self", YamlTextMerge.merge(cfg, cfg).equals(cfg), Boolean.TRUE);
+            t("merge real messages self", YamlTextMerge.merge(msg, msg).equals(msg), Boolean.TRUE);
+            String oldUser = "anticheat:\n  xray:\n    obfuscation: true\n    radius: 4\n    scan-y-min: -64\n";
+            String upgraded = YamlTextMerge.merge(cfg, oldUser);
+            t("merge real keeps user", upgraded.contains("radius: 4"), Boolean.TRUE);
+            t("merge real adds keys", upgraded.contains("hide-exposed") && upgraded.contains("window: 20"), Boolean.TRUE);
+            t("merge real idempotent", YamlTextMerge.merge(cfg, upgraded).equals(upgraded), Boolean.TRUE);
+            t("merge real messages upgrade", YamlTextMerge.merge(msg, "prefix: \"P \"\n").contains("ban.usage"), Boolean.TRUE);
+        } catch (java.io.IOException e) {
+            t("merge real files readable", Boolean.FALSE, Boolean.TRUE);
+        }
         t("time expiry perm", TimeUtil.expiryMillis(1000L, Long.MAX_VALUE), TimeUtil.NEVER);
 
         // PingGuard

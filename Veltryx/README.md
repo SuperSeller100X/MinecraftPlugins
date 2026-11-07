@@ -40,7 +40,7 @@ violation-level decay keep false positives near zero.
 
 | Group | Checks |
 |---|---|
-| Movement | Fly (hover/ascend), Speed, Jesus (water-skating), Phase (noclip), Timer |
+| Movement | Fly (hover, slow descent, bobbing, ascend), Speed, Jesus (water-skating), Phase (noclip), Timer |
 | Combat | AutoClicker (CPS + robot-consistency), Reach (hitbox-precise), MultiAura, Aim (hits while looking away) |
 | Interact | FastPlace/FastBreak, FastUse, InteractReach |
 | Mining | X-Ray statistics (hidden-ore scoring) + block obfuscation |
@@ -56,8 +56,11 @@ violation-level decay keep false positives near zero.
 - **X-Ray detection:** every broken ore is scored by how hidden it was
   (0–6 exposed faces). Players who keep pulling ores out of solid rock at an
   impossible ratio get flagged and escalated like any other check.
-- Every flag is stored as evidence (player, check, VL, detail, time) and shown
-  in `/sus` and on ban records.
+- **Creative and spectator players are never checked** — neither are players
+  with `veltryx.anticheat.bypass`, nor legitimate flight/height (elytra, boats,
+  horses, vehicles, riptide, levitation, slow falling, falling/jumping).
+- **Every flag is stored as evidence (player, check, VL, detail, time) and shown
+  in `/sus` and on ban records.**
 
 ### 🔨 `/offend` — the custom ban system
 
@@ -156,6 +159,11 @@ Every command has tab completion.
 ## ⚙️ Configuration
 
 `config.yml` (reload with `/veltryx reload`) — the important knobs:
+
+> **The config updates itself.** On every start and reload the plugin adds new
+> default keys (and new message entries) to your existing `config.yml` and
+> `messages.yml` — your own values and comments are always kept. After a plugin
+> update you never have to delete the config; missing settings simply appear.
 
 ```yaml
 storage:

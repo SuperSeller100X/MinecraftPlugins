@@ -12,6 +12,7 @@ public abstract class JavaPlugin implements Plugin {
     public void onEnable() {}
     public void onDisable() {}
     public void saveDefaultConfig() {}
+    public java.io.InputStream getResource(String name) { return null; }
     public void saveResource(String resourcePath, boolean replace) {}
     public FileConfiguration getConfig() { return null; }
     public void reloadConfig() {}
