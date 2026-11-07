@@ -1,6 +1,7 @@
 package dev.superseller.veltryx.anticheat.listener;
 
 import dev.superseller.veltryx.anticheat.AntiCheatService;
+import dev.superseller.veltryx.anticheat.SpeedGuard;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.PlayerTrace;
@@ -87,6 +88,7 @@ public final class AntiCheatListener implements Listener {
         obfuscator.scanNow(player);
         if (checked(player)) {
             service.trace(player).skipNextMove();
+            service.trace(player).setSpeedGraceUntilMillis(System.currentTimeMillis() + 450L);
         }
     }
 
@@ -96,6 +98,7 @@ public final class AntiCheatListener implements Listener {
         obfuscator.scanNow(player);
         if (checked(player)) {
             service.trace(player).skipNextMove();
+            service.trace(player).setSpeedGraceUntilMillis(System.currentTimeMillis() + 450L);
         }
     }
 
@@ -134,6 +137,13 @@ public final class AntiCheatListener implements Listener {
             trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
             return;
         }
+        // After teleports and server-authority corrections the next movement
+        // samples are artifacts — they must never count toward any check.
+        if (trace.hasSpeedGrace(nowMillis)) {
+            trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
+            trace.pushMoveTime(nowMillis);
+            return;
+        }
 
         double factor = PingGuard.allowanceFactor(ping, tps);
         double dx = to.getX() - trace.lastX();
@@ -143,6 +153,12 @@ public final class AntiCheatListener implements Listener {
         trace.touchMove(nowNanos);
         trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
         trace.pushMoveTime(nowMillis);
+
+        // Sprint-jump chains are the fastest legitimate vanilla movement —
+        // remember them so the speed limit covers the whole hop chain.
+        if (dy > 0.12) {
+            trace.markJump(nowNanos);
+        }
 
         boolean skipPhysics = player.isInsideVehicle() || player.isGliding() || player.isFlying()
                 || player.isDead() || player.getGameMode() == GameMode.CREATIVE
@@ -194,16 +210,46 @@ public final class AntiCheatListener implements Listener {
         boolean onGround = to.clone().subtract(0, 0.1, 0).getBlock().getType().isSolid();
 
         // Speed: horizontal distance per second above any legitimate baseline.
-        // Falling and elytra takeoff/flight carry legitimately unbounded
-        // momentum and must never flag (anti-cheat promise: no false flags).
+        // The limit covers the fastest legitimate vanilla movement (sprint-jump
+        // chains, speed potions, ice, soul speed, slime launches) and grows with
+        // ping/lag — no false flags. Falling and elytra carry unbounded momentum
+        // and never flag. Mild excess is only counted after THREE consecutive
+        // samples; movement above the hard cap is impossible for vanilla clients
+        // and gets rolled back by server authority.
         boolean falling = dy < -0.08 || player.getFallDistance() > 0.4F;
         boolean elytraAir = !onGround && hasElytra(player);
         if (!falling && !elytraAir && seconds > 0.02 && seconds < 2.0) {
             double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
-            double limit = config.maxMoveSpeed() * factor * situationalSpeedMultiplier(player, to);
-            if (horizontal > limit) {
-                service.flag(player, CheckType.SPEED, 1.0 + Math.min(3.0, (horizontal - limit) / 2.0),
-                        String.format(Locale.ROOT, "%.1f b/s (limit %.1f)", horizontal, limit));
+            Material below = to.clone().subtract(0, 0.2, 0).getBlock().getType();
+            double multiplier = SpeedGuard.situationalMultiplier(
+                    potionAmplifier(player, PotionEffectType.SPEED),
+                    below == Material.ICE || below == Material.PACKED_ICE
+                            || below == Material.BLUE_ICE || below == Material.FROSTED_ICE,
+                    below == Material.SLIME_BLOCK || below == Material.HONEY_BLOCK,
+                    below == Material.SOUL_SAND || below == Material.SOUL_SOIL,
+                    trace.inJumpChain(nowNanos));
+            double limit = SpeedGuard.limit(config.maxMoveSpeed(), factor, multiplier);
+            int streak = trace.speedExcessStreak();
+            int verdict = SpeedGuard.verdict(horizontal, limit, config.speedHardCap(), streak);
+            if (verdict == SpeedGuard.OK) {
+                trace.setSpeedExcessStreak(0);
+            } else {
+                trace.setSpeedExcessStreak(streak + 1);
+                String detail = String.format(Locale.ROOT, "%.1f b/s (limit %.1f)", horizontal, limit);
+                if (verdict == SpeedGuard.ROLLBACK) {
+                    // Server authority: the server has the last word. Impossible
+                    // movement is rejected and the player is put back where they
+                    // legally were — speed hacks physically cannot move.
+                    if (config.serverAuthority()) {
+                        event.setTo(new Location(from.getWorld(), from.getX(), from.getY(),
+                                from.getZ(), from.getYaw(), from.getPitch()));
+                        trace.recordPosition(from.getX(), from.getY(), from.getZ(), nowNanos);
+                        trace.setSpeedGraceUntilMillis(nowMillis + 450L);
+                    }
+                    service.flag(player, CheckType.SPEED, streak >= 1 ? 2.5 : 0.8, detail + " — rolled back");
+                } else if (verdict == SpeedGuard.FLAG) {
+                    service.flag(player, CheckType.SPEED, 1.0 + Math.min(3.0, (horizontal - limit) / 2.0), detail);
+                }
             }
         }
 
@@ -230,6 +276,14 @@ public final class AntiCheatListener implements Listener {
                         1.2 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
                         String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)",
                                 airborneSeconds, dy));
+                // Server authority: once flight is confirmed (never fires for
+                // legitimate air time), the server pulls the player back down.
+                if (config.serverAuthority()) {
+                    event.setTo(new Location(from.getWorld(), from.getX(), from.getY() - 0.35,
+                            from.getZ(), from.getYaw(), from.getPitch()));
+                    trace.recordPosition(from.getX(), from.getY() - 0.35, from.getZ(), nowNanos);
+                    trace.setSpeedGraceUntilMillis(nowMillis + 450L);
+                }
             }
         }
 
@@ -454,25 +508,6 @@ public final class AntiCheatListener implements Listener {
             }
         }
         return false;
-    }
-
-    /** Speed multiplier from potion effects and terrain (never below 1.0). */
-    private static double situationalSpeedMultiplier(Player player, Location to) {
-        double multiplier = 1.0;
-        for (PotionEffect effect : player.getActivePotionEffects()) {
-            if (effect.getType().equals(PotionEffectType.SPEED)) {
-                multiplier *= 1.0 + 0.2 * (effect.getAmplifier() + 1);
-            }
-        }
-        Material below = to.clone().subtract(0, 0.2, 0).getBlock().getType();
-        if (below == Material.ICE || below == Material.PACKED_ICE
-                || below == Material.BLUE_ICE || below == Material.FROSTED_ICE) {
-            multiplier *= 1.6;
-        }
-        if (below == Material.SLIME_BLOCK || below == Material.HONEY_BLOCK) {
-            multiplier *= 1.5;
-        }
-        return Math.min(3.0, multiplier);
     }
 
     /** Amplifier of an active potion effect, or -1 when the effect is absent. */

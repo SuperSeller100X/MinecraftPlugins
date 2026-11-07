@@ -102,6 +102,16 @@ public final class VeltryxConfig {
         return config.getDouble("anticheat.max-move-speed", 6.5);
     }
 
+    /** Server authority: impossible movement (speed/flight hacks) is rolled back. */
+    public boolean serverAuthority() {
+        return config.getBoolean("anticheat.server-authority", true);
+    }
+
+    /** Movement faster than limit × this is impossible for vanilla clients. */
+    public double speedHardCap() {
+        return Math.max(1.05, config.getDouble("anticheat.speed-hard-cap", 1.75));
+    }
+
     public double maxCps() {
         return config.getDouble("anticheat.max-cps", 19.0);
     }

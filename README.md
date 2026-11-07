@@ -306,9 +306,11 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
   custom ban screen (reason, category, ban ID, expiry, staff, appeal URL) with the player's
   recent anti-cheat flags attached as evidence · `/bans` · `/unban`
-- **Anti-cheat** — movement (fly — caught with *and* without sprinting, speed,
-  jesus, phase, timer — elytra, falling, jumping and lag never false-flag),
-  combat (autoclicker, reach,
+- **Anti-cheat** — movement (fly — caught with *and* without sprinting, speed —
+  sprint-jump chains and lag never false-flag, jesus, phase, timer — elytra and
+  falling never false-flag), **server authority**: impossible movement is rolled
+  back instantly, so speed/flight hacks physically cannot move.
+  Combat (autoclicker, reach,
   multi-aura, aim), interact (fastplace, fastuse, reach) and X-Ray statistics with
   **block obfuscation** (hidden ores sent as stone). Ping/TPS aware at every step:
   tolerances scale with lag, checks skip on bad connections and auto kicks/bans only fire

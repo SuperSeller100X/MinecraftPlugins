@@ -39,6 +39,9 @@ public final class PlayerTrace {
     private int airTicks;
     private boolean positionInitialized;
     private boolean skipNextMove;
+    private long jumpChainUntilNanos;
+    private long speedGraceUntilMillis;
+    private int speedExcessStreak;
     private final ArrayDeque<Long> moveTimesMillis = new ArrayDeque<>();
 
     // combat state
@@ -145,6 +148,37 @@ public final class PlayerTrace {
 
     public boolean positionInitialized() {
         return positionInitialized;
+    }
+
+    /** Mark the start of a jump chain (sprint-hopping is the fastest legit movement). */
+    public void markJump(long nowNanos) {
+        jumpChainUntilNanos = nowNanos + 1_200_000_000L;
+    }
+
+    public boolean inJumpChain(long nowNanos) {
+        return nowNanos < jumpChainUntilNanos;
+    }
+
+    /**
+     * Suppress movement-checking briefly — used after teleports, server
+     * authority rollbacks and corrections, where the next samples are
+     * artifacts and must never count toward any violation level.
+     */
+    public void setSpeedGraceUntilMillis(long untilMillis) {
+        speedGraceUntilMillis = untilMillis;
+    }
+
+    public boolean hasSpeedGrace(long nowMillis) {
+        return nowMillis < speedGraceUntilMillis;
+    }
+
+    /** Consecutive movement samples above the speed tolerance. */
+    public int speedExcessStreak() {
+        return speedExcessStreak;
+    }
+
+    public void setSpeedExcessStreak(int streak) {
+        speedExcessStreak = streak;
     }
 
     public void recordPosition(double x, double y, double z, long nowNanos) {

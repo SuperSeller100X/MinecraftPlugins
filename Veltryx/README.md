@@ -40,11 +40,21 @@ violation-level decay keep false positives near zero.
 
 | Group | Checks |
 |---|---|
-| Movement | Fly (hover, slow descent, bobbing, ascend), Speed, Jesus (water-skating), Phase (noclip), Timer |
+| Movement | Fly (hover, slow descent, bobbing, ascend), Speed (sprint-jump aware), Jesus (water-skating), Phase (noclip), Timer |
 | Combat | AutoClicker (CPS + robot-consistency), Reach (hitbox-precise), MultiAura, Aim (hits while looking away) |
 | Interact | FastPlace/FastBreak, FastUse, InteractReach |
 | Mining | X-Ray statistics (hidden-ore scoring) + block obfuscation |
 
+- **Server authority (movement):** the server has the last word — movement that
+  is impossible for vanilla clients (`speed-hard-cap: 1.75` × the limit) is
+  **rolled back instantly**, so speed and flight hacks physically cannot move.
+  Confirmed flight pulls the player back down. Borderline speeds are tolerated
+  and never rolled back.
+- **Speed without false flags:** the limit covers the fastest legitimate
+  vanilla movement — sprint-jump chains (~7.5–8 b/s, the way everyone moves),
+  speed potions, ice, soul speed and slime launches all widen it automatically,
+  and it grows with ping/lag. Mild excess is only counted after three
+  consecutive samples; falls, elytra, jumping and lag corrections never flag.
 - **Anti-xray (obfuscation):** **every** ore (configurable) is sent to clients
   as stone the moment the client receives the chunk — X-Ray texture packs and
   ESP overlays show plain stone across the whole view distance, with **no
@@ -175,6 +185,8 @@ anticheat:
   min-tps: 18.0           # skip checks below this TPS
   punish-max-ping: 250    # kicks/bans need a healthy connection
   punish-min-tps: 19.0
+  server-authority: true    # roll back impossible movement (speed/flight hacks)
+  speed-hard-cap: 1.75      # limit x this = impossible -> rolled back
   checks:
     movement.fly:  { alert-vl: 6, kick-vl: 18, ban-vl: 40, ban-duration: 7d }
   xray:

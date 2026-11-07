@@ -100,6 +100,55 @@ public final class SmokeTest {
         t("merge flat key appended", flatMerged.contains("bans.none"), Boolean.TRUE);
         t("merge flat keeps value", flatMerged.contains("<red>No.</red>"), Boolean.TRUE);
 
+        // SpeedGuard: the tolerance must cover the fastest legitimate vanilla
+        // movement (sprint-jump chains) and never false-flag it.
+        {
+            var sgFlat = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(-1, false, false, false, false);
+            t("sg flat multiplier", sgFlat == 1.0, Boolean.TRUE);
+            var sgSpeed2 = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(1, false, false, false, false);
+            t("sg speed-2 multiplier", Math.abs(sgSpeed2 - 1.4) < 1e-9, Boolean.TRUE);
+            var sgJump = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(-1, false, false, false, true);
+            t("sg jump-chain multiplier", Math.abs(sgJump - 1.42) < 1e-9, Boolean.TRUE);
+            var sgIce = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(-1, true, false, false, false);
+            t("sg ice multiplier", Math.abs(sgIce - 1.6) < 1e-9, Boolean.TRUE);
+            var sgSoul = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(-1, false, false, true, false);
+            t("sg soul-speed multiplier", Math.abs(sgSoul - 1.45) < 1e-9, Boolean.TRUE);
+            var sgAll = dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(4, true, true, true, true);
+            t("sg multiplier capped", sgAll == 4.5, Boolean.TRUE);
+            var sgLimit = dev.superseller.veltryx.anticheat.SpeedGuard.limit(6.5, 1.0, sgJump);
+            t("sg limit math", Math.abs(sgLimit - 9.23) < 1e-9, Boolean.TRUE);
+            // THE false-flag regression: flat sprint-jump (~8 b/s) with no effects
+            t("sg sprint-jump never flags",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(8.0, sgLimit, 1.75, 0)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.OK, Boolean.TRUE);
+            // sprint-jump + speed II (~11 b/s)
+            var sgLimit2 = dev.superseller.veltryx.anticheat.SpeedGuard.limit(6.5, 1.0,
+                    dev.superseller.veltryx.anticheat.SpeedGuard.situationalMultiplier(1, false, false, false, true));
+            t("sg speed-2 sprint-jump never flags",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(11.0, sgLimit2, 1.75, 0)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.OK, Boolean.TRUE);
+            // jitter under 15% is silent; mild excess needs a streak of 3
+            t("sg jitter ok",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(7.2, 6.5, 1.75, 0)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.OK, Boolean.TRUE);
+            t("sg suspect silent",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(7.6, 6.5, 1.75, 0)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.SUSPECT, Boolean.TRUE);
+            t("sg streak flags",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(7.6, 6.5, 1.75, 2)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.FLAG, Boolean.TRUE);
+            // impossible movement rolls back immediately, streak or not
+            t("sg impossible rolls back",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(12.0, 6.5, 1.75, 0)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.ROLLBACK, Boolean.TRUE);
+            t("sg rollback beats streak",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(12.0, 6.5, 1.75, 5)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.ROLLBACK, Boolean.TRUE);
+            t("sg under hard cap is not rollback",
+                    dev.superseller.veltryx.anticheat.SpeedGuard.verdict(11.3, 6.5, 1.75, 2)
+                            == dev.superseller.veltryx.anticheat.SpeedGuard.FLAG, Boolean.TRUE);
+        }
+
         // Real templates: self-merge is a no-op and upgrades stay idempotent
         try {
             String cfg = new String(java.nio.file.Files.readAllBytes(

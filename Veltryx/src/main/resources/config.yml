@@ -38,7 +38,15 @@ anticheat:
   decay-per-second: 0.5    # violation level decay (VL/s)
 
   # Check limits. Tolerances scale automatically with ping and TPS.
-  max-move-speed: 6.5          # blocks/s (walk ~4.3, sprint ~5.6)
+  max-move-speed: 6.5          # blocks/s baseline (walk ~4.3, flat sprint ~5.6); jump
+                               # chains, potions, ice, soul speed and lag widen it automatically
+  # Server authority: the server has the last word. Movement that is impossible
+  # for vanilla clients is rolled back instantly — speed and flight hacks
+  # physically cannot move. Confirmed flight pulls the player back down.
+  server-authority: true
+  # Faster than the speed limit × this is impossible and gets rolled back.
+  # Borderline speeds are tolerated and never rolled back.
+  speed-hard-cap: 1.75
   max-cps: 19.0                # attacks per second
   max-reach: 3.4               # blocks from eyes to hitbox
   max-interact-reach: 5.6      # blocks from eyes to block
