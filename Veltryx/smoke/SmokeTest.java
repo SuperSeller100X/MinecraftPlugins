@@ -3,6 +3,7 @@ package dev.superseller.veltryx.smoke;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.XrayStats;
+import dev.superseller.veltryx.anticheat.xray.OreObfuscator;
 import dev.superseller.veltryx.punish.BanCommand;
 import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.TimeUtil;
@@ -51,6 +52,20 @@ public final class SmokeTest {
         t("ban parse invalid-duration-is-reason", BanCommand.parse(new String[]{"steve", "xray", "ban"}).reason(), "xray ban");
         t("ban parse duration-without-reason", BanCommand.parse(new String[]{"steve", "7d"}), null);
         t("ban parse missing-args", BanCommand.parse(new String[]{"steve"}), null);
+
+        // Anti-xray helpers (OreObfuscator)
+        t("xray is ore", OreObfuscator.isOre(org.bukkit.Material.EMERALD_ORE), Boolean.TRUE);
+        t("xray not ore", OreObfuscator.isOre(org.bukkit.Material.STONE), Boolean.FALSE);
+        t("xray fake deepslate", OreObfuscator.fakeFor(org.bukkit.Material.DEEPSLATE_DIAMOND_ORE),
+                org.bukkit.Material.DEEPSLATE);
+        t("xray fake nether", OreObfuscator.fakeFor(org.bukkit.Material.ANCIENT_DEBRIS),
+                org.bukkit.Material.NETHERRACK);
+        t("xray fake stone", OreObfuscator.fakeFor(org.bukkit.Material.DIAMOND_ORE),
+                org.bukkit.Material.STONE);
+        t("xray pack distinct y", Boolean.valueOf(OreObfuscator.packBlock(5, 10, -3) != OreObfuscator.packBlock(5, 11, -3)), Boolean.TRUE);
+        t("xray pack distinct x", Boolean.valueOf(OreObfuscator.packBlock(-30_000_000, -64, 12) != OreObfuscator.packBlock(-29_999_999, -64, 12)), Boolean.TRUE);
+        t("xray pack negative ok", Long.valueOf(OreObfuscator.packBlock(-1, -1, -1)), Long.valueOf(OreObfuscator.packBlock(-1, -1, -1)));
+        t("xray chunk pack distinct", Boolean.valueOf(OreObfuscator.packChunk(-5, 7) != OreObfuscator.packChunk(5, 7)), Boolean.TRUE);
         t("time expiry perm", TimeUtil.expiryMillis(1000L, Long.MAX_VALUE), TimeUtil.NEVER);
 
         // PingGuard

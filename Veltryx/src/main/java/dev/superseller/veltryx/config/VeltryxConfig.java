@@ -174,8 +174,16 @@ public final class VeltryxConfig {
         return config.getBoolean("anticheat.xray.obfuscation", true);
     }
 
-    public int xrayRadius() {
-        return Math.max(1, config.getInt("anticheat.xray.radius", 4));
+    public int xrayRevealRadius() {
+        return Math.max(2, config.getInt("anticheat.xray.reveal-radius", 5));
+    }
+
+    public int xraySweepRadius() {
+        return Math.max(4, config.getInt("anticheat.xray.sweep-radius", 12));
+    }
+
+    public boolean xrayHideExposed() {
+        return config.getBoolean("anticheat.xray.hide-exposed", true);
     }
 
     public int xrayScanYMin() {

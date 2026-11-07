@@ -15,5 +15,6 @@ public interface Entity {
     boolean isInsideVehicle();
     boolean isGliding();
     boolean isRiptiding();
+    float getFallDistance();
     Server getServer();
 }

@@ -33,6 +33,7 @@ public final class PlatformScheduler {
     private static Method globalSchedulerGet;
     private static Method globalRun;
     private static Method globalRunAtFixedRate;
+    private static Method globalRunDelayed;
     private static Method asyncSchedulerGet;
     private static Method asyncRunNow;
 
@@ -60,6 +61,8 @@ public final class PlatformScheduler {
             globalRun = globalScheduler.getMethod("run", org.bukkit.plugin.Plugin.class, Consumer.class);
             globalRunAtFixedRate = globalScheduler.getMethod("runAtFixedRate",
                     org.bukkit.plugin.Plugin.class, Consumer.class, long.class, long.class);
+            globalRunDelayed = globalScheduler.getMethod("runDelayed",
+                    org.bukkit.plugin.Plugin.class, Consumer.class, long.class);
             folia = true;
         } catch (Throwable ignored) {
             globalRun = null;
@@ -113,6 +116,25 @@ public final class PlatformScheduler {
         }
         try {
             Bukkit.getScheduler().runTask(plugin, task);
+        } catch (Throwable e) {
+            logger.warning("Bukkit scheduler unavailable: " + e.getMessage());
+        }
+    }
+
+    /** Runs a task once after a delay, safe from the global thread. */
+    public static void runLater(Runnable task, long delayTicks) {
+        long delay = Math.max(1L, delayTicks);
+        if (globalRunDelayed != null) {
+            try {
+                Object scheduler = globalSchedulerGet.invoke(null);
+                globalRunDelayed.invoke(scheduler, plugin, (Consumer<Object>) t -> task.run(), delay);
+                return;
+            } catch (Throwable e) {
+                logger.warning("Delayed task failed, using Bukkit scheduler: " + e.getMessage());
+            }
+        }
+        try {
+            Bukkit.getScheduler().runTaskLater(plugin, task, delay);
         } catch (Throwable e) {
             logger.warning("Bukkit scheduler unavailable: " + e.getMessage());
         }

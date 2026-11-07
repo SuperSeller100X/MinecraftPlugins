@@ -45,9 +45,14 @@ violation-level decay keep false positives near zero.
 | Interact | FastPlace/FastBreak, FastUse, InteractReach |
 | Mining | X-Ray statistics (hidden-ore scoring) + block obfuscation |
 
-- **Anti-xray (obfuscation):** buried ores are sent to clients as stone — X-Ray
-  texture packs and ESP overlays show nothing. Digging reveals the real block
-  just in time. Client-side only; combine with Paper's built-in anti-xray.
+- **Anti-xray (obfuscation):** **every** ore (configurable) is sent to clients
+  as stone the moment the client receives the chunk — X-Ray texture packs and
+  ESP overlays show plain stone across the whole view distance, with **no
+  visible flash** (the fakes are queued right behind the chunk packet itself,
+  so ore positions can never be cached). Ore becomes visible again only when a
+  player is close enough to legitimately see it (`reveal-radius: 5`) or digs it
+  out — once seen it is never re-hidden, so nothing flickers. Client-side only;
+  combine with Paper's built-in anti-xray for belt and braces.
 - **X-Ray detection:** every broken ore is scored by how hidden it was
   (0–6 exposed faces). Players who keep pulling ores out of solid rock at an
   impossible ratio get flagged and escalated like any other check.

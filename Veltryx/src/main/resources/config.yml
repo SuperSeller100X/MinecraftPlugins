@@ -71,10 +71,15 @@ anticheat:
   # Anti-xray: hidden ores are sent to clients as stone (client-side only).
   xray:
     obfuscation: true
-    radius: 4                  # blocks around the player to protect
+    # Client-side block faking: every ore is sent as stone the moment the
+    # client receives the chunk (no visible flash), and revealed again when a
+    # player is close enough to legitimately see it.
+    reveal-radius: 5           # blocks — ore this close to a player is shown real
+    sweep-radius: 12           # blocks — safety re-fake around players
+    update-interval-ms: 500    # near-area sweep cadence
+    hide-exposed: true         # hide ALL ores (strong); false = only fully buried ones
     scan-y-min: -64
     scan-y-max: 80
-    update-interval-ms: 1000   # scan throttle per player
     # X-Ray detection statistics (ore hiddenness per mining window).
     window: 20                 # ores per evaluation window
     min-hidden-ratio: 0.55     # average hiddenness that raises suspicion

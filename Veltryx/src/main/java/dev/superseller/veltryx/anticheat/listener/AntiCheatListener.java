@@ -65,6 +65,14 @@ public final class AntiCheatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         service.startTracking(event.getPlayer());
+        obfuscator.scanNow(event.getPlayer());
+    }
+
+    /** The client just received a chunk — fake its hidden ore immediately. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerChunkLoad(io.papermc.paper.event.packet.PlayerChunkLoadEvent event) {
+        org.bukkit.Chunk chunk = event.getChunk();
+        obfuscator.chunkSent(event.getPlayer(), chunk.getWorld(), chunk.getX(), chunk.getZ());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -76,6 +84,7 @@ public final class AntiCheatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
+        obfuscator.scanNow(player);
         if (checked(player)) {
             service.trace(player).skipNextMove();
         }
@@ -84,6 +93,7 @@ public final class AntiCheatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
+        obfuscator.scanNow(player);
         if (checked(player)) {
             service.trace(player).skipNextMove();
         }
@@ -139,7 +149,13 @@ public final class AntiCheatListener implements Listener {
                 || player.getGameMode() == GameMode.SPECTATOR || player.isRiptiding();
 
         // Timer: far more position updates than the 20 TPS game loop produces.
-        if (trace.moveEventsLastSecond() > (int) (22.0 * factor) + 4) {
+        // Fast movement (elytra, vehicles, falling) legitimately produces extra
+        // position packets, so the allowance doubles there — no false flags.
+        int timerAllowance = (int) (22.0 * factor) + 4;
+        if (skipPhysics || dy < -0.08) {
+            timerAllowance *= 2;
+        }
+        if (trace.moveEventsLastSecond() > timerAllowance) {
             service.flag(player, CheckType.TIMER, 1.0,
                     trace.moveEventsLastSecond() + " moves/s");
         }
@@ -161,8 +177,10 @@ public final class AntiCheatListener implements Listener {
             }
         }
 
-        // Phase: moving while fully inside solid blocks.
-        if (!inLiquid && !climbing
+        // Phase: moving while fully inside solid blocks. Fast descents are
+        // exempt — client prediction legitimately clips into blocks while
+        // falling and must never false-flag.
+        if (!inLiquid && !climbing && dy >= -0.08
                 && from.getBlock().getType().isSolid() && to.getBlock().getType().isSolid()) {
             service.flag(player, CheckType.PHASE, 3.0,
                     from.getBlock().getType() + " -> " + to.getBlock().getType());
@@ -176,7 +194,11 @@ public final class AntiCheatListener implements Listener {
         boolean onGround = to.clone().subtract(0, 0.1, 0).getBlock().getType().isSolid();
 
         // Speed: horizontal distance per second above any legitimate baseline.
-        if (seconds > 0.02 && seconds < 2.0) {
+        // Falling and elytra takeoff/flight carry legitimately unbounded
+        // momentum and must never flag (anti-cheat promise: no false flags).
+        boolean falling = dy < -0.08 || player.getFallDistance() > 0.4F;
+        boolean elytraAir = !onGround && hasElytra(player);
+        if (!falling && !elytraAir && seconds > 0.02 && seconds < 2.0) {
             double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
             double limit = config.maxMoveSpeed() * factor * situationalSpeedMultiplier(player, to);
             if (horizontal > limit) {
@@ -439,6 +461,13 @@ public final class AntiCheatListener implements Listener {
             multiplier *= 1.5;
         }
         return Math.min(3.0, multiplier);
+    }
+
+    /** Whether the player is wearing an elytra (pre/post glide momentum). */
+    private static boolean hasElytra(Player player) {
+        org.bukkit.inventory.PlayerInventory inventory = player.getInventory();
+        return inventory != null && inventory.getChestplate() != null
+                && inventory.getChestplate().getType() == Material.ELYTRA;
     }
 
     /** Distance from the attacker's eyes to the closest point of the victim's hitbox. */

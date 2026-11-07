@@ -12,6 +12,7 @@ public interface Player extends LivingEntity, OfflinePlayer, org.bukkit.command.
     int getPing();
     GameMode getGameMode();
     boolean isFlying();
+    org.bukkit.inventory.PlayerInventory getInventory();
     boolean isSwimming();
     Location getEyeLocation();
     void kick(Component reason);
