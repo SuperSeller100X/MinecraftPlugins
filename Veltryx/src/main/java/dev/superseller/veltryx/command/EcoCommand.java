@@ -137,7 +137,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "economy.top-header", Map.of("count", String.valueOf(top.size())));
         for (int i = 0; i < top.size(); i++) {
             Account account = top.get(i);
-            sender.sendMessage(messages.prefixed("economy.top-entry", Map.of(
+            sender.sendMessage(messages.render("economy.top-entry", Map.of(
                     "position", String.valueOf(i + 1),
                     "player", account.name() == null ? "?" : account.name(),
                     "amount", economy.format(account.balance()))));
@@ -197,16 +197,16 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
     }
 
     private void help(CommandSender sender, String label) {
-        sender.sendMessage(messages.prefixed("economy.help-header"));
-        sender.sendMessage(messages.prefixed("economy.help-balance", Map.of("command", "/" + label)));
+        sender.sendMessage(messages.render("economy.help-header"));
+        sender.sendMessage(messages.render("economy.help-balance", Map.of("command", "/" + label)));
         if (sender.hasPermission("veltryx.eco.pay")) {
-            sender.sendMessage(messages.prefixed("economy.help-pay", Map.of("command", "/" + label)));
+            sender.sendMessage(messages.render("economy.help-pay", Map.of("command", "/" + label)));
         }
         if (sender.hasPermission("veltryx.eco.top")) {
-            sender.sendMessage(messages.prefixed("economy.help-top", Map.of("command", "/" + label)));
+            sender.sendMessage(messages.render("economy.help-top", Map.of("command", "/" + label)));
         }
         if (sender.hasPermission("veltryx.eco.admin")) {
-            sender.sendMessage(messages.prefixed("economy.help-admin", Map.of("command", "/" + label)));
+            sender.sendMessage(messages.render("economy.help-admin", Map.of("command", "/" + label)));
         }
     }
 

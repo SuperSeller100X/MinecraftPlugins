@@ -34,7 +34,7 @@ import org.bukkit.inventory.meta.SkullMeta;
  * <p>Main view: every online player as a head, sorted by suspicion score
  * (violation levels + recent flags). Detail view: the player's per-check
  * violation levels, recent flags and one-click staff actions (teleport,
- * freeze, kick, offend-xray, offend-hacking).
+ * freeze, kick, offend ban menu).
  */
 public final class SusGui implements Listener {
 
@@ -42,11 +42,13 @@ public final class SusGui implements Listener {
     public static final class Holder implements InventoryHolder {
         private final boolean detailView;
         private final UUID target;
+        private final String name;
         private Inventory inventory;
 
-        Holder(boolean detailView, UUID target) {
+        Holder(boolean detailView, UUID target, String name) {
             this.detailView = detailView;
             this.target = target;
+            this.name = name;
         }
 
         public boolean detailView() {
@@ -55,6 +57,10 @@ public final class SusGui implements Listener {
 
         public UUID target() {
             return target;
+        }
+
+        public String name() {
+            return name;
         }
 
         @Override
@@ -68,14 +74,16 @@ public final class SusGui implements Listener {
     private final FreezeService freeze;
     private final VeltryxConfig config;
     private final Messages messages;
+    private final OffendGui offendGui;
 
     public SusGui(AntiCheatService anticheat, BanService bans, FreezeService freeze,
-                  VeltryxConfig config, Messages messages) {
+                  VeltryxConfig config, Messages messages, OffendGui offendGui) {
         this.anticheat = anticheat;
         this.bans = bans;
         this.freeze = freeze;
         this.config = config;
         this.messages = messages;
+        this.offendGui = offendGui;
     }
 
     /** Opens the suspicion overview for a staff member (Folia-safe). */
@@ -83,7 +91,7 @@ public final class SusGui implements Listener {
         PlatformScheduler.runForPlayer(staff, () -> {
             List<PlayerTrace> ranked = anticheat.ranked();
             int rows = Math.max(1, Math.min(6, (ranked.size() + 8) / 9));
-            Holder holder = new Holder(false, null);
+            Holder holder = new Holder(false, null, null);
             Inventory inventory = Bukkit.createInventory(holder, rows * 9,
                     Component.text("§8§lSUS — flagged players"));
             holder.inventory = inventory;
@@ -115,7 +123,7 @@ public final class SusGui implements Listener {
         PlatformScheduler.runForPlayer(staff, () -> {
             Player online = Bukkit.getPlayer(target);
             String name = online != null ? online.getName() : "unknown";
-            Holder holder = new Holder(true, target);
+            Holder holder = new Holder(true, target, name);
             Inventory inventory = Bukkit.createInventory(holder, 54,
                     Component.text("§8§lSUS — " + name));
             holder.inventory = inventory;
@@ -162,10 +170,9 @@ public final class SusGui implements Listener {
                     List.of(Component.text("§7Lock them in place"))));
             inventory.setItem(47, item(Material.IRON_DOOR, Component.text("§cKick"),
                     List.of(Component.text("§7Disconnect the player"))));
-            inventory.setItem(51, item(Material.DIAMOND_ORE, Component.text("§cOffend: X-Ray / ESP"),
-                    List.of(Component.text("§7Ban for §f" + TimeUtil.format(30L * 86_400L)))));
-            inventory.setItem(52, item(Material.IRON_SWORD, Component.text("§cOffend: Hacking"),
-                    List.of(Component.text("§7Permanent ban"))));
+            inventory.setItem(51, item(Material.NETHER_STAR, Component.text("§cOffend — ban menu"),
+                    List.of(Component.text("§7Open the ban categories"),
+                            Component.text("§7and ban this player"))));
             inventory.setItem(53, item(Material.ARROW, Component.text("§7Back to list"), List.of()));
             staff.openInventory(inventory);
         });
@@ -221,40 +228,17 @@ public final class SusGui implements Listener {
                     staff.closeInventory();
                 }
             }
-            case 51 -> offend(staff, online, target, "xray");
-            case 52 -> offend(staff, online, target, "hacking");
+            case 51 -> {
+                if (staff.hasPermission("veltryx.offend")) {
+                    offendGui.open(staff, target, holder.name());
+                } else {
+                    messages.send(staff, "general.no-permission");
+                }
+            }
             case 53 -> openList(staff);
             default -> {
             }
         }
-    }
-
-    private void offend(Player staff, Player online, UUID target, String reasonKey) {
-        if (!staff.hasPermission("veltryx.offend")) {
-            messages.send(staff, "general.no-permission");
-            return;
-        }
-        config.resolveOffendReason(reasonKey).ifPresent(reason -> {
-            String name = online != null ? online.getName() : reasonKey;
-            StringBuilder evidence = new StringBuilder();
-            for (FlagEntry flag : anticheat.storedFlags(target, 8)) {
-                if (evidence.length() > 0) {
-                    evidence.append(" | ");
-                }
-                evidence.append(flag.check()).append(' ')
-                        .append(String.format(Locale.ROOT, "%.1f", flag.vl()))
-                        .append(" (").append(flag.detail()).append(')');
-            }
-            long expires = TimeUtil.expiryMillis(System.currentTimeMillis(), reason.durationSeconds());
-            BanEntry entry = bans.ban(target, name, reason.category(), reason.display(),
-                    evidence.toString(), staff.getName(), expires, false);
-            String duration = reason.durationSeconds() == Long.MAX_VALUE
-                    ? "permanent" : TimeUtil.format(reason.durationSeconds());
-            messages.send(staff, "offend.done", Map.of(
-                    "player", name, "reason", reason.display(),
-                    "duration", duration, "id", entry.id()));
-            staff.closeInventory();
-        });
     }
 
     // -------------------------------------------------------------- items

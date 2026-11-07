@@ -140,7 +140,7 @@ public final class WarnCommand implements CommandExecutor, TabCompleter {
         messages.send(sender, "warns.header",
                 Map.of("player", args[0], "count", String.valueOf(active.size())));
         for (WarnEntry entry : active) {
-            sender.sendMessage(messages.prefixed("warns.entry", Map.of(
+            sender.sendMessage(messages.render("warns.entry", Map.of(
                     "id", entry.id(),
                     "reason", entry.reason(),
                     "staff", entry.staff(),

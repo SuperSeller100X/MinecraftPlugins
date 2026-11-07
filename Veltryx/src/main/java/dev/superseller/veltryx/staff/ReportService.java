@@ -32,7 +32,7 @@ public final class ReportService {
                 System.currentTimeMillis(), false);
         store.saveReport(entry);
 
-        Component notification = messages.prefixed("report.filed-staff", Map.of(
+        Component notification = messages.render("report.filed-staff", Map.of(
                 "reporter", reporter.getName(),
                 "player", targetName,
                 "reason", reason,

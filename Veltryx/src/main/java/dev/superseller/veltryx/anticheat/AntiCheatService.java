@@ -146,7 +146,7 @@ public final class AntiCheatService {
 
     /** Sends a staff alert for a flagged player. */
     private void alert(Player player, CheckType check, double vl, String detail, int ping) {
-        Component message = messages.prefixed("anticheat.alert", Map.of(
+        Component message = messages.render("anticheat.alert", Map.of(
                 "player", player.getName(),
                 "check", check.display(),
                 "vl", String.format(java.util.Locale.ROOT, "%.1f", vl),
@@ -181,7 +181,7 @@ public final class AntiCheatService {
     }
 
     private void notifyPunishment(String name, CheckType check, String action, String duration) {
-        Component message = messages.prefixed("anticheat.punished", Map.of(
+        Component message = messages.render("anticheat.punished", Map.of(
                 "player", name,
                 "check", check.display(),
                 "action", action,

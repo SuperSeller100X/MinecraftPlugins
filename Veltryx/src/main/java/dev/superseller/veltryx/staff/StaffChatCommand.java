@@ -53,7 +53,7 @@ public final class StaffChatCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         String message = String.join(" ", args);
-        Component chat = messages.prefixed("staffchat.format", Map.of(
+        Component chat = messages.render("staffchat.format", Map.of(
                 "staff", sender.getName(),
                 "message", message));
         for (Player staff : Bukkit.getOnlinePlayers()) {

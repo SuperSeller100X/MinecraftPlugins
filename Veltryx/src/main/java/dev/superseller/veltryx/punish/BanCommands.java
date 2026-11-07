@@ -79,7 +79,7 @@ public final class BanCommands implements CommandExecutor, TabCompleter {
         String expires = entry.expires() == TimeUtil.NEVER
                 ? "perm"
                 : TimeUtil.formatTimestamp(entry.expires());
-        sender.sendMessage(messages.prefixed("bans.entry", Map.of(
+        sender.sendMessage(messages.render("bans.entry", Map.of(
                 "id", entry.id(),
                 "player", entry.name(),
                 "category", entry.category(),

@@ -31,6 +31,7 @@ import dev.superseller.veltryx.storage.DataStore;
 import dev.superseller.veltryx.storage.SqliteDataStore;
 import dev.superseller.veltryx.storage.YamlDataStore;
 import dev.superseller.veltryx.sus.SusCommand;
+import dev.superseller.veltryx.sus.OffendGui;
 import dev.superseller.veltryx.sus.SusGui;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import java.io.File;
@@ -65,6 +66,7 @@ public final class VeltryxPlugin extends JavaPlugin {
     private FreezeService freeze;
     private ChatListener chatListener;
     private SusGui susGui;
+    private OffendGui offendGui;
 
     @Override
     public void onEnable() {
@@ -96,11 +98,14 @@ public final class VeltryxPlugin extends JavaPlugin {
             chatListener = new ChatListener(messages, mutes);
             chatListener.setSlowchatSeconds(0);
             ReportService reports = new ReportService(store, messages);
-            susGui = new SusGui(anticheat, bans, freeze, config, messages);
+            offendGui = new OffendGui(config, messages, bans, anticheat);
+            susGui = new SusGui(anticheat, bans, freeze, config, messages, offendGui);
+            offendGui.attach(susGui);
 
             stage = "timers";
             EconomyRegistry.register(economy);
             anticheat.startTimer();
+            freeze.startGuard();
             startAutosave();
 
             stage = "commands";
@@ -181,7 +186,7 @@ public final class VeltryxPlugin extends JavaPlugin {
     private void registerCommands(ReportService reports) {
         EcoCommand ecoCommand = new EcoCommand(economy, messages, config);
         bind("eco", ecoCommand, ecoCommand);
-        OffendCommand offendCommand = new OffendCommand(config, messages, bans, anticheat);
+        OffendCommand offendCommand = new OffendCommand(config, messages, bans, anticheat, offendGui);
         bind("offend", offendCommand, offendCommand);
         BanCommands banCommands = new BanCommands(messages, bans);
         bind("bans", banCommands, banCommands);
@@ -224,6 +229,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(vanish);
         register(freeze);
         register(susGui);
+        register(offendGui);
     }
 
     private void startAutosave() {

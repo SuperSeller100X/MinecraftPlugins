@@ -72,7 +72,7 @@ public final class NotesCommand implements CommandExecutor, TabCompleter {
                 messages.send(sender, "notes.header",
                         Map.of("player", name, "count", String.valueOf(notes.size())));
                 for (NoteEntry entry : notes) {
-                    sender.sendMessage(messages.prefixed("notes.entry", Map.of(
+                    sender.sendMessage(messages.render("notes.entry", Map.of(
                             "id", entry.id(),
                             "staff", entry.staff(),
                             "issued", TimeUtil.formatTimestamp(entry.issued()),

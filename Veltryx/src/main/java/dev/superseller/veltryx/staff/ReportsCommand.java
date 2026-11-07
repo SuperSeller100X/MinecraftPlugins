@@ -68,7 +68,7 @@ public final class ReportsCommand implements CommandExecutor, TabCompleter {
                 "pages", String.valueOf(pages),
                 "count", String.valueOf(open.size())));
         for (ReportEntry entry : open.subList(start, end)) {
-            sender.sendMessage(messages.prefixed("reports.entry", Map.of(
+            sender.sendMessage(messages.render("reports.entry", Map.of(
                     "id", entry.id(),
                     "player", entry.targetName(),
                     "reporter", entry.reporterName(),

@@ -5,6 +5,7 @@ import dev.superseller.veltryx.config.Messages;
 import dev.superseller.veltryx.config.VeltryxConfig;
 import dev.superseller.veltryx.model.BanEntry;
 import dev.superseller.veltryx.model.FlagEntry;
+import dev.superseller.veltryx.sus.OffendGui;
 import dev.superseller.veltryx.util.Players;
 import dev.superseller.veltryx.util.TimeUtil;
 import java.util.ArrayList;
@@ -33,13 +34,15 @@ public final class OffendCommand implements CommandExecutor, TabCompleter {
     private final Messages messages;
     private final BanService bans;
     private final AntiCheatService anticheat;
+    private final OffendGui offendGui;
 
     public OffendCommand(VeltryxConfig config, Messages messages, BanService bans,
-                         AntiCheatService anticheat) {
+                         AntiCheatService anticheat, OffendGui offendGui) {
         this.config = config;
         this.messages = messages;
         this.bans = bans;
         this.anticheat = anticheat;
+        this.offendGui = offendGui;
     }
 
     @Override
@@ -49,6 +52,15 @@ public final class OffendCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (args.length < 2) {
+            if (args.length == 1 && sender instanceof Player staff) {
+                OfflinePlayer target = Players.offline(args[0]);
+                if (target == null) {
+                    messages.send(sender, "general.player-not-found", Map.of("input", args[0]));
+                    return true;
+                }
+                offendGui.open(staff, target.getUniqueId(), Players.name(target, args[0]));
+                return true;
+            }
             messages.send(sender, "offend.usage", Map.of("command", "/" + label));
             return true;
         }
@@ -99,7 +111,7 @@ public final class OffendCommand implements CommandExecutor, TabCompleter {
                 "duration", duration,
                 "id", entry.id()));
 
-        Component staffMessage = messages.prefixed("offend.staff-note", Map.of(
+        Component staffMessage = messages.render("offend.staff-note", Map.of(
                 "staff", sender.getName(),
                 "player", name,
                 "reason", reason.display(),

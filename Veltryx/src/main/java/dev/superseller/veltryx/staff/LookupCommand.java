@@ -68,25 +68,25 @@ public final class LookupCommand implements CommandExecutor, TabCompleter {
         String name = Players.name(target, args[0]);
         Profile profile = store.getProfile(target.getUniqueId());
 
-        sender.sendMessage(messages.prefixed("lookup.header", Map.of("player", name)));
-        sender.sendMessage(messages.prefixed("lookup.identity", Map.of(
+        sender.sendMessage(messages.render("lookup.header", Map.of("player", name)));
+        sender.sendMessage(messages.render("lookup.identity", Map.of(
                 "uuid", target.getUniqueId().toString(),
                 "name", name)));
         if (profile != null) {
-            sender.sendMessage(messages.prefixed("lookup.activity", Map.of(
+            sender.sendMessage(messages.render("lookup.activity", Map.of(
                     "first", TimeUtil.formatTimestamp(profile.firstSeen()),
                     "last", TimeUtil.formatTimestamp(profile.lastSeen()),
                     "playtime", TimeUtil.format(profile.playtimeMs() / 1000L),
                     "joins", String.valueOf(profile.joins()))));
         } else {
-            sender.sendMessage(messages.prefixed("lookup.unknown"));
+            sender.sendMessage(messages.render("lookup.unknown"));
         }
-        sender.sendMessage(messages.prefixed("lookup.money", Map.of(
+        sender.sendMessage(messages.render("lookup.money", Map.of(
                 "amount", economy.format(economy.getBalance(target.getUniqueId())))));
 
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) {
-            sender.sendMessage(messages.prefixed("lookup.online", Map.of(
+            sender.sendMessage(messages.render("lookup.online", Map.of(
                     "ping", String.valueOf(online.getPing()),
                     "world", online.getWorld().getName(),
                     "gamemode", String.valueOf(online.getGameMode()))));
@@ -97,7 +97,7 @@ public final class LookupCommand implements CommandExecutor, TabCompleter {
         List<MuteEntry> activeMutes = mutes.history(target.getUniqueId()).stream()
                 .filter(m -> m.isActiveAt(System.currentTimeMillis())).toList();
         List<WarnEntry> activeWarns = warns.activeWarns(target.getUniqueId());
-        sender.sendMessage(messages.prefixed("lookup.moderation", Map.of(
+        sender.sendMessage(messages.render("lookup.moderation", Map.of(
                 "bans", String.valueOf(activeBans.size()),
                 "mutes", String.valueOf(activeMutes.size()),
                 "warns", String.valueOf(activeWarns.size()),
