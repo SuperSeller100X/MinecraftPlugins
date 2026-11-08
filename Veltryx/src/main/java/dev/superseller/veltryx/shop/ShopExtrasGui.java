@@ -17,7 +17,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ArrowMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -460,8 +459,15 @@ public final class ShopExtrasGui implements Listener {
         ItemMeta meta = stack.getItemMeta();
         if (meta instanceof PotionMeta potionMeta) {
             potionMeta.setBasePotionType(type);
-        } else if (meta instanceof ArrowMeta arrowMeta) {
-            arrowMeta.setBasePotionType(type);
+        } else if (meta != null) {
+            // tipped arrows: some API versions carry the potion type on a
+            // different meta type — call setBasePotionType if it exists
+            try {
+                meta.getClass().getMethod("setBasePotionType", org.bukkit.potion.PotionType.class)
+                        .invoke(meta, type);
+            } catch (ReflectiveOperationException ignored) {
+                // leave the arrow plain rather than fail the purchase
+            }
         }
         if (meta != null) {
             stack.setItemMeta(meta);
