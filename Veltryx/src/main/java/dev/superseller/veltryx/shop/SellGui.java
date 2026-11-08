@@ -55,14 +55,19 @@ public final class SellGui implements Listener {
             holder.inventory = inventory;
 
             Map<String, Integer> counts = new LinkedHashMap<>();
+            Map<String, Long> totals = new LinkedHashMap<>();
             for (ItemStack stack : player.getInventory().getContents()) {
                 if (stack == null || stack.getType() == Material.AIR) {
                     continue;
                 }
-                if (shop.prices().sellCents(stack.getType().name()) <= 0) {
+                dev.superseller.veltryx.shop.PriceTable.Entry priced = shop.prices().get(stack.getType().name());
+                if (priced == null || priced.sellCents() <= 0) {
                     continue;
                 }
+                // enchanted items are worth more, damaged ones less
+                long unit = ItemValue.valueCents(priced.sellCents(), priced.buyCents(), stack);
                 counts.merge(stack.getType().name(), stack.getAmount(), Integer::sum);
+                totals.merge(stack.getType().name(), unit * stack.getAmount(), Long::sum);
             }
 
             int slot = 0;
@@ -72,8 +77,8 @@ public final class SellGui implements Listener {
                 }
                 String materialName = entry.getKey();
                 int amount = entry.getValue();
-                long unit = shop.prices().sellCents(materialName);
-                long total = unit * amount;
+                long total = totals.getOrDefault(materialName, 0L);
+                long unit = amount <= 0 ? total : total / amount;
                 Material material = Material.matchMaterial(materialName);
                 inventory.setItem(slot, item(material == null ? Material.PAPER : material, amount,
                         Txt.legacy("§f" + PriceTable.displayName(materialName)),
@@ -92,8 +97,8 @@ public final class SellGui implements Listener {
             }
 
             long value = 0;
-            for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                value += shop.prices().sellCents(entry.getKey()) * entry.getValue();
+            for (long total : totals.values()) {
+                value += total;
             }
             inventory.setItem(49, item(Material.EMERALD, 1,
                     Txt.legacy("§aSell everything"),

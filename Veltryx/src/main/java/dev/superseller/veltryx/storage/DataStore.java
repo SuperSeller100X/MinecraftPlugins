@@ -131,4 +131,33 @@ public interface DataStore {
 
     /** Deletes one home (no-op when it does not exist). */
     void removeHome(UUID owner, String name);
+
+    /** Renames a home (no-op when the old name is unknown or the new one is taken). */
+    default void renameHome(UUID owner, String oldName, String newName) {
+        for (HomeLocation home : homesFor(owner)) {
+            if (home.name().equals(oldName)) {
+                saveHome(new HomeLocation(owner, newName, home.world(),
+                        home.x(), home.y(), home.z(), home.yaw(), home.pitch()));
+                removeHome(owner, oldName);
+                return;
+            }
+        }
+    }
+
+    /** Icon material name of a home, or {@code null} for the default icon. */
+    String homeIcon(UUID owner, String name);
+
+    /** Sets the icon material name of a home (any block or item). */
+    void setHomeIcon(UUID owner, String name, String material);
+
+    // -------------------------------------------------------------- shards
+
+    /** Shard balance of a player (0 when unknown). */
+    long shards(UUID uuid);
+
+    /** Overwrites the shard balance of a player. */
+    void setShards(UUID uuid, long amount);
+
+    /** Every stored shard balance (snapshot copies). */
+    java.util.Map<UUID, Long> shardBalances();
 }

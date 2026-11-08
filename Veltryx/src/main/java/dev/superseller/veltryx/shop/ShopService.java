@@ -93,10 +93,14 @@ public final class ShopService {
         return new BuyResult(given, spent, null, Map.of());
     }
 
-    /** Sells up to {@code maxAmount} of a material from the player's inventory. */
+    /**
+     * Sells up to {@code maxAmount} of a material from the player's inventory.
+     * Enchanted items sell for more (+12% per enchant level), damaged items
+     * for less (scaled by the remaining durability) - see {@link ItemValue}.
+     */
     public SellResult sell(Player player, String materialName, int maxAmount) {
-        long unitSell = prices.sellCents(materialName);
-        if (unitSell <= 0) {
+        PriceTable.Entry entry = prices.get(materialName);
+        if (entry == null || entry.sellCents() <= 0) {
             return new SellResult(0, 0, "shop.no-sell");
         }
         Material material = Material.matchMaterial(materialName);
@@ -104,16 +108,34 @@ public final class ShopService {
             return new SellResult(0, 0, "shop.no-sell");
         }
         ItemStack[] contents = player.getInventory().getContents();
-        int removed = removeFrom(contents, material, Math.max(1, maxAmount), player);
-        if (removed <= 0) {
+        long earned = 0;
+        int sold = 0;
+        for (int i = 0; i < contents.length && sold < Math.max(1, maxAmount); i++) {
+            ItemStack stack = contents[i];
+            if (stack == null || stack.getType() != material) {
+                continue;
+            }
+            long unit = ItemValue.valueCents(entry.sellCents(), entry.buyCents(), stack);
+            int take = Math.min(stack.getAmount(), Math.max(1, maxAmount) - sold);
+            earned += unit * take;
+            sold += take;
+            int left = stack.getAmount() - take;
+            stack.setAmount(left);
+            if (left <= 0) {
+                player.getInventory().setItem(i, new ItemStack(Material.AIR, 1));
+            }
+        }
+        if (sold <= 0) {
             return new SellResult(0, 0, "shop.nothing");
         }
-        long earned = unitSell * removed;
         economy.deposit(player.getUniqueId(), player.getName(), earned);
-        return new SellResult(removed, earned, null);
+        return new SellResult(sold, earned, null);
     }
 
-    /** Sells every sellable item in the inventory; returns the total earned. */
+    /**
+     * Sells every sellable item in the inventory; enchanted and damaged
+     * items are paid out at their {@link ItemValue} worth.
+     */
     public SellResult sellAll(Player player) {
         long earned = 0;
         int sold = 0;
@@ -121,12 +143,13 @@ public final class ShopService {
             if (stack == null || stack.getType() == Material.AIR) {
                 continue;
             }
-            long unitSell = prices.sellCents(stack.getType().name());
-            if (unitSell <= 0) {
+            PriceTable.Entry entry = prices.get(stack.getType().name());
+            if (entry == null || entry.sellCents() <= 0) {
                 continue;
             }
+            long unit = ItemValue.valueCents(entry.sellCents(), entry.buyCents(), stack);
             int amount = stack.getAmount();
-            earned += unitSell * amount;
+            earned += unit * amount;
             sold += amount;
             stack.setAmount(0);
         }
@@ -137,23 +160,6 @@ public final class ShopService {
         return new SellResult(sold, earned, null);
     }
 
-    /** Removes up to {@code max} items of a type from the contents array. */
-    private static int removeFrom(ItemStack[] contents, Material material, int max, Player player) {
-        int removed = 0;
-        for (int i = 0; i < contents.length && removed < max; i++) {
-            ItemStack stack = contents[i];
-            if (stack == null || stack.getType() != material) {
-                continue;
-            }
-            int take = Math.min(stack.getAmount(), max - removed);
-            removed += take;
-            int left = stack.getAmount() - take;
-            stack.setAmount(left);
-            contents[i] = left > 0 ? stack : null;
-            player.getInventory().setItem(i, contents[i]);
-        }
-        return removed;
-    }
 
     /** Money in the player's balance — used in GUI lore. */
     public long balance(Player player) {

@@ -297,7 +297,7 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**vx-0.0.2-beta**. More modules land in the same plugin; the public
+**0.0.3-beta**. More modules land in the same plugin; the public
 `VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
@@ -335,6 +335,21 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   they cannot cause false bans.
 - `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
   levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
+- `/ah` auction house (list/buy/reclaim, 48h, capped) · `/order`/`/orders` buy
+  orders with escrow · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
+  max 45) with **per-home rename and any-item icons** · `/tpa`/`/tpahere`/`/tp`
+  with per-counterpart cooldowns
+- **`/sell` values enchants and wear**: enchantments raise the price
+  (+12% per enchant level), lost durability lowers it (scales with remaining
+  durability) — always strictly below the shop buy price
+- **Shards (`/shard`)** — a second currency earned **1 shard per minute** of
+  play (*"you earned 1 shard for playing the server"*). The shard shop sells
+  the **Shard Spear** (lunge dash, 90% less hunger drain while lunging),
+  **Shard Trident** (riptide without water, 3s cooldown), **Shard Axe**
+  (whole-tree felling, 128-log chain), **Shard Pickaxe** (3×3 with amethyst
+  particles) at 500 shards each — self-destructing **24h after purchase**
+  like the ShardTools plugin — plus the **Void Totem** (150) that rescues
+  you from the void. No way to buy shards with money: earned, paid or given.
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
   `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
   `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`

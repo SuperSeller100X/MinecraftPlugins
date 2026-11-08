@@ -47,6 +47,8 @@ public final class SqliteDataStore implements DataStore {
     private final ConcurrentMap<String, AhListing> ahListings = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, BuyOrder> buyOrders = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> homeIcons = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Long> shards = new ConcurrentHashMap<>();
 
     private final Object lock = new Object();
     private Connection connection;
@@ -97,7 +99,14 @@ public final class SqliteDataStore implements DataStore {
                             + " expires INTEGER, closed INTEGER)");
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_homes ("
                             + "owner TEXT, name TEXT, world TEXT, x REAL, y REAL, z REAL,"
-                            + " yaw REAL, pitch REAL, PRIMARY KEY (owner, name))");
+                            + " yaw REAL, pitch REAL, icon TEXT, PRIMARY KEY (owner, name))");
+                    statement.execute("CREATE TABLE IF NOT EXISTS vel_shards ("
+                            + "uuid TEXT PRIMARY KEY, shards INTEGER)");
+                    try {
+                        statement.execute("ALTER TABLE vel_homes ADD COLUMN icon TEXT");
+                    } catch (SQLException ignored) {
+                        // column already exists
+                    }
                 }
                 loadFromDatabase();
             } catch (Exception e) {
@@ -196,13 +205,24 @@ public final class SqliteDataStore implements DataStore {
                             rs.getLong(7), rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0));
                 }
             }
-            rs = statement.executeQuery("SELECT owner, name, world, x, y, z, yaw, pitch FROM vel_homes");
+            rs = statement.executeQuery("SELECT owner, name, world, x, y, z, yaw, pitch, icon FROM vel_homes");
             while (rs.next()) {
                 UUID owner = parseUuid(rs.getString(1));
                 if (owner != null) {
                     homes.put(rs.getString(1) + ":" + rs.getString(2), new HomeLocation(owner,
                             rs.getString(2), rs.getString(3), rs.getDouble(4), rs.getDouble(5),
                             rs.getDouble(6), (float) rs.getDouble(7), (float) rs.getDouble(8)));
+                    String icon = rs.getString(9);
+                    if (icon != null && !icon.isEmpty()) {
+                        homeIcons.put(rs.getString(1) + ":" + rs.getString(2), icon);
+                    }
+                }
+            }
+            rs = statement.executeQuery("SELECT uuid, shards FROM vel_shards");
+            while (rs.next()) {
+                UUID uuid = parseUuid(rs.getString(1));
+                if (uuid != null) {
+                    shards.put(uuid, rs.getLong(2));
                 }
             }
         }
@@ -531,6 +551,41 @@ public final class SqliteDataStore implements DataStore {
     public void removeHome(UUID owner, String name) {
         homes.remove(owner.toString() + ":" + name);
         execute("DELETE FROM vel_homes WHERE owner = ? AND name = ?", owner.toString(), name);
+    }
+
+    @Override
+    public String homeIcon(UUID owner, String name) {
+        return homeIcons.get(owner.toString() + ":" + name);
+    }
+
+    @Override
+    public void setHomeIcon(UUID owner, String name, String material) {
+        String key = owner.toString() + ":" + name;
+        if (material == null) {
+            homeIcons.remove(key);
+        } else {
+            homeIcons.put(key, material);
+        }
+        execute("UPDATE vel_homes SET icon = ? WHERE owner = ? AND name = ?",
+                material == null ? "" : material, owner.toString(), name);
+    }
+
+    @Override
+    public long shards(UUID uuid) {
+        return shards.getOrDefault(uuid, 0L);
+    }
+
+    @Override
+    public void setShards(UUID uuid, long amount) {
+        shards.put(uuid, amount);
+        execute("INSERT INTO vel_shards (uuid, shards) VALUES (?, ?)"
+                        + " ON CONFLICT(uuid) DO UPDATE SET shards = excluded.shards",
+                uuid.toString(), amount);
+    }
+
+    @Override
+    public java.util.Map<UUID, Long> shardBalances() {
+        return new java.util.HashMap<>(shards);
     }
 
     private void execute(String sql, Object... args) {

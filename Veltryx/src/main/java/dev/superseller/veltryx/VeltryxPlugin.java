@@ -94,6 +94,11 @@ public final class VeltryxPlugin extends JavaPlugin {
     private OrderGui orderGui;
     private ShopGui shopGui;
     private SellGui sellGui;
+    private dev.superseller.veltryx.shards.ShardService shardService;
+    private dev.superseller.veltryx.shards.ShardCatalog shardCatalog;
+    private dev.superseller.veltryx.shards.ShardItems shardItems;
+    private dev.superseller.veltryx.shards.ShardShopGui shardShopGui;
+    private dev.superseller.veltryx.shards.ShardExpiryService shardExpiry;
 
     @Override
     public void onEnable() {
@@ -138,12 +143,20 @@ public final class VeltryxPlugin extends JavaPlugin {
             ahGui = new AhGui(ahService, economy, messages);
             orderService = new OrderService(store, economy, messages, config);
             orderGui = new OrderGui(orderService, economy, messages);
+            shardCatalog = new dev.superseller.veltryx.shards.ShardCatalog();
+            shardItems = new dev.superseller.veltryx.shards.ShardItems(this);
+            shardService = new dev.superseller.veltryx.shards.ShardService(store);
+            shardShopGui = new dev.superseller.veltryx.shards.ShardShopGui(
+                    shardCatalog, shardItems, shardService, messages);
+            shardExpiry = new dev.superseller.veltryx.shards.ShardExpiryService(
+                    shardItems, shardCatalog, messages);
 
             stage = "timers";
             EconomyRegistry.register(economy);
             anticheat.startTimer();
             freeze.startGuard();
             startAutosave();
+            startShardTimers();
 
             stage = "commands";
             registerCommands(reports);
@@ -271,6 +284,9 @@ public final class VeltryxPlugin extends JavaPlugin {
         bind("home", homeCommand, homeCommand);
         bind("sethome", homeCommand, homeCommand);
         bind("homes", homeCommand, homeCommand);
+        dev.superseller.veltryx.shards.ShardCommand shardCommand = new dev.superseller.veltryx.shards.ShardCommand(
+                shardService, shardCatalog, shardItems, shardShopGui, messages);
+        bind("shard", shardCommand, shardCommand);
         TpaCommand tpaCommand = new TpaCommand(tpaService, messages, config);
         bind("tpa", tpaCommand, tpaCommand);
         bind("tpahere", tpaCommand, tpaCommand);
@@ -327,6 +343,31 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(homesGui);
         register(ahGui);
         register(orderGui);
+        register(shardShopGui);
+        register(new dev.superseller.veltryx.shards.ShardToolListener(shardItems, shardCatalog, config));
+        register(new dev.superseller.veltryx.shards.ShardPotionListener(
+                shardItems, shardCatalog, messages, config));
+        register(new dev.superseller.veltryx.shards.ShardVoidListener(shardItems, shardCatalog, messages));
+        register(new dev.superseller.veltryx.shards.ShardWeaponListener(shardItems, shardCatalog, messages));
+    }
+
+    private void startShardTimers() {
+        // Passive income: every online player earns 1 shard per minute of play.
+        PlatformScheduler.runTimer(() -> {
+            long perMinute = config.shardsPerMinute();
+            if (perMinute <= 0) {
+                return;
+            }
+            for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                shardService.give(player.getUniqueId(), perMinute);
+                if (config.shardIncomeMessage()) {
+                    messages.send(player, "shards.income", java.util.Map.of());
+                }
+            }
+        }, 60L * 20L);
+        // Self-destruct sweep: warns about and removes expired shard tools.
+        PlatformScheduler.runTimer(() -> shardExpiry.sweepAll(
+                org.bukkit.Bukkit.getOnlinePlayers(), System.currentTimeMillis()), 30L * 20L);
     }
 
     private void startAutosave() {

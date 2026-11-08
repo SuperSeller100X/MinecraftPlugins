@@ -77,6 +77,9 @@ public final class AhService {
             return Result.fail("ah.bad-price", Map.of(
                     "max", Money.formatCompact(MAX_PRICE_EACH)));
         }
+        if (hasValuedStack(seller, material)) {
+            return Result.fail("ah.no-valued", Map.of());
+        }
         long now = System.currentTimeMillis();
         int active = 0;
         for (AhListing listing : store.allAhListings()) {
@@ -104,6 +107,17 @@ public final class AhService {
                 "count", String.valueOf(amount),
                 "item", displayName(materialName),
                 "money", Money.formatCompact(total)));
+    }
+
+    /** True when any stack of the material is enchanted or damaged (valued items). */
+    private boolean hasValuedStack(Player seller, Material material) {
+        for (ItemStack stack : seller.getInventory().getContents()) {
+            if (stack != null && stack.getType() == material
+                    && dev.superseller.veltryx.shop.ItemValue.isValued(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Buys one listing. */

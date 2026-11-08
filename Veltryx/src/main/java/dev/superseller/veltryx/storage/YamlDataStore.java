@@ -45,6 +45,8 @@ public final class YamlDataStore implements DataStore {
     private final ConcurrentMap<String, AhListing> ahListings = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, BuyOrder> buyOrders = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> homeIcons = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Long> shards = new ConcurrentHashMap<>();
 
     public YamlDataStore(File folder, Logger logger) {
         this.folder = folder;
@@ -160,6 +162,7 @@ public final class YamlDataStore implements DataStore {
         }
 
         homes.clear();
+        homeIcons.clear();
         YamlConfiguration homeFile = read("homes.yml");
         for (String ownerKey : homeFile.getKeys(false)) {
             ConfigurationSection ownerSection = homeFile.getConfigurationSection(ownerKey);
@@ -176,6 +179,19 @@ public final class YamlDataStore implements DataStore {
                         s.getString("world", "world"), s.getDouble("x", 0.0), s.getDouble("y", 0.0),
                         s.getDouble("z", 0.0), (float) s.getDouble("yaw", 0.0),
                         (float) s.getDouble("pitch", 0.0)));
+                String icon = s.getString("icon", null);
+                if (icon != null && !icon.isEmpty()) {
+                    homeIcons.put(ownerKey + ":" + name, icon);
+                }
+            }
+        }
+
+        shards.clear();
+        YamlConfiguration shardFile = read("shards.yml");
+        for (String uuidKey : shardFile.getKeys(false)) {
+            UUID uuid = parseUuid(uuidKey);
+            if (uuid != null) {
+                shards.put(uuid, shardFile.getLong(uuidKey, 0L));
             }
         }
     }
@@ -392,6 +408,12 @@ public final class YamlDataStore implements DataStore {
         }
         write("market.yml", market);
 
+        YamlConfiguration shardFile = new YamlConfiguration();
+        for (java.util.Map.Entry<UUID, Long> e : shards.entrySet()) {
+            shardFile.set(e.getKey().toString(), e.getValue());
+        }
+        write("shards.yml", shardFile);
+
         YamlConfiguration homeFile = new YamlConfiguration();
         for (HomeLocation h : homes.values()) {
             String path = h.owner().toString() + "." + h.name();
@@ -401,8 +423,42 @@ public final class YamlDataStore implements DataStore {
             homeFile.set(path + ".z", h.z());
             homeFile.set(path + ".yaw", h.yaw());
             homeFile.set(path + ".pitch", h.pitch());
+            String icon = homeIcons.get(h.owner().toString() + ":" + h.name());
+            if (icon != null) {
+                homeFile.set(path + ".icon", icon);
+            }
         }
         write("homes.yml", homeFile);
+    }
+
+    @Override
+    public String homeIcon(UUID owner, String name) {
+        return homeIcons.get(owner.toString() + ":" + name);
+    }
+
+    @Override
+    public void setHomeIcon(UUID owner, String name, String material) {
+        String key = owner.toString() + ":" + name;
+        if (material == null || material.isEmpty()) {
+            homeIcons.remove(key);
+        } else {
+            homeIcons.put(key, material);
+        }
+    }
+
+    @Override
+    public long shards(UUID uuid) {
+        return shards.getOrDefault(uuid, 0L);
+    }
+
+    @Override
+    public void setShards(UUID uuid, long amount) {
+        shards.put(uuid, amount);
+    }
+
+    @Override
+    public java.util.Map<UUID, Long> shardBalances() {
+        return new java.util.HashMap<>(shards);
     }
 
     @Override

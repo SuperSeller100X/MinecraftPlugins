@@ -366,6 +366,43 @@ public final class VeltryxConfig {
         return config.getBoolean("staff.vanish-persists", true);
     }
 
+    // -------------------------------------------------------------- shards
+
+    /** Passive shard income per minute of playtime (1 = the Veltryx default). */
+    public long shardsPerMinute() {
+        return Math.max(0L, config.getLong("shards.per-minute", 1L));
+    }
+
+    /** Whether the small "you earned X shards" chat line is shown on income. */
+    public boolean shardIncomeMessage() {
+        return config.getBoolean("shards.income-message", true);
+    }
+
+    /** 3x3 plane radius of the shard tools (1 = 3x3, 2 = 5x5). */
+    public int shardAreaRadius() {
+        return Math.max(1, Math.min(2, config.getInt("shards.area-radius", 1)));
+    }
+
+    /** Hard cap of blocks a tree felling may break (log chain limit). */
+    public int shardTreeMaxBlocks() {
+        return Math.max(16, config.getInt("shards.tree.max-blocks", 128));
+    }
+
+    /** Whether the shard axe also breaks the tree's leaves. */
+    public boolean shardTreeBreakLeaves() {
+        return config.getBoolean("shards.tree.break-leaves", true);
+    }
+
+    /** Whether the shard axe replants a sapling where the tree stood. */
+    public boolean shardTreeReplant() {
+        return config.getBoolean("shards.tree.replant", true);
+    }
+
+    /** Haste II duration of the shard potion, in minutes. */
+    public long shardHasteMinutes() {
+        return Math.max(1L, config.getLong("shards.haste-minutes", 60L));
+    }
+
     /** Whole config, for the consistency checker and debugging. */
     public Map<String, Object> rawValues() {
         return new LinkedHashMap<>(config.getValues(true));

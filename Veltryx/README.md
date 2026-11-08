@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**. More modules (shop, and everything else) land in the same
 plugin in the next versions — the economy API is already built for it.
 
-- Version: **vx-0.0.2-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
+- Version: **0.0.3-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
 - Storage: **YAML** (default) or **SQLite** — one config switch
 - No required dependencies. Vault bridge and PlaceholderAPI hooks are planned.
 
@@ -42,8 +42,15 @@ restarts and shared by every future Veltryx module through the public
   lime `$`) plus your balance.
 - **`/sell`** — a GUI listing everything sellable in your inventory with its
   payout. Click an item to sell all of it, or sell everything with one button.
+  **Enchantments raise the price** (+12% of the flat sell price per total
+  enchant level) and **lost durability lowers it** (the payout scales with the
+  remaining durability — a broken tool is worth almost nothing). The payout is
+  always strictly below the shop buy price, so no loop can print money.
   Every sale shows the payout above the hotbar (action bar) and in chat as a
   compact amount like **$2.3k** / **$500k** with a lime `$`.
+- Enchanted or damaged items can't be listed on `/ah` or fill `/order`s
+  (their real worth is their `/sell` value, not a flat price) — the GUIs say
+  so and point you to `/sell`.
 - **Fair, exploit-proof prices.** You earn money by *doing something* — mining,
   farming, hunting — never by market games: buying materials, crafting and
   selling **always loses money** (verified against 170+ recipes in the smoke
@@ -89,8 +96,10 @@ so active play always wins.
 
 - **`/sethome <name>`, `/home [name]`, `/homes`** — the first 3 homes are
   free; every extra home costs $2,500 more than the previous one ($2.5k,
-  $5.0k, $7.5k, …) up to a maximum of 45 homes. The `/homes` GUI teleports on
-  click and deletes on shift-click.
+  $5.0k, $7.5k, …) up to a maximum of 45 homes. Clicking a home in `/homes`
+  opens its manage screen: **teleport, rename, change icon, delete**. Renames
+  are typed in chat (or `cancel`). **Icons can be any Minecraft block or
+  item** — the icon picker pages through every item in the game.
 - **`/tpa <player>`, `/tpahere <player>`** — teleport requests, accepted with
   **`/tp`** (expires after 60s). The 10s send cooldown is tracked **per
   player**: you can ask several players at once, but the same player only
@@ -221,6 +230,33 @@ A chest GUI listing every online player sorted by **suspicion score**
 
 ---
 
+### ✦ Shards (`/shard`, `/shardtools`, `/st`)
+
+A second currency earned **by playing**: every online player earns **1 shard
+per minute** of playtime (with a small gray chat line: *"you earned 1 shard
+for playing the server"*). Shards buy the shard weapons and tools — there is
+deliberately **no way to buy shards with money**; they are earned, paid
+between players (`/shard pay`) or given by staff (`/shard give`).
+
+| Item | Price | What it does | Lifetime |
+|---|---|---|---|
+| Shard Spear | 500 ✦ | Right-click to **lunge** forward — **90% less hunger drain while lunging** | **24 h real time** |
+| Shard Trident | 500 ✦ | **Riptide without water** (3 second cooldown; vanilla riptide still works in water/rain) | **24 h real time** |
+| Shard Axe | 500 ✦ | **Fells whole trees at once** (max 128-log chain), 3×3 on everything else — pick **Fortune III or Silk Touch** | **24 h real time** |
+| Shard Pickaxe | 500 ✦ | **3×3 mining** with **amethyst-like particles on every block mined** — pick **Fortune III or Silk Touch** | **24 h real time** |
+| Void Totem | 150 ✦ | **Rescues you from a lethal void hit** — consumed, teleports you to safety, full heal + Resistance & Slow Falling | permanent |
+
+- The weapons/tools self-destruct **24 real-time hours after purchase** —
+  exactly like the ShardTools plugin — and warn you before they go.
+- `/shard toggle` turns the held tool's ability on or off (each tool
+  remembers its own state).
+- `/shard top` shows the richest shard holders; `/shard balance` yours.
+- Area mining applies the tool's Fortune/Silk Touch to **every** broken
+  block and drops vanilla-style ore XP for the extras (never with Silk
+  Touch), skips containers and bedrock, and replants saplings for the axe.
+  All settings (chain cap, plane size, leaves) live under `shards:` in
+  `config.yml`.
+
 ## 📜 Commands
 
 | Command | Permission | Default |
@@ -228,6 +264,7 @@ A chest GUI listing every online player sorted by **suspicion score**
 | `/eco` (`/bal`, `/balance`, `/money`) | `veltryx.eco.balance` / `.pay` / `.top` / `.admin` | true / op |
 | `/shop` (`/store`) [category] | `veltryx.shop` | true |
 | `/sell` | `veltryx.sell` | true |
+| `/shard` (`/shardtools`, `/st`) <balance\|pay\|top\|shop\|toggle\|info> | `veltryx.shards` (give/set: `veltryx.shards.admin`) | true / op |
 | `/offend` | `veltryx.offend` | op |
 | `/ban` | `veltryx.bans.ban` | op |
 | `/bans` · `/unban` | `veltryx.bans.manage` | op |
@@ -322,7 +359,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.2-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/0.0.3-beta.jar
 ```
 
 Offline fallback (no Maven Central access): the bundled Eclipse compiler and
@@ -330,7 +367,7 @@ compile-only API stubs build the plugin and run the smoke tests:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.2-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/0.0.3-beta.jar
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
@@ -353,12 +390,12 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.2-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/0.0.3-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.2-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx 0.0.3-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 

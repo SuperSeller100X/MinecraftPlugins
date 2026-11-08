@@ -20,4 +20,7 @@ public interface Entity {
     void setVelocity(Vector velocity);
     Vector getVelocity();
     Server getServer();
+    boolean teleport(Location location);
+    boolean isSneaking();
+    boolean isInWater();
 }

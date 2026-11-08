@@ -105,6 +105,9 @@ public final class OrderService {
         if (material == null) {
             return Result.fail("order.gone", Map.of());
         }
+        if (hasValuedStack(seller, material)) {
+            return Result.fail("order.no-valued", Map.of());
+        }
         int take = Math.min(order.remaining(), Math.max(1, maxAmount));
         int removed = AhService.removeFromInventory(seller, material, take);
         if (removed <= 0) {
@@ -229,5 +232,16 @@ public final class OrderService {
             }
         }
         return total;
+    }
+
+    /** True when any stack of the material is enchanted or damaged (valued items). */
+    private boolean hasValuedStack(Player seller, Material material) {
+        for (ItemStack stack : seller.getInventory().getContents()) {
+            if (stack != null && stack.getType() == material
+                    && dev.superseller.veltryx.shop.ItemValue.isValued(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

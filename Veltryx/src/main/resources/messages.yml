@@ -227,3 +227,52 @@ tpa.you-teleported: "<green>Teleported to <white>{player}</white>.</green>"
 tpa.pulled: "<green>Pulled <white>{player}</white> to you.</green>"
 tpa.pulled-you: "<green><white>{player}</white> pulled you to them.</green>"
 tpa.warped: "<green>Teleported to <white>{player}</white>.</green>"
+
+# ------------------------------------------------------------- shards
+shards.income: "<gray>you earned 1 shard for playing the server</gray>"
+shards.balance: "<gray>Shards:</gray> <aqua>{balance}</aqua>"
+shards.balance-other: "<gray>{player}'s shards:</gray> <aqua>{balance}</aqua>"
+shards.pay-sent: "<green>Sent <white>{amount}</white> shards to <white>{player}</white>.</green>"
+shards.pay-received: "<green>Received <white>{amount}</white> shards from <white>{player}</white>.</green>"
+shards.pay-self: "<red>You cannot pay yourself.</red>"
+shards.pay-bad-amount: "<red>That is not a valid shard amount.</red>"
+shards.pay-unknown: "<red>Could not find a player named <white>{player}</white>.</red>"
+shards.not-enough: "<red>You don't have enough shards.</red>"
+shards.shop-cannot-afford: "<red>That costs <white>{price}</white> shards — you have <white>{balance}</white>.</red>"
+shards.top-header: "<gray>——— <aqua>Shard top</aqua> ———</gray>"
+shards.top-row: "<gray>{rank}.</gray> <white>{player}</white> <dark_gray>—</dark_gray> <aqua>{balance}</aqua>"
+shards.top-empty: "<gray>No shard balances yet.</gray>"
+shards.bought: "<green>Bought <white>{item}</white> for <white>{price}</white> shards.</green>"
+shards.shop-full: "<red>Your inventory is full.</red>"
+shards.toggle-on: "<green><white>{item}</white> ability enabled.</green>"
+shards.toggle-off: "<yellow><white>{item}</white> ability disabled.</yellow>"
+shards.toggle-no-tool: "<red>Hold a shard weapon or tool to toggle its ability.</red>"
+shards.expired: "<yellow>Your <white>{item}</white> self-destructed.</yellow>"
+shards.warn: "<yellow>Your <white>{item}</white> self-destructs in <white>{minutes}</white> minutes.</yellow>"
+shards.potion: "<green>Haste II for <white>{minutes}</white> minutes.</green>"
+shards.totem-saved: "<green>Your Void Totem saved you from the void!</green>"
+shards.gave: "<green>Gave <white>{amount}</white> shards to <white>{player}</white>.</green>"
+shards.set: "<green>Set <white>{player}</white>'s shards to <white>{amount}</white>.</green>"
+shards.usage-pay: "<red>Usage: <white>/shard pay <player> <amount></white></red>"
+shards.usage-give: "<red>Usage: <white>/shard give <player> <amount></white></red>"
+shards.riptide-cooldown: "<gray>Riptide recharging (<white>{seconds}s</white>).</gray>"
+shards.info: |-
+  <gray>——— <aqua>Shards</aqua> ———</gray>
+  <gray>You earn <white>1 shard per minute</white> just by playing.</gray>
+  <gray>Shard weapons and tools live <white>24 hours</white> and then self-destruct.</gray>
+  <gray><white>/shard shop</white> — buy the shard spear, trident, axe, pickaxe and void totem</gray>
+  <gray><white>/shard pay <player> <amount></white> — send shards to a friend</gray>
+  <gray><white>/shard top</white> — richest shard holders</gray>
+  <gray><white>/shard toggle</white> — turn the held shard tool's ability on or off</gray>
+
+# ------------------------------------------------------- home extras
+home.renamed: "<green>Home <white>{old}</white> renamed to <white>{name}</white>.</green>"
+home.name-taken: "<red>You already have a home named <white>{name}</white>.</red>"
+home.bad-icon: "<red><white>{icon}</white> is not an item that can be an icon.</red>"
+home.icon-set: "<green>Icon of <white>{name}</white> set to <white>{icon}</white>.</green>"
+home.rename-prompt: "<gray>Type the new name for <white>{name}</white> in chat (or <white>cancel</white>).</gray>"
+home.rename-cancelled: "<gray>Renaming <white>{name}</white> cancelled.</gray>"
+
+# -------------------------------------------------- valued item guards
+ah.no-valued: "<red>Enchanted or damaged items can't be listed — <white>/sell</white> pays extra for them.</red>"
+order.no-valued: "<red>Enchanted or damaged items can't fill orders — <white>/sell</white> pays extra for them.</red>"

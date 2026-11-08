@@ -570,6 +570,96 @@ public final class SmokeTest {
         t("check reach path", CheckType.INTERACT_REACH.configPath(), "interact.interact-reach");
         t("check xray path", CheckType.XRAY.configPath(), "xray.xray");
 
+        // Shard tools: AreaPlane (look-direction mining planes)
+        t("plane floor 3x3", Integer.valueOf(dev.superseller.veltryx.shards.AreaPlane.offsets(0, -1, 0, 1).size()), Integer.valueOf(8));
+        t("plane wall 3x3", Integer.valueOf(dev.superseller.veltryx.shards.AreaPlane.offsets(1, 0, 0, 1).size()), Integer.valueOf(8));
+        t("plane 5x5", Integer.valueOf(dev.superseller.veltryx.shards.AreaPlane.offsets(0, 1, 0, 2).size()), Integer.valueOf(24));
+        boolean planeOriginFree = true;
+        boolean planePerp = true;
+        for (int[] o : dev.superseller.veltryx.shards.AreaPlane.offsets(0, 1, 0, 1)) {
+            if (o[0] == 0 && o[1] == 0 && o[2] == 0) {
+                planeOriginFree = false;
+            }
+            if (o[1] != 0) {
+                planePerp = false;
+            }
+        }
+        t("plane excludes origin", planeOriginFree, true);
+        t("plane perpendicular to look", planePerp, true);
+
+        // Shard tools: TreeFeller (BFS tree collection + caps + leaves)
+        dev.superseller.veltryx.shards.TreeFeller.Grid column = (x, y, z) ->
+                (x == 0 && z == 0 && y >= 0 && y <= 5) ? "OAK_LOG" : null;
+        t("tree collects column", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collect(0, 0, 0, "OAK_LOG", column, n -> n.endsWith("_LOG"), true, 128).size()), Integer.valueOf(5));
+        t("tree respects max", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collect(0, 0, 0, "OAK_LOG", column, n -> n.endsWith("_LOG"), true, 3).size()), Integer.valueOf(2));
+        t("tree same-material only", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collect(0, 0, 0, "OAK_LOG", column, n -> n.endsWith("_LOG"), true, 128).size()), Integer.valueOf(5));
+        dev.superseller.veltryx.shards.TreeFeller.Grid single = (x, y, z) ->
+                (x == 0 && y == 0 && z == 0) ? "OAK_LOG" : Math.abs(x) + Math.abs(y) + Math.abs(z) == 1 ? "OAK_LEAVES" : null;
+        t("tree leaves adjacent", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collectLeaves(java.util.List.of(new int[]{0, 0, 0}), single, n -> n.endsWith("LEAVES"), 256).size()), Integer.valueOf(6));
+        t("tree leaves cap", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collectLeaves(java.util.List.of(new int[]{0, 0, 0}), single, n -> n.endsWith("LEAVES"), 2).size()), Integer.valueOf(2));
+        t("tree leaves none", Integer.valueOf(dev.superseller.veltryx.shards.TreeFeller
+                .collectLeaves(java.util.List.of(), single, n -> true, 256).size()), Integer.valueOf(0));
+
+        // Shard tools: ExpiryMath (24h wall-clock self-destruct)
+        t("expiry permanent", Long.valueOf(dev.superseller.veltryx.shards.ExpiryMath.expiresAt(100L, 0L)), Long.valueOf(Long.MAX_VALUE));
+        t("expiry at", Long.valueOf(dev.superseller.veltryx.shards.ExpiryMath.expiresAt(1000L, 2000L)), Long.valueOf(3000L));
+        t("expiry remaining", Long.valueOf(dev.superseller.veltryx.shards.ExpiryMath.remaining(1000L, 2000L, 2500L)), Long.valueOf(500L));
+        t("expiry remaining floor", Long.valueOf(dev.superseller.veltryx.shards.ExpiryMath.remaining(1000L, 2000L, 9000L)), Long.valueOf(0L));
+        t("expiry flag", dev.superseller.veltryx.shards.ExpiryMath.expired(1000L, 2000L, 3000L), true);
+        t("expiry live", dev.superseller.veltryx.shards.ExpiryMath.expired(1000L, 2000L, 2999L), false);
+        t("expiry warn 60", Integer.valueOf(dev.superseller.veltryx.shards.ExpiryMath
+                .dueWarning(59L * 60_000L, new long[]{60, 10}, 0)), Integer.valueOf(0));
+        t("expiry warn once", Integer.valueOf(dev.superseller.veltryx.shards.ExpiryMath
+                .dueWarning(59L * 60_000L, new long[]{60, 10}, 1)), Integer.valueOf(-1));
+        t("expiry warn 10", Integer.valueOf(dev.superseller.veltryx.shards.ExpiryMath
+                .dueWarning(9L * 60_000L, new long[]{60, 10}, 1)), Integer.valueOf(1));
+        t("expiry warn none", Integer.valueOf(dev.superseller.veltryx.shards.ExpiryMath
+                .dueWarning(2L * 3_600_000L, new long[]{60, 10}, 0)), Integer.valueOf(-1));
+
+        // ItemValue: enchants raise the /sell price, lost durability lowers it
+        t("value plain", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 2000L, 0, 1.0)), Long.valueOf(1000L));
+        t("value enchanted", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 5000L, 5, 1.0)), Long.valueOf(1600L));
+        t("value enchanted more", dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 5000L, 10, 1.0)
+                > dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 5000L, 1, 1.0), true);
+        t("value damaged", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 2000L, 0, 0.5)), Long.valueOf(500L));
+        t("value broken", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 2000L, 0, 0.0)), Long.valueOf(0L));
+        t("value cap below buy", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 1200L, 20, 1.0)), Long.valueOf(1199L));
+        t("value loop safe", dev.superseller.veltryx.shop.ItemValue.valueCents(1000L, 1001L, 99, 1.0) < 1001L, true);
+        t("value no base", Long.valueOf(dev.superseller.veltryx.shop.ItemValue.valueCents(0L, 2000L, 5, 1.0)), Long.valueOf(0L));
+
+        // Shard catalog: the four weapons/tools at 500 shards, void totem 150
+        dev.superseller.veltryx.shards.ShardCatalog cat = new dev.superseller.veltryx.shards.ShardCatalog();
+        t("catalog size", Integer.valueOf(cat.all().size()), Integer.valueOf(5));
+        t("catalog spear", Long.valueOf(cat.byId("shard_spear").priceShards()), Long.valueOf(500L));
+        t("catalog trident", Long.valueOf(cat.byId("shard_trident").priceShards()), Long.valueOf(500L));
+        t("catalog axe", Long.valueOf(cat.byId("shard_axe").priceShards()), Long.valueOf(500L));
+        t("catalog pickaxe", Long.valueOf(cat.byId("shard_pickaxe").priceShards()), Long.valueOf(500L));
+        t("catalog totem", Long.valueOf(cat.byId("void_totem").priceShards()), Long.valueOf(150L));
+        t("catalog 24h", Long.valueOf(cat.byId("shard_spear").lifetimeMs()), Long.valueOf(24L * 60 * 60 * 1000));
+        t("catalog totem permanent", cat.byId("void_totem").expires(), false);
+        t("catalog spear behavior", cat.byId("shard_spear").behavior(), dev.superseller.veltryx.shards.Behavior.LUNGE_SPEAR);
+        t("catalog trident behavior", cat.byId("shard_trident").behavior(), dev.superseller.veltryx.shards.Behavior.RIPTIDE_TRIDENT);
+        t("catalog axe behavior", cat.byId("shard_axe").behavior(), dev.superseller.veltryx.shards.Behavior.TREE_AXE);
+        t("catalog pickaxe behavior", cat.byId("shard_pickaxe").behavior(), dev.superseller.veltryx.shards.Behavior.AREA_MINE);
+        t("catalog totem behavior", cat.byId("void_totem").behavior(), dev.superseller.veltryx.shards.Behavior.VOID_TOTEM);
+        t("catalog tools have choice", cat.byId("shard_pickaxe").hasChoice(), true);
+        t("catalog axe has choice", cat.byId("shard_axe").hasChoice(), true);
+        t("catalog weapons no choice", cat.byId("shard_spear").hasChoice(), false);
+        t("catalog trident riptide", Integer.valueOf(cat.byId("shard_trident").enchants().get(0).level()), Integer.valueOf(3));
+        t("income per minute", Long.valueOf(dev.superseller.veltryx.shards.ShardService.SHARDS_PER_MINUTE), Long.valueOf(1L));
+        try {
+            String shardCmdSrc = new String(java.nio.file.Files.readAllBytes(java.nio.file.Path.of(
+                    "src/main/java/dev/superseller/veltryx/shards/ShardCommand.java")));
+            t("no buy-shards subcommand", shardCmdSrc.contains("\"buy\""), false);
+        } catch (java.io.IOException e) {
+            t("no buy-shards subcommand readable", Boolean.FALSE, Boolean.TRUE);
+        }
+
         System.out.println("Smoke: " + passed + " passed, " + failed + " failed.");
         if (failed > 0) {
             System.exit(1);

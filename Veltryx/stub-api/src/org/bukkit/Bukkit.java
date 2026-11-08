@@ -17,6 +17,7 @@ public final class Bukkit {
     public static Player getPlayer(UUID id) { return null; }
     public static World getWorld(String name) { return null; }
     @Deprecated public static OfflinePlayer getOfflinePlayer(String name) { return null; }
+    public static OfflinePlayer getOfflinePlayer(java.util.UUID id) { return null; }
     public static ConsoleCommandSender getConsoleSender() { return null; }
     public static BukkitScheduler getScheduler() { return null; }
     public static double[] getTPS() { return null; }

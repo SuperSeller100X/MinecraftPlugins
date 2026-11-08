@@ -12,6 +12,8 @@ public class InventoryClickEvent extends Event implements Cancellable {
     public ItemStack getCurrentItem() { return null; }
     public boolean isShiftClick() { return false; }
     public int getSlot() { return 0; }
+    public int getRawSlot() { return 0; }
+    public org.bukkit.inventory.InventoryView getView() { return null; }
     public Entity getWhoClicked() { return null; }
     @Override public void setCancelled(boolean cancelled) {}
     @Override public boolean isCancelled() { return false; }

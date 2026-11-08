@@ -124,6 +124,10 @@ commands:
   tphere:
     description: Accept a teleport-here request — or pull a player to you (staff).
     usage: /<command> [player]
+  shard:
+    description: Shard currency and shard shop — earn shards by playing, buy shard weapons and tools.
+    usage: /<command> <balance|pay|top|shop|toggle|info>
+    aliases: [shardtools, st]
 
 permissions:
   veltryx.*:
@@ -138,6 +142,8 @@ permissions:
       veltryx.home: true
       veltryx.tpa: true
       veltryx.tp: true
+      veltryx.shards: true
+      veltryx.shards.admin: true
       veltryx.anticheat.alerts: true
       veltryx.anticheat.bypass: true
       veltryx.sus: true
@@ -174,6 +180,12 @@ permissions:
   veltryx.home:
     description: Set and use homes (/sethome, /home, /homes).
     default: true
+  veltryx.shards:
+    description: Earn shards while playing, use the shard shop and shard weapons.
+    default: true
+  veltryx.shards.admin:
+    description: Give or set shard balances (/shard give, /shard set).
+    default: op
   veltryx.tpa:
     description: Send and accept teleport requests (/tpa, /tpahere, /tp).
     default: true

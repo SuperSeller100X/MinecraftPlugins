@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -136,5 +137,45 @@ public final class HomeService {
         }
         player.teleportAsync(new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch()));
         return Result.ok("home.teleported", Map.of("name", name));
+    }
+
+    /** Renames a home. The home keeps its location, icon and slot in the list. */
+    public Result rename(Player player, String rawOld, String rawNew) {
+        String oldName = HomePricing.normalizeName(rawOld);
+        String newName = HomePricing.normalizeName(rawNew);
+        if (oldName == null || find(player.getUniqueId(), oldName) == null) {
+            return Result.fail("home.not-found", Map.of("name", String.valueOf(rawOld)));
+        }
+        if (newName == null) {
+            return Result.fail("home.invalid-name", Map.of());
+        }
+        if (!newName.equals(oldName) && find(player.getUniqueId(), newName) != null) {
+            return Result.fail("home.name-taken", Map.of("name", newName));
+        }
+        store.renameHome(player.getUniqueId(), oldName, newName);
+        return Result.ok("home.renamed", Map.of("name", newName, "old", oldName));
+    }
+
+    /** Sets the icon of a home (any Minecraft block or item); null resets to the default. */
+    public Result setIcon(Player player, String rawName, String materialName) {
+        String name = HomePricing.normalizeName(rawName);
+        if (name == null || find(player.getUniqueId(), name) == null) {
+            return Result.fail("home.not-found", Map.of("name", String.valueOf(rawName)));
+        }
+        if (materialName == null) {
+            store.setHomeIcon(player.getUniqueId(), name, null);
+            return Result.ok("home.icon-set", Map.of("name", name, "icon", "default"));
+        }
+        Material material = Material.matchMaterial(materialName);
+        if (material == null || !material.isItem()) {
+            return Result.fail("home.bad-icon", Map.of("icon", String.valueOf(materialName)));
+        }
+        store.setHomeIcon(player.getUniqueId(), name, material.name());
+        return Result.ok("home.icon-set", Map.of("name", name, "icon", material.name()));
+    }
+
+    /** Icon material name of a home, or {@code null} for the default icon. */
+    public String icon(UUID owner, String name) {
+        return store.homeIcon(owner, name);
     }
 }

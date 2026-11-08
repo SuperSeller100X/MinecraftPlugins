@@ -16,6 +16,14 @@ public final class Txt {
     }
 
     /** Renders a legacy-coded string (§-colors) as a styled component. */
+    public static java.util.List<Component> legacy(java.util.List<String> lines) {
+        java.util.List<Component> out = new java.util.ArrayList<>(lines.size());
+        for (String line : lines) {
+            out.add(legacy(line));
+        }
+        return out;
+    }
+
     public static Component legacy(String text) {
         return LEGACY.deserialize(text);
     }

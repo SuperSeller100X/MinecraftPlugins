@@ -45,6 +45,25 @@ tpa:
   cooldown-seconds: 10
   request-timeout-seconds: 60
 
+# Shards (/shard): a second currency earned by playing — 1 shard per minute
+# of playtime. Shards buy the shard weapons and tools (spear, trident, axe,
+# pickaxe) and the void totem in the shard shop. Weapons and tools
+# self-destruct 24 real-time hours after purchase, like the ShardTools
+# plugin. There is deliberately no way to buy shards with money — they are
+# earned by playing, paid between players or given by staff.
+shards:
+  per-minute: 1
+  income-message: true
+  # Mining plane radius of the shard pickaxe and axe (1 = 3x3).
+  area-radius: 1
+  # The shard axe fells whole trees; this caps the log chain length.
+  tree:
+    max-blocks: 128
+    break-leaves: true
+    replant: true
+  # Haste II duration of the shard potion of haste, in minutes.
+  haste-minutes: 60
+
 anticheat:
   enabled: true
 
