@@ -45,7 +45,7 @@ find smoke -name '*.java' >target/smoke-sources.txt
   -cp "$OUT" -d "$SMOKE_OUT" @target/smoke-sources.txt
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT" dev.superseller.veltryx.smoke.SmokeTest
 
-VERSION="vx-v0.0.1-beta"
+VERSION="vx-0.0.2-beta"
 echo "==> assembling target/${VERSION}.jar"
 rm -rf target/jar
 mkdir -p target/jar

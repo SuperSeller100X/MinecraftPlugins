@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**. More modules (shop, and everything else) land in the same
 plugin in the next versions — the economy API is already built for it.
 
-- Version: **vx-v0.0.1-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
+- Version: **vx-0.0.2-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
 - Storage: **YAML** (default) or **SQLite** — one config switch
 - No required dependencies. Vault bridge and PlaceholderAPI hooks are planned.
 
@@ -51,6 +51,27 @@ restarts and shared by every future Veltryx module through the public
   live in `shop.yml`, are editable per server, and new items are added on
   updates while keeping your values.
 - New players still start with **$100** (`economy.starting-balance`).
+
+### 💰 Money making methods
+
+Prices are tuned so **playing the game earns good money** — while buying
+materials, crafting and selling still always loses (no market tricks, checked
+against 150+ recipes on every build). What the server pays per item:
+
+| Job | What to do | What it pays |
+| --- | --- | --- |
+| **Ice mining** | silk-touch an ice spikes biome | ice **$0.13**, packed **$0.30**, blue **$0.80** each |
+| **Ore mining** | strip-mine or cave with fortune | diamonds **$5.20**, quartz **$0.35**, redstone **$0.25**, raw iron **$0.45**, coal **$0.35**, lapis **$0.45** |
+| **Nether mining** | ancient debris & quartz | debris **$16.25**, quartz **$0.35**, nether wart **$0.35** |
+| **Fishing** | rod + luck of the sea | tropical **$0.70**, puffer **$0.58**, salmon **$0.42**, cod **$0.35** |
+| **Mob hunting** | spawners, farms, endermen | pearls **$1.95**, bones **$0.20**, gunpowder **$0.25**, string **$0.16**, phantom membranes **$1.17** |
+| **Farming** | big crop fields | wheat **$0.18**, carrots/potatoes **$0.14**, pumpkins **$0.25**, cocoa **$0.25**, sugar cane **$0.16** |
+| **End busting** | raid end cities | shulker shells **$5.20**, chorus fruit **$0.35**, elytra (trophies, not sold) |
+| **Guardian farms** | prismarine & fish | shards **$0.29**, crystals **$0.36**, fish prices above |
+
+Raw ores sell better than their smelted ingots — sell what you mine. Passive
+AFK-farmable items (bamboo, cactus, kelp, snow, melon) deliberately pay less
+so active play always wins.
 
 ### 🏷️ Auction house & orders (`/ah`, `/order`, `/orders`)
 
@@ -301,7 +322,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/vx-v0.0.1-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.2-beta.jar
 ```
 
 Offline fallback (no Maven Central access): the bundled Eclipse compiler and
@@ -309,7 +330,7 @@ compile-only API stubs build the plugin and run the smoke tests:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-v0.0.1-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.2-beta.jar
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
@@ -332,12 +353,12 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-v0.0.1-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.2-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx vx-v0.0.1-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.2-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 

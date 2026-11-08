@@ -17,21 +17,21 @@ ores:
   display: "Ores & Minerals"
   icon: DIAMOND
   items:
-    COAL: { buy: 0.25, sell: 0.16 }
+    COAL: { buy: 0.55, sell: 0.35 }
     CHARCOAL: { buy: 0.18, sell: 0.09 }
-    RAW_IRON: { buy: 0.45, sell: 0.29 }
+    RAW_IRON: { buy: 0.75, sell: 0.45 }
     IRON_INGOT: { buy: 0.65, sell: 0.42 }
     IRON_NUGGET: { buy: 0.08, sell: 0.04 }
-    RAW_COPPER: { buy: 0.22, sell: 0.14 }
+    RAW_COPPER: { buy: 0.28, sell: 0.18 }
     COPPER_INGOT: { buy: 0.32, sell: 0.16 }
     RAW_GOLD: { buy: 0.85, sell: 0.55 }
     GOLD_INGOT: { buy: 1.20, sell: 0.78 }
     GOLD_NUGGET: { buy: 0.14, sell: 0.07 }
-    REDSTONE: { buy: 0.25, sell: 0.16 }
-    LAPIS_LAZULI: { buy: 0.50, sell: 0.33 }
+    REDSTONE: { buy: 0.40, sell: 0.25 }
+    LAPIS_LAZULI: { buy: 0.75, sell: 0.45 }
     DIAMOND: { buy: 8.00, sell: 5.20 }
     EMERALD: { buy: 7.00, sell: 4.55 }
-    QUARTZ: { buy: 0.30, sell: 0.20 }
+    QUARTZ: { buy: 0.55, sell: 0.35 }
     AMETHYST_SHARD: { buy: 0.45, sell: 0.29 }
     ANCIENT_DEBRIS: { buy: 25.00, sell: 16.25 }
     NETHERITE_SCRAP: { buy: 30.00, sell: 15.00 }
@@ -39,11 +39,11 @@ ores:
     IRON_BLOCK: { buy: 6.20, sell: 3.10 }
     COPPER_BLOCK: { buy: 3.00, sell: 1.50 }
     GOLD_BLOCK: { buy: 11.50, sell: 5.75 }
-    REDSTONE_BLOCK: { buy: 2.40, sell: 1.20 }
+    REDSTONE_BLOCK: { buy: 2.75, sell: 1.38 }
     LAPIS_BLOCK: { buy: 4.80, sell: 2.40 }
     DIAMOND_BLOCK: { buy: 76.00, sell: 38.00 }
     EMERALD_BLOCK: { buy: 66.00, sell: 33.00 }
-    COAL_BLOCK: { buy: 2.40, sell: 1.20 }
+    COAL_BLOCK: { buy: 3.50, sell: 1.75 }
     NETHERITE_BLOCK: { buy: 1150.00, sell: 575.00 }
     RAW_IRON_BLOCK: { buy: 4.30, sell: 2.15 }
     RAW_COPPER_BLOCK: { buy: 2.10, sell: 1.05 }
@@ -98,7 +98,7 @@ building:
     TUFF_BRICKS: { buy: 0.12, sell: 0.06 }
     MUD_BRICKS: { buy: 0.13, sell: 0.07 }
     BRICKS: { buy: 0.85, sell: 0.42 }
-    PRISMARINE: { buy: 0.35, sell: 0.23 }
+    PRISMARINE: { buy: 1.35, sell: 0.68 }
     PRISMARINE_BRICKS: { buy: 0.40, sell: 0.20 }
     DARK_PRISMARINE: { buy: 0.45, sell: 0.23 }
     SEA_LANTERN: { buy: 2.50, sell: 1.25 }
@@ -106,7 +106,7 @@ building:
     PURPUR_PILLAR: { buy: 0.32, sell: 0.16 }
     END_STONE: { buy: 0.10, sell: 0.07 }
     END_STONE_BRICKS: { buy: 0.13, sell: 0.07 }
-    OBSIDIAN: { buy: 0.65, sell: 0.42 }
+    OBSIDIAN: { buy: 0.95, sell: 0.60 }
     CRYING_OBSIDIAN: { buy: 1.20, sell: 0.60 }
     BASALT: { buy: 0.08, sell: 0.05 }
     POLISHED_BASALT: { buy: 0.11, sell: 0.06 }
@@ -116,10 +116,10 @@ building:
     POLISHED_BLACKSTONE_BRICKS: { buy: 0.13, sell: 0.07 }
     GILDED_BLACKSTONE: { buy: 0.35, sell: 0.17 }
     NETHERRACK: { buy: 0.08, sell: 0.05 }
-    NETHER_BRICKS: { buy: 0.24, sell: 0.12 }
+    NETHER_BRICKS: { buy: 0.26, sell: 0.12 }
     RED_NETHER_BRICKS: { buy: 0.30, sell: 0.15 }
     CHISELED_NETHER_BRICKS: { buy: 0.25, sell: 0.12 }
-    QUARTZ_BLOCK: { buy: 0.95, sell: 0.47 }
+    QUARTZ_BLOCK: { buy: 1.65, sell: 0.83 }
     SMOOTH_QUARTZ: { buy: 1.00, sell: 0.50 }
     QUARTZ_BRICKS: { buy: 1.05, sell: 0.53 }
     QUARTZ_PILLAR: { buy: 1.00, sell: 0.50 }
@@ -143,10 +143,10 @@ building:
     BRICK: { buy: 0.18, sell: 0.09 }
     NETHER_BRICK: { buy: 0.12, sell: 0.06 }
     BONE_BLOCK: { buy: 0.65, sell: 0.33 }
-    HAY_BLOCK: { buy: 1.95, sell: 0.97 }
+    HAY_BLOCK: { buy: 2.45, sell: 1.23 }
     SLIME_BLOCK: { buy: 4.60, sell: 2.30 }
     HONEY_BLOCK: { buy: 2.60, sell: 1.30 }
-    HONEYCOMB_BLOCK: { buy: 2.80, sell: 1.40 }
+    HONEYCOMB_BLOCK: { buy: 2.80, sell: 1.30 }
     GLOWSTONE: { buy: 0.90, sell: 0.45 }
     SHROOMLIGHT: { buy: 1.10, sell: 0.72 }
     GLOW_LICHEN: { buy: 0.25, sell: 0.16 }
@@ -355,24 +355,24 @@ nature:
     GRAVEL: { buy: 0.05, sell: 0.03 }
     CLAY_BALL: { buy: 0.15, sell: 0.10 }
     SNOWBALL: { buy: 0.05, sell: 0.03 }
-    ICE: { buy: 0.12, sell: 0.08 }
-    PACKED_ICE: { buy: 0.25, sell: 0.12 }
-    BLUE_ICE: { buy: 0.75, sell: 0.38 }
+    ICE: { buy: 0.22, sell: 0.13 }
+    PACKED_ICE: { buy: 0.50, sell: 0.30 }
+    BLUE_ICE: { buy: 1.25, sell: 0.80 }
     KELP: { buy: 0.05, sell: 0.03 }
     DRIED_KELP: { buy: 0.06, sell: 0.03 }
     DRIED_KELP_BLOCK: { buy: 0.55, sell: 0.28 }
     SEAGRASS: { buy: 0.05, sell: 0.03 }
     SEA_PICKLE: { buy: 0.30, sell: 0.20 }
     LILY_PAD: { buy: 0.12, sell: 0.08 }
-    SUGAR_CANE: { buy: 0.15, sell: 0.10 }
+    SUGAR_CANE: { buy: 0.24, sell: 0.16 }
     BAMBOO: { buy: 0.05, sell: 0.03 }
     CACTUS: { buy: 0.10, sell: 0.07 }
-    PUMPKIN: { buy: 0.25, sell: 0.16 }
+    PUMPKIN: { buy: 0.40, sell: 0.25 }
     MELON: { buy: 0.55, sell: 0.36 }
     MELON_SLICE: { buy: 0.08, sell: 0.05 }
-    GLOW_BERRIES: { buy: 0.15, sell: 0.10 }
-    SWEET_BERRIES: { buy: 0.10, sell: 0.07 }
-    CHORUS_FRUIT: { buy: 0.35, sell: 0.23 }
+    GLOW_BERRIES: { buy: 0.24, sell: 0.16 }
+    SWEET_BERRIES: { buy: 0.18, sell: 0.12 }
+    CHORUS_FRUIT: { buy: 0.55, sell: 0.35 }
     WEEPING_VINES: { buy: 0.12, sell: 0.08 }
     TWISTING_VINES: { buy: 0.12, sell: 0.08 }
     VINE: { buy: 0.08, sell: 0.05 }
@@ -936,7 +936,7 @@ colored:
     GLOWSTONE_DUST: { buy: 0.30, sell: 0.20 }
     BONE_MEAL: { buy: 0.10, sell: 0.05 }
     INK_SAC: { buy: 0.20, sell: 0.13 }
-    COCOA_BEANS: { buy: 0.25, sell: 0.16 }
+    COCOA_BEANS: { buy: 0.40, sell: 0.25 }
 
     BUNDLE: { buy: 1.20, sell: 0.60 }
 
@@ -1065,12 +1065,12 @@ food:
   icon: GOLDEN_APPLE
   items:
     EGG: { buy: 0.25, sell: 0.16 }
-    WHEAT: { buy: 0.20, sell: 0.13 }
+    WHEAT: { buy: 0.28, sell: 0.18 }
     WHEAT_SEEDS: { buy: 0.05, sell: 0.03 }
     BEETROOT_SEEDS: { buy: 0.06, sell: 0.04 }
-    BEETROOT: { buy: 0.12, sell: 0.08 }
-    CARROT: { buy: 0.10, sell: 0.07 }
-    POTATO: { buy: 0.10, sell: 0.07 }
+    BEETROOT: { buy: 0.22, sell: 0.14 }
+    CARROT: { buy: 0.22, sell: 0.14 }
+    POTATO: { buy: 0.22, sell: 0.14 }
     POISONOUS_POTATO: { buy: 0.08, sell: 0.05 }
     GOLDEN_CARROT: { buy: 2.30, sell: 1.15 }
     PUMPKIN_SEEDS: { buy: 0.08, sell: 0.05 }
@@ -1098,13 +1098,13 @@ food:
     COOKED_RABBIT: { buy: 0.55, sell: 0.28 }
     RABBIT: { buy: 0.38, sell: 0.25 }
     COOKED_COD: { buy: 0.50, sell: 0.25 }
-    COD: { buy: 0.32, sell: 0.21 }
+    COD: { buy: 0.55, sell: 0.35 }
     COOKED_SALMON: { buy: 0.55, sell: 0.28 }
-    SALMON: { buy: 0.35, sell: 0.23 }
-    TROPICAL_FISH: { buy: 0.45, sell: 0.29 }
-    PUFFERFISH: { buy: 0.40, sell: 0.26 }
-    ROTTEN_FLESH: { buy: 0.08, sell: 0.05 }
-    SPIDER_EYE: { buy: 0.22, sell: 0.14 }
+    SALMON: { buy: 0.65, sell: 0.42 }
+    TROPICAL_FISH: { buy: 1.10, sell: 0.70 }
+    PUFFERFISH: { buy: 0.90, sell: 0.58 }
+    ROTTEN_FLESH: { buy: 0.13, sell: 0.08 }
+    SPIDER_EYE: { buy: 0.30, sell: 0.19 }
     FERMENTED_SPIDER_EYE: { buy: 0.35, sell: 0.17 }
     MILK_BUCKET: { buy: 0.60, sell: 0.30 }
     HONEY_BOTTLE: { buy: 0.45, sell: 0.29 }
@@ -1117,13 +1117,13 @@ mobs:
   display: "Mob Drops & Brewing"
   icon: ENDER_PEARL
   items:
-    BONE: { buy: 0.18, sell: 0.12 }
-    STRING: { buy: 0.15, sell: 0.10 }
-    GUNPOWDER: { buy: 0.22, sell: 0.14 }
+    BONE: { buy: 0.32, sell: 0.20 }
+    STRING: { buy: 0.26, sell: 0.16 }
+    GUNPOWDER: { buy: 0.38, sell: 0.25 }
     FEATHER: { buy: 0.12, sell: 0.08 }
     LEATHER: { buy: 0.45, sell: 0.29 }
     RABBIT_HIDE: { buy: 0.25, sell: 0.16 }
-    ENDER_PEARL: { buy: 1.80, sell: 1.17 }
+    ENDER_PEARL: { buy: 3.00, sell: 1.95 }
     BLAZE_ROD: { buy: 2.40, sell: 1.56 }
     BLAZE_POWDER: { buy: 1.35, sell: 0.68 }
     GHAST_TEAR: { buy: 3.50, sell: 2.27 }
@@ -1135,14 +1135,14 @@ mobs:
     HEART_OF_THE_SEA: { buy: 22.00, sell: 14.30 }
     TURTLE_SCUTE: { buy: 2.80, sell: 1.82 }
     ARMADILLO_SCUTE: { buy: 1.20, sell: 0.78 }
-    PHANTOM_MEMBRANE: { buy: 1.40, sell: 0.91 }
+    PHANTOM_MEMBRANE: { buy: 1.80, sell: 1.17 }
     SHULKER_SHELL: { buy: 8.00, sell: 5.20 }
     TOTEM_OF_UNDYING: { buy: 40.00, sell: 26.00 }
     NETHER_STAR: { buy: 150.00, sell: 97.50 }
     DRAGON_BREATH: { buy: 12.00, sell: 7.80 }
     POPPED_CHORUS_FRUIT: { buy: 0.40, sell: 0.20 }
     SUGAR: { buy: 0.08, sell: 0.04 }
-    NETHER_WART: { buy: 0.35, sell: 0.23 }
+    NETHER_WART: { buy: 0.55, sell: 0.35 }
     ECHO_SHARD: { buy: 9.00, sell: 5.85 }
     DISC_FRAGMENT_5: { buy: 2.20, sell: 1.43 }
     OMINOUS_BOTTLE: { buy: 8.00, sell: 5.20 }
@@ -1213,7 +1213,7 @@ misc:
     SOUL_TORCH: { buy: 0.12, sell: 0.06 }
     BOWL: { buy: 0.09, sell: 0.04 }
     HONEYCOMB: { buy: 0.35, sell: 0.23 }
-    NETHER_WART_BLOCK: { buy: 2.20, sell: 1.10 }
+    NETHER_WART_BLOCK: { buy: 3.50, sell: 1.75 }
     SOUL_SAND: { buy: 0.05, sell: 0.03 }
     SOUL_SOIL: { buy: 0.05, sell: 0.03 }
     BAKED_POTATO: { buy: 0.18, sell: 0.09 }
@@ -1311,4 +1311,3 @@ misc:
 
     OMINOUS_KEY: { buy: 60.00, sell: 21.00 }
 
-    ARMADILLO_SCUTE: { buy: 1.20, sell: 0.78 }
