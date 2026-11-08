@@ -180,6 +180,54 @@ public final class VeltryxConfig {
 
     // ---------------------------------------------------------------- xray
 
+    // ------------------------------------------------- market / homes / tpa
+
+    /** How long auction listings stay buyable (seconds). */
+    public long auctionHours() {
+        return config.getLong("market.auction-hours", 48L);
+    }
+
+    /** How long buy orders stay open (seconds). */
+    public long orderHours() {
+        return config.getLong("market.order-hours", 48L);
+    }
+
+    /** How many active listings one player may have at once. */
+    public int maxListings() {
+        return config.getInt("market.max-listings", 20);
+    }
+
+    /** How many open buy orders one player may have at once. */
+    public int maxOrders() {
+        return config.getInt("market.max-orders", 20);
+    }
+
+    /** Hard cap of homes per player. */
+    public int maxHomes() {
+        return config.getInt("home.max", 45);
+    }
+
+    /** Homes that are free for everyone. */
+    public int freeHomes() {
+        return config.getInt("home.free", 3);
+    }
+
+    /** Price increase per extra home beyond the free ones (money units). */
+    public long homePriceStep() {
+        long parsed = Money.parse(config.getString("home.price-step", "2500"));
+        return parsed == Money.INVALID ? 250_000L : parsed;
+    }
+
+    /** Send cooldown for tpa/tpahere per counterpart (seconds). */
+    public long tpaCooldownSeconds() {
+        return config.getLong("tpa.cooldown-seconds", 10L);
+    }
+
+    /** How long a tpa request stays acceptable (seconds). */
+    public long tpaTimeoutSeconds() {
+        return config.getLong("tpa.request-timeout-seconds", 60L);
+    }
+
     public boolean xrayObfuscation() {
         return config.getBoolean("anticheat.xray.obfuscation", true);
     }

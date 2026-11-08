@@ -108,6 +108,14 @@ for key in re.findall(r"\?\s*\"([a-z0-9.\-]+)\"\s*:\s*\"([a-z0-9.\-]+)\"", all_j
 for m in re.finditer(r"notifyAll\(\"([a-z0-9.\-]+)\"", all_java):
     used_messages.setdefault(m.group(1), [])
 
+# service Result records (ok/fail carry the template key) and SellNotices chat keys
+for m in re.finditer(r"Result\.(?:ok|fail)\(\s*\"([a-z0-9.\-]+)\"", all_java):
+    used_messages.setdefault(m.group(1), [])
+for m in re.finditer(r"new Result\((?:true|false),\s*\"([a-z0-9.\-]+)\"", all_java):
+    used_messages.setdefault(m.group(1), [])
+for m in re.finditer(r"SellNotices\.show\(\s*[^,]+,\s*[^,]+,\s*\"([a-z0-9.\-]+)\"", all_java):
+    used_messages.setdefault(m.group(1), [])
+
 for key, sites in sorted(used_messages.items()):
     if key not in message_keys:
         where = ", ".join(sorted({name for name, _ in sites})) or "?"

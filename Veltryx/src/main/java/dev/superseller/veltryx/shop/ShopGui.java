@@ -1,5 +1,6 @@
 package dev.superseller.veltryx.shop;
 
+import dev.superseller.veltryx.util.Txt;
 import dev.superseller.veltryx.config.Messages;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import java.util.ArrayList;
@@ -66,16 +67,16 @@ public final class ShopGui implements Listener {
             int rows = Math.max(1, Math.min(6, (categories.size() + 8) / 9));
             Holder holder = new Holder(null, 0);
             Inventory inventory = Bukkit.createInventory(holder, rows * 9,
-                    Component.text("§8§lShop — categories"));
+                    Txt.legacy("§8§lShop — categories"));
             holder.inventory = inventory;
             for (int i = 0; i < categories.size() && i < rows * 9; i++) {
                 PriceTable.Category category = categories.get(i);
                 Material icon = Material.matchMaterial(category.icon());
                 inventory.setItem(i, item(icon == null ? Material.CHEST : icon,
-                        Component.text("§f" + category.display()),
-                        List.of(Component.text("§7" + category.items().size() + " items"),
+                        Txt.legacy("§f" + category.display()),
+                        List.of(Txt.legacy("§7" + category.items().size() + " items"),
                                 Component.text(""),
-                                Component.text("§eClick to browse"))));
+                                Txt.legacy("§eClick to browse"))));
             }
             player.openInventory(inventory);
         });
@@ -99,7 +100,7 @@ public final class ShopGui implements Listener {
             int current = Math.max(0, Math.min(page, pages - 1));
             Holder holder = new Holder(categoryId, current);
             Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Component.text("§8§lShop — " + category.display() + " §7(" + (current + 1) + "/" + pages + ")"));
+                    Txt.legacy("§8§lShop — " + category.display() + " §7(" + (current + 1) + "/" + pages + ")"));
             holder.inventory = inventory;
 
             List<PriceTable.Entry> items = category.items();
@@ -111,22 +112,27 @@ public final class ShopGui implements Listener {
                 PriceTable.Entry entry = items.get(index);
                 Material material = Material.matchMaterial(entry.material());
                 inventory.setItem(slot, item(material == null ? Material.PAPER : material,
-                        Component.text("§f" + PriceTable.displayName(entry.material())),
-                        List.of(Component.text("§7Buy: §a" + shop.format(entry.buyCents())
-                                        + " §8×1 §7| §a" + shop.format(entry.buyCents() * 64) + " §8×64"),
-                                Component.text("§7Sell: §6" + shop.format(entry.sellCents())),
+                        Txt.legacy("§f" + PriceTable.displayName(entry.material())),
+                        List.of(Txt.legacy("§7Buy: §a$§f"
+                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents())
+                                        + " §8×1 §7| §a$§f"
+                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents() * 64)
+                                        + " §8×64"),
+                                Txt.legacy("§7Sell: §a$§f"
+                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.sellCents())),
                                 Component.text(""),
-                                Component.text("§eLeft-click§7: buy 1"),
-                                Component.text("§eShift-click§7: buy 64"))));
+                                Txt.legacy("§eLeft-click§7: buy 1"),
+                                Txt.legacy("§eShift-click§7: buy 64"))));
             }
             if (current > 0) {
-                inventory.setItem(45, item(Material.ARROW, Component.text("§ePrevious page"), List.of()));
+                inventory.setItem(45, item(Material.ARROW, Txt.legacy("§ePrevious page"), List.of()));
             }
-            inventory.setItem(49, item(Material.BARRIER, Component.text("§cBack to categories"), List.of()));
+            inventory.setItem(49, item(Material.BARRIER, Txt.legacy("§cBack to categories"), List.of()));
             inventory.setItem(51, item(Material.GOLD_INGOT,
-                    Component.text("§6Your balance: §a" + shop.format(shop.balance(player))), List.of()));
+                    Txt.legacy("§6Your balance: §a$§f"
+                            + dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player))), List.of()));
             if (current < pages - 1) {
-                inventory.setItem(53, item(Material.ARROW, Component.text("§eNext page"), List.of()));
+                inventory.setItem(53, item(Material.ARROW, Txt.legacy("§eNext page"), List.of()));
             }
             player.openInventory(inventory);
         });
@@ -173,11 +179,11 @@ public final class ShopGui implements Listener {
     private void buy(Player player, PriceTable.Entry entry, int amount) {
         ShopService.BuyResult result = shop.buy(player, entry.material(), amount);
         if (result.ok()) {
-            player.sendMessage(messages.render("shop.buy-done", Map.of(
+player.sendMessage(messages.render("shop.buy-done", Map.of(
                     "amount", String.valueOf(result.given()),
-                    "item", PriceTable.displayName(entry.material()),
-                    "price", shop.format(result.spentCents()),
-                    "balance", shop.format(shop.balance(player)))));
+                    "item", entry.material(),
+                    "price", dev.superseller.veltryx.util.Money.formatCompact(result.spentCents()),
+                    "balance", dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player)))));
         } else {
             sendFail(player, result.failKey(), result.failValues());
         }

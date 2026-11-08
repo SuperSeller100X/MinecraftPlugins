@@ -1,5 +1,6 @@
 package dev.superseller.veltryx.sus;
 
+import dev.superseller.veltryx.util.Txt;
 import dev.superseller.veltryx.anticheat.AntiCheatService;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PlayerTrace;
@@ -93,7 +94,7 @@ public final class SusGui implements Listener {
             int rows = Math.max(1, Math.min(6, (ranked.size() + 8) / 9));
             Holder holder = new Holder(false, null, null);
             Inventory inventory = Bukkit.createInventory(holder, rows * 9,
-                    Component.text("§8§lSUS — flagged players"));
+                    Txt.legacy("§8§lSUS — flagged players"));
             holder.inventory = inventory;
 
             for (int i = 0; i < ranked.size() && i < rows * 9; i++) {
@@ -102,17 +103,17 @@ public final class SusGui implements Listener {
                 if (online == null) {
                     continue;
                 }
-                ItemStack head = head(online, Component.text("§f" + online.getName()),
-                        List.of(Component.text("§7Suspicion: §c" + format(anticheat.suspicion(trace))),
-                                Component.text("§7Ping: §f" + online.getPing()),
-                                Component.text("§7Flags: §f" + trace.recentFlags().size()),
+                ItemStack head = head(online, Txt.legacy("§f" + online.getName()),
+                        List.of(Txt.legacy("§7Suspicion: §c" + format(anticheat.suspicion(trace))),
+                                Txt.legacy("§7Ping: §f" + online.getPing()),
+                                Txt.legacy("§7Flags: §f" + trace.recentFlags().size()),
                                 Component.text(""),
-                                Component.text("§eClick to inspect")));
+                                Txt.legacy("§eClick to inspect")));
                 inventory.setItem(i, head);
             }
             if (ranked.isEmpty()) {
-                inventory.setItem(4, item(Material.LIME_DYE, Component.text("§aNo suspicious players"),
-                        List.of(Component.text("§7Nobody is currently flagged."))));
+                inventory.setItem(4, item(Material.LIME_DYE, Txt.legacy("§aNo suspicious players"),
+                        List.of(Txt.legacy("§7Nobody is currently flagged."))));
             }
             staff.openInventory(inventory);
         });
@@ -125,16 +126,16 @@ public final class SusGui implements Listener {
             String name = online != null ? online.getName() : "unknown";
             Holder holder = new Holder(true, target, name);
             Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Component.text("§8§lSUS — " + name));
+                    Txt.legacy("§8§lSUS — " + name));
             holder.inventory = inventory;
 
             PlayerTrace trace = anticheat.traceIfPresent(target);
             double suspicion = trace == null ? 0.0 : anticheat.suspicion(trace);
 
-            inventory.setItem(4, head(target, Component.text("§f" + name),
-                    List.of(Component.text("§7Suspicion: §c" + format(suspicion)),
-                            Component.text("§7Ping: §f" + (online != null ? online.getPing() : -1)),
-                            Component.text("§7Online: §f" + (online != null ? "yes" : "no")))));
+            inventory.setItem(4, head(target, Txt.legacy("§f" + name),
+                    List.of(Txt.legacy("§7Suspicion: §c" + format(suspicion)),
+                            Txt.legacy("§7Ping: §f" + (online != null ? online.getPing() : -1)),
+                            Txt.legacy("§7Online: §f" + (online != null ? "yes" : "no")))));
 
             // Per-check violation levels.
             int slot = 18;
@@ -144,8 +145,8 @@ public final class SusGui implements Listener {
                         break;
                     }
                     inventory.setItem(slot++, item(Material.PAPER,
-                            Component.text("§c" + entry.getKey().display()),
-                            List.of(Component.text("§7Violation level: §f" + format(entry.getValue())))));
+                            Txt.legacy("§c" + entry.getKey().display()),
+                            List.of(Txt.legacy("§7Violation level: §f" + format(entry.getValue())))));
                 }
             }
 
@@ -157,23 +158,23 @@ public final class SusGui implements Listener {
                     break;
                 }
                 inventory.setItem(slot++, item(Material.REDSTONE,
-                        Component.text("§e" + flag.check()),
-                        List.of(Component.text("§7VL: §f" + format(flag.vl())),
-                                Component.text("§7Detail: §f" + flag.detail()),
-                                Component.text("§7When: §f" + TimeUtil.formatTimestamp(flag.issued())))));
+                        Txt.legacy("§e" + flag.check()),
+                        List.of(Txt.legacy("§7VL: §f" + format(flag.vl())),
+                                Txt.legacy("§7Detail: §f" + flag.detail()),
+                                Txt.legacy("§7When: §f" + TimeUtil.formatTimestamp(flag.issued())))));
             }
 
             // Staff actions.
-            inventory.setItem(45, item(Material.COMPASS, Component.text("§bTeleport to player"),
-                    List.of(Component.text("§7Jump to their location"))));
-            inventory.setItem(46, item(Material.PACKED_ICE, Component.text("§bFreeze / unfreeze"),
-                    List.of(Component.text("§7Lock them in place"))));
-            inventory.setItem(47, item(Material.IRON_DOOR, Component.text("§cKick"),
-                    List.of(Component.text("§7Disconnect the player"))));
-            inventory.setItem(51, item(Material.NETHER_STAR, Component.text("§cOffend — ban menu"),
-                    List.of(Component.text("§7Open the ban categories"),
-                            Component.text("§7and ban this player"))));
-            inventory.setItem(53, item(Material.ARROW, Component.text("§7Back to list"), List.of()));
+            inventory.setItem(45, item(Material.COMPASS, Txt.legacy("§bTeleport to player"),
+                    List.of(Txt.legacy("§7Jump to their location"))));
+            inventory.setItem(46, item(Material.PACKED_ICE, Txt.legacy("§bFreeze / unfreeze"),
+                    List.of(Txt.legacy("§7Lock them in place"))));
+            inventory.setItem(47, item(Material.IRON_DOOR, Txt.legacy("§cKick"),
+                    List.of(Txt.legacy("§7Disconnect the player"))));
+            inventory.setItem(51, item(Material.NETHER_STAR, Txt.legacy("§cOffend — ban menu"),
+                    List.of(Txt.legacy("§7Open the ban categories"),
+                            Txt.legacy("§7and ban this player"))));
+            inventory.setItem(53, item(Material.ARROW, Txt.legacy("§7Back to list"), List.of()));
             staff.openInventory(inventory);
         });
     }

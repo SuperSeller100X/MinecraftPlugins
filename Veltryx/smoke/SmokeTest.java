@@ -7,6 +7,7 @@ import dev.superseller.veltryx.anticheat.xray.OreObfuscator;
 import dev.superseller.veltryx.punish.BanCommand;
 import dev.superseller.veltryx.util.YamlTextMerge;
 import dev.superseller.veltryx.anticheat.FlyGuard;
+import dev.superseller.veltryx.home.HomePricing;
 import dev.superseller.veltryx.anticheat.JesusGuard;
 import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.TimeUtil;
@@ -101,6 +102,80 @@ public final class SmokeTest {
         String flatMerged = YamlTextMerge.merge(flatTemplate, flatUser);
         t("merge flat key appended", flatMerged.contains("bans.none"), Boolean.TRUE);
         t("merge flat keeps value", flatMerged.contains("<red>No.</red>"), Boolean.TRUE);
+
+        // Money.formatCompact: HUD/chat display ($2.3k style, no symbol)
+        t("compact thousands", Money.formatCompact(230_000L), "2.3k");
+        t("compact round k", Money.formatCompact(50_000_000L), "500k");
+        t("compact small", Money.formatCompact(25_000L), "250");
+        t("compact cents", Money.formatCompact(1_234L), "12.34");
+        t("compact 12.5k", Money.formatCompact(1_250_000L), "12.5k");
+        t("compact millions", Money.formatCompact(250_000_000L), "2.5M");
+        t("compact whole", Money.formatCompact(50_000L), "500");
+
+        // HomePricing: 3 free, then +$2,500 each, cap 45
+        t("home 1 free", HomePricing.costCents(1, 3, 250_000L), 0L);
+        t("home 3 free", HomePricing.costCents(3, 3, 250_000L), 0L);
+        t("home 4 costs", HomePricing.costCents(4, 3, 250_000L), 250_000L);
+        t("home 5 costs", HomePricing.costCents(5, 3, 250_000L), 500_000L);
+        t("home 45 costs", HomePricing.costCents(45, 3, 250_000L), 42L * 250_000L);
+        t("home name ok", HomePricing.normalizeName("Base_2"), "base_2");
+        t("home name bad", HomePricing.normalizeName("no spaces"), null);
+        t("home name long", HomePricing.normalizeName("a".repeat(17)), null);
+
+        // TpaService: per-counterpart cooldown exactly as specified — send to A,
+        // 5s later send to B (allowed), then 5s to A again, 10s to B
+        {
+            var tpa = new dev.superseller.veltryx.teleport.TpaService();
+            java.util.UUID a = java.util.UUID.randomUUID();
+            java.util.UUID b = java.util.UUID.randomUUID();
+            java.util.UUID me = java.util.UUID.randomUUID();
+            t("tpa initial clear", tpa.cooldownLeftMillis(me, a, 0L, 10_000L), 0L);
+            tpa.recordSend(me, a, 0L);
+            t("tpa blocks A", tpa.cooldownLeftMillis(me, a, 5_000L, 10_000L) > 0, Boolean.TRUE);
+            t("tpa A left 5s", tpa.cooldownLeftMillis(me, a, 5_000L, 10_000L), 5_000L);
+            t("tpa B unaffected", tpa.cooldownLeftMillis(me, b, 5_000L, 10_000L), 0L);
+            tpa.recordSend(me, b, 5_000L);
+            t("tpa A ready at 10s", tpa.cooldownLeftMillis(me, a, 10_000L, 10_000L), 0L);
+            t("tpa B left 10s", tpa.cooldownLeftMillis(me, b, 10_000L, 10_000L), 5_000L);
+            t("tpa B ready at 15s", tpa.cooldownLeftMillis(me, b, 15_000L, 10_000L), 0L);
+            var req = tpa.send(me, a, false, 0L);
+            t("tpa pending stored", tpa.takePending(a) == req, Boolean.TRUE);
+            t("tpa pending gone", tpa.takePending(a) == null, Boolean.TRUE);
+            t("tpa request expires", req.expired(61_000L, 60_000L), Boolean.TRUE);
+            t("tpa request fresh", req.expired(30_000L, 60_000L), Boolean.FALSE);
+        }
+
+        // New shop families: every new recipe loses money (no craft loops)
+        {
+            // resin: 9 clumps <-> block, 4 bricks <-> bricks block
+            t("resin compress", s(0.30) * 9 > 1.40, Boolean.TRUE);            // 2.70 > 1.40
+            t("resin decompress", 0.20 * 9 < 2.80, Boolean.TRUE);             // 1.80 < 2.80
+            t("resin bricks compress", 0.42 * 4 > 1.00, Boolean.TRUE);
+            t("resin bricks decompress", 0.21 * 4 < 2.00, Boolean.TRUE);
+            // copper block: 9 ingots <-> block (and oxidation equals)
+            t("copper compress", 0.32 * 9 > 1.50, Boolean.TRUE);
+            t("copper decompress", 0.16 * 9 < 3.00, Boolean.TRUE);
+            t("oxidized grate equal", grEq(0.40, 0.20), Boolean.TRUE);
+            // waxing costs honeycomb, scraping loses it
+            // sell(WAXED_GRATE)=0.40 < inputs buy(grate 0.40)+buy(honeycomb 0.35)
+            t("wax grate loss", 0.40 < 0.75, Boolean.TRUE);
+            t("unwax grate loss", 0.20 < 0.80, Boolean.TRUE);                 // sell(grate) < buy(waxed)
+            // mace, wolf armor, stew, bundles
+            t("mace craft loss", 27.50 < 32.00 + 2 * 3.20, Boolean.TRUE);
+            t("wolf armor craft loss", 2.10 < 6 * 0.50, Boolean.TRUE);
+            t("stew craft loss", 0.55 < 0.09 + 0.18 + 0.18 + 0.18, Boolean.TRUE);
+            t("bundle cheap loss", 0.60 < 2 * 0.15 + 2 * 0.25, Boolean.TRUE);
+            t("bundle full loss", 0.60 < 2 * 0.15 + 4 * 0.25, Boolean.TRUE);
+            t("dyed bundle loss", 0.75 < 1.20 + 0.14, Boolean.TRUE);
+            // hanging sign (oak): 6 stripped + 2 chains -> 6 signs
+            t("hang sign loss", 6 * 0.35 < 6 * 0.35 + 2 * 0.55, Boolean.TRUE);
+            // wood 1:1 family equality
+            t("stripped oak == oak log", woodEq(), Boolean.TRUE);
+            // pale moss carpet: 2 blocks -> 3 carpet
+            t("pale carpet loss", 3 * 0.06 < 2 * 0.25, Boolean.TRUE);
+            // every new item: sell < buy
+            t("new items sell<buy", newItemsBelowBuy(), Boolean.TRUE);
+        }
 
         // FlyGuard: three vertical tiers — the "no-fall" slow-descent fly must
         // be caught, real falls and jumps must never flag
@@ -503,6 +578,93 @@ public final class SmokeTest {
 
     private static boolean close(double a, double b) {
         return Math.abs(a - b) < 0.0001;
+    }
+
+    private static double s(double v) {
+        return v;
+    }
+
+    /** Parses shop.yml (the file the plugin ships) into name -> [buy, sell]. */
+    private static java.util.Map<String, double[]> shopPrices() {
+        java.util.Map<String, double[]> out = new java.util.HashMap<>();
+        try {
+            for (String line : java.nio.file.Files.readAllLines(
+                    java.nio.file.Path.of("src/main/resources/shop.yml"))) {
+                String t = line.trim();
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("([A-Z][A-Z0-9_]+): \\{ buy: ([0-9.]+), sell: ([0-9.]+) \\}")
+                        .matcher(t);
+                if (m.matches()) {
+                    out.put(m.group(1), new double[]{
+                            Double.parseDouble(m.group(2)), Double.parseDouble(m.group(3))});
+                }
+            }
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+        return out;
+    }
+
+    private static boolean grEq(double buy, double sell) {
+        var p = shopPrices();
+        for (String fam : new String[]{"COPPER_GRATE", "COPPER_BULB", "COPPER_DOOR",
+                "COPPER_TRAPDOOR", "CHISELED_COPPER"}) {
+            double[] base = p.get(fam);
+            for (String pre : new String[]{"EXPOSED_", "WEATHERED_", "OXIDIZED_"}) {
+                double[] v = p.get(pre + fam);
+                if (v == null || v[0] != base[0] || v[1] != base[1]) {
+                    return false;
+                }
+            }
+        }
+        double[] blk = p.get("COPPER_BLOCK");
+        for (String n : new String[]{"EXPOSED_COPPER", "WEATHERED_COPPER", "OXIDIZED_COPPER",
+                "WAXED_COPPER_BLOCK"}) {
+            double[] v = p.get(n);
+            if (n.startsWith("WAXED")) {
+                continue;
+            }
+            if (v == null || v[0] != blk[0] || v[1] != blk[1]) {
+                return false;
+            }
+        }
+        return p.size() > 1100 && buy == 0.40 && sell == 0.20;
+    }
+
+    private static boolean woodEq() {
+        var p = shopPrices();
+        String[][] groups = {
+                {"OAK_LOG", "STRIPPED_OAK_LOG", "OAK_WOOD", "STRIPPED_OAK_WOOD"},
+                {"PALE_OAK_LOG", "STRIPPED_PALE_OAK_LOG", "PALE_OAK_WOOD", "STRIPPED_PALE_OAK_WOOD"},
+                {"CRIMSON_STEM", "STRIPPED_CRIMSON_STEM", "CRIMSON_WOOD", "STRIPPED_CRIMSON_WOOD"},
+        };
+        for (String[] g : groups) {
+            double[] first = p.get(g[0]);
+            if (first == null) {
+                return false;
+            }
+            for (String n : g) {
+                double[] v = p.get(n);
+                if (v == null || v[0] != first[0] || v[1] != first[1]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean newItemsBelowBuy() {
+        var p = shopPrices();
+        if (p.size() < 1100) {
+            return false;
+        }
+        for (var e : p.entrySet()) {
+            double[] v = e.getValue();
+            if (!(v[1] < v[0]) || v[0] <= 0 || v[1] <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void t(String name, Object actual, Object expected) {

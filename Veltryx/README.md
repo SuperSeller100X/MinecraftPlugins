@@ -31,15 +31,19 @@ restarts and shared by every future Veltryx module through the public
 
 ### 🛛️ Shop & selling (`/shop`, `/sell`)
 
-- **`/shop` (`/store`)** — a category GUI with **almost every obtainable item**
-  (970+): blocks, woods, ores, tools, armor, food, redstone, mob drops and
-  more. Elytra and operator-only items (command blocks, barriers, …) are not
-  sold. Left-click buys 1, shift-click buys a stack; every item shows buy and
-  sell price plus your balance.
+- **`/shop` (`/store`)** — a category GUI with **every obtainable item**
+  (1,100+): blocks, woods, ores, tools, armor, food, redstone, mob drops,
+  the full copper/tuff/resin/pale-oak families, bundles, keys and more. The
+  only items not sold are **elytra and the dragon egg** (unique to the
+  server), operator-only items (command blocks, barriers, …) and items whose
+  value lives inside their NBT (potions, enchanted/written books, filled
+  maps) that a flat per-item price could never make fair. Left-click buys 1,
+  shift-click buys a stack; every item shows buy and sell price (with the
+  lime `$`) plus your balance.
 - **`/sell`** — a GUI listing everything sellable in your inventory with its
   payout. Click an item to sell all of it, or sell everything with one button.
-  Sell prices are always below shop buy prices (~65% for gathered resources,
-  ~50% for crafted items).
+  Every sale shows the payout above the hotbar (action bar) and in chat as a
+  compact amount like **$2.3k** / **$500k** with a lime `$`.
 - **Fair, exploit-proof prices.** You earn money by *doing something* — mining,
   farming, hunting — never by market games: buying materials, crafting and
   selling **always loses money** (verified against 170+ recipes in the smoke
@@ -47,6 +51,30 @@ restarts and shared by every future Veltryx module through the public
   live in `shop.yml`, are editable per server, and new items are added on
   updates while keeping your values.
 - New players still start with **$100** (`economy.starting-balance`).
+
+### 🏷️ Auction house & orders (`/ah`, `/order`, `/orders`)
+
+- **`/ah`** — hold an item, run `/ah sell <price-per-item>` (up to 20 active
+  listings, 48h) and anyone can buy it from the `/ah` GUI with one click.
+  Money goes straight from buyer to seller. "My listings" shows expired ones —
+  one click reclaims your items.
+- **`/order <item> <amount> <price-per-item>`** — player buy orders with the
+  full price **escrowed** up front; other players sell into them instantly
+  from the `/orders` GUI (with the same action-bar payout). Cancel any time to
+  get the unfilled remainder back; orders auto-close after 48h and refund
+  whatever was not filled.
+
+### 🏠 Homes & teleporting (`/home`, `/tpa`, …)
+
+- **`/sethome <name>`, `/home [name]`, `/homes`** — the first 3 homes are
+  free; every extra home costs $2,500 more than the previous one ($2.5k,
+  $5.0k, $7.5k, …) up to a maximum of 45 homes. The `/homes` GUI teleports on
+  click and deletes on shift-click.
+- **`/tpa <player>`, `/tpahere <player>`** — teleport requests, accepted with
+  **`/tp`** (expires after 60s). The 10s send cooldown is tracked **per
+  player**: you can ask several players at once, but the same player only
+  every 10 seconds (ask A, wait 5s, ask B → A is ready again in 5s, B in
+  10s). `/tp <player>` / `/tphere <player>` are instant staff teleports.
 
 ### 🛡️ Anti-cheat
 

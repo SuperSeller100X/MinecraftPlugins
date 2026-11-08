@@ -302,7 +302,7 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
 - **`/shop` (`/store`) + `/sell`** — buy/sell GUIs for **almost every obtainable
-  item** (970+, no elytra, no operator-only blocks) with fair buy and sell
+  item** (1,100++, no elytra, no operator-only blocks) with fair buy and sell
   prices; new players still start with **$100**. The pricing is
   **exploit-proof**: buying materials, crafting and selling always loses money
   (verified against 170+ recipes), so money is only earned by doing something —

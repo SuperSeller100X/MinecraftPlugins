@@ -92,6 +92,35 @@ public final class Money {
         }
     }
 
+    /**
+     * Formats cents compactly for HUD/chat display: {@code 250}, {@code 12.50},
+     * {@code 2.3k}, {@code 500k}, {@code 1.2M}, {@code 3.4B}. No currency
+     * symbol — templates add it (so the {@code $} can be colored).
+     */
+    public static String formatCompact(long cents) {
+        double dollars = cents / 100.0;
+        double abs = Math.abs(dollars);
+        if (abs >= 1_000_000_000.0) {
+            return trimDecimal(dollars / 1_000_000_000.0) + "B";
+        }
+        if (abs >= 1_000_000.0) {
+            return trimDecimal(dollars / 1_000_000.0) + "M";
+        }
+        if (abs >= 1_000.0) {
+            return trimDecimal(dollars / 1_000.0) + "k";
+        }
+        if (cents % 100 == 0) {
+            return String.format(Locale.ROOT, "%,d", cents / 100);
+        }
+        return formatNumber(cents);
+    }
+
+    /** {@code 2.35} -> {@code 2.4}, {@code 2.00} -> {@code 2}, {@code 500.25} -> {@code 500.3}. */
+    private static String trimDecimal(double value) {
+        String one = String.format(Locale.ROOT, "%.1f", value);
+        return one.endsWith(".0") ? one.substring(0, one.length() - 2) : one;
+    }
+
     /** Formats cents as {@code 1,500} when whole, {@code 1,500.50} otherwise. */
     public static String formatShort(long cents) {
         if (cents % 100 == 0) {

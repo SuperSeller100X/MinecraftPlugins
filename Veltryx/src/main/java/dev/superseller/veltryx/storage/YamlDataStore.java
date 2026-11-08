@@ -1,6 +1,9 @@
 package dev.superseller.veltryx.storage;
 
 import dev.superseller.veltryx.model.Account;
+import dev.superseller.veltryx.model.AhListing;
+import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.HomeLocation;
 import dev.superseller.veltryx.model.BanEntry;
 import dev.superseller.veltryx.model.FlagEntry;
 import dev.superseller.veltryx.model.MuteEntry;
@@ -39,6 +42,9 @@ public final class YamlDataStore implements DataStore {
     private final ConcurrentMap<String, NoteEntry> notes = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReportEntry> reports = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlagEntry> flags = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AhListing> ahListings = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, BuyOrder> buyOrders = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
 
     public YamlDataStore(File folder, Logger logger) {
         this.folder = folder;
@@ -111,6 +117,65 @@ public final class YamlDataStore implements DataStore {
                 flags.put(key, new FlagEntry(key, uuid, s.getString("name", "?"),
                         s.getString("check", "?"), s.getDouble("vl", 0.0),
                         s.getString("detail", ""), s.getLong("issued", 0L)));
+            }
+        }
+
+        ahListings.clear();
+        buyOrders.clear();
+        YamlConfiguration market = read("market.yml");
+        ConfigurationSection ahSection = market.getConfigurationSection("ah");
+        if (ahSection != null) {
+            for (String key : ahSection.getKeys(false)) {
+                ConfigurationSection s = ahSection.getConfigurationSection(key);
+                if (s == null) {
+                    continue;
+                }
+                UUID seller = parseUuid(s.getString("seller", ""));
+                if (seller == null) {
+                    continue;
+                }
+                ahListings.put(key, new AhListing(key, seller, s.getString("seller-name", "?"),
+                        s.getString("material", "PAPER"), s.getInt("amount", 1),
+                        s.getLong("price", 0L), s.getLong("listed", 0L),
+                        s.getLong("expires", 0L), s.getBoolean("closed", false)));
+            }
+        }
+        ConfigurationSection orderSection = market.getConfigurationSection("orders");
+        if (orderSection != null) {
+            for (String key : orderSection.getKeys(false)) {
+                ConfigurationSection s = orderSection.getConfigurationSection(key);
+                if (s == null) {
+                    continue;
+                }
+                UUID buyer = parseUuid(s.getString("buyer", ""));
+                if (buyer == null) {
+                    continue;
+                }
+                buyOrders.put(key, new BuyOrder(key, buyer, s.getString("buyer-name", "?"),
+                        s.getString("material", "PAPER"), s.getInt("amount", 1),
+                        s.getInt("filled", 0), s.getLong("price-each", 0L),
+                        s.getLong("created", 0L), s.getLong("expires", 0L),
+                        s.getBoolean("closed", false)));
+            }
+        }
+
+        homes.clear();
+        YamlConfiguration homeFile = read("homes.yml");
+        for (String ownerKey : homeFile.getKeys(false)) {
+            ConfigurationSection ownerSection = homeFile.getConfigurationSection(ownerKey);
+            UUID owner = parseUuid(ownerKey);
+            if (ownerSection == null || owner == null) {
+                continue;
+            }
+            for (String name : ownerSection.getKeys(false)) {
+                ConfigurationSection s = ownerSection.getConfigurationSection(name);
+                if (s == null) {
+                    continue;
+                }
+                homes.put(ownerKey + ":" + name, new HomeLocation(owner, name,
+                        s.getString("world", "world"), s.getDouble("x", 0.0), s.getDouble("y", 0.0),
+                        s.getDouble("z", 0.0), (float) s.getDouble("yaw", 0.0),
+                        (float) s.getDouble("pitch", 0.0)));
             }
         }
     }
@@ -300,6 +365,44 @@ public final class YamlDataStore implements DataStore {
             flagFile.set(path + ".issued", f.issued());
         }
         write("flags.yml", flagFile);
+
+        YamlConfiguration market = new YamlConfiguration();
+        for (AhListing a : ahListings.values()) {
+            String path = "ah." + a.id();
+            market.set(path + ".seller", a.seller().toString());
+            market.set(path + ".seller-name", a.sellerName());
+            market.set(path + ".material", a.material());
+            market.set(path + ".amount", a.amount());
+            market.set(path + ".price", a.priceCents());
+            market.set(path + ".listed", a.listed());
+            market.set(path + ".expires", a.expires());
+            market.set(path + ".closed", a.closed());
+        }
+        for (BuyOrder o : buyOrders.values()) {
+            String path = "orders." + o.id();
+            market.set(path + ".buyer", o.buyer().toString());
+            market.set(path + ".buyer-name", o.buyerName());
+            market.set(path + ".material", o.material());
+            market.set(path + ".amount", o.amount());
+            market.set(path + ".filled", o.filled());
+            market.set(path + ".price-each", o.priceEachCents());
+            market.set(path + ".created", o.created());
+            market.set(path + ".expires", o.expires());
+            market.set(path + ".closed", o.closed());
+        }
+        write("market.yml", market);
+
+        YamlConfiguration homeFile = new YamlConfiguration();
+        for (HomeLocation h : homes.values()) {
+            String path = h.owner().toString() + "." + h.name();
+            homeFile.set(path + ".world", h.world());
+            homeFile.set(path + ".x", h.x());
+            homeFile.set(path + ".y", h.y());
+            homeFile.set(path + ".z", h.z());
+            homeFile.set(path + ".yaw", h.yaw());
+            homeFile.set(path + ".pitch", h.pitch());
+        }
+        write("homes.yml", homeFile);
     }
 
     @Override
@@ -489,6 +592,54 @@ public final class YamlDataStore implements DataStore {
     }
 
     // -------------------------------------------------------------- helper
+
+    // --------------------------------------------------- market & homes
+
+    @Override
+    public List<AhListing> allAhListings() {
+        return List.copyOf(ahListings.values());
+    }
+
+    @Override
+    public void saveAhListing(AhListing entry) {
+        ahListings.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public List<BuyOrder> allBuyOrders() {
+        return List.copyOf(buyOrders.values());
+    }
+
+    @Override
+    public void saveBuyOrder(BuyOrder entry) {
+        buyOrders.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public List<HomeLocation> homesFor(UUID owner) {
+        List<HomeLocation> out = new ArrayList<>();
+        for (HomeLocation home : homes.values()) {
+            if (home.owner().equals(owner)) {
+                out.add(home);
+            }
+        }
+        out.sort(Comparator.comparing(HomeLocation::name));
+        return out;
+    }
+
+    @Override
+    public void saveHome(HomeLocation home) {
+        homes.put(home.owner().toString() + ":" + home.name(), home);
+        save();
+    }
+
+    @Override
+    public void removeHome(UUID owner, String name) {
+        homes.remove(owner.toString() + ":" + name);
+        save();
+    }
 
     private YamlConfiguration read(String name) {
         File file = new File(folder, name);

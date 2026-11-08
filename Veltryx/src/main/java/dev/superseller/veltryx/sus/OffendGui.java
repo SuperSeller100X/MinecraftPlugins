@@ -1,5 +1,6 @@
 package dev.superseller.veltryx.sus;
 
+import dev.superseller.veltryx.util.Txt;
 import dev.superseller.veltryx.anticheat.AntiCheatService;
 import dev.superseller.veltryx.config.Messages;
 import dev.superseller.veltryx.config.VeltryxConfig;
@@ -82,15 +83,15 @@ public final class OffendGui implements Listener {
             int rows = Math.max(2, Math.min(6, (reasons.size() + 8) / 9 + 1));
             Holder holder = new Holder(target, name);
             Inventory inventory = Bukkit.createInventory(holder, rows * 9,
-                    Component.text("§8§lOFFEND — " + name));
+                    Txt.legacy("§8§lOFFEND — " + name));
             holder.inventory = inventory;
 
             int capacity = (rows - 1) * 9;
             for (int i = 0; i < reasons.size() && i < capacity; i++) {
                 inventory.setItem(i, reasonItem(reasons.get(i), name));
             }
-            inventory.setItem(rows * 9 - 1, item(Material.ARROW, Component.text("§7Back"),
-                    List.of(Component.text("§7Back to the suspect view"))));
+            inventory.setItem(rows * 9 - 1, item(Material.ARROW, Txt.legacy("§7Back"),
+                    List.of(Txt.legacy("§7Back to the suspect view"))));
             staff.openInventory(inventory);
         });
     }
@@ -99,11 +100,11 @@ public final class OffendGui implements Listener {
         String duration = reason.durationSeconds() == Long.MAX_VALUE
                 ? "permanent" : TimeUtil.format(reason.durationSeconds());
         return item(materialFor(reason.category()),
-                Component.text("§c" + reason.display()),
-                List.of(Component.text("§7Category: §f" + reason.category()),
-                        Component.text("§7Duration: §f" + duration),
+                Txt.legacy("§c" + reason.display()),
+                List.of(Txt.legacy("§7Category: §f" + reason.category()),
+                        Txt.legacy("§7Duration: §f" + duration),
                         Component.text(""),
-                        Component.text("§eClick to ban §f" + targetName)));
+                        Txt.legacy("§eClick to ban §f" + targetName)));
     }
 
     private static Material materialFor(String category) {

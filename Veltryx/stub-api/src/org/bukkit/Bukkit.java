@@ -15,6 +15,7 @@ public final class Bukkit {
     public static Collection<? extends Player> getOnlinePlayers() { return null; }
     public static Player getPlayerExact(String name) { return null; }
     public static Player getPlayer(UUID id) { return null; }
+    public static World getWorld(String name) { return null; }
     @Deprecated public static OfflinePlayer getOfflinePlayer(String name) { return null; }
     public static ConsoleCommandSender getConsoleSender() { return null; }
     public static BukkitScheduler getScheduler() { return null; }

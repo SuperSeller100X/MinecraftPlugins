@@ -217,6 +217,127 @@ building:
     MOSSY_COBBLESTONE_WALL: { buy: 0.13, sell: 0.07 }
     NETHER_BRICK_FENCE: { buy: 0.30, sell: 0.15 }
 
+    RESIN_BRICK: { buy: 0.42, sell: 0.21 }
+
+    RESIN_BLOCK: { buy: 2.80, sell: 1.40 }
+
+    RESIN_BRICKS: { buy: 2.00, sell: 1.00 }
+
+    RESIN_BRICK_STAIRS: { buy: 0.75, sell: 0.38 }
+
+    RESIN_BRICK_SLAB: { buy: 0.35, sell: 0.18 }
+
+    RESIN_BRICK_WALL: { buy: 0.60, sell: 0.30 }
+
+    CHISELED_RESIN_BRICKS: { buy: 0.85, sell: 0.43 }
+
+    CREAKING_HEART: { buy: 4.50, sell: 2.90 }
+
+    TUFF_STAIRS: { buy: 0.16, sell: 0.08 }
+
+    TUFF_SLAB: { buy: 0.06, sell: 0.03 }
+
+    TUFF_WALL: { buy: 0.10, sell: 0.05 }
+
+    POLISHED_TUFF_STAIRS: { buy: 0.18, sell: 0.09 }
+
+    POLISHED_TUFF_SLAB: { buy: 0.07, sell: 0.04 }
+
+    POLISHED_TUFF_WALL: { buy: 0.13, sell: 0.07 }
+
+    TUFF_BRICK_WALL: { buy: 0.15, sell: 0.07 }
+
+    CHISELED_TUFF: { buy: 0.12, sell: 0.06 }
+
+    CHISELED_TUFF_BRICKS: { buy: 0.18, sell: 0.09 }
+
+    EXPOSED_COPPER: { buy: 3.00, sell: 1.50 }
+
+    WEATHERED_COPPER: { buy: 3.00, sell: 1.50 }
+
+    OXIDIZED_COPPER: { buy: 3.00, sell: 1.50 }
+
+    WAXED_COPPER_BLOCK: { buy: 3.40, sell: 1.70 }
+
+    WAXED_EXPOSED_COPPER: { buy: 3.40, sell: 1.70 }
+
+    WAXED_WEATHERED_COPPER: { buy: 3.40, sell: 1.70 }
+
+    WAXED_OXIDIZED_COPPER: { buy: 3.40, sell: 1.70 }
+
+    EXPOSED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+
+    WEATHERED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+
+    OXIDIZED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+
+    WAXED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+
+    WAXED_EXPOSED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+
+    WAXED_WEATHERED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+
+    WAXED_OXIDIZED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+    CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+    COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+    COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+
+    EXPOSED_COPPER_GRATE: { buy: 0.40, sell: 0.20 }
+
+    WEATHERED_COPPER_GRATE: { buy: 0.40, sell: 0.20 }
+
+    OXIDIZED_COPPER_GRATE: { buy: 0.40, sell: 0.20 }
+
+    WAXED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+
+    WAXED_EXPOSED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+
+    WAXED_WEATHERED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+
+    WAXED_OXIDIZED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+
+    EXPOSED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+
+    WEATHERED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+
+    OXIDIZED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+
+    WAXED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+
+    WAXED_EXPOSED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+
+    WAXED_WEATHERED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+
+    WAXED_OXIDIZED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+
+    EXPOSED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+
+    WEATHERED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+
+    OXIDIZED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+
+    WAXED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+
+    WAXED_EXPOSED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+
+    WAXED_WEATHERED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+
+    WAXED_OXIDIZED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+
+    EXPOSED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+
+    WEATHERED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+
+    OXIDIZED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+
+    WAXED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+
+    WAXED_EXPOSED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+
+    WAXED_WEATHERED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+
+    WAXED_OXIDIZED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+
 nature:
   display: "Nature"
   icon: OAK_SAPLING
@@ -311,6 +432,26 @@ nature:
     PALE_OAK_LEAVES: { buy: 0.12, sell: 0.08 }
     AZALEA_LEAVES: { buy: 0.12, sell: 0.08 }
     FLOWERING_AZALEA_LEAVES: { buy: 0.12, sell: 0.08 }
+
+    PALE_MOSS_BLOCK: { buy: 0.25, sell: 0.16 }
+
+    PALE_MOSS_CARPET: { buy: 0.12, sell: 0.06 }
+
+    PALE_HANGING_MOSS: { buy: 0.15, sell: 0.10 }
+
+    SHORT_DRY_GRASS: { buy: 0.10, sell: 0.07 }
+
+    TALL_DRY_GRASS: { buy: 0.12, sell: 0.08 }
+
+    BUSH: { buy: 0.12, sell: 0.08 }
+
+    CACTUS_FLOWER: { buy: 0.20, sell: 0.13 }
+
+    FIREFLY_BUSH: { buy: 0.18, sell: 0.12 }
+
+    WILDFLOWERS: { buy: 0.15, sell: 0.10 }
+
+    LEAF_LITTER: { buy: 0.10, sell: 0.07 }
 
 wood:
   display: "Wood"
@@ -488,6 +629,94 @@ wood:
     ITEM_FRAME: { buy: 0.75, sell: 0.38 }
     GLOW_ITEM_FRAME: { buy: 1.20, sell: 0.60 }
     PAINTING: { buy: 0.85, sell: 0.42 }
+
+    STRIPPED_OAK_LOG: { buy: 0.35, sell: 0.23 }
+
+    OAK_WOOD: { buy: 0.35, sell: 0.23 }
+
+    STRIPPED_OAK_WOOD: { buy: 0.35, sell: 0.23 }
+
+    OAK_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+
+    STRIPPED_SPRUCE_LOG: { buy: 0.35, sell: 0.23 }
+
+    SPRUCE_WOOD: { buy: 0.35, sell: 0.23 }
+
+    STRIPPED_SPRUCE_WOOD: { buy: 0.35, sell: 0.23 }
+
+    SPRUCE_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+
+    STRIPPED_BIRCH_LOG: { buy: 0.35, sell: 0.23 }
+
+    BIRCH_WOOD: { buy: 0.35, sell: 0.23 }
+
+    STRIPPED_BIRCH_WOOD: { buy: 0.35, sell: 0.23 }
+
+    BIRCH_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+
+    STRIPPED_JUNGLE_LOG: { buy: 0.35, sell: 0.23 }
+
+    JUNGLE_WOOD: { buy: 0.35, sell: 0.23 }
+
+    STRIPPED_JUNGLE_WOOD: { buy: 0.35, sell: 0.23 }
+
+    JUNGLE_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+
+    STRIPPED_ACACIA_LOG: { buy: 0.38, sell: 0.25 }
+
+    ACACIA_WOOD: { buy: 0.38, sell: 0.25 }
+
+    STRIPPED_ACACIA_WOOD: { buy: 0.38, sell: 0.25 }
+
+    ACACIA_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+
+    STRIPPED_DARK_OAK_LOG: { buy: 0.38, sell: 0.25 }
+
+    DARK_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+
+    STRIPPED_DARK_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+
+    DARK_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+
+    STRIPPED_MANGROVE_LOG: { buy: 0.38, sell: 0.25 }
+
+    MANGROVE_WOOD: { buy: 0.38, sell: 0.25 }
+
+    STRIPPED_MANGROVE_WOOD: { buy: 0.38, sell: 0.25 }
+
+    MANGROVE_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+
+    STRIPPED_CHERRY_LOG: { buy: 0.43, sell: 0.28 }
+
+    CHERRY_WOOD: { buy: 0.43, sell: 0.28 }
+
+    STRIPPED_CHERRY_WOOD: { buy: 0.43, sell: 0.28 }
+
+    CHERRY_HANGING_SIGN: { buy: 0.80, sell: 0.40 }
+
+    STRIPPED_PALE_OAK_LOG: { buy: 0.38, sell: 0.25 }
+
+    PALE_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+
+    STRIPPED_PALE_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+
+    PALE_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+
+    STRIPPED_CRIMSON_STEM: { buy: 0.45, sell: 0.29 }
+
+    CRIMSON_WOOD: { buy: 0.45, sell: 0.29 }
+
+    STRIPPED_CRIMSON_WOOD: { buy: 0.45, sell: 0.29 }
+
+    CRIMSON_HANGING_SIGN: { buy: 0.82, sell: 0.41 }
+
+    STRIPPED_WARPED_STEM: { buy: 0.45, sell: 0.29 }
+
+    WARPED_WOOD: { buy: 0.45, sell: 0.29 }
+
+    STRIPPED_WARPED_WOOD: { buy: 0.45, sell: 0.29 }
+
+    WARPED_HANGING_SIGN: { buy: 0.82, sell: 0.41 }
 
 colored:
   display: "Colored & Decorative"
@@ -709,6 +938,40 @@ colored:
     INK_SAC: { buy: 0.20, sell: 0.13 }
     COCOA_BEANS: { buy: 0.25, sell: 0.16 }
 
+    BUNDLE: { buy: 1.20, sell: 0.60 }
+
+    WHITE_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    ORANGE_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    MAGENTA_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    LIGHT_BLUE_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    YELLOW_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    LIME_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    PINK_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    GRAY_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    LIGHT_GRAY_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    CYAN_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    PURPLE_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    BLUE_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    BROWN_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    GREEN_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    RED_BUNDLE: { buy: 1.50, sell: 0.75 }
+
+    BLACK_BUNDLE: { buy: 1.50, sell: 0.75 }
+
 tools:
   display: "Tools & Weapons"
   icon: DIAMOND_PICKAXE
@@ -847,6 +1110,8 @@ food:
     HONEY_BOTTLE: { buy: 0.45, sell: 0.29 }
     GLISTERING_MELON_SLICE: { buy: 1.35, sell: 0.68 }
     RABBIT_FOOT: { buy: 1.20, sell: 0.78 }
+
+    SUSPICIOUS_STEW: { buy: 1.30, sell: 0.55 }
 
 mobs:
   display: "Mob Drops & Brewing"
@@ -1037,3 +1302,13 @@ misc:
     BOLT_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
     FLOW_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
     GOAT_HORN: { buy: 4.50, sell: 2.93 }
+
+    RESIN_CLUMP: { buy: 0.30, sell: 0.20 }
+
+    HEAVY_CORE: { buy: 32.00, sell: 14.00 }
+
+    TRIAL_KEY: { buy: 25.00, sell: 9.00 }
+
+    OMINOUS_KEY: { buy: 60.00, sell: 21.00 }
+
+    ARMADILLO_SCUTE: { buy: 1.20, sell: 0.78 }

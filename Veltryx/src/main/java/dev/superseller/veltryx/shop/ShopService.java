@@ -75,8 +75,9 @@ public final class ShopService {
         long total = unitPrice * amount;
         if (!economy.has(player.getUniqueId(), total)) {
             return new BuyResult(0, 0, "shop.cannot-afford", Map.of(
-                    "price", economy.format(total),
-                    "balance", economy.format(economy.getBalance(player.getUniqueId()))));
+                    "price", dev.superseller.veltryx.util.Money.formatCompact(total),
+                    "balance", dev.superseller.veltryx.util.Money.formatCompact(
+                            economy.getBalance(player.getUniqueId()))));
         }
         ItemStack stack = new ItemStack(material, amount);
         HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(stack);

@@ -1,5 +1,7 @@
 package dev.superseller.veltryx.shop;
 
+import dev.superseller.veltryx.util.SellNotices;
+import dev.superseller.veltryx.util.Txt;
 import dev.superseller.veltryx.config.Messages;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ public final class SellGui implements Listener {
         PlatformScheduler.runForPlayer(player, () -> {
             Holder holder = new Holder();
             Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Component.text("§8§lSell items"));
+                    Txt.legacy("§8§lSell items"));
             holder.inventory = inventory;
 
             Map<String, Integer> counts = new LinkedHashMap<>();
@@ -74,19 +76,19 @@ public final class SellGui implements Listener {
                 long total = unit * amount;
                 Material material = Material.matchMaterial(materialName);
                 inventory.setItem(slot, item(material == null ? Material.PAPER : material, amount,
-                        Component.text("§f" + PriceTable.displayName(materialName)),
-                        List.of(Component.text("§7Amount: §f" + amount),
-                                Component.text("§7Payout: §6" + shop.format(total)
-                                        + " §8(§7" + shop.format(unit) + " each§8)"),
+                        Txt.legacy("§f" + PriceTable.displayName(materialName)),
+                        List.of(Txt.legacy("§7Amount: §f" + amount),
+                                Txt.legacy("§7Payout: §a$§f" + SellNotices.compact(total)
+                                        + " §8(§7§a$§f" + SellNotices.compact(unit) + "§7 each§8)"),
                                 Component.text(""),
-                                Component.text("§eClick to sell all"))));
+                                Txt.legacy("§eClick to sell all"))));
                 holder.slotMaterials.put(slot, materialName);
                 slot++;
             }
             if (counts.isEmpty()) {
                 inventory.setItem(22, item(Material.LIME_DYE, 1,
-                        Component.text("§aNothing to sell"),
-                        List.of(Component.text("§7Your inventory has no sellable items."))));
+                        Txt.legacy("§aNothing to sell"),
+                        List.of(Txt.legacy("§7Your inventory has no sellable items."))));
             }
 
             long value = 0;
@@ -94,12 +96,12 @@ public final class SellGui implements Listener {
                 value += shop.prices().sellCents(entry.getKey()) * entry.getValue();
             }
             inventory.setItem(49, item(Material.EMERALD, 1,
-                    Component.text("§aSell everything"),
-                    List.of(Component.text("§7Total payout: §6" + shop.format(value)),
+                    Txt.legacy("§aSell everything"),
+                    List.of(Txt.legacy("§7Total payout: §a$§f" + SellNotices.compact(value)),
                             Component.text(""),
-                            Component.text("§eClick to sell it all"))));
+                            Txt.legacy("§eClick to sell it all"))));
             inventory.setItem(53, item(Material.GOLD_INGOT, 1,
-                    Component.text("§6Your balance: §a" + shop.format(shop.balance(player))), List.of()));
+                    Txt.legacy("§6Your balance: §a$§f" + SellNotices.compact(shop.balance(player))), List.of()));
             player.openInventory(inventory);
         });
     }
@@ -120,9 +122,8 @@ public final class SellGui implements Listener {
         if (slot == 49) {
             ShopService.SellResult result = shop.sellAll(player);
             if (result.ok()) {
-                player.sendMessage(messages.render("shop.sold-all", Map.of(
-                        "price", shop.format(result.earnedCents()),
-                        "balance", shop.format(shop.balance(player)))));
+                SellNotices.show(player, messages, "shop.sold-all", Map.of(
+                        "balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
             } else {
                 player.sendMessage(messages.render(result.failKey().equals("shop.no-sell")
                         ? "shop.no-sell" : "shop.nothing"));
@@ -136,11 +137,10 @@ public final class SellGui implements Listener {
         }
         ShopService.SellResult result = shop.sell(player, materialName, Integer.MAX_VALUE);
         if (result.ok()) {
-            player.sendMessage(messages.render("shop.sold", Map.of(
-                    "amount", String.valueOf(result.sold()),
+            SellNotices.show(player, messages, "shop.sold", Map.of(
+                    "count", String.valueOf(result.sold()),
                     "item", PriceTable.displayName(materialName),
-                    "price", shop.format(result.earnedCents()),
-                    "balance", shop.format(shop.balance(player)))));
+                    "balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
         } else {
             player.sendMessage(messages.render(result.failKey().equals("shop.no-sell")
                     ? "shop.no-sell" : "shop.nothing"));

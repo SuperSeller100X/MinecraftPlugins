@@ -3,6 +3,9 @@ package org.bukkit;
 import org.bukkit.block.data.BlockData;
 
 public enum Material {
+    ENDER_EYE,
+    WRITABLE_BOOK,
+    ENDER_PEARL,
     AIR, STONE, DEEPSLATE, NETHERRACK, TUFF, WATER, LAVA,
     ICE, PACKED_ICE, BLUE_ICE, FROSTED_ICE, SLIME_BLOCK, HONEY_BLOCK,
     LADDER, VINE, SCAFFOLDING, TWISTING_VINES, WEEPING_VINES,

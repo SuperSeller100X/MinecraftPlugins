@@ -10,6 +10,17 @@ import dev.superseller.veltryx.config.Messages;
 import dev.superseller.veltryx.config.VeltryxConfig;
 import dev.superseller.veltryx.economy.EconomyListener;
 import dev.superseller.veltryx.economy.EconomyService;
+import dev.superseller.veltryx.home.HomeCommand;
+import dev.superseller.veltryx.home.HomeService;
+import dev.superseller.veltryx.home.HomesGui;
+import dev.superseller.veltryx.market.AhCommand;
+import dev.superseller.veltryx.market.AhGui;
+import dev.superseller.veltryx.market.AhService;
+import dev.superseller.veltryx.market.OrderCommand;
+import dev.superseller.veltryx.market.OrderGui;
+import dev.superseller.veltryx.market.OrderService;
+import dev.superseller.veltryx.teleport.TpaCommand;
+import dev.superseller.veltryx.teleport.TpaService;
 import dev.superseller.veltryx.punish.BanCommands;
 import dev.superseller.veltryx.punish.BanCommand;
 import dev.superseller.veltryx.punish.BanService;
@@ -74,6 +85,13 @@ public final class VeltryxPlugin extends JavaPlugin {
     private SusGui susGui;
     private OffendGui offendGui;
     private ShopService shopService;
+    private HomeService homeService;
+    private HomesGui homesGui;
+    private TpaService tpaService;
+    private AhService ahService;
+    private AhGui ahGui;
+    private OrderService orderService;
+    private OrderGui orderGui;
     private ShopGui shopGui;
     private SellGui sellGui;
 
@@ -113,6 +131,13 @@ public final class VeltryxPlugin extends JavaPlugin {
             shopService = new ShopService(economy, getDataFolder().toPath().resolve("shop.yml"));
             shopGui = new ShopGui(shopService, messages);
             sellGui = new SellGui(shopService, messages);
+            homeService = new HomeService(store, economy, messages, config);
+            homesGui = new HomesGui(homeService, economy, messages, config);
+            tpaService = new TpaService();
+            ahService = new AhService(store, economy, messages, config);
+            ahGui = new AhGui(ahService, economy, messages);
+            orderService = new OrderService(store, economy, messages, config);
+            orderGui = new OrderGui(orderService, economy, messages);
 
             stage = "timers";
             EconomyRegistry.register(economy);
@@ -237,6 +262,20 @@ public final class VeltryxPlugin extends JavaPlugin {
         bind("shop", shopCommand, shopCommand);
         SellCommand sellCommand = new SellCommand(sellGui, messages);
         bind("sell", sellCommand, sellCommand);
+        AhCommand ahCommand = new AhCommand(ahGui, ahService, messages);
+        bind("ah", ahCommand, ahCommand);
+        OrderCommand orderCommand = new OrderCommand(orderGui, orderService, messages);
+        bind("order", orderCommand, orderCommand);
+        bind("orders", orderCommand, orderCommand);
+        HomeCommand homeCommand = new HomeCommand(homeService, homesGui, messages, config);
+        bind("home", homeCommand, homeCommand);
+        bind("sethome", homeCommand, homeCommand);
+        bind("homes", homeCommand, homeCommand);
+        TpaCommand tpaCommand = new TpaCommand(tpaService, messages, config);
+        bind("tpa", tpaCommand, tpaCommand);
+        bind("tpahere", tpaCommand, tpaCommand);
+        bind("tp", tpaCommand, tpaCommand);
+        bind("tphere", tpaCommand, tpaCommand);
         OffendCommand offendCommand = new OffendCommand(config, messages, bans, anticheat, offendGui);
         bind("offend", offendCommand, offendCommand);
         BanCommand banCommand = new BanCommand(messages, bans, anticheat);
@@ -285,6 +324,9 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(offendGui);
         register(shopGui);
         register(sellGui);
+        register(homesGui);
+        register(ahGui);
+        register(orderGui);
     }
 
     private void startAutosave() {

@@ -16,6 +16,7 @@ public interface Player extends LivingEntity, OfflinePlayer, org.bukkit.command.
     boolean isSwimming();
     Location getEyeLocation();
     void kick(Component reason);
+    void sendActionBar(Component message);
     void closeInventory();
     Object openInventory(Inventory inventory);
     CompletableFuture<Boolean> teleportAsync(Location location);

@@ -1,7 +1,10 @@
 package dev.superseller.veltryx.storage;
 
 import dev.superseller.veltryx.model.Account;
+import dev.superseller.veltryx.model.AhListing;
 import dev.superseller.veltryx.model.BanEntry;
+import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.HomeLocation;
 import dev.superseller.veltryx.model.FlagEntry;
 import dev.superseller.veltryx.model.MuteEntry;
 import dev.superseller.veltryx.model.NoteEntry;
@@ -105,4 +108,27 @@ public interface DataStore {
 
     /** Deletes flags older than the given timestamp. */
     void pruneFlags(long olderThanMillis);
+
+    // ---------------------------------------------- market & homes
+
+    /** Every auction-house listing on record (snapshot copies; includes closed ones). */
+    List<AhListing> allAhListings();
+
+    /** Upserts one auction-house listing. */
+    void saveAhListing(AhListing entry);
+
+    /** Every buy order on record (snapshot copies; includes closed ones). */
+    List<BuyOrder> allBuyOrders();
+
+    /** Upserts one buy order. */
+    void saveBuyOrder(BuyOrder entry);
+
+    /** Homes of one player (snapshot copies). */
+    List<HomeLocation> homesFor(UUID owner);
+
+    /** Creates or moves a home. */
+    void saveHome(HomeLocation home);
+
+    /** Deletes one home (no-op when it does not exist). */
+    void removeHome(UUID owner, String name);
 }

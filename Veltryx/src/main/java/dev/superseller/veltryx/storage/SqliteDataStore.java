@@ -1,6 +1,9 @@
 package dev.superseller.veltryx.storage;
 
 import dev.superseller.veltryx.model.Account;
+import dev.superseller.veltryx.model.AhListing;
+import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.HomeLocation;
 import dev.superseller.veltryx.model.BanEntry;
 import dev.superseller.veltryx.model.FlagEntry;
 import dev.superseller.veltryx.model.MuteEntry;
@@ -41,6 +44,9 @@ public final class SqliteDataStore implements DataStore {
     private final ConcurrentMap<String, NoteEntry> notes = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReportEntry> reports = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlagEntry> flags = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AhListing> ahListings = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, BuyOrder> buyOrders = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
 
     private final Object lock = new Object();
     private Connection connection;
@@ -81,6 +87,17 @@ public final class SqliteDataStore implements DataStore {
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_flags ("
                             + "id TEXT PRIMARY KEY, uuid TEXT, name TEXT, check_name TEXT, vl REAL,"
                             + " detail TEXT, issued INTEGER)");
+                    statement.execute("CREATE TABLE IF NOT EXISTS vel_ah ("
+                            + "id TEXT PRIMARY KEY, seller TEXT, seller_name TEXT, material TEXT,"
+                            + " amount INTEGER, price INTEGER, listed INTEGER, expires INTEGER,"
+                            + " closed INTEGER)");
+                    statement.execute("CREATE TABLE IF NOT EXISTS vel_orders ("
+                            + "id TEXT PRIMARY KEY, buyer TEXT, buyer_name TEXT, material TEXT,"
+                            + " amount INTEGER, filled INTEGER, price_each INTEGER, created INTEGER,"
+                            + " expires INTEGER, closed INTEGER)");
+                    statement.execute("CREATE TABLE IF NOT EXISTS vel_homes ("
+                            + "owner TEXT, name TEXT, world TEXT, x REAL, y REAL, z REAL,"
+                            + " yaw REAL, pitch REAL, PRIMARY KEY (owner, name))");
                 }
                 loadFromDatabase();
             } catch (Exception e) {
@@ -157,6 +174,35 @@ public final class SqliteDataStore implements DataStore {
                 if (uuid != null) {
                     flags.put(rs.getString(1), new FlagEntry(rs.getString(1), uuid, rs.getString(3),
                             rs.getString(4), rs.getDouble(5), rs.getString(6), rs.getLong(7)));
+                }
+            }
+            rs = statement.executeQuery("SELECT id, seller, seller_name, material, amount, price,"
+                    + " listed, expires, closed FROM vel_ah");
+            while (rs.next()) {
+                UUID seller = parseUuid(rs.getString(2));
+                if (seller != null) {
+                    ahListings.put(rs.getString(1), new AhListing(rs.getString(1), seller,
+                            rs.getString(3), rs.getString(4), rs.getInt(5), rs.getLong(6),
+                            rs.getLong(7), rs.getLong(8), rs.getInt(9) != 0));
+                }
+            }
+            rs = statement.executeQuery("SELECT id, buyer, buyer_name, material, amount, filled,"
+                    + " price_each, created, expires, closed FROM vel_orders");
+            while (rs.next()) {
+                UUID buyer = parseUuid(rs.getString(2));
+                if (buyer != null) {
+                    buyOrders.put(rs.getString(1), new BuyOrder(rs.getString(1), buyer,
+                            rs.getString(3), rs.getString(4), rs.getInt(5), rs.getInt(6),
+                            rs.getLong(7), rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0));
+                }
+            }
+            rs = statement.executeQuery("SELECT owner, name, world, x, y, z, yaw, pitch FROM vel_homes");
+            while (rs.next()) {
+                UUID owner = parseUuid(rs.getString(1));
+                if (owner != null) {
+                    homes.put(rs.getString(1) + ":" + rs.getString(2), new HomeLocation(owner,
+                            rs.getString(2), rs.getString(3), rs.getDouble(4), rs.getDouble(5),
+                            rs.getDouble(6), (float) rs.getDouble(7), (float) rs.getDouble(8)));
                 }
             }
         }
@@ -415,6 +461,77 @@ public final class SqliteDataStore implements DataStore {
     }
 
     // -------------------------------------------------------------- helper
+
+    // --------------------------------------------------- market & homes
+
+    @Override
+    public List<AhListing> allAhListings() {
+        return List.copyOf(ahListings.values());
+    }
+
+    @Override
+    public void saveAhListing(AhListing entry) {
+        ahListings.put(entry.id(), entry);
+        execute("INSERT INTO vel_ah (id, seller, seller_name, material, amount, price, listed,"
+                        + " expires, closed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        + " ON CONFLICT(id) DO UPDATE SET seller = excluded.seller,"
+                        + " seller_name = excluded.seller_name, material = excluded.material,"
+                        + " amount = excluded.amount, price = excluded.price, listed = excluded.listed,"
+                        + " expires = excluded.expires, closed = excluded.closed",
+                entry.id(), entry.seller().toString(), entry.sellerName(), entry.material(),
+                entry.amount(), entry.priceCents(), entry.listed(), entry.expires(),
+                entry.closed() ? 1 : 0);
+    }
+
+    @Override
+    public List<BuyOrder> allBuyOrders() {
+        return List.copyOf(buyOrders.values());
+    }
+
+    @Override
+    public void saveBuyOrder(BuyOrder entry) {
+        buyOrders.put(entry.id(), entry);
+        execute("INSERT INTO vel_orders (id, buyer, buyer_name, material, amount, filled,"
+                        + " price_each, created, expires, closed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        + " ON CONFLICT(id) DO UPDATE SET buyer = excluded.buyer,"
+                        + " buyer_name = excluded.buyer_name, material = excluded.material,"
+                        + " amount = excluded.amount, filled = excluded.filled,"
+                        + " price_each = excluded.price_each, created = excluded.created,"
+                        + " expires = excluded.expires, closed = excluded.closed",
+                entry.id(), entry.buyer().toString(), entry.buyerName(), entry.material(),
+                entry.amount(), entry.filled(), entry.priceEachCents(), entry.created(),
+                entry.expires(), entry.closed() ? 1 : 0);
+    }
+
+    @Override
+    public List<HomeLocation> homesFor(UUID owner) {
+        List<HomeLocation> out = new ArrayList<>();
+        for (HomeLocation home : homes.values()) {
+            if (home.owner().equals(owner)) {
+                out.add(home);
+            }
+        }
+        out.sort(Comparator.comparing(HomeLocation::name));
+        return out;
+    }
+
+    @Override
+    public void saveHome(HomeLocation home) {
+        homes.put(home.owner().toString() + ":" + home.name(), home);
+        execute("INSERT INTO vel_homes (owner, name, world, x, y, z, yaw, pitch)"
+                        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                        + " ON CONFLICT(owner, name) DO UPDATE SET world = excluded.world,"
+                        + " x = excluded.x, y = excluded.y, z = excluded.z, yaw = excluded.yaw,"
+                        + " pitch = excluded.pitch",
+                home.owner().toString(), home.name(), home.world(), home.x(), home.y(), home.z(),
+                (double) home.yaw(), (double) home.pitch());
+    }
+
+    @Override
+    public void removeHome(UUID owner, String name) {
+        homes.remove(owner.toString() + ":" + name);
+        execute("DELETE FROM vel_homes WHERE owner = ? AND name = ?", owner.toString(), name);
+    }
 
     private void execute(String sql, Object... args) {
         synchronized (lock) {
