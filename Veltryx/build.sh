@@ -50,7 +50,7 @@ rm -rf target/jar
 mkdir -p target/jar
 cp -r "$OUT"/dev target/jar/
 cp src/main/resources/*.yml target/jar/
-sed -i.bak 's/\${project.version}/vx-0.0.2-alpha/' target/jar/plugin.yml && rm -f target/jar/plugin.yml.bak
+sed -i.bak 's/\${project.version}/vx-v0.0.1-beta/' target/jar/plugin.yml && rm -f target/jar/plugin.yml.bak
 (cd target/jar && zip -qr ../Veltryx-offline.jar .)
 
 echo "OK: target/Veltryx-offline.jar"
