@@ -95,6 +95,8 @@ public final class VeltryxPlugin extends JavaPlugin {
     private ShopGui shopGui;
     private SellGui sellGui;
     private dev.superseller.veltryx.shards.ShardService shardService;
+    private dev.superseller.veltryx.stats.StatsService statsService;
+    private dev.superseller.veltryx.stats.ScoreboardService scoreboardService;
     private dev.superseller.veltryx.shards.ShardCatalog shardCatalog;
     private dev.superseller.veltryx.shards.ShardItems shardItems;
     private dev.superseller.veltryx.shards.ShardShopGui shardShopGui;
@@ -158,6 +160,11 @@ public final class VeltryxPlugin extends JavaPlugin {
             shopGui.attachExtras(shopExtrasGui);
             rtpService = new dev.superseller.veltryx.rtp.RtpService(config, messages);
             rtpGui = new dev.superseller.veltryx.rtp.RtpGui(rtpService);
+            statsService = new dev.superseller.veltryx.stats.StatsService(store);
+            if (config.scoreboardEnabled()) {
+                scoreboardService = new dev.superseller.veltryx.stats.ScoreboardService(
+                        statsService, economy, shardService, config.scoreboardUpdateSeconds());
+            }
 
             stage = "timers";
             EconomyRegistry.register(economy);
@@ -165,6 +172,9 @@ public final class VeltryxPlugin extends JavaPlugin {
             freeze.startGuard();
             startAutosave();
             startShardTimers();
+            if (scoreboardService != null) {
+                scoreboardService.startTimer();
+            }
 
             stage = "commands";
             registerCommands(reports);
@@ -361,6 +371,12 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(shardShopGui);
         register(shopExtrasGui);
         register(rtpGui);
+        Runnable statsRefresh = () -> { };
+        if (scoreboardService != null) {
+            statsRefresh = scoreboardService::refreshAll;
+            register(scoreboardService);
+        }
+        register(new dev.superseller.veltryx.stats.StatsListener(statsService, statsRefresh));
         register(new dev.superseller.veltryx.shards.ShardToolListener(shardItems, shardCatalog, config));
         register(new dev.superseller.veltryx.shards.ShardPotionListener(
                 shardItems, shardCatalog, messages, config));

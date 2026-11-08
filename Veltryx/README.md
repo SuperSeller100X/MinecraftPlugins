@@ -70,6 +70,13 @@ restarts and shared by every future Veltryx module through the public
   by rarity tier), shown before every purchase. These are the shop's only
   configurable items: written books and filled maps stay out.
 - New players still start with **$100** (`economy.starting-balance`).
+- **Stats display** (config `scoreboard`): a sidebar on the right side of the
+  screen with **cash, shards, deaths, kills and playtime** under the player's
+  name, and a **multi-line nametag** above every username — money, ✦ shards,
+  ☠ deaths, ⚔ kills — via scoreboard team suffixes, mirrored to every
+  viewer. Kills are PVP kills, deaths count every death, playtime includes
+  the running session. Refreshes every `update-seconds` (default 20) plus
+  on join/quit/death.
 
 ### 💰 Money making methods
 

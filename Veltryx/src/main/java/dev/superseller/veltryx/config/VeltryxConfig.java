@@ -68,6 +68,20 @@ public final class VeltryxConfig {
         return Math.max(1, config.getInt("economy.baltop-size", 10));
     }
 
+    // ---------------------------------------------------------- scoreboard
+
+    public boolean scoreboardEnabled() {
+        return config.getBoolean("scoreboard.enabled", true);
+    }
+
+    public boolean scoreboardNametag() {
+        return config.getBoolean("scoreboard.nametag", true);
+    }
+
+    public long scoreboardUpdateSeconds() {
+        return config.getLong("scoreboard.update-seconds", 20L);
+    }
+
     // ------------------------------------------------------------ anticheat
 
     public boolean anticheatEnabled() {

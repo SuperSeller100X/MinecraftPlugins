@@ -160,4 +160,18 @@ public interface DataStore {
 
     /** Every stored shard balance (snapshot copies). */
     java.util.Map<UUID, Long> shardBalances();
+
+    // --------------------------------------------------------------- stats
+
+    /** PVP kill count of a player (0 when unknown). */
+    long kills(UUID uuid);
+
+    /** Death count of a player (0 when unknown). */
+    long deaths(UUID uuid);
+
+    /** Overwrites the kill count of a player. */
+    void setKills(UUID uuid, long amount);
+
+    /** Overwrites the death count of a player. */
+    void setDeaths(UUID uuid, long amount);
 }

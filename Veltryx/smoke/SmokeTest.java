@@ -727,6 +727,38 @@ public final class SmokeTest {
         t("quickshop 5 rows", Boolean.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.defaultQuickshopItems().size() <= 45), Boolean.valueOf(true));
         t("quickshop default size", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.defaultQuickshopItems().size()), Integer.valueOf(45));
 
+        // ---- scoreboard + nametag stat lines ----
+        String star = "\u2726";
+        String skull = "\u2620";
+        String sword = "\u2694";
+        String clock = "\u23F1";
+        t("stat money 235M", dev.superseller.veltryx.stats.StatLines.money(23_500_000_000L), "§a$ §f235M");
+        t("stat money 2.3k", dev.superseller.veltryx.stats.StatLines.money(230_000L), "§a$ §f2.3k");
+        t("stat shards 10.6k", dev.superseller.veltryx.stats.StatLines.shards(10_600L), "§d" + star + " §f10.6k");
+        t("stat shards plain", dev.superseller.veltryx.stats.StatLines.shards(32L), "§d" + star + " §f32");
+        t("stat deaths", dev.superseller.veltryx.stats.StatLines.deaths(849L), "§6" + skull + " §f849");
+        t("stat kills", dev.superseller.veltryx.stats.StatLines.kills(790L), "§c" + sword + " §f790");
+        t("stat playtime 5d 13h", dev.superseller.veltryx.stats.StatLines.playtime(478_800_000L), "§e" + clock + " §f5d 13h");
+        t("playtime hours", dev.superseller.veltryx.util.TimeUtil.formatPlaytime(12_060_000L), "3h 21m");
+        t("playtime minutes", dev.superseller.veltryx.util.TimeUtil.formatPlaytime(2_700_000L), "45m");
+        t("playtime zero", dev.superseller.veltryx.util.TimeUtil.formatPlaytime(0L), "0m");
+        t("nametag line order",
+                String.join("|", dev.superseller.veltryx.stats.StatLines.nametagLines(230_000L, 11_600L, 849L, 126L)),
+                "§a$ §f2.3k|§d" + star + " §f11.6k|§6" + skull + " §f849|§c" + sword + " §f126");
+        t("sidebar row order",
+                String.join("|", dev.superseller.veltryx.stats.StatLines.sidebarRows(230_000L, 2L, 3L, 4L, 5L)),
+                "§a$ §f2.3k|§d" + star + " §f2|§6" + skull + " §f3|§c" + sword + " §f4|§e" + clock + " §f0m");
+        t("unique entries differ",
+                Boolean.valueOf(dev.superseller.veltryx.stats.StatLines.uniqueEntry("same", 0)
+                        .equals(dev.superseller.veltryx.stats.StatLines.uniqueEntry("same", 1))),
+                Boolean.valueOf(false));
+        t("unique entries stable", dev.superseller.veltryx.stats.StatLines.uniqueEntry("row", 3),
+                dev.superseller.veltryx.stats.StatLines.uniqueEntry("row", 3));
+        t("compact 849", dev.superseller.veltryx.stats.StatLines.compactNumber(849L), "849");
+        t("compact 10.6k", dev.superseller.veltryx.stats.StatLines.compactNumber(10_600L), "10.6k");
+        t("compact 2.4M", dev.superseller.veltryx.stats.StatLines.compactNumber(2_350_000L), "2.4M");
+        t("compact negative clamps", dev.superseller.veltryx.stats.StatLines.compactNumber(-5L), "0");
+
         System.out.println("Smoke: " + passed + " passed, " + failed + " failed.");
         if (failed > 0) {
             System.exit(1);

@@ -49,6 +49,7 @@ public final class SqliteDataStore implements DataStore {
     private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> homeIcons = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> shards = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, long[]> stats = new ConcurrentHashMap<>();   // [kills, deaths]
 
     private final Object lock = new Object();
     private Connection connection;
@@ -102,6 +103,8 @@ public final class SqliteDataStore implements DataStore {
                             + " yaw REAL, pitch REAL, icon TEXT, PRIMARY KEY (owner, name))");
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_shards ("
                             + "uuid TEXT PRIMARY KEY, shards INTEGER)");
+                    statement.execute("CREATE TABLE IF NOT EXISTS vel_stats ("
+                            + "uuid TEXT PRIMARY KEY, kills INTEGER, deaths INTEGER)");
                     try {
                         statement.execute("ALTER TABLE vel_homes ADD COLUMN icon TEXT");
                     } catch (SQLException ignored) {
@@ -223,6 +226,13 @@ public final class SqliteDataStore implements DataStore {
                 UUID uuid = parseUuid(rs.getString(1));
                 if (uuid != null) {
                     shards.put(uuid, rs.getLong(2));
+                }
+            }
+            rs = statement.executeQuery("SELECT uuid, kills, deaths FROM vel_stats");
+            while (rs.next()) {
+                UUID uuid = parseUuid(rs.getString(1));
+                if (uuid != null) {
+                    stats.put(uuid, new long[]{rs.getLong(2), rs.getLong(3)});
                 }
             }
         }
@@ -586,6 +596,36 @@ public final class SqliteDataStore implements DataStore {
     @Override
     public java.util.Map<UUID, Long> shardBalances() {
         return new java.util.HashMap<>(shards);
+    }
+
+    @Override
+    public long kills(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[0];
+    }
+
+    @Override
+    public long deaths(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[1];
+    }
+
+    @Override
+    public void setKills(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[0] = amount;
+        execute("INSERT INTO vel_stats (uuid, kills, deaths) VALUES (?, ?, ?)"
+                        + " ON CONFLICT(uuid) DO UPDATE SET kills = excluded.kills",
+                uuid.toString(), amount, v[1]);
+    }
+
+    @Override
+    public void setDeaths(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[1] = amount;
+        execute("INSERT INTO vel_stats (uuid, kills, deaths) VALUES (?, ?, ?)"
+                        + " ON CONFLICT(uuid) DO UPDATE SET deaths = excluded.deaths",
+                uuid.toString(), v[0], amount);
     }
 
     private void execute(String sql, Object... args) {

@@ -47,6 +47,7 @@ public final class YamlDataStore implements DataStore {
     private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> homeIcons = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> shards = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, long[]> stats = new ConcurrentHashMap<>();   // [kills, deaths]
 
     public YamlDataStore(File folder, Logger logger) {
         this.folder = folder;
@@ -192,6 +193,16 @@ public final class YamlDataStore implements DataStore {
             UUID uuid = parseUuid(uuidKey);
             if (uuid != null) {
                 shards.put(uuid, shardFile.getLong(uuidKey, 0L));
+            }
+        }
+
+        stats.clear();
+        YamlConfiguration statsFile = read("stats.yml");
+        for (String uuidKey : statsFile.getKeys(false)) {
+            ConfigurationSection s = statsFile.getConfigurationSection(uuidKey);
+            UUID uuid = parseUuid(uuidKey);
+            if (s != null && uuid != null) {
+                stats.put(uuid, new long[]{s.getLong("kills", 0L), s.getLong("deaths", 0L)});
             }
         }
     }
@@ -414,6 +425,13 @@ public final class YamlDataStore implements DataStore {
         }
         write("shards.yml", shardFile);
 
+        YamlConfiguration statsFile = new YamlConfiguration();
+        for (java.util.Map.Entry<UUID, long[]> e : stats.entrySet()) {
+            statsFile.set(e.getKey().toString() + ".kills", e.getValue()[0]);
+            statsFile.set(e.getKey().toString() + ".deaths", e.getValue()[1]);
+        }
+        write("stats.yml", statsFile);
+
         YamlConfiguration homeFile = new YamlConfiguration();
         for (HomeLocation h : homes.values()) {
             String path = h.owner().toString() + "." + h.name();
@@ -459,6 +477,30 @@ public final class YamlDataStore implements DataStore {
     @Override
     public java.util.Map<UUID, Long> shardBalances() {
         return new java.util.HashMap<>(shards);
+    }
+
+    @Override
+    public long kills(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[0];
+    }
+
+    @Override
+    public long deaths(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[1];
+    }
+
+    @Override
+    public void setKills(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[0] = amount;
+    }
+
+    @Override
+    public void setDeaths(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[1] = amount;
     }
 
     @Override

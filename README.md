@@ -357,6 +357,9 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   chest in the shop), **item search** (compass in the shop or
   `/shop search`), and choose-what-you-buy **potions / tipped arrows /
   enchanted books** (type, effect, enchantment + level)
+- **Stats display** — always-on scoreboard on the right side (cash, shards,
+  deaths, kills, playtime) and four-line nametags above every player's
+  username: money, shards (✦), deaths (☠), kills (⚔)
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
   `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
   `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`

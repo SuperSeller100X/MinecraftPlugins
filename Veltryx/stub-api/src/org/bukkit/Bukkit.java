@@ -14,6 +14,7 @@ public final class Bukkit {
     public static Server getServer() { return null; }
     public static Collection<? extends Player> getOnlinePlayers() { return null; }
     public static java.util.List<World> getWorlds() { return null; }
+    public static org.bukkit.scoreboard.ScoreboardManager getScoreboardManager() { return null; }
     public static World getWorld(String name) { return null; }
     public static Player getPlayerExact(String name) { return null; }
     public static Player getPlayer(UUID id) { return null; }

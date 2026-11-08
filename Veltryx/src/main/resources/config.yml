@@ -22,6 +22,14 @@ economy:
   # Entries on /eco top.
   baltop-size: 10
 
+# The stats display: a scoreboard on the right side of the screen with
+# cash, shards, deaths, kills and playtime, plus multi-line nametags
+# (money, shards, deaths, kills) above every player's username.
+scoreboard:
+  enabled: true
+  nametag: true
+  update-seconds: 20
+
 # Auction house (/ah) and player buy orders (/order, /orders).
 market:
   auction-hours: 48      # listings expire after this long (item can be reclaimed)

@@ -84,6 +84,24 @@ public final class TimeUtil {
      * Formats seconds compactly: {@code 45s}, {@code 5m 30s}, {@code 12h 5m},
      * {@code 7d 12h}, {@code perm} for permanent. Rounds partial units down.
      */
+    /**
+     * Playtime formatting for the scoreboard: {@code 5d 13h}, {@code 3h 21m}
+     * or {@code 45m} — always the two biggest meaningful units.
+     */
+    public static String formatPlaytime(long millis) {
+        long totalMinutes = Math.max(0L, millis / 60_000L);
+        long days = totalMinutes / (24 * 60);
+        long hours = (totalMinutes / 60) % 24;
+        long minutes = totalMinutes % 60;
+        if (days > 0) {
+            return days + "d " + hours + "h";
+        }
+        if (hours > 0) {
+            return hours + "h " + minutes + "m";
+        }
+        return totalMinutes + "m";
+    }
+
     public static String format(long seconds) {
         if (seconds == Long.MAX_VALUE) {
             return "perm";
