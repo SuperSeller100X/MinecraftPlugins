@@ -660,6 +660,73 @@ public final class SmokeTest {
             t("no buy-shards subcommand readable", Boolean.FALSE, Boolean.TRUE);
         }
 
+        // RTP safety rules (pure)
+        t("rtp safe rock", dev.superseller.veltryx.rtp.RtpSafety.isSafe("STONE", true, "AIR", "AIR"), true);
+        t("rtp cave air ok", dev.superseller.veltryx.rtp.RtpSafety.isSafe("DEEPSLATE", true, "CAVE_AIR", "CAVE_AIR"), true);
+        t("rtp end void air", dev.superseller.veltryx.rtp.RtpSafety.isSafe("END_STONE", true, "VOID_AIR", "AIR"), true);
+        t("rtp leaves ok", dev.superseller.veltryx.rtp.RtpSafety.isSafe("OAK_LEAVES", true, "AIR", "AIR"), true);
+        t("rtp lava ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe("LAVA", false, "AIR", "AIR"), false);
+        t("rtp magma ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe("MAGMA_BLOCK", true, "AIR", "AIR"), false);
+        t("rtp cactus ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe("CACTUS", true, "AIR", "AIR"), false);
+        t("rtp fire ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe("FIRE", false, "AIR", "AIR"), false);
+        t("rtp soul fire", dev.superseller.veltryx.rtp.RtpSafety.isSafe("SOUL_FIRE", false, "AIR", "AIR"), false);
+        t("rtp campfire", dev.superseller.veltryx.rtp.RtpSafety.isSafe("CAMPFIRE", true, "AIR", "AIR"), false);
+        t("rtp berry bush", dev.superseller.veltryx.rtp.RtpSafety.isSafe("SWEET_BERRY_BUSH", true, "AIR", "AIR"), false);
+        t("rtp wither rose", dev.superseller.veltryx.rtp.RtpSafety.isSafe("WITHER_ROSE", true, "AIR", "AIR"), false);
+        t("rtp powder snow", dev.superseller.veltryx.rtp.RtpSafety.isSafe("POWDER_SNOW", true, "AIR", "AIR"), false);
+        t("rtp bedrock", dev.superseller.veltryx.rtp.RtpSafety.isSafe("BEDROCK", true, "AIR", "AIR"), false);
+        t("rtp water feet", dev.superseller.veltryx.rtp.RtpSafety.isSafe("SAND", true, "WATER", "AIR"), false);
+        t("rtp solid feet", dev.superseller.veltryx.rtp.RtpSafety.isSafe("STONE", true, "STONE", "AIR"), false);
+        t("rtp solid head", dev.superseller.veltryx.rtp.RtpSafety.isSafe("STONE", true, "AIR", "STONE"), false);
+        t("rtp air ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe("AIR", false, "AIR", "AIR"), false);
+        t("rtp null ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe(null, true, "AIR", "AIR"), false);
+
+        // Choice catalog: potions, tipped arrows, enchanted books
+        t("potions offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.potions().size()), Integer.valueOf(15));
+        boolean potionPricesOk = true;
+        long healingPrice = 0;
+        for (var potion : dev.superseller.veltryx.shop.ChoiceCatalog.potions()) {
+            if (potion.priceCents() <= 0) {
+                potionPricesOk = false;
+            }
+            if (potion.key().equals("HEALING")) {
+                healingPrice = potion.priceCents();
+            }
+        }
+        t("potion prices positive", potionPricesOk, true);
+        t("healing price", Long.valueOf(healingPrice), Long.valueOf(5000L));
+        t("arrow pack 1.25x", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.arrowPackCents(
+                new dev.superseller.veltryx.shop.ChoiceCatalog.PotionOption("HEALING", "Healing", 5000L))),
+                Long.valueOf(6250L));
+        t("arrow pack size", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.TIPPED_ARROW_PACK), Integer.valueOf(8));
+        t("books offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.books().size()), Integer.valueOf(30));
+        dev.superseller.veltryx.shop.ChoiceCatalog.BookOption sharpness = null;
+        dev.superseller.veltryx.shop.ChoiceCatalog.BookOption mending = null;
+        for (var book : dev.superseller.veltryx.shop.ChoiceCatalog.books()) {
+            if (book.key().equals("SHARPNESS")) {
+                sharpness = book;
+            }
+            if (book.key().equals("MENDING")) {
+                mending = book;
+            }
+        }
+        t("sharpness found", Boolean.valueOf(sharpness != null), Boolean.valueOf(true));
+        t("mending found", Boolean.valueOf(mending != null), Boolean.valueOf(true));
+        t("sharpness V price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 5)), Long.valueOf(125000L));
+        t("sharpness I price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 1)), Long.valueOf(25000L));
+        t("book level clamps high", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 99)), Long.valueOf(125000L));
+        t("book level clamps low", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 0)), Long.valueOf(25000L));
+        t("mending rare price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(mending, 1)), Long.valueOf(80000L));
+
+        // Search matching + quickshop defaults
+        t("search by display", dev.superseller.veltryx.shop.ChoiceCatalog.matches("diamond", "Diamond Sword", "DIAMOND_SWORD"), true);
+        t("search by material", dev.superseller.veltryx.shop.ChoiceCatalog.matches("sword", "Blade", "IRON_SWORD"), true);
+        t("search with space", dev.superseller.veltryx.shop.ChoiceCatalog.matches("diamond s", "Diamond Sword", "DIAMOND_SWORD"), true);
+        t("search no match", dev.superseller.veltryx.shop.ChoiceCatalog.matches("zzz", "Diamond Sword", "DIAMOND_SWORD"), false);
+        t("search blank", dev.superseller.veltryx.shop.ChoiceCatalog.matches("  ", "Diamond Sword", "DIAMOND_SWORD"), false);
+        t("quickshop 5 rows", Boolean.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.defaultQuickshopItems().size() <= 45), Boolean.valueOf(true));
+        t("quickshop default size", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.defaultQuickshopItems().size()), Integer.valueOf(45));
+
         System.out.println("Smoke: " + passed + " passed, " + failed + " failed.");
         if (failed > 0) {
             System.exit(1);

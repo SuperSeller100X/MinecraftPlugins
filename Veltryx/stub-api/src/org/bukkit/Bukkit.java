@@ -13,9 +13,10 @@ public final class Bukkit {
     private Bukkit() {}
     public static Server getServer() { return null; }
     public static Collection<? extends Player> getOnlinePlayers() { return null; }
+    public static java.util.List<World> getWorlds() { return null; }
+    public static World getWorld(String name) { return null; }
     public static Player getPlayerExact(String name) { return null; }
     public static Player getPlayer(UUID id) { return null; }
-    public static World getWorld(String name) { return null; }
     @Deprecated public static OfflinePlayer getOfflinePlayer(String name) { return null; }
     public static OfflinePlayer getOfflinePlayer(java.util.UUID id) { return null; }
     public static ConsoleCommandSender getConsoleSender() { return null; }

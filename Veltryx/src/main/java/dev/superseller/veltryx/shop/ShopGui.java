@@ -52,25 +52,38 @@ public final class ShopGui implements Listener {
 
     private static final int PAGE_SIZE = 45;
 
+    /** Slots in the category menu reserved for the shop extras. */
+    private static final java.util.Set<Integer> RESERVED = java.util.Set.of(13, 14, 15, 16, 17);
+
     private final ShopService shop;
     private final Messages messages;
+    private ShopExtrasGui extras;
 
     public ShopGui(ShopService shop, Messages messages) {
         this.shop = shop;
         this.messages = messages;
     }
 
+    /** Wires the quick-shop / search / choice pickers (set in the plugin). */
+    public void attachExtras(ShopExtrasGui extras) {
+        this.extras = extras;
+    }
+
     /** Opens the category menu (Folia-safe). */
     public void openMain(Player player) {
         PlatformScheduler.runForPlayer(player, () -> {
             List<PriceTable.Category> categories = shop.prices().categories();
-            int rows = Math.max(1, Math.min(6, (categories.size() + 8) / 9));
+            int rows = Math.max(2, Math.min(6, (categories.size() + 8) / 9));
             Holder holder = new Holder(null, 0);
             Inventory inventory = Bukkit.createInventory(holder, rows * 9,
                     Txt.legacy("§8§lShop — categories"));
             holder.inventory = inventory;
-            for (int i = 0; i < categories.size() && i < rows * 9; i++) {
-                PriceTable.Category category = categories.get(i);
+            int placed = 0;
+            for (int i = 0; i < rows * 9 && placed < categories.size(); i++) {
+                if (RESERVED.contains(i)) {
+                    continue;
+                }
+                PriceTable.Category category = categories.get(placed++);
                 Material icon = Material.matchMaterial(category.icon());
                 inventory.setItem(i, item(icon == null ? Material.CHEST : icon,
                         Txt.legacy("§f" + category.display()),
@@ -78,6 +91,26 @@ public final class ShopGui implements Listener {
                                 Component.text(""),
                                 Txt.legacy("§eClick to browse"))));
             }
+            inventory.setItem(13, item(Material.POTION, Txt.legacy("§dPotions"),
+                    List.of(Txt.legacy("§7Buy a potion — choose the type"),
+                            Component.text(""),
+                            Txt.legacy("§eClick to open"))));
+            inventory.setItem(14, item(Material.matchMaterial("TIPPED_ARROW"), Txt.legacy("§dTipped arrows"),
+                    List.of(Txt.legacy("§7Buy tipped arrows — choose the effect"),
+                            Component.text(""),
+                            Txt.legacy("§eClick to open"))));
+            inventory.setItem(15, item(Material.ENCHANTED_BOOK, Txt.legacy("§dEnchanted books"),
+                    List.of(Txt.legacy("§7Choose the enchantment and level"),
+                            Component.text(""),
+                            Txt.legacy("§eClick to open"))));
+            inventory.setItem(16, item(Material.matchMaterial("ENDER_CHEST"), Txt.legacy("§aQuick shop"),
+                    List.of(Txt.legacy("§75 rows of the common items"),
+                            Component.text(""),
+                            Txt.legacy("§eClick to open"))));
+            inventory.setItem(17, item(Material.COMPASS, Txt.legacy("§eSearch"),
+                    List.of(Txt.legacy("§7Find any item by name"),
+                            Component.text(""),
+                            Txt.legacy("§eClick to search"))));
             player.openInventory(inventory);
         });
     }
@@ -152,9 +185,27 @@ public final class ShopGui implements Listener {
         }
         int slot = event.getSlot();
         if (holder.categoryId() == null) {
+            if (extras != null) {
+                switch (slot) {
+                    case 13 -> { extras.openPotions(player); return; }
+                    case 14 -> { extras.openArrows(player); return; }
+                    case 15 -> { extras.openBooks(player); return; }
+                    case 16 -> { extras.openQuickshop(player); return; }
+                    case 17 -> { extras.openSearchPrompt(player); return; }
+                    default -> { }
+                }
+            }
             List<PriceTable.Category> categories = shop.prices().categories();
-            if (slot >= 0 && slot < categories.size()) {
-                openCategory(player, categories.get(slot).id(), 0);
+            int placed = 0;
+            for (int i = 0; i < 54 && placed < categories.size(); i++) {
+                if (RESERVED.contains(i)) {
+                    continue;
+                }
+                if (i == slot) {
+                    openCategory(player, categories.get(placed).id(), 0);
+                    return;
+                }
+                placed++;
             }
             return;
         }

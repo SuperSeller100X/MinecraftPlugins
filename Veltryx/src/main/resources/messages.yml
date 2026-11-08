@@ -276,3 +276,15 @@ home.rename-cancelled: "<gray>Renaming <white>{name}</white> cancelled.</gray>"
 # -------------------------------------------------- valued item guards
 ah.no-valued: "<red>Enchanted or damaged items can't be listed — <white>/sell</white> pays extra for them.</red>"
 order.no-valued: "<red>Enchanted or damaged items can't fill orders — <white>/sell</white> pays extra for them.</red>"
+
+# -------------------------------------------------------------- rtp
+rtp.searching: "<gray>Searching for a safe spot in the <white>{world}</white>...</gray>"
+rtp.countdown: "<gray>Teleporting in <white>{seconds}</white>...</gray>"
+rtp.teleported: "<green>Teleported to <white>{world}</white> <gray>(<white>{x}</white>, <white>{y}</white>, <white>{z}</white>)</gray>.</green>"
+rtp.cooldown: "<red>RTP is on cooldown for <white>{seconds}</white> more seconds.</red>"
+rtp.world-missing: "<red>The <white>{world}</white> is not loaded on this server.</red>"
+rtp.failed: "<red>Could not find a safe spot — try again.</red>"
+
+# --------------------------------------------------- shop search
+shop.search-prompt: "<gray>Type your search in chat (or <white>cancel</white>) — e.g. <white>diamond</white>.</gray>"
+shop.search-cancelled: "<gray>Search cancelled.</gray>"

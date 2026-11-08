@@ -99,6 +99,9 @@ public final class VeltryxPlugin extends JavaPlugin {
     private dev.superseller.veltryx.shards.ShardItems shardItems;
     private dev.superseller.veltryx.shards.ShardShopGui shardShopGui;
     private dev.superseller.veltryx.shards.ShardExpiryService shardExpiry;
+    private dev.superseller.veltryx.shop.ShopExtrasGui shopExtrasGui;
+    private dev.superseller.veltryx.rtp.RtpService rtpService;
+    private dev.superseller.veltryx.rtp.RtpGui rtpGui;
 
     @Override
     public void onEnable() {
@@ -150,6 +153,11 @@ public final class VeltryxPlugin extends JavaPlugin {
                     shardCatalog, shardItems, shardService, messages);
             shardExpiry = new dev.superseller.veltryx.shards.ShardExpiryService(
                     shardItems, shardCatalog, messages);
+            shopExtrasGui = new dev.superseller.veltryx.shop.ShopExtrasGui(shopService, economy, messages, config);
+            shopExtrasGui.attachShopOpener(shopGui::openMain);
+            shopGui.attachExtras(shopExtrasGui);
+            rtpService = new dev.superseller.veltryx.rtp.RtpService(config, messages);
+            rtpGui = new dev.superseller.veltryx.rtp.RtpGui(rtpService);
 
             stage = "timers";
             EconomyRegistry.register(economy);
@@ -272,6 +280,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         EcoCommand ecoCommand = new EcoCommand(economy, messages, config);
         bind("eco", ecoCommand, ecoCommand);
         ShopCommand shopCommand = new ShopCommand(shopGui, shopService, messages);
+        shopCommand.attachExtras(shopExtrasGui);
         bind("shop", shopCommand, shopCommand);
         SellCommand sellCommand = new SellCommand(sellGui, messages);
         bind("sell", sellCommand, sellCommand);
@@ -284,6 +293,12 @@ public final class VeltryxPlugin extends JavaPlugin {
         bind("home", homeCommand, homeCommand);
         bind("sethome", homeCommand, homeCommand);
         bind("homes", homeCommand, homeCommand);
+        dev.superseller.veltryx.shop.QuickShopCommand quickShopCommand =
+                new dev.superseller.veltryx.shop.QuickShopCommand(shopExtrasGui, messages);
+        bind("quickshop", quickShopCommand, quickShopCommand);
+        dev.superseller.veltryx.rtp.RtpCommand rtpCommand =
+                new dev.superseller.veltryx.rtp.RtpCommand(rtpGui, rtpService, messages);
+        bind("rtp", rtpCommand, rtpCommand);
         dev.superseller.veltryx.shards.ShardCommand shardCommand = new dev.superseller.veltryx.shards.ShardCommand(
                 shardService, shardCatalog, shardItems, shardShopGui, messages);
         bind("shard", shardCommand, shardCommand);
@@ -344,6 +359,8 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(ahGui);
         register(orderGui);
         register(shardShopGui);
+        register(shopExtrasGui);
+        register(rtpGui);
         register(new dev.superseller.veltryx.shards.ShardToolListener(shardItems, shardCatalog, config));
         register(new dev.superseller.veltryx.shards.ShardPotionListener(
                 shardItems, shardCatalog, messages, config));

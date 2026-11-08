@@ -25,6 +25,13 @@ public final class ShopCommand implements CommandExecutor, TabCompleter {
         this.messages = messages;
     }
 
+    /** Wired with the shop extras for /shop search. */
+    private ShopExtrasGui extras;
+
+    public void attachExtras(ShopExtrasGui extras) {
+        this.extras = extras;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -40,6 +47,18 @@ public final class ShopCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         String wanted = args[0].toLowerCase(Locale.ROOT);
+        if (wanted.equals("search") && extras != null) {
+            if (args.length < 2) {
+                extras.openSearchPrompt(player);
+            } else {
+                StringBuilder query = new StringBuilder(args[1]);
+                for (int i = 2; i < args.length; i++) {
+                    query.append(' ').append(args[i]);
+                }
+                extras.openSearch(player, query.toString(), 0);
+            }
+            return true;
+        }
         for (PriceTable.Category category : shop.prices().categories()) {
             if (category.id().equals(wanted)) {
                 gui.openCategory(player, category.id(), 0);

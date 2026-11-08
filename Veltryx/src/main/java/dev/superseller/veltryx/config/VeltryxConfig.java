@@ -403,6 +403,49 @@ public final class VeltryxConfig {
         return Math.max(1L, config.getLong("shards.haste-minutes", 60L));
     }
 
+    // ------------------------------------------------------------------ rtp
+
+    /** Random teleport radius in blocks (default 10 million). */
+    public long rtpRadius() {
+        return Math.max(1000L, config.getLong("rtp.radius", 10_000_000L));
+    }
+
+    /** Never land closer than this to spawn. */
+    public long rtpMinDistance() {
+        return Math.max(0L, config.getLong("rtp.min-distance", 500L));
+    }
+
+    /** The nether radius is the radius divided by this (coordinate scale). */
+    public long rtpNetherDivisor() {
+        return Math.max(1L, config.getLong("rtp.nether-divisor", 8L));
+    }
+
+    /** Seconds between two /rtp uses. */
+    public long rtpCooldownSeconds() {
+        return Math.max(0L, config.getLong("rtp.cooldown-seconds", 60L));
+    }
+
+    /** Countdown before the teleport, in seconds. */
+    public long rtpCountdownSeconds() {
+        return Math.max(1L, config.getLong("rtp.countdown-seconds", 3L));
+    }
+
+    /** Random spots to try before giving up. */
+    public int rtpMaxAttempts() {
+        return Math.max(1, config.getInt("rtp.max-attempts", 25));
+    }
+
+    // ------------------------------------------------------------ quickshop
+
+    /** Material names shown in the quick shop (up to 45). */
+    public java.util.List<String> quickshopItems() {
+        java.util.List<String> configured = config.getStringList("quickshop.items");
+        if (configured == null || configured.isEmpty()) {
+            return dev.superseller.veltryx.shop.ChoiceCatalog.defaultQuickshopItems();
+        }
+        return configured.size() > 45 ? configured.subList(0, 45) : configured;
+    }
+
     /** Whole config, for the consistency checker and debugging. */
     public Map<String, Object> rawValues() {
         return new LinkedHashMap<>(config.getValues(true));

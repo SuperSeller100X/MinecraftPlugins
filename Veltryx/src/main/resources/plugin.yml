@@ -128,6 +128,13 @@ commands:
     description: Shard currency and shard shop — earn shards by playing, buy shard weapons and tools.
     usage: /<command> <balance|pay|top|shop|toggle|info>
     aliases: [shardtools, st]
+  quickshop:
+    description: Quick-buy panel — 5 rows of the common shop items without searching.
+    usage: /<command>
+    aliases: [qs]
+  rtp:
+    description: Random teleport — pick Overworld, Nether or End, find a safe block, teleport after 3 seconds.
+    usage: /<command> [overworld|nether|end]
 
 permissions:
   veltryx.*:
@@ -144,6 +151,7 @@ permissions:
       veltryx.tp: true
       veltryx.shards: true
       veltryx.shards.admin: true
+      veltryx.rtp: true
       veltryx.anticheat.alerts: true
       veltryx.anticheat.bypass: true
       veltryx.sus: true
@@ -179,6 +187,9 @@ permissions:
     default: true
   veltryx.home:
     description: Set and use homes (/sethome, /home, /homes).
+    default: true
+  veltryx.rtp:
+    description: Use the random teleport (/rtp).
     default: true
   veltryx.shards:
     description: Earn shards while playing, use the shard shop and shard weapons.

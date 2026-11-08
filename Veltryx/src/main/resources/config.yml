@@ -64,6 +64,68 @@ shards:
   # Haste II duration of the shard potion of haste, in minutes.
   haste-minutes: 60
 
+# Random teleport (/rtp): picks a random spot, searches for a safe block
+# column (never lava, cactus, fire, the void or the nether roof), counts
+# down 3 seconds and teleports. The nether radius is divided by 8 to match
+# the coordinate scale.
+rtp:
+  radius: 10000000
+  min-distance: 500
+  nether-divisor: 8
+  cooldown-seconds: 60
+  countdown-seconds: 3
+  max-attempts: 25
+
+# Quick shop (/quickshop, /qs, or the ender chest in the shop): the material
+# names shown on its 5 rows. Up to 45 items — edit to taste.
+quickshop:
+  items:
+    - STONE
+    - COBBLESTONE
+    - DEEPSLATE
+    - COBBLED_DEEPSLATE
+    - DIRT
+    - GRASS_BLOCK
+    - SAND
+    - GRAVEL
+    - GLASS
+    - BRICKS
+    - OAK_LOG
+    - OAK_PLANKS
+    - SPRUCE_PLANKS
+    - COBBLESTONE_WALL
+    - LADDER
+    - TORCH
+    - CHEST
+    - BARREL
+    - IRON_INGOT
+    - GOLD_INGOT
+    - COPPER_INGOT
+    - REDSTONE
+    - LAPIS_LAZULI
+    - DIAMOND
+    - EMERALD
+    - COAL
+    - IRON_BLOCK
+    - GOLD_BLOCK
+    - DIAMOND_BLOCK
+    - OBSIDIAN
+    - IRON_PICKAXE
+    - DIAMOND_PICKAXE
+    - IRON_SWORD
+    - DIAMOND_SWORD
+    - BOW
+    - ARROW
+    - SHIELD
+    - IRON_HELMET
+    - IRON_CHESTPLATE
+    - DIAMOND_HELMET
+    - DIAMOND_CHESTPLATE
+    - COOKED_BEEF
+    - BREAD
+    - GOLDEN_APPLE
+    - ENDER_PEARL
+
 anticheat:
   enabled: true
 

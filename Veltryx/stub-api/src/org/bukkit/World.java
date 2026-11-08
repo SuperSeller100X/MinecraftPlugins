@@ -10,5 +10,8 @@ public interface World {
     boolean isChunkLoaded(int x, int z);
     int getMinHeight();
     int getMaxHeight();
+    int getHighestBlockYAt(int x, int z);
+    Environment getEnvironment();
+    enum Environment { NORMAL, NETHER, THE_END, CUSTOM }
     String getName();
 }

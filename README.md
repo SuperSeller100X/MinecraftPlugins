@@ -297,7 +297,7 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**0.0.3-beta**. More modules land in the same plugin; the public
+**vx-0.0.4-beta**. More modules land in the same plugin; the public
 `VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
@@ -350,6 +350,13 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   particles) at 500 shards each — self-destructing **24h after purchase**
   like the ShardTools plugin — plus the **Void Totem** (150) that rescues
   you from the void. No way to buy shards with money: earned, paid or given.
+- **`/rtp` random teleport** — world picker (Overworld / Nether / End),
+  **10 million block radius**, async **safe-block search** (never lava,
+  fire, the void or the nether roof) and a **3 second countdown**
+- **Shop extras** — `/quickshop` (`/qs`) 5-row quick-buy panel (+ ender
+  chest in the shop), **item search** (compass in the shop or
+  `/shop search`), and choose-what-you-buy **potions / tipped arrows /
+  enchanted books** (type, effect, enchantment + level)
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
   `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
   `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`

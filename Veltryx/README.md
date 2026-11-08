@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**. More modules (shop, and everything else) land in the same
 plugin in the next versions — the economy API is already built for it.
 
-- Version: **0.0.3-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
+- Version: **vx-0.0.4-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
 - Storage: **YAML** (default) or **SQLite** — one config switch
 - No required dependencies. Vault bridge and PlaceholderAPI hooks are planned.
 
@@ -57,6 +57,18 @@ restarts and shared by every future Veltryx module through the public
   tests, including compression/decompression loops like ingot ↔ block). Prices
   live in `shop.yml`, are editable per server, and new items are added on
   updates while keeping your values.
+- **`/quickshop` (`/qs`)** — or the **ender chest** in the shop menu — a
+  **5-row quick-buy panel** with the common items (editable list in
+  `config.yml`), so you don't have to search the big shop. Left-click buys
+  1, shift-click buys 64, exactly like the shop.
+- **Search** — the **compass** in the shop menu (or `/shop search <text>`)
+  finds any item by display or material name, with paged results you can
+  buy directly from.
+- **Choose-what-you-buy items**: **potions** (pick the type), **tipped
+  arrows** (pick the effect, packs of 8) and **enchanted books** (pick the
+  enchantment *and* its level) — priced per choice (books scale per level
+  by rarity tier), shown before every purchase. These are the shop's only
+  configurable items: written books and filled maps stay out.
 - New players still start with **$100** (`economy.starting-balance`).
 
 ### 💰 Money making methods
@@ -257,6 +269,19 @@ between players (`/shard pay`) or given by staff (`/shard give`).
   All settings (chain cap, plane size, leaves) live under `shards:` in
   `config.yml`.
 
+### 🎲 Random teleport (`/rtp`)
+
+- **`/rtp`** opens a world picker: **Overworld**, **Nether** or **End**
+  (`/rtp overworld|nether|end` goes directly).
+- The search radius is **10 million blocks** by default (the nether radius
+  is divided by 8 to match its coordinate scale) — all configurable under
+  `rtp:`.
+- The plugin **searches for a safe block column**: never lava, magma,
+  cactus, fire, campfires, sweet berries, powder snow, the void or the
+  nether's bedrock roof — then counts down **3 seconds** (action bar) and
+  teleports. The spot search runs asynchronously, so the server never
+  stutters; `/rtp` has a 60s cooldown by default.
+
 ## 📜 Commands
 
 | Command | Permission | Default |
@@ -265,6 +290,8 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 | `/shop` (`/store`) [category] | `veltryx.shop` | true |
 | `/sell` | `veltryx.sell` | true |
 | `/shard` (`/shardtools`, `/st`) <balance\|pay\|top\|shop\|toggle\|info> | `veltryx.shards` (give/set: `veltryx.shards.admin`) | true / op |
+| `/quickshop` (`/qs`) | `veltryx.shop` | true |
+| `/rtp` [overworld\|nether\|end] | `veltryx.rtp` | true |
 | `/offend` | `veltryx.offend` | op |
 | `/ban` | `veltryx.bans.ban` | op |
 | `/bans` · `/unban` | `veltryx.bans.manage` | op |
@@ -359,7 +386,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/0.0.3-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.4-beta.jar
 ```
 
 Offline fallback (no Maven Central access): the bundled Eclipse compiler and
@@ -367,7 +394,7 @@ compile-only API stubs build the plugin and run the smoke tests:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/0.0.3-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.4-beta.jar
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
@@ -390,12 +417,12 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/0.0.3-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.4-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx 0.0.3-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.4-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 
