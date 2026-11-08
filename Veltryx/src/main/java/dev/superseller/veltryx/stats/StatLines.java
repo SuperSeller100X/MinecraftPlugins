@@ -20,7 +20,8 @@ public final class StatLines {
     }
 
     /** Sidebar row: {@code $ 235M} in the money colors. */
-    public static String money(long cents) {
+    public static String money(long cents) { return money(java.math.BigInteger.valueOf(cents)); }
+    public static String money(java.math.BigInteger cents) {
         return "§a$ §f" + Money.formatCompact(cents);
     }
 
@@ -45,15 +46,17 @@ public final class StatLines {
     }
 
     /**
-     * The nametag lines below the player name: money, shards, deaths, kills
-     * (no playtime), in that order.
+     * The only stat displayed below another player's name is money.
      */
     public static String[] nametagLines(long cents, long shards, long deaths, long kills) {
-        return new String[] {money(cents), shards(shards), deaths(deaths), kills(kills)};
+        return new String[] {money(cents)};
     }
 
     /** The sidebar rows top to bottom: money, shards, deaths, kills, playtime. */
     public static String[] sidebarRows(long cents, long shards, long deaths, long kills, long playtimeMillis) {
+        return sidebarRows(java.math.BigInteger.valueOf(cents), shards, deaths, kills, playtimeMillis);
+    }
+    public static String[] sidebarRows(java.math.BigInteger cents, long shards, long deaths, long kills, long playtimeMillis) {
         return new String[] {
                 money(cents), shards(shards), deaths(deaths), kills(kills), playtime(playtimeMillis)};
     }

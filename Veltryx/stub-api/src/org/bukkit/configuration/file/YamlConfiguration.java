@@ -7,7 +7,11 @@ import org.bukkit.configuration.ConfigurationSection;
 
 /** Small test double for simple scalar YAML, not a replacement for Paper/SnakeYAML. */
 public class YamlConfiguration extends FileConfiguration {
-    private final Map<String, Object> values = new LinkedHashMap<>();
+    private final Map<String, Object> values;
+    private final String prefix;
+    public YamlConfiguration() { this(new LinkedHashMap<>(), ""); }
+    private YamlConfiguration(Map<String, Object> values, String prefix) { this.values=values; this.prefix=prefix; }
+    private String path(String key) { return prefix + key; }
     public static YamlConfiguration loadConfiguration(File file) {
         try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             return loadConfiguration(reader);
@@ -48,17 +52,48 @@ public class YamlConfiguration extends FileConfiguration {
         } catch (Exception ignored) { }
         return yaml;
     }
-    public void save(File file) throws IOException { }
-    @Override public Set<String> getKeys(boolean deep) { return values.keySet(); }
-    @Override public ConfigurationSection getConfigurationSection(String path) { return null; }
-    @Override public String getString(String path, String def) { Object v=values.get(path); return v instanceof String ? (String)v : def; }
-    @Override public String getString(String path) { return getString(path, null); }
-    @Override public long getLong(String path, long def) { try { return Long.parseLong(String.valueOf(values.get(path))); } catch(Exception e) { return def; } }
-    @Override public int getInt(String path, int def) { try { return Integer.parseInt(String.valueOf(values.get(path))); } catch(Exception e) { return def; } }
-    @Override public double getDouble(String path, double def) { try { return Double.parseDouble(String.valueOf(values.get(path))); } catch(Exception e) { return def; } }
-    @Override public boolean getBoolean(String path, boolean def) { Object v=values.get(path); return v instanceof Boolean ? (Boolean)v : def; }
+    public void load(File file) throws IOException, org.bukkit.configuration.InvalidConfigurationException {
+        YamlConfiguration loaded=loadConfiguration(file); values.clear(); values.putAll(loaded.values);
+    }
+    public void save(File file) throws IOException {
+        Map<String,Object> tree = new LinkedHashMap<>();
+        for (var e : values.entrySet()) {
+            String[] parts=e.getKey().split("\\."); Map<String,Object> node=tree;
+            for(int i=0;i<parts.length-1;i++) node=(Map<String,Object>)node.computeIfAbsent(parts[i], k -> new LinkedHashMap<String,Object>());
+            node.put(parts[parts.length-1],e.getValue());
+        }
+        try (Writer out = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) { emit(out,tree,0); }
+    }
+    @SuppressWarnings("unchecked")
+    private static void emit(Writer out, Map<String,Object> map, int indent) throws IOException {
+        for(var e:map.entrySet()) {
+            out.write(" ".repeat(indent)+e.getKey()+":"); Object v=e.getValue();
+            if(v instanceof Map) { out.write("\n"); emit(out,(Map<String,Object>)v,indent+2); }
+            else if(v instanceof String) out.write(" '"+((String)v).replace("'","''")+"'\n");
+            else out.write(" "+String.valueOf(v)+"\n");
+        }
+    }
+    @Override public Set<String> getKeys(boolean deep) {
+        Set<String> result=new LinkedHashSet<>();
+        for(String full:values.keySet()) if(full.startsWith(prefix)) {
+            String rel=full.substring(prefix.length()); int dot=rel.indexOf('.');
+            result.add(!deep && dot>=0 ? rel.substring(0,dot) : rel);
+        }
+        return result;
+    }
+    @Override public ConfigurationSection getConfigurationSection(String key) {
+        String child=path(key)+".";
+        for(String full:values.keySet()) if(full.startsWith(child)) return new YamlConfiguration(values,child);
+        return null;
+    }
+    @Override public String getString(String key, String def) { Object v=values.get(path(key)); return v==null ? def : v.toString(); }
+    @Override public String getString(String key) { return getString(key, null); }
+    @Override public long getLong(String key, long def) { try { return Long.parseLong(String.valueOf(values.get(path(key)))); } catch(Exception e) { return def; } }
+    @Override public int getInt(String key, int def) { try { return Integer.parseInt(String.valueOf(values.get(path(key)))); } catch(Exception e) { return def; } }
+    @Override public double getDouble(String key, double def) { try { return Double.parseDouble(String.valueOf(values.get(path(key)))); } catch(Exception e) { return def; } }
+    @Override public boolean getBoolean(String key, boolean def) { Object v=values.get(path(key)); return v instanceof Boolean ? (Boolean)v : def; }
     @Override public List<String> getStringList(String path) { return List.of(); }
-    @Override public boolean isString(String path) { return values.get(path) instanceof String; }
-    @Override public void set(String path, Object value) { values.put(path, value); }
+    @Override public boolean isString(String key) { return values.get(path(key)) instanceof String; }
+    @Override public void set(String key, Object value) { values.put(path(key), value); }
     @Override public Map<String, Object> getValues(boolean deep) { return values; }
 }

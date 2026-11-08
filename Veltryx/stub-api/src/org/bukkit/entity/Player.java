@@ -22,6 +22,10 @@ public interface Player extends HumanEntity, OfflinePlayer, org.bukkit.command.C
     void hideEntity(org.bukkit.plugin.Plugin plugin, Entity entity);
     void showEntity(org.bukkit.plugin.Plugin plugin, Entity entity);
     boolean canSee(Entity entity);
+    default void startRiptideAttack(int duration, float damage, org.bukkit.inventory.ItemStack item) {}
+    default void playSound(Location location, String sound, float volume, float pitch) {}
+    default void openVirtualSign(io.papermc.paper.math.Position pos, org.bukkit.block.sign.Side side) {}
+    default void sendSignChange(Location location, String[] lines) {}
     void closeInventory();
     org.bukkit.inventory.InventoryView openInventory(Inventory inventory);
     CompletableFuture<Boolean> teleportAsync(Location location);

@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**, survival shop, player settings, homes, shard tools, and
 custom spawners.
 
-- Version: **vx-0.0.5-beta** · targets Paper API 26.3 and Java 25 ·
+- Version: **vx-0.0.6-beta** · targets Paper API 26.3 and Java 25 ·
   `folia-supported: true`. The descriptor declares `api-version: 26.2`, but
   compatibility with older servers has not been verified; 26.3 items are
   filtered out when the server does not recognize them.
@@ -28,23 +28,32 @@ restarts and shared by every future Veltryx module through the public
 - `/eco` · `/bal` · `/balance` · `/money` — check your balance
 - `/eco pay <player> <amount>` — pay online players (`1.5k`, `2m`, `$1,000` all parse)
 - `/eco top` — money leaderboard
-- `/eco give|take|set|reset <player> <amount>` — admin management (offline-friendly)
-- Starting balance for new players, configurable minimum transfer, saturated
-  math (balances can never overflow or go negative)
+- `/eco give|take|set <player> <amount>` and `/eco reset <player>` — admin management
+- Starting balance for new players and configurable minimum transfer.
+  `/eco` amounts support case-insensitive `k/m/b/t/q/d/g/l`, where the
+  multipliers are respectively **10³/10⁶/10⁹/10¹²/10¹⁵/10¹⁸/10²¹/10²⁴**.
+  Balances and transfers use exact arbitrary-precision cents; untrusted amount
+  inputs are limited to 160 characters and sub-cent results round half up.
+  Shop item prices and auction/order per-item prices retain their existing
+  bounds (the latter are capped at $100,000 per item).
 
 ### 🛛️ Shop, selling & QuickShop (`/shop`, `/sell`, `/quickshop`)
 
 - The 26.3 catalogue has **1,530 survival-obtainable item types** in 11
   categories. Elytra, the dragon egg, operator-only and other unobtainable
   items are excluded. Items unknown to the running server are filtered out.
-- `/shop` shows the category menu; the compass searches names and material
-  IDs. Choose an item to open its purchase screen. The `+1`, `+16`, and `+32`
-  controls change the amount (right-click to subtract); the paper buys the
+- `/shop` shows the category menu; the compass opens a private sign editor to
+  search names and material IDs (`*` browses all, blank or `cancel` exits).
+  Choose an item to open its purchase screen. The `+1`, `+16`, and `+32` controls change the amount (right-click to subtract); the paper buys the
   selected amount and the chest buys 64. The yellow shulker opens SellGUI.
-- `/sell` shows sellable items in your inventory. Click one to sell that item,
-  or the nether star to sell all; sale payouts appear in chat and the action
-  bar. Enchantments add up to 12% per level before the safety caps; damage
-  reduces value. Metadata-dependent potions, arrows, books and maps are
+- `/sell` opens a 45-slot deposit tray. Click a gray placeholder or shift-click
+  an item from your inventory to add it, then click the green pane to sell the
+  deposited items. Unsellable items stay in the tray; closing it returns all
+  remaining items to your inventory (overflow drops are owner-locked and do
+  not despawn). Sale payouts appear in chat and the action bar. Enchantments
+  add up to 12% per level before the safety caps; damage
+  reduces value. Close the tray before a plugin reload or server stop; tray
+  contents are not persisted through a crash. Metadata-dependent potions, arrows, books and maps are
   **buy-only**, because a flat sell price cannot value their variants safely.
 - Potion types, tipped-arrow effects, and enchanted-book enchantments and
   levels are selected before purchase. Their per-choice prices are fixed in
@@ -55,7 +64,7 @@ restarts and shared by every future Veltryx module through the public
   cannot be found in the buyer's world, the purchase is refunded. Camp maps
   try the available camp variants; structure lookup may take time.
 - Each player has **45 initially empty QuickShop slots**. Click a slot, type a
-  private search in chat (`*` browses all, `cancel` exits), choose the item
+  search in the sign editor (`*` browses all, `cancel` exits), choose the item
   and any variant, set an amount from 1 to 64, then save. Left-click the saved
   slot to buy that amount, right-click to edit, or shift-right-click to clear.
   Saved slots use the **current** shop price, not a cached price. The old
@@ -87,7 +96,10 @@ player tick; death/kill changes refresh affected displays. Playtime uses the
 periodic `scoreboard.update-seconds` interval (default **1** on new installs).
 Existing configured values are preserved on upgrade, so change an older
 `20` to `1` if faster playtime updates are wanted. `scoreboard.nametag`
-controls whether the stat nametags are also mirrored to viewers.
+controls whether **other players' money only** is displayed below their names.
+No stat suffix is added to names in the tab list, and a viewer's own score is
+not added to their below-name board. Veltryx uses a separate scoreboard for
+each viewer; test compatibility with other scoreboard/team plugins.
 
 ### 🏷️ Auction house & orders (`/ah`, `/order`, `/orders`)
 
@@ -95,11 +107,26 @@ controls whether the stat nametags are also mirrored to viewers.
   listings, 48h) and anyone can buy it from the `/ah` GUI with one click.
   Money goes straight from buyer to seller. "My listings" shows expired ones —
   one click reclaims your items.
-- **`/order <item> <amount> <price-per-item>`** — player buy orders with the
-  full price **escrowed** up front; other players sell into them instantly
-  from the `/orders` GUI (with the same action-bar payout). Cancel any time to
-  get the unfilled remainder back; orders auto-close after 48h and refund
-  whatever was not filled.
+- **`/order`** opens a creation GUI: choose an item from the paginated picker
+  or click one in your inventory, adjust amount and price with the controls,
+  then confirm the displayed total. **`/order <item> <amount> <price-per-item>`**
+  still works directly. The full price is escrowed on confirmation.
+- **`/orders`** browses offers, and **`/orders mine`** manages your own.
+  Sellers click to fill an order and are paid immediately; in your orders,
+  **left-click to collect supplied items** and **right-click to cancel** and
+  refund the unfilled remainder. Collected items can remain pending across
+  logout, restart, cancellation or expiry; full inventories collect partially.
+  Orders track only the material, not variants or metadata: custom/enchanted/
+  damaged items cannot fill them, and spawners are prohibited. The price cap is
+  $100,000 per item and the maximum quantity is 23,040.
+- Earlier beta versions recorded fills but did not deliver the purchased items.
+  Historical fills have **unknown delivery/compensation status** and are not
+  automatically made claimable, to avoid duplicating manual compensation. Back
+  up `market.yml`/the database and reconcile historical fills manually before
+  upgrading; the log reports legacy fills (YAML order IDs or a SQLite count).
+  Player inventories and market
+  storage cannot be committed as one crash-proof transaction, so an abrupt
+  server crash or disk failure during a trade may require administrator review.
 
 ### 🏠 Homes & teleporting (`/home`, `/tpa`, …)
 
@@ -249,22 +276,35 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 
 | Item | Price | What it does | Lifetime |
 |---|---|---|---|
-| Shard Spear | 500 ✦ | Right-click to **lunge** forward — **90% less hunger drain while lunging** | **24 h real time** |
-| Shard Trident | 500 ✦ | **Riptide without water** (3 second cooldown; vanilla riptide still works in water/rain) | **24 h real time** |
-| Shard Axe | 500 ✦ | **Fells whole trees at once** (max 128-log chain), 3×3 on everything else — pick **Fortune III or Silk Touch** | **24 h real time** |
+| Shard Spear | 500 ✦ | Native spear with **Lunge III**; its Lunge exhaustion is reduced by 90% | **24 h real time** |
+| Shard Trident | 500 ✦ | **Riptide III**, plus a dry launch with a 5-second dry-only cooldown (water/rain use stays vanilla) | **24 h real time** |
+| Shard Axe | 500 ✦ | **Fells whole trees at once** (default 256-log cap), 3×3 on the allowed list — pick **Fortune III or Silk Touch** | **24 h real time** |
 | Shard Pickaxe | 500 ✦ | **3×3 mining** with **amethyst-like particles on every block mined** — pick **Fortune III or Silk Touch** | **24 h real time** |
 | Void Totem | 150 ✦ | **Rescues you from a lethal void hit** — consumed, teleports you to safety, full heal + Resistance & Slow Falling | permanent |
 
+- Paper does not attribute its exhaustion event to a specific enchantment or
+  hand. The Lunge reduction correlates a matching recent event while the shard
+  spear is in the main hand; other plugins or custom enchantments can interfere.
+- Dry Riptide is a server-side immediate launch with Riptide spin, sound and
+  durability handling. It is **not** native charge-and-release: unmodified
+  clients refuse to charge a Riptide trident while dry. Wet use is vanilla.
+- A void rescue returns you to the last remembered grounded location in the
+  current world, or that world's spawn if none is known; ensure the spawn is
+  safe. A failed teleport refunds the totem in memory (not across a crash).
+- The Void Totem uses `shardtools:void_totem`. Host the updated
+  `ShardTools/resourcepack.zip`, configure the URL and SHA-1 in
+  `server.properties`, and have players accept the pack to see its model.
 - The weapons/tools self-destruct **24 real-time hours after purchase** —
   exactly like the ShardTools plugin — and warn you before they go.
 - `/shard toggle` turns the held tool's ability on or off (each tool
   remembers its own state).
 - `/shard top` shows the richest shard holders; `/shard balance` yours.
 - Area mining applies the tool's Fortune/Silk Touch to **every** broken
-  block and drops vanilla-style ore XP for the extras (never with Silk
-  Touch), skips containers, spawners and bedrock, and replants saplings for
-  the axe. All settings (chain cap, plane size, leaves) live under `shards:`
-  in `config.yml`.
+  block on the ShardTools shared allow-list and drops ore XP for the extras
+  (never with Silk Touch), skips containers, spawners and bedrock, and
+  supports optional sapling replanting for the axe. Existing `shards:`
+  settings remain unchanged on upgrade; new configs default to 256 logs and
+  no replanting, like ShardTools.
 
 ### 🐖 Custom spawners (`/shard spawners`)
 
@@ -272,20 +312,31 @@ between players (`/shard pay`) or given by staff (`/shard give`).
   (`veltryx.shards`). **Pig, sheep, cow, iron golem, skeleton, zombie and
   creeper** spawners cost **1,000 shards each**. They are permanent and do
   not inherit shard-tool expiry.
-- Place one, then **right-click** it to open its storage. The lever switches
-  between normal **Spawner** mode and **Inventory** mode. Use the arrows for
-  **20 pages of 45 slots**; left-click a loot stack to collect it, or
-  right-click to collect one. The mode and loot survive pickup and restart.
-- Inventory mode converts each permitted spawn attempt into a roll of that
-  mob's server loot table, using the spawned entity but **no player killer**.
-  Player-kill-only loot, Looting, XP and separate equipment drops do not
-  apply. If a complete roll does not fit, that attempt produces no mob or
-  loot; it resumes once there is enough space. Spawning requires the chunk to
-  be loaded and still follows normal nearby-player, space, nearby-entity and
-  other non-light rules. The custom light rule permits all block and sky light
-  levels in both modes.
-- Mine a custom spawner with **Silk Touch** to put the same spawner directly
-  into your inventory, retaining its mode and contents. A full player
+- Place one, then right-click it with another **Veltryx spawner of the same
+  mob type** to combine them, up to **1,024**. A different type or a stack
+  that would exceed the cap is rejected without consuming the item. A picked-up
+  stack can be combined as a whole; stacking does not split it. Right-click
+  with an empty hand to open its storage and switch the lever between normal
+  **Spawner** and **Inventory** modes. Each component retains its own **20
+  pages of 45 slots** (a stack of two has 40 pages); previously saved loot,
+  stack membership and the root's mode survive pickup and restart. Use arrows
+  to navigate, left-click a loot stack to collect it, or right-click for one.
+- In Spawner mode, native spawn attempts and the nearby-mob limit scale with
+  stack size (up to 4,096 attempts per normal cycle at 1,024). Large stacks
+  can cause **severe server lag**. Inventory mode keeps the normal number of
+  attempts and makes one independent loot-table roll per spawner in the stack,
+  using the spawned entity but **no player killer**. Player-kill-only loot,
+  Looting, XP and separate equipment drops do not apply. If an entire attempt's
+  batch cannot fit, it produces no mob or loot; it resumes when space is free.
+  On an I/O error during a batch spanning multiple component files, earlier
+  components may already contain part of the batch; it is not retried. Monitor
+  disk space and errors, and use consistent backups for recovery.
+  Spawning still requires a loaded chunk and obeys nearby-player, space,
+  nearby-entity and other non-light rules; it is not a guaranteed output rate.
+  The custom light rule permits all block and sky light levels in both modes.
+- Mine a custom spawner with **Silk Touch** to put the **whole stack** as one
+  identity-bearing item directly into your inventory, retaining its mode and
+  every component's contents. A full player
   inventory or a non-Silk tool prevents the break. Explosions do not destroy
   these spawners. If placement cannot be completed after the block-place
   event, the original item is returned at that location as a non-expiring,
@@ -398,27 +449,35 @@ inject formatting).
   Recommended for large servers and networks.
 - `player-preferences.properties` and `quickshop-slots.properties` — persistent
   per-player settings and QuickShop slots, regardless of economy storage mode.
-- `spawners/<uuid>.properties` — each custom spawner's type, location, mode
-  and 900 slots; written through separately from YAML/SQLite. Back up this
-  directory **together with world and player data**, preferably while the
-  server is stopped. Many active inventory-mode spawners can increase disk
-  I/O. Missing or corrupt records disable the affected spawner rather than
-  recreate its loot; check the server log and restore the record.
+- `spawners/<uuid>.properties` — each purchased identity's type, parent link,
+  location, mode and 900 loot slots; written through separately from YAML/SQLite.
+  Back up the **entire directory together with world and player data**,
+  preferably while the server is stopped. An unreadable record or invalid
+  parent graph disables custom spawners rather than inventing missing data;
+  inspect the log and restore the complete backup. Large stacks can increase
+  disk I/O and CPU use.
 
-The economy backends keep an in-memory cache as the source of truth; YAML
-autosaves on an interval, SQLite writes through on every change.
+Economy account updates write through: YAML uses an atomic file replacement
+where supported; SQLite uses transactions. Existing long-cent YAML/SQLite
+balances are migrated automatically to exact decimal strings. **Back up data
+before upgrading and do not downgrade after creating balances beyond the old
+64-bit limit**, because old versions cannot read the new exact SQLite column
+and may truncate other balances. Other YAML subsystems also autosave.
 
 ## 🔌 Developer API
 
 ```java
 VeltryxEconomy.get().ifPresent(eco -> {
-    long cents = eco.getBalance(playerId);
-    eco.withdraw(playerId, name, 1_500);            // $15.00
-    String pretty = eco.format(1_500);              // "$15.00"
+    java.math.BigInteger cents = eco.getBalanceExact(playerId);
+    eco.withdrawExact(playerId, name, java.math.BigInteger.valueOf(1_500)); // $15.00
+    String pretty = eco.formatExact(cents);
 });
 ```
 
-The built-in shop uses this economy service.
+The built-in shop uses this economy service. Legacy `long` balance reads and
+return values clamp at `Long.MAX_VALUE`; use the `*Exact` methods for the full
+balance. Legacy long deposits/withdrawals still operate on the exact balance,
+while an explicit legacy `setBalance` replaces it with the supplied value.
 
 ---
 
@@ -428,7 +487,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.5-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.6-beta.jar
 ```
 
 Offline development fallback: the bundled Eclipse compiler and compile-only
@@ -438,7 +497,15 @@ driver. Use the Maven jar for deployment:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.5-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.6-beta.jar
+```
+
+To run the additional real SQLite integration tests during the offline build,
+set `SQLITE_JDBC_JAR` to a local xerial SQLite JDBC jar (and include any runtime
+dependencies it needs). This still does not run a Paper server:
+
+```bash
+JAVA_BIN=/path/to/java25 SQLITE_JDBC_JAR=/absolute/path/sqlite-jdbc.jar ./build.sh
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
@@ -447,10 +514,10 @@ Offline consistency checks (message keys, permissions, command wiring):
 cd Veltryx && python3 tools/check_consistency.py
 ```
 
-A CI workflow that runs the consistency checks, the unit tests and
-`mvn clean verify` on Temurin 25 is included at
-`Veltryx/.github/workflows/build.yml` (copy it to the repo root
-`.github/workflows/` to activate it).
+The CI template at `Veltryx/.github/workflows/build.yml` runs consistency,
+offline regressions, SQLite integration and `mvn clean verify` on Temurin 25.
+Copy it to the repo root `.github/workflows/` to activate it; updating active
+workflows requires GitHub workflow permission.
 
 ## 🚑 Troubleshooting
 
@@ -461,12 +528,12 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.5-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.6-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'` and targets 26.3; send the exact server version and error |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.5-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.6-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 

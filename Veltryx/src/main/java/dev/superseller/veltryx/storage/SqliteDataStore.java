@@ -12,6 +12,7 @@ import dev.superseller.veltryx.model.Profile;
 import dev.superseller.veltryx.model.ReportEntry;
 import dev.superseller.veltryx.model.WarnEntry;
 import java.io.File;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -67,7 +68,7 @@ public final class SqliteDataStore implements DataStore {
                 connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
                 try (Statement statement = connection.createStatement()) {
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_accounts ("
-                            + "uuid TEXT PRIMARY KEY, name TEXT, balance INTEGER)");
+                            + "uuid TEXT PRIMARY KEY, name TEXT, balance INTEGER, balance_exact TEXT)");
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_profiles ("
                             + "uuid TEXT PRIMARY KEY, name TEXT, first_seen INTEGER, last_seen INTEGER,"
                             + " playtime INTEGER, joins INTEGER)");
@@ -97,7 +98,7 @@ public final class SqliteDataStore implements DataStore {
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_orders ("
                             + "id TEXT PRIMARY KEY, buyer TEXT, buyer_name TEXT, material TEXT,"
                             + " amount INTEGER, filled INTEGER, price_each INTEGER, created INTEGER,"
-                            + " expires INTEGER, closed INTEGER)");
+                            + " expires INTEGER, closed INTEGER, collected INTEGER NOT NULL DEFAULT 0)");
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_homes ("
                             + "owner TEXT, name TEXT, world TEXT, x REAL, y REAL, z REAL,"
                             + " yaw REAL, pitch REAL, icon TEXT, PRIMARY KEY (owner, name))");
@@ -105,6 +106,29 @@ public final class SqliteDataStore implements DataStore {
                             + "uuid TEXT PRIMARY KEY, shards INTEGER)");
                     statement.execute("CREATE TABLE IF NOT EXISTS vel_stats ("
                             + "uuid TEXT PRIMARY KEY, kills INTEGER, deaths INTEGER)");
+                    boolean exactBalanceColumn = false;
+                    try (ResultSet columns = statement.executeQuery("PRAGMA table_info(vel_accounts)")) {
+                        while (columns.next()) if ("balance_exact".equals(columns.getString("name"))) exactBalanceColumn = true;
+                    }
+                    if (!exactBalanceColumn) statement.execute("ALTER TABLE vel_accounts ADD COLUMN balance_exact TEXT");
+                    boolean collectedColumn = false;
+                    try (ResultSet columns = statement.executeQuery("PRAGMA table_info(vel_orders)")) {
+                        while (columns.next()) if ("collected".equals(columns.getString("name"))) collectedColumn = true;
+                    }
+                    if (!collectedColumn) {
+                        // Existing releases never recorded deliveries. Mark historical fills as
+                        // reconciled rather than minting items that might have been compensated.
+                        connection.setAutoCommit(false);
+                        try {
+                            statement.execute("ALTER TABLE vel_orders ADD COLUMN collected INTEGER NOT NULL DEFAULT 0");
+                            int legacy = statement.executeUpdate("UPDATE vel_orders SET collected = filled WHERE filled > 0");
+                            connection.commit();
+                            if (legacy > 0) logger.warning("Migrated " + legacy + " legacy filled orders with unknown delivery; reconcile manually.");
+                        } catch (SQLException ex) {
+                            try { connection.rollback(); } catch (SQLException rollback) { ex.addSuppressed(rollback); }
+                            throw ex;
+                        } finally { connection.setAutoCommit(true); }
+                    }
                     try {
                         statement.execute("ALTER TABLE vel_homes ADD COLUMN icon TEXT");
                     } catch (SQLException ignored) {
@@ -113,18 +137,25 @@ public final class SqliteDataStore implements DataStore {
                 }
                 loadFromDatabase();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Could not open SQLite database: " + e.getMessage());
+                logger.log(Level.SEVERE, "Could not open SQLite database", e);
+                throw new IllegalStateException("Could not load SQLite data safely", e);
             }
         }
     }
 
     private void loadFromDatabase() throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            ResultSet rs = statement.executeQuery("SELECT uuid, name, balance FROM vel_accounts");
+            ResultSet rs = statement.executeQuery("SELECT uuid, name, balance, balance_exact FROM vel_accounts");
             while (rs.next()) {
                 UUID uuid = parseUuid(rs.getString(1));
                 if (uuid != null) {
-                    accounts.put(uuid, new Account(uuid, rs.getString(2), rs.getLong(3)));
+                    String exact = rs.getString(4);
+                    BigInteger cents;
+                    try {
+                        cents = exact == null ? BigInteger.valueOf(rs.getLong(3)) : new BigInteger(exact);
+                        if (cents.signum() < 0) throw new NumberFormatException("negative balance");
+                    } catch (NumberFormatException ex) { throw new SQLException("Invalid account balance for " + uuid, ex); }
+                    accounts.put(uuid, new Account(uuid, rs.getString(2), cents));
                 }
             }
             rs = statement.executeQuery("SELECT uuid, name, first_seen, last_seen, playtime, joins FROM vel_profiles");
@@ -199,14 +230,15 @@ public final class SqliteDataStore implements DataStore {
                 }
             }
             rs = statement.executeQuery("SELECT id, buyer, buyer_name, material, amount, filled,"
-                    + " price_each, created, expires, closed FROM vel_orders");
+                    + " price_each, created, expires, closed, collected FROM vel_orders");
             while (rs.next()) {
                 UUID buyer = parseUuid(rs.getString(2));
-                if (buyer != null) {
-                    buyOrders.put(rs.getString(1), new BuyOrder(rs.getString(1), buyer,
-                            rs.getString(3), rs.getString(4), rs.getInt(5), rs.getInt(6),
-                            rs.getLong(7), rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0));
-                }
+                if (buyer == null || rs.getString(5) == null || rs.getString(6) == null
+                        || rs.getString(7) == null || rs.getString(11) == null)
+                    throw new SQLException("Invalid persisted buy order " + rs.getString(1));
+                buyOrders.put(rs.getString(1), new BuyOrder(rs.getString(1), buyer,
+                        rs.getString(3), rs.getString(4), rs.getInt(5), rs.getInt(6),
+                        rs.getLong(7), rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0, rs.getInt(11)));
             }
             rs = statement.executeQuery("SELECT owner, name, world, x, y, z, yaw, pitch, icon FROM vel_homes");
             while (rs.next()) {
@@ -259,26 +291,49 @@ public final class SqliteDataStore implements DataStore {
 
     // ------------------------------------------------------------- economy
 
-    @Override
-    public long getBalance(UUID uuid) {
+    @Override public long getBalance(UUID uuid) {
+        return dev.superseller.veltryx.util.Money.legacyLong(getBalanceExact(uuid));
+    }
+    @Override public BigInteger getBalanceExact(UUID uuid) {
         Account account = accounts.get(uuid);
-        return account == null ? 0L : account.balance();
+        return account == null ? BigInteger.ZERO : account.balanceExact();
     }
-
-    @Override
-    public void setBalance(UUID uuid, String name, long cents) {
-        long balance = Math.max(0L, cents);
-        accounts.put(uuid, new Account(uuid, name, balance));
-        execute("INSERT INTO vel_accounts (uuid, name, balance) VALUES (?, ?, ?)"
-                        + " ON CONFLICT(uuid) DO UPDATE SET name = excluded.name, balance = excluded.balance",
-                uuid.toString(), name, balance);
+    @Override public void setBalance(UUID uuid, String name, long cents) {
+        setBalanceExact(uuid, name, BigInteger.valueOf(Math.max(0L, cents)));
     }
-
-    @Override
-    public List<Account> top(int limit) {
+    @Override public void setBalanceExact(UUID uuid, String name, BigInteger cents) {
+        setBalancesExact(List.of(new Account(uuid, name, cents)));
+    }
+    @Override public void setBalancesExact(List<Account> updates) {
+        synchronized (lock) {
+            if (connection == null) throw new IllegalStateException("SQLite economy is unavailable");
+            try {
+                connection.setAutoCommit(false);
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "INSERT INTO vel_accounts (uuid, name, balance, balance_exact) VALUES (?, ?, ?, ?)"
+                        + " ON CONFLICT(uuid) DO UPDATE SET name = excluded.name, balance = excluded.balance,"
+                        + " balance_exact = excluded.balance_exact")) {
+                    for (Account account : updates) {
+                        ps.setString(1, account.uuid().toString()); ps.setString(2, account.name());
+                        ps.setLong(3, account.balance()); ps.setString(4, account.balanceExact().toString());
+                        ps.executeUpdate();
+                    }
+                }
+                connection.commit();
+            } catch (SQLException ex) {
+                try { connection.rollback(); } catch (SQLException rollback) { ex.addSuppressed(rollback); }
+                throw new IllegalStateException("Could not persist economy accounts", ex);
+            } finally {
+                try { connection.setAutoCommit(true); }
+                catch (SQLException ex) { logger.log(Level.SEVERE, "Could not restore SQLite auto-commit", ex); }
+            }
+            for (Account account : updates) accounts.put(account.uuid(), account);
+        }
+    }
+    @Override public List<Account> top(int limit) {
         List<Account> sorted = new ArrayList<>(accounts.values());
-        sorted.sort(Comparator.comparingLong(Account::balance).reversed());
-        return sorted.subList(0, Math.min(limit, sorted.size()));
+        sorted.sort(Comparator.comparing(Account::balanceExact).reversed());
+        return sorted.subList(0, Math.min(Math.max(0, limit), sorted.size()));
     }
 
     // ------------------------------------------------------------- profile
@@ -520,17 +575,24 @@ public final class SqliteDataStore implements DataStore {
 
     @Override
     public void saveBuyOrder(BuyOrder entry) {
-        buyOrders.put(entry.id(), entry);
-        execute("INSERT INTO vel_orders (id, buyer, buyer_name, material, amount, filled,"
-                        + " price_each, created, expires, closed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                        + " ON CONFLICT(id) DO UPDATE SET buyer = excluded.buyer,"
-                        + " buyer_name = excluded.buyer_name, material = excluded.material,"
-                        + " amount = excluded.amount, filled = excluded.filled,"
-                        + " price_each = excluded.price_each, created = excluded.created,"
-                        + " expires = excluded.expires, closed = excluded.closed",
-                entry.id(), entry.buyer().toString(), entry.buyerName(), entry.material(),
-                entry.amount(), entry.filled(), entry.priceEachCents(), entry.created(),
-                entry.expires(), entry.closed() ? 1 : 0);
+        synchronized (lock) {
+            if (connection == null) throw new IllegalStateException("SQLite market is unavailable");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO vel_orders (id, buyer, buyer_name, material, amount, filled,"
+                    + " price_each, created, expires, closed, collected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    + " ON CONFLICT(id) DO UPDATE SET buyer=excluded.buyer, buyer_name=excluded.buyer_name,"
+                    + " material=excluded.material, amount=excluded.amount, filled=excluded.filled,"
+                    + " price_each=excluded.price_each, created=excluded.created, expires=excluded.expires,"
+                    + " closed=excluded.closed, collected=excluded.collected")) {
+                ps.setString(1, entry.id()); ps.setString(2, entry.buyer().toString());
+                ps.setString(3, entry.buyerName()); ps.setString(4, entry.material());
+                ps.setInt(5, entry.amount()); ps.setInt(6, entry.filled()); ps.setLong(7, entry.priceEachCents());
+                ps.setLong(8, entry.created()); ps.setLong(9, entry.expires());
+                ps.setInt(10, entry.closed() ? 1 : 0); ps.setInt(11, entry.collected());
+                ps.executeUpdate();
+            } catch (SQLException ex) { throw new IllegalStateException("Could not persist buy order", ex); }
+            buyOrders.put(entry.id(), entry);
+        }
     }
 
     @Override

@@ -17,7 +17,7 @@ public class Location implements Cloneable {
     public int getBlockX() { return (int) Math.floor(x); }
     public int getBlockY() { return (int) Math.floor(y); }
     public int getBlockZ() { return (int) Math.floor(z); }
-    public Block getBlock() { return null; }
+    public Block getBlock() { return world == null ? null : world.getBlockAt(getBlockX(), getBlockY(), getBlockZ()); }
     public org.bukkit.util.Vector getDirection() { return null; }
     public org.bukkit.util.Vector toVector() { return null; }
     public Location add(double dx, double dy, double dz) { return this; }

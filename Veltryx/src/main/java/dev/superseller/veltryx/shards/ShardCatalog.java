@@ -69,16 +69,16 @@ public final class ShardCatalog {
     public ShardCatalog() {
         // The four weapons/tools cost 500 shards each (~8h of play at 1/min),
         // the void totem 150. All tools self-destruct 24h after purchase.
-        entries.put("shard_spear", new Entry("shard_spear", "NETHERITE_SWORD",
+        entries.put("shard_spear", new Entry("shard_spear", "NETHERITE_SPEAR",
                 "Shard Spear", 500, 24L * 60 * 60 * 1000,
                 Behavior.LUNGE_SPEAR,
-                List.of(new EnchantSpec(Enchantment.SHARPNESS, 5, "Sharpness V"),
+                List.of(new EnchantSpec(Enchantment.LUNGE, 3, "Lunge III"),
+                        new EnchantSpec(Enchantment.SHARPNESS, 5, "Sharpness V"),
                         new EnchantSpec(Enchantment.UNBREAKING, 3, "Unbreaking III"),
                         new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
                 List.of(),
-                List.of("Right-click to lunge forward",
-                        "90% less hunger drain while lunging",
-                        "Self-destructs 24h after purchase")));
+                List.of("§7Jab with §bLunge III§7 to propel forward.",
+                        "§7Lunge uses §b90% less exhaustion§7.")));
         entries.put("shard_trident", new Entry("shard_trident", "TRIDENT",
                 "Shard Trident", 500, 24L * 60 * 60 * 1000,
                 Behavior.RIPTIDE_TRIDENT,
@@ -86,9 +86,8 @@ public final class ShardCatalog {
                         new EnchantSpec(Enchantment.UNBREAKING, 3, "Unbreaking III"),
                         new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
                 List.of(),
-                List.of("Riptide works without water",
-                        "3 second cooldown",
-                        "Self-destructs 24h after purchase")));
+                List.of("§7Riptide works §bwithout water§7.",
+                        "§7Dry cooldown: §e5 seconds§7.")));
         entries.put("shard_axe", new Entry("shard_axe", "NETHERITE_AXE",
                 "Shard Axe", 500, 24L * 60 * 60 * 1000,
                 Behavior.TREE_AXE,
@@ -97,9 +96,8 @@ public final class ShardCatalog {
                         new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
                 List.of(new EnchantSpec(Enchantment.FORTUNE, 3, "Fortune III"),
                         new EnchantSpec(Enchantment.SILK_TOUCH, 1, "Silk Touch")),
-                List.of("Fells whole trees at once (max 128 logs)",
-                        "3x3 on everything else",
-                        "Self-destructs 24h after purchase")));
+                List.of("§7Fells §bwhole trees §7at once.",
+                        "§7Mines a §b3x3 §7area on other blocks.")));
         entries.put("shard_pickaxe", new Entry("shard_pickaxe", "NETHERITE_PICKAXE",
                 "Shard Pickaxe", 500, 24L * 60 * 60 * 1000,
                 Behavior.AREA_MINE,
@@ -108,15 +106,15 @@ public final class ShardCatalog {
                         new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
                 List.of(new EnchantSpec(Enchantment.FORTUNE, 3, "Fortune III"),
                         new EnchantSpec(Enchantment.SILK_TOUCH, 1, "Silk Touch")),
-                List.of("Mines a 3x3 plane",
-                        "Amethyst particles on all blocks mined",
-                        "Self-destructs 24h after purchase")));
+                List.of("§7Mines a §b3x3 §7plane.",
+                        "§7Leaves §damethyst particles §7when mining.")));
         entries.put("void_totem", new Entry("void_totem", "TOTEM_OF_UNDYING",
                 "Void Totem", 150, 0,
                 Behavior.VOID_TOTEM,
                 List.of(),
                 List.of(),
-                List.of("Rescues you from a lethal void hit")));
+                List.of("§7Rescues you from a §dlethal void hit§7.",
+                        "§8Consumed on rescue.")));
     }
 
     public Entry byId(String id) {

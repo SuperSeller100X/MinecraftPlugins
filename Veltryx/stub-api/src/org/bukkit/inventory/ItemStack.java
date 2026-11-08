@@ -11,6 +11,8 @@ import org.bukkit.persistence.StubPersistentDataContainer;
 
 /** Small stateful compile stub, used by offline tests only. */
 public class ItemStack implements Cloneable {
+    /** Test hook to simulate a server refusing to apply item metadata. */
+    public static boolean testRejectItemMeta;
     private Material type;
     private int amount;
     private ItemMeta meta;
@@ -35,7 +37,7 @@ public class ItemStack implements Cloneable {
     public <T> void setData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type, T value) { data.put(type, value); }
     @SuppressWarnings("unchecked") public <T> T getData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) { return (T)data.get(type); }
     public ItemMeta getItemMeta() { return meta; }
-    public boolean setItemMeta(ItemMeta meta) { this.meta = meta; return true; }
+    public boolean setItemMeta(ItemMeta meta) { if (testRejectItemMeta) return false; this.meta = meta; return true; }
     @Override public ItemStack clone() {
         ItemStack result = new ItemStack(type,amount);
         if (meta instanceof StubItemMeta m) result.meta=m.copy(); else result.meta=meta;
@@ -64,6 +66,8 @@ public class ItemStack implements Cloneable {
                 else if(v instanceof Byte n){out.writeByte(4);out.writeByte(n);}
                 else throw new IllegalArgumentException("unsupported test metadata");
             }
+            out.writeBoolean(m.hasItemModel());
+            if (m.hasItemModel()) out.writeUTF(m.getItemModel().toString());
             out.flush(); return bytes.toByteArray();
         } catch(IOException e){throw new IllegalStateException(e);}
     }
@@ -79,6 +83,7 @@ public class ItemStack implements Cloneable {
                 Object value=switch(tag){case 1 -> in.readUTF();case 2 -> in.readInt();case 3 -> in.readLong();case 4 -> in.readByte();default -> throw new IOException("bad test tag");};
                 values.put(key,value);
             }
+            if (in.available() > 0 && in.readBoolean()) m.setItemModel(NamespacedKey.fromString(in.readUTF()));
             return stack;
         } catch(IOException e){throw new IllegalArgumentException(e);}
     }

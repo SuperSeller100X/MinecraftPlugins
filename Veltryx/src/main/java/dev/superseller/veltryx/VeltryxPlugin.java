@@ -401,6 +401,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(ahGui);
         register(orderGui);
         register(shardShopGui);
+        register(shardExpiry);
         register(spawnerShopGui);
         register(spawnerLootGui);
         register(spawnerListener);
@@ -434,7 +435,10 @@ public final class VeltryxPlugin extends JavaPlugin {
                 }
             }
         }, 60L * 20L);
-        // Self-destruct sweep: warns about and removes expired shard tools.
+        // Refresh items for players already online (e.g. after a plugin reload),
+        // then keep checking newly acquired items and expiry every 30 seconds.
+        PlatformScheduler.runGlobal(() -> shardExpiry.sweepAll(
+                org.bukkit.Bukkit.getOnlinePlayers(), System.currentTimeMillis()));
         PlatformScheduler.runTimer(() -> shardExpiry.sweepAll(
                 org.bukkit.Bukkit.getOnlinePlayers(), System.currentTimeMillis()), 30L * 20L);
     }

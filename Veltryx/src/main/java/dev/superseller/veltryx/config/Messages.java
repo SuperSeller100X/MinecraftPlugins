@@ -44,7 +44,8 @@ public final class Messages {
     /**
      * Start with the bundled messages, then overlay the server's custom file.
      * Even an old/incomplete file (or a failed update merge) can never hide a
-     * message supplied in the current jar. Existing translations win.
+     * message supplied in the current jar. Customized translations win;
+     * exact old built-in defaults can receive the updated color palette.
      */
     public void reload() {
         Map<String, String> defaults = new HashMap<>();
@@ -59,9 +60,20 @@ public final class Messages {
         } catch (java.io.IOException e) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not read default messages.yml", e);
         }
+        Map<String, String> previousDefaults = new HashMap<>();
+        try (java.io.InputStream in = plugin.getResource("legacy-message-colors.yml")) {
+            if (in != null) {
+                collect(YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(
+                        in, java.nio.charset.StandardCharsets.UTF_8)), previousDefaults);
+            } else {
+                plugin.getLogger().warning("Legacy message palette is missing; existing text will not be recolored.");
+            }
+        } catch (java.io.IOException e) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not read legacy message palette", e);
+        }
         Map<String, String> custom = new HashMap<>();
         collect(YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "messages.yml")), custom);
-        templates = mergeTemplates(defaults, custom);
+        templates = mergeTemplates(defaults, custom, previousDefaults);
     }
 
     private static void collect(YamlConfiguration yaml, Map<String, String> destination) {
@@ -72,8 +84,18 @@ public final class Messages {
 
     /** Merge is intentionally independent of disk I/O, to make the fallback testable. */
     public static Map<String, String> mergeTemplates(Map<String, String> defaults, Map<String, String> custom) {
+        return mergeTemplates(defaults, custom, Map.of());
+    }
+
+    /** Update only values that exactly match a known previous shipped default. */
+    public static Map<String, String> mergeTemplates(Map<String, String> defaults,
+            Map<String, String> custom, Map<String, String> previousDefaults) {
         Map<String, String> combined = new HashMap<>(defaults);
-        combined.putAll(custom);
+        custom.forEach((key, value) -> {
+            boolean oldDefault = defaults.containsKey(key) && previousDefaults.containsKey(key)
+                    && previousDefaults.get(key).equals(value);
+            if (!oldDefault) combined.put(key, value);
+        });
         return Map.copyOf(combined);
     }
 

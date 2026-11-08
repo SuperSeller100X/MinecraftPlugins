@@ -25,7 +25,7 @@ public final class Bukkit {
     public static org.bukkit.scoreboard.ScoreboardManager testScoreboardManager;
     public static org.bukkit.scoreboard.ScoreboardManager getScoreboardManager() { return testScoreboardManager; }
     public static World getWorld(String name) { return null; }
-    public static Player getPlayerExact(String name) { return null; }
+    public static Player getPlayerExact(String name) { for (Player p : testOnlinePlayers) if (p.getName().equals(name)) return p; return null; }
     public static Player getPlayer(UUID id) { for (Player p : testOnlinePlayers) if (p.getUniqueId().equals(id)) return p; return null; }
     @Deprecated public static OfflinePlayer getOfflinePlayer(String name) { return null; }
     public static OfflinePlayer getOfflinePlayer(java.util.UUID id) { return null; }

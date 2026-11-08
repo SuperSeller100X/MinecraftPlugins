@@ -145,7 +145,7 @@ public final class HomesGui implements Listener {
                             : List.of(Txt.legacy("§7Price: §a$§f" + Money.formatCompact(nextPrice)))));
             inventory.setItem(49, item(Material.EMERALD, 1,
                     Txt.legacy("§6Your balance: §a$§f" + Money.formatCompact(
-                            economy.getBalance(player.getUniqueId()))), List.of()));
+                            economy.getBalanceExact(player.getUniqueId()))), List.of()));
             inventory.setItem(51, item(Material.ENDER_EYE, 1,
                     Txt.legacy("§eCreate a home"),
                     List.of(Txt.legacy("§7Stand where you want it and run"),

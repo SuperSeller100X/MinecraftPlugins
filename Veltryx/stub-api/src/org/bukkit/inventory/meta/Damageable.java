@@ -1,6 +1,6 @@
 package org.bukkit.inventory.meta;
 
-public interface Damageable {
+public interface Damageable extends ItemMeta {
     int getDamage();
     void setDamage(int damage);
 }

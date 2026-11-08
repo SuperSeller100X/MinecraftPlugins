@@ -7,12 +7,15 @@ import dev.superseller.veltryx.model.BuyOrder;
 import dev.superseller.veltryx.storage.DataStore;
 import dev.superseller.veltryx.util.Ids;
 import dev.superseller.veltryx.util.Money;
+import dev.superseller.veltryx.util.PlatformScheduler;
 import dev.superseller.veltryx.util.SellNotices;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -37,6 +40,7 @@ public final class OrderService {
         }
     }
 
+    private static final Logger LOG = Logger.getLogger(OrderService.class.getName());
     private final DataStore store;
     private final EconomyService economy;
     private final Messages messages;
@@ -50,9 +54,9 @@ public final class OrderService {
     }
 
     /** Creates a buy order, escrowing the full price. */
-    public Result create(Player buyer, String materialName, int amount, long priceEachCents) {
+    public synchronized Result create(Player buyer, String materialName, int amount, long priceEachCents) {
         Material material = Material.matchMaterial(materialName);
-        if (material == null || material == Material.AIR) {
+        if (material == null || material.isLegacy() || !material.isItem() || material == Material.AIR) {
             return Result.fail("ah.unknown-item", Map.of("item", materialName));
         }
         // Buy orders carry a material name, not a custom spawner's identity.
@@ -73,16 +77,25 @@ public final class OrderService {
         if (open >= config.maxOrders()) {
             return Result.fail("order.too-many", Map.of("max", String.valueOf(config.maxOrders())));
         }
+        // IDs are short for players, so explicitly avoid overwriting a historical order.
+        String orderId;
+        do { orderId = Ids.next(); } while (find(orderId) != null);
         long total = priceEachCents * amount;
         if (!economy.withdraw(buyer.getUniqueId(), buyer.getName(), total)) {
             return Result.fail("shop.cannot-afford", Map.of(
                     "price", Money.formatCompact(total),
-                    "balance", Money.formatCompact(economy.getBalance(buyer.getUniqueId()))));
+                    "balance", Money.formatCompact(economy.getBalanceExact(buyer.getUniqueId()))));
         }
-        BuyOrder order = new BuyOrder(Ids.next(), buyer.getUniqueId(), buyer.getName(),
-                materialName, amount, 0, priceEachCents, now,
+        BuyOrder order = new BuyOrder(orderId, buyer.getUniqueId(), buyer.getName(),
+                material.name(), amount, 0, priceEachCents, now,
                 now + config.orderHours() * 3_600_000L, false);
-        store.saveBuyOrder(order);
+        try { store.saveBuyOrder(order); }
+        catch (RuntimeException ex) {
+            LOG.log(Level.SEVERE, "Could not persist order " + order.id() + "; refunding escrow", ex);
+            try { economy.deposit(buyer.getUniqueId(), buyer.getName(), total); }
+            catch (RuntimeException refund) { LOG.log(Level.SEVERE, "Order escrow refund requires administrator review: " + order.id(), refund); }
+            return Result.fail("order.storage-error", Map.of());
+        }
         return Result.ok("order.created", Map.of(
                 "id", order.id(),
                 "count", String.valueOf(amount),
@@ -94,7 +107,7 @@ public final class OrderService {
     /**
      * Fills up to {@code maxAmount} of an order from the seller's inventory.
      */
-    public Result fill(Player seller, String orderId, int maxAmount) {
+    public synchronized Result fill(Player seller, String orderId, int maxAmount) {
         long now = System.currentTimeMillis();
         BuyOrder order = find(orderId);
         if (order == null || !order.isLiveAt(now)) {
@@ -109,10 +122,10 @@ public final class OrderService {
         }
         // Also protect spawners from orders created before this guard existed.
         if (material == Material.SPAWNER) return Result.fail("spawner.market-disabled", Map.of());
-        if (hasValuedStack(seller, material)) {
-            return Result.fail("order.no-valued", Map.of());
-        }
+        if (hasValuedStack(seller, material)) return Result.fail("order.no-valued", Map.of());
+        if (hasNonPlainStack(seller, material)) return Result.fail("order.no-metadata", Map.of());
         int take = Math.min(order.remaining(), Math.max(1, maxAmount));
+        ItemStack[] before = copyStorage(seller);
         int removed = AhService.removeFromInventory(seller, material, take);
         if (removed <= 0) {
             return Result.fail("ah.not-enough", Map.of(
@@ -120,22 +133,38 @@ public final class OrderService {
         }
         long payout = order.priceEachCents() * removed;
         int filled = order.filled() + removed;
-        store.saveBuyOrder(new BuyOrder(order.id(), order.buyer(), order.buyerName(),
+        BuyOrder updated = new BuyOrder(order.id(), order.buyer(), order.buyerName(),
                 order.material(), order.amount(), filled, order.priceEachCents(),
-                order.created(), order.expires(), filled >= order.amount()));
-        long balance = economy.deposit(seller.getUniqueId(), seller.getName(), payout);
+                order.created(), order.expires(), filled >= order.amount(), order.collected());
+        try { store.saveBuyOrder(updated); }
+        catch (RuntimeException ex) {
+            seller.getInventory().setStorageContents(before);
+            LOG.log(Level.SEVERE, "Could not save order fill " + order.id(), ex);
+            return Result.fail("order.storage-error", Map.of());
+        }
+        java.math.BigInteger balance;
+        try { balance = economy.depositExact(seller.getUniqueId(), seller.getName(), java.math.BigInteger.valueOf(payout)); }
+        catch (RuntimeException ex) {
+            LOG.log(Level.SEVERE, "Could not pay order seller; rolling back " + order.id(), ex);
+            try { store.saveBuyOrder(order); seller.getInventory().setStorageContents(before); }
+            catch (RuntimeException rollback) {
+                LOG.log(Level.SEVERE, "Order fill requires administrator review: " + order.id(), rollback);
+            }
+            return Result.fail("order.storage-error", Map.of());
+        }
         SellNotices.show(seller, messages, "order.filled-seller", Map.of(
                 "count", String.valueOf(removed),
                 "item", AhService.displayName(order.material()),
                 "balance", Money.formatCompact(balance)), payout);
         Player buyer = Bukkit.getPlayer(order.buyer());
         if (buyer != null) {
-            messages.send(buyer, "order.filled-buyer", Map.of(
+            String sellerName = seller.getName();
+            PlatformScheduler.runForPlayer(buyer, () -> messages.send(buyer, "order.filled-buyer", Map.of(
                     "count", String.valueOf(removed),
                     "item", AhService.displayName(order.material()),
-                    "player", seller.getName(),
+                    "player", sellerName,
                     "money", Money.formatCompact(payout),
-                    "left", String.valueOf(Math.max(0, order.amount() - filled))));
+                    "left", String.valueOf(Math.max(0, order.amount() - filled)))));
         }
         // the seller already got the payout notice via SellNotices (action bar
         // + chat), so the success template key is informational only
@@ -147,7 +176,7 @@ public final class OrderService {
     }
 
     /** Cancels an order (buyer only) and refunds the unfilled remainder. */
-    public Result cancel(Player player, String orderId) {
+    public synchronized Result cancel(Player player, String orderId) {
         BuyOrder order = find(orderId);
         if (order == null || order.closed() || !order.buyer().equals(player.getUniqueId())) {
             return Result.fail("order.gone", Map.of());
@@ -156,7 +185,7 @@ public final class OrderService {
     }
 
     /** Closes every expired open order with a refund (run lazily on browse). */
-    public void sweepExpired(long nowMillis) {
+    public synchronized void sweepExpired(long nowMillis) {
         for (BuyOrder order : store.allBuyOrders()) {
             if (!order.closed() && order.expires() <= nowMillis) {
                 close(order, null, null);
@@ -167,10 +196,22 @@ public final class OrderService {
     private Result close(BuyOrder order, String templateKey, Player notify) {
         int left = order.remaining();
         long refund = order.priceEachCents() * left;
-        store.saveBuyOrder(new BuyOrder(order.id(), order.buyer(), order.buyerName(),
+        BuyOrder closed = new BuyOrder(order.id(), order.buyer(), order.buyerName(),
                 order.material(), order.amount(), order.filled(), order.priceEachCents(),
-                order.created(), order.expires(), true));
-        long balance = economy.deposit(order.buyer(), order.buyerName(), refund);
+                order.created(), order.expires(), true, order.collected());
+        try { store.saveBuyOrder(closed); }
+        catch (RuntimeException ex) {
+            LOG.log(Level.SEVERE, "Could not close order " + order.id(), ex);
+            return Result.fail("order.storage-error", Map.of());
+        }
+        java.math.BigInteger balance;
+        try { balance = economy.depositExact(order.buyer(), order.buyerName(), java.math.BigInteger.valueOf(refund)); }
+        catch (RuntimeException ex) {
+            LOG.log(Level.SEVERE, "Could not refund order " + order.id(), ex);
+            try { store.saveBuyOrder(order); }
+            catch (RuntimeException rollback) { LOG.log(Level.SEVERE, "Order refund requires administrator review: " + order.id(), rollback); }
+            return Result.fail("order.storage-error", Map.of());
+        }
         if (notify != null && templateKey != null) {
             return Result.ok(templateKey, Map.of(
                     "count", String.valueOf(left),
@@ -181,10 +222,10 @@ public final class OrderService {
         if (templateKey == null) {
             Player buyer = Bukkit.getPlayer(order.buyer());
             if (buyer != null) {
-                messages.send(buyer, "order.expired", Map.of(
+                PlatformScheduler.runForPlayer(buyer, () -> messages.send(buyer, "order.expired", Map.of(
                         "count", String.valueOf(left),
                         "item", AhService.displayName(order.material()),
-                        "money", Money.formatCompact(refund)));
+                        "money", Money.formatCompact(refund))));
             }
         }
         return Result.ok("order.cancelled", Map.of());
@@ -206,7 +247,7 @@ public final class OrderService {
     public List<BuyOrder> ordersOf(UUID buyer) {
         List<BuyOrder> out = new ArrayList<>();
         for (BuyOrder order : store.allBuyOrders()) {
-            if (order.buyer().equals(buyer) && !order.closed()) {
+            if (order.buyer().equals(buyer) && (!order.closed() || order.claimable() > 0)) {
                 out.add(order);
             }
         }
@@ -230,7 +271,7 @@ public final class OrderService {
             return 0;
         }
         int total = 0;
-        for (ItemStack stack : player.getInventory().getContents()) {
+        for (ItemStack stack : player.getInventory().getStorageContents()) {
             if (stack != null && stack.getType() == material) {
                 total += stack.getAmount();
             }
@@ -238,14 +279,58 @@ public final class OrderService {
         return total;
     }
 
-    /** True when any stack of the material is enchanted or damaged (valued items). */
     private boolean hasValuedStack(Player seller, Material material) {
-        for (ItemStack stack : seller.getInventory().getContents()) {
-            if (stack != null && stack.getType() == material
-                    && dev.superseller.veltryx.shop.ItemValue.isValued(stack)) {
-                return true;
-            }
+        for (ItemStack stack : seller.getInventory().getStorageContents())
+            if (stack != null && stack.getType() == material && dev.superseller.veltryx.shop.ItemValue.isValued(stack)) return true;
+        return false;
+    }
+
+    /** Refuse metadata-bearing stacks: an order stores only the vanilla material. */
+    private boolean hasNonPlainStack(Player seller, Material material) {
+        ItemStack plain = new ItemStack(material);
+        for (ItemStack stack : seller.getInventory().getStorageContents()) {
+            if (stack != null && stack.getType() == material && !stack.isSimilar(plain)) return true;
         }
         return false;
+    }
+
+    private static ItemStack[] copyStorage(Player player) {
+        ItemStack[] copy = player.getInventory().getStorageContents().clone();
+        for (int i=0; i<copy.length; i++) if (copy[i] != null) copy[i] = copy[i].clone();
+        return copy;
+    }
+
+    /** Claim supplied items, including on a closed or cancelled order. */
+    public synchronized Result claim(Player buyer, String orderId) {
+        BuyOrder order = find(orderId);
+        if (order == null || !order.buyer().equals(buyer.getUniqueId())) return Result.fail("order.gone", Map.of());
+        if (order.claimable() <= 0) return Result.fail("order.nothing-to-claim", Map.of());
+        Material material = Material.matchMaterial(order.material());
+        if (material == null || material.isLegacy() || !material.isItem() || material == Material.SPAWNER)
+            return Result.fail("order.gone", Map.of());
+        ItemStack[] before = copyStorage(buyer);
+        int left = order.claimable();
+        int maxStack = Math.max(1, new ItemStack(material).getMaxStackSize());
+        try {
+            while (left > 0) {
+                int amount = Math.min(left, maxStack);
+                Map<Integer, ItemStack> leftovers = buyer.getInventory().addItem(new ItemStack(material, amount));
+                int notAdded = leftovers.values().stream().mapToInt(ItemStack::getAmount).sum();
+                left -= amount - notAdded;
+                if (notAdded > 0) break;
+            }
+            int claimed = order.claimable() - left;
+            if (claimed == 0) return Result.fail("shop.no-space", Map.of());
+            BuyOrder updated = new BuyOrder(order.id(), order.buyer(), order.buyerName(), order.material(),
+                    order.amount(), order.filled(), order.priceEachCents(), order.created(), order.expires(),
+                    order.closed(), order.collected() + claimed);
+            store.saveBuyOrder(updated);
+            return Result.ok("order.claimed", Map.of("count", String.valueOf(claimed),
+                    "item", AhService.displayName(order.material()), "left", String.valueOf(left)));
+        } catch (RuntimeException ex) {
+            buyer.getInventory().setStorageContents(before);
+            LOG.log(Level.SEVERE, "Could not claim order " + order.id(), ex);
+            return Result.fail("order.storage-error", Map.of());
+        }
     }
 }

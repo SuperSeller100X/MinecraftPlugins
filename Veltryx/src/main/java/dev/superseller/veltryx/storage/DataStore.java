@@ -11,6 +11,7 @@ import dev.superseller.veltryx.model.NoteEntry;
 import dev.superseller.veltryx.model.Profile;
 import dev.superseller.veltryx.model.ReportEntry;
 import dev.superseller.veltryx.model.WarnEntry;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,6 +42,20 @@ public interface DataStore {
 
     /** Overwrites the stored balance and remembers the player's last-known name. */
     void setBalance(UUID uuid, String name, long cents);
+
+    /** Exact cents. Implementations with only a legacy long store may use this fallback. */
+    default BigInteger getBalanceExact(UUID uuid) { return BigInteger.valueOf(getBalance(uuid)); }
+
+    /** Exact write; a legacy-only store fails closed for values outside its range. */
+    default void setBalanceExact(UUID uuid, String name, BigInteger cents) {
+        if (cents.signum() < 0) throw new IllegalArgumentException("negative balance");
+        setBalance(uuid, name, cents.longValueExact());
+    }
+
+    /** Persist a group of account updates. Built-in stores implement an atomic group write. */
+    default void setBalancesExact(List<Account> accounts) {
+        for (Account account : accounts) setBalanceExact(account.uuid(), account.name(), account.balanceExact());
+    }
 
     /** Top accounts by balance, highest first. */
     List<Account> top(int limit);

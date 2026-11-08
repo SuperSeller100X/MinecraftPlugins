@@ -120,6 +120,7 @@ public final class SpawnerTest {
         check("potential spawn retains light override", block.spawner.potentials.size()==1
                 && block.spawner.potentials.get(0).getSpawnRule().getMaxBlockLight()==15);
         eq("block and item identity match", items.identity(block), pig);
+        state.inventory.setItem(0, null); // vanilla consumed the placed item
 
         Place duplicate = new Place(player, purchased, new TestBlock(world.proxy, 5, 70, 8));
         listener.onPlace(duplicate); listener.onPlaceFinished(duplicate);
@@ -264,6 +265,247 @@ public final class SpawnerTest {
         testAllMobTables(dir, plugin, world.proxy, store, items, listener, gui, scheduler);
         testDiskFailure(dir, plugin, shards, messages, player, state, scheduler, items);
         testRegionScheduler(world.proxy);
+        testStacks(dir, plugin, scheduler, items, messages);
+    }
+
+    private static void testStacks(Path dir, FakePlugin plugin, FakeScheduler scheduler,
+                                   SpawnerItems items, Messages messages) throws Exception {
+        Path path=dir.resolve("stack-tests");
+        SpawnerStore store=new SpawnerStore(path,LOG);
+        SpawnerLootGui gui=new SpawnerLootGui(store,messages);
+        SpawnerListener listener=new SpawnerListener(items,store,gui,messages,LOG);
+        TestWorld world=new TestWorld(); PlayerState player=new PlayerState(world.proxy);
+        TestBlock target=new TestBlock(world.proxy,3,70,3);
+        SpawnerStore.Position pos=SpawnerStore.Position.of(target);
+        SpawnerItems.Identity root=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity child=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity wrong=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.COW);
+        check("stack identities created",store.create(root)&&store.create(child)&&store.create(wrong));
+        check("stack root placed",store.bind(root,pos)&&items.configure(target,root));
+        SpawnerStore.Position childPos=new SpawnerStore.Position(world.id,4,70,3);
+        check("child bound before acquiring loot",store.bind(child,childPos));
+        eq("child inventory mode",store.toggle(child,childPos),SpawnerStore.Mode.INVENTORY);
+        eq("child saves pre-existing loot",store.deposit(child,childPos,List.of(new ItemStack(Material.PORKCHOP,7))),SpawnerStore.Deposit.STORED);
+        check("child picked up before stacking",store.unbind(child,childPos));
+        ItemStack source=items.create(child);
+        player.inventory.setItemInMainHand(source);
+        Interact protectedUse=new Interact(player.proxy,target,EquipmentSlot.HAND); protectedUse.cancelled=true;
+        listener.onInteract(protectedUse);
+        eq("cancelled use cannot stack",store.stackSizeAt(root,pos),1);
+        check("cancelled use doesn't consume item",player.inventory.getItemInMainHand()!=null);
+        player.inventory.setItemInMainHand(items.create(wrong));
+        Interact wrongUse=new Interact(player.proxy,target,EquipmentSlot.HAND); listener.onInteract(wrongUse);
+        check("different types are not consumed",wrongUse.cancelled && items.identity(player.inventory.getItemInMainHand()).equals(wrong));
+        eq("different types never merge",store.stackSizeAt(root,pos),1);
+        player.inventory.setItemInMainHand(source);
+        Interact stack=new Interact(player.proxy,target,EquipmentSlot.HAND); listener.onInteract(stack); scheduler.drain();
+        check("right clicking with same type consumes source",stack.cancelled && player.inventory.getItemInMainHand()==null);
+        eq("two spawners now stacked",store.stackSizeAt(root,pos),2);
+        eq("native spawn attempts scale",target.spawner.spawnCount,8);
+        eq("nearby limit scales",target.spawner.nearby,12);
+        check("consumed identity cannot be placed twice",!store.bind(child,childPos));
+        eq("each component contributes 20 pages",store.page(root,pos,0).totalPages(),40);
+        eq("child's stored loot is preserved",store.page(root,pos,20).items()[0].getAmount(),7);
+
+        Interact open=new Interact(player.proxy,target,EquipmentSlot.HAND); listener.onInteract(open); scheduler.drain();
+        check("empty hand opens stacked storage",player.open!=null && player.open.getHolder() instanceof SpawnerLootGui.Holder);
+        Click toggle=new Click(player.open,player.open,player.proxy,49,false,false); gui.onClick(toggle);
+        eq("mode change waits for block region",store.modeAt(root,pos),SpawnerStore.Mode.SPAWNER);
+        scheduler.drain();
+        eq("mode changed on region",store.modeAt(root,pos),SpawnerStore.Mode.INVENTORY);
+        eq("inventory mode restores baseline spawn attempts",target.spawner.spawnCount,4);
+        eq("inventory mode restores baseline nearby limit",target.spawner.nearby,6);
+        int[] rolls={0};
+        Bukkit.testLootFactory=key -> (random,context) -> {rolls[0]++;return List.of(new ItemStack(Material.PORKCHOP,3),new ItemStack(Material.BONE,2));};
+        Spawn generated=new Spawn(target.spawner,entity(world.proxy,EntityType.PIG)); listener.onSpawn(generated); scheduler.drain();
+        check("stacked virtual spawn cancels mob",generated.cancelled);
+        eq("inventory generates one independent roll per spawner",rolls[0],2);
+        eq("root stores proportional pork",store.page(root,pos,0).items()[0].getAmount(),6);
+        eq("root stores proportional bone",store.page(root,pos,0).items()[1].getAmount(),4);
+        eq("previous child loot remains separate",store.page(root,pos,20).items()[0].getAmount(),7);
+        target.spawner.spawnCount=8; // simulate stale parameters after interrupted configuration
+        Spawn stale=new Spawn(target.spawner,entity(world.proxy,EntityType.PIG)); listener.onSpawn(stale);
+        check("stale counts fail closed",stale.cancelled && rolls[0]==2);
+        scheduler.drain(); eq("stale counts repaired on region",target.spawner.spawnCount,4);
+        toggle=new Click(player.open,player.open,player.proxy,49,false,false); gui.onClick(toggle); scheduler.drain();
+        eq("normal mode scales attempts again",target.spawner.spawnCount,8);
+        Spawn normal=new Spawn(target.spawner,entity(world.proxy,EntityType.PIG));listener.onSpawn(normal);
+        check("normal mode permits vanilla spawn",!normal.cancelled);
+        eq("switch to inventory for joined storage test",store.toggle(root,pos),SpawnerStore.Mode.INVENTORY);
+        List<ItemStack> fill=new ArrayList<>();
+        for(int i=0;i<SpawnerStore.CAPACITY-2;i++) fill.add(new ItemStack(Material.STONE,64));
+        eq("root component can fill completely",store.deposit(root,pos,fill),SpawnerStore.Deposit.STORED);
+        eq("overflow proceeds to next component",store.deposit(root,pos,List.of(new ItemStack(Material.DIAMOND,2))),SpawnerStore.Deposit.STORED);
+        eq("child existing loot preserved beside new loot",store.page(root,pos,20).items()[0].getAmount(),7);
+        eq("child accepts loot when root full",store.page(root,pos,20).items()[1].getType(),Material.DIAMOND);
+        TestInventory receiver=new TestInventory(null,36);
+        ItemStack displayed=store.page(root,pos,20).items()[0];
+        eq("can withdraw from attached storage",store.withdraw(root,pos,SpawnerStore.CAPACITY,displayed,true,receiver).amount(),1);
+        eq("attached withdrawal changes correct record",store.page(root,pos,20).items()[0].getAmount(),6);
+        eq("can store the withdrawn loot again",store.deposit(root,pos,List.of(new ItemStack(Material.PORKCHOP,1))),SpawnerStore.Deposit.STORED);
+        eq("back to normal mode",store.toggle(root,pos),SpawnerStore.Mode.SPAWNER);
+
+        SpawnerStore restarted=new SpawnerStore(path,LOG);
+        eq("stack count survives restart",restarted.stackSizeAt(root,pos),2);
+        eq("stacked child loot survives restart",restarted.page(root,pos,20).items()[0].getAmount(),6);
+        check("child copy remains unusable after restart",!restarted.bind(child,childPos));
+        ItemStack silk=new ItemStack(Material.DIAMOND_PICKAXE); ItemMeta meta=silk.getItemMeta();
+        meta.addEnchant(Enchantment.SILK_TOUCH,1,true);silk.setItemMeta(meta);player.inventory.setItemInMainHand(silk);
+        Break pickup=new Break(player.proxy,target);listener.onBreak(pickup);listener.onBreakFinished(pickup);scheduler.drain();
+        ItemStack returned=player.inventory.findSpawner(root,items);
+        check("whole stack can be silk picked up",!pickup.cancelled && returned!=null && store.stackSize(root)==2);
+        TestBlock moved=new TestBlock(world.proxy,15,72,15); Place placed=new Place(player.proxy,returned,moved);
+        listener.onPlace(placed);listener.onPlaceFinished(placed);scheduler.drain();
+        SpawnerStore.Position movedPos=SpawnerStore.Position.of(moved);
+        check("whole stack replaces at a new location",!placed.cancelled && store.stackSizeAt(root,movedPos)==2);
+        eq("replaced stack has scaled native count",moved.spawner.spawnCount,8);
+        eq("replaced stack keeps child storage",store.page(root,movedPos,20).items()[0].getAmount(),6);
+
+        // Competing interactions on the same source may attach it only once.
+        SpawnerItems.Identity race=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        check("race source created",store.create(race));
+        ExecutorService threads=Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch go=new CountDownLatch(1);
+            Future<SpawnerStore.Merge> a=threads.submit(() -> {go.await();return store.merge(root,movedPos,race);});
+            Future<SpawnerStore.Merge> b=threads.submit(() -> {go.await();return store.merge(root,movedPos,race);});
+            go.countDown(); SpawnerStore.Merge x=a.get(), y=b.get();
+            check("concurrent source cannot be attached twice",(x==SpawnerStore.Merge.OK && y==SpawnerStore.Merge.INVALID)||(y==SpawnerStore.Merge.OK && x==SpawnerStore.Merge.INVALID));
+            eq("race adds exactly one",store.stackSizeAt(root,movedPos),3);
+        } finally {threads.shutdownNow();}
+        testStackCap(dir,plugin,world.proxy,items,messages,scheduler);
+        testNestedStacks(dir,world.proxy);
+        testPartialDepositFailure(dir,world.proxy);
+        testFailedAttach(dir,world.proxy);
+    }
+
+    private static void testNestedStacks(Path dir, World world) {
+        Path path=dir.resolve("nested-stacks");
+        SpawnerStore store=new SpawnerStore(path,LOG);
+        SpawnerStore.Position aPos=new SpawnerStore.Position(world.getUID(),40,70,40);
+        SpawnerStore.Position bPos=new SpawnerStore.Position(world.getUID(),41,70,40);
+        SpawnerItems.Identity a=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity ac=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity b=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity bc=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        check("nested test records created",store.create(a)&&store.create(ac)&&store.create(b)&&store.create(bc));
+        check("nested roots bound",store.bind(a,aPos)&&store.bind(b,bPos));
+        eq("nested first pair merges",store.merge(a,aPos,ac),SpawnerStore.Merge.OK);
+        eq("nested second pair merges",store.merge(b,bPos,bc),SpawnerStore.Merge.OK);
+        eq("nested source in inventory mode",store.toggle(b,bPos),SpawnerStore.Mode.INVENTORY);
+        eq("nested source stores items",store.deposit(b,bPos,List.of(new ItemStack(Material.DIAMOND,4))),SpawnerStore.Deposit.STORED);
+        check("nested source can be picked up",store.unbind(b,bPos));
+        eq("whole substack merges into root",store.merge(a,aPos,b),SpawnerStore.Merge.OK);
+        eq("nested merge preserves all members",store.stackSizeAt(a,aPos),4);
+        eq("nested stack has 80 pages",store.page(a,aPos,0).totalPages(),80);
+        eq("target mode wins",store.modeAt(a,aPos),SpawnerStore.Mode.SPAWNER);
+        int diamonds=0;for(int page=0;page<80;page++) for(ItemStack item:store.page(a,aPos,page).items())
+            if(item!=null && item.getType()==Material.DIAMOND) diamonds+=item.getAmount();
+        eq("nested source loot survives merge",diamonds,4);
+        SpawnerStore restarted=new SpawnerStore(path,LOG);
+        eq("nested parent chains survive restart",restarted.stackSizeAt(a,aPos),4);
+        check("nested source copy cannot bind after restart",!restarted.bind(b,bPos));
+    }
+
+    private static void testPartialDepositFailure(Path dir, World world) throws Exception {
+        Path path=dir.resolve("partial-deposit");
+        Logger quiet=Logger.getLogger("expected-partial-deposit");quiet.setLevel(java.util.logging.Level.OFF);
+        SpawnerStore store=new SpawnerStore(path,quiet);
+        SpawnerItems.Identity root=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity child=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerStore.Position a=new SpawnerStore.Position(world.getUID(),50,70,50);
+        SpawnerStore.Position b=new SpawnerStore.Position(world.getUID(),51,70,50);
+        check("partial deposit records created",store.create(root)&&store.create(child)&&store.bind(root,a)&&store.bind(child,b));
+        eq("partial deposit child inventory mode",store.toggle(child,b),SpawnerStore.Mode.INVENTORY);
+        eq("pre-existing child contents stored",store.deposit(child,b,List.of(new ItemStack(Material.PORKCHOP,7))),SpawnerStore.Deposit.STORED);
+        check("partial deposit child unbound",store.unbind(child,b));
+        eq("partial deposit pair merged",store.merge(root,a,child),SpawnerStore.Merge.OK);
+        eq("partial deposit root inventory mode",store.toggle(root,a),SpawnerStore.Mode.INVENTORY);
+        List<ItemStack> almostFull=new ArrayList<>();
+        for(int i=0;i<SpawnerStore.CAPACITY-1;i++)almostFull.add(new ItemStack(Material.STONE,64));
+        almostFull.add(new ItemStack(Material.STONE,63));
+        eq("root filled except one item",store.deposit(root,a,almostFull),SpawnerStore.Deposit.STORED);
+        Files.createDirectory(path.resolve(child.id()+".tmp"));
+        eq("multi-file batch reports failure",store.deposit(root,a,List.of(new ItemStack(Material.STONE,2))),SpawnerStore.Deposit.ERROR);
+        Files.delete(path.resolve(child.id()+".tmp"));
+        SpawnerStore restarted=new SpawnerStore(path,quiet);
+        eq("first component may retain partial new loot",restarted.page(root,a,19).items()[44].getAmount(),64);
+        eq("later component retains pre-existing loot",restarted.page(root,a,20).items()[0].getAmount(),7);
+        check("failed later write did not invent loot",restarted.page(root,a,20).items()[1]==null);
+    }
+
+    private static void testFailedAttach(Path dir, World world) throws Exception {
+        Path path=dir.resolve("stack-fail");
+        Logger quiet=Logger.getLogger("expected-stack-io-failure");quiet.setLevel(java.util.logging.Level.OFF);
+        SpawnerStore store=new SpawnerStore(path,quiet);
+        SpawnerItems.Identity root=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerItems.Identity child=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.PIG);
+        SpawnerStore.Position pos=new SpawnerStore.Position(world.getUID(),1,65,1);
+        SpawnerStore.Position other=new SpawnerStore.Position(world.getUID(),2,65,1);
+        check("failure test stack created",store.create(root)&&store.bind(root,pos)&&store.create(child));
+        Files.createDirectory(path.resolve(child.id()+".tmp"));
+        eq("failed parent write refuses merge",store.merge(root,pos,child),SpawnerStore.Merge.ERROR);
+        eq("failed merge leaves count untouched",store.stackSizeAt(root,pos),1);
+        Files.delete(path.resolve(child.id()+".tmp"));
+        check("failed merge leaves source usable",store.bind(child,other));
+        check("source can be unbound",store.unbind(child,other));
+        check("merge succeeds once disk recovers",store.merge(root,pos,child)==SpawnerStore.Merge.OK);
+        java.util.Properties corrupt=new java.util.Properties();
+        try(var in=Files.newInputStream(path.resolve(child.id()+".properties"))){corrupt.load(in);}
+        corrupt.setProperty("parent",UUID.randomUUID().toString());
+        try(var out=Files.newOutputStream(path.resolve(child.id()+".properties"))){corrupt.store(out,"bad parent");}
+        SpawnerStore broken=new SpawnerStore(path,quiet);
+        eq("corrupt parent graph fails closed",broken.stackSizeAt(root,pos),0);
+        check("corrupt graph cannot permit duplicate placement",!broken.bind(child,other));
+    }
+
+    private static void testStackCap(Path dir, FakePlugin plugin, World world, SpawnerItems items,
+                                     Messages messages, FakeScheduler scheduler) throws Exception {
+        Path path=dir.resolve("stack-cap");
+        SpawnerStore store=new SpawnerStore(path,LOG);
+        SpawnerLootGui gui=new SpawnerLootGui(store,messages);
+        SpawnerListener listener=new SpawnerListener(items,store,gui,messages,LOG);
+        TestBlock block=new TestBlock(world,200,80,200); SpawnerStore.Position pos=SpawnerStore.Position.of(block);
+        SpawnerItems.Identity root=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+        check("cap root created",store.create(root)&&store.bind(root,pos));
+        boolean all=true;
+        for(int n=1;n<SpawnerStore.MAX_STACK-1;n++) {
+            SpawnerItems.Identity id=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+            all &= store.create(id) && store.merge(root,pos,id)==SpawnerStore.Merge.OK;
+        }
+        check("can stack through 1023",all);
+        eq("one slot remains",store.stackSizeAt(root,pos),1023);
+        SpawnerItems.Identity pair=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+        SpawnerItems.Identity pairChild=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+        SpawnerStore.Position pairPos=new SpawnerStore.Position(world.getUID(),202,80,200);
+        check("two-stack source created",store.create(pair)&&store.create(pairChild)&&store.bind(pair,pairPos));
+        eq("two-stack source assembled",store.merge(pair,pairPos,pairChild),SpawnerStore.Merge.OK);
+        check("two-stack source picked up",store.unbind(pair,pairPos));
+        eq("partial source group rejected at cap",store.merge(root,pos,pair),SpawnerStore.Merge.FULL);
+        eq("rejected source group intact",store.stackSize(pair),2);
+        eq("target untouched by rejection",store.stackSizeAt(root,pos),1023);
+        SpawnerItems.Identity last=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+        check("last source created",store.create(last));
+        eq("single source reaches exact cap",store.merge(root,pos,last),SpawnerStore.Merge.OK);
+        eq("exact stack cap",store.stackSizeAt(root,pos),1024);
+        SpawnerItems.Identity extra=new SpawnerItems.Identity(UUID.randomUUID(),SpawnerType.SHEEP);
+        check("extra item created",store.create(extra));
+        eq("1025th is refused",store.merge(root,pos,extra),SpawnerStore.Merge.FULL);
+        SpawnerStore.Position other=new SpawnerStore.Position(world.getUID(),201,80,200);
+        check("rejected item remains usable",store.bind(extra,other));
+        check("max stack parameters configured",items.configure(block,root,1024,SpawnerStore.Mode.SPAWNER));
+        eq("1024 stack attempts are proportional",block.spawner.spawnCount,4096);
+        eq("1024 stack nearby limit is proportional",block.spawner.nearby,6144);
+        eq("1024 stack inventory mode",store.toggle(root,pos),SpawnerStore.Mode.INVENTORY);
+        check("inventory counts configured",items.updateCounts(block,root,1024,SpawnerStore.Mode.INVENTORY));
+        int[] rolls={0}; Bukkit.testLootFactory=key -> (random,context) -> {rolls[0]++;return List.of(new ItemStack(Material.DIAMOND,1));};
+        Spawn event=new Spawn(block.spawner,entity(world,EntityType.SHEEP));listener.onSpawn(event);scheduler.drain();
+        int diamonds=0;for(ItemStack stack:store.page(root,pos,0).items())if(stack!=null && stack.getType()==Material.DIAMOND)diamonds+=stack.getAmount();
+        eq("1024 independent virtual rolls",rolls[0],1024);
+        eq("1024 generated items stored without overflow",diamonds,1024);
+        SpawnerStore restarted=new SpawnerStore(path,LOG);
+        eq("1024 stack survives restart",restarted.stackSizeAt(root,pos),1024);
+        eq("1024 stack storage pages survive",restarted.page(root,pos,0).totalPages(),20480);
     }
 
     private static void testRegionScheduler(World world) throws Exception {
@@ -461,9 +703,10 @@ public final class SpawnerTest {
     private static final class TestWorld implements InvocationHandler {
         final UUID id=UUID.randomUUID();
         final World proxy=(World)Proxy.newProxyInstance(World.class.getClassLoader(),new Class<?>[]{World.class},this);
-        DropState lastDrop;
+        DropState lastDrop; final Map<String, Block> blocks = new HashMap<>();
         public Object invoke(Object o,Method m,Object[] a){return switch(m.getName()) {
             case "getUID" -> id;
+            case "getBlockAt" -> blocks.get(a[0] + ":" + a[1] + ":" + a[2]);
             case "dropItemNaturally" -> {lastDrop=new DropState((ItemStack)a[1]);yield lastDrop.proxy;}
             default -> defaults(m.getReturnType());
         };}
@@ -482,7 +725,8 @@ public final class SpawnerTest {
     }
     private static final class TestBlock implements Block {
         final World world; final int x,y,z; Material type=Material.SPAWNER; TestSpawner spawner;
-        TestBlock(World world,int x,int y,int z){this.world=world;this.x=x;this.y=y;this.z=z;spawner=new TestSpawner(this);}
+        TestBlock(World world,int x,int y,int z){this.world=world;this.x=x;this.y=y;this.z=z;spawner=new TestSpawner(this);
+            if (Proxy.isProxyClass(world.getClass()) && Proxy.getInvocationHandler(world) instanceof TestWorld test) test.blocks.put(x+":"+y+":"+z,this); }
         public Material getType(){return type;} public Block getRelative(BlockFace face){return null;} public Location getLocation(){return new Location(world,x,y,z);}
         public BlockData getBlockData(){return null;} public BlockState getState(){return spawner;} public void setType(Material t){type=t;}
         public boolean breakNaturally(){return false;} public boolean breakNaturally(ItemStack tool,boolean effect){return false;}
@@ -490,8 +734,10 @@ public final class SpawnerTest {
     }
     private static final class TestSpawner implements CreatureSpawner {
         final TestBlock block; final StubPersistentDataContainer pdc=new StubPersistentDataContainer();
-        EntityType type; SpawnerEntry entry; List<SpawnerEntry> potentials=List.of();
+        EntityType type; int spawnCount=4, nearby=6; SpawnerEntry entry; List<SpawnerEntry> potentials=List.of();
         TestSpawner(TestBlock block){this.block=block;} public Block getBlock(){return block;} public boolean update(boolean force,boolean physics){return true;}
+        public int getSpawnCount(){return spawnCount;} public void setSpawnCount(int n){spawnCount=n;}
+        public int getMaxNearbyEntities(){return nearby;} public void setMaxNearbyEntities(int n){nearby=n;}
         public void setSpawnedType(EntityType type){this.type=type;} public EntityType getSpawnedType(){return type;}
         public EntitySnapshot getSpawnedEntity(){return () -> type;} public void setSpawnedEntity(SpawnerEntry entry){this.entry=entry;}
         public void setPotentialSpawns(Collection<SpawnerEntry> entries){potentials=new ArrayList<>(entries);}

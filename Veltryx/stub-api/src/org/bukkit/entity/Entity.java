@@ -19,11 +19,15 @@ public interface Entity {
     boolean isGliding();
     boolean isRiptiding();
     float getFallDistance();
+    default void setFallDistance(float value) {}
+    default boolean isOnGround() { return false; }
+    default void playEffect(org.bukkit.EntityEffect effect) {}
     void setVelocity(Vector velocity);
     Vector getVelocity();
     Server getServer();
     boolean teleport(Location location);
     boolean isSneaking();
     boolean isInWater();
+    default boolean isInRain() { return false; }
     default void setInvulnerable(boolean value) {}
 }

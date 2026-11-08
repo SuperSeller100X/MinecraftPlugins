@@ -132,7 +132,8 @@ for key, sites in sorted(used_messages.items()):
             warn(f"message '{key}' ({name}) passes placeholders not in the template: {sorted(missing)}")
 
 for key in sorted(message_keys):
-    if key == "prefix":
+    # Kept for existing customized messages.yml files from before sign search.
+    if key in {"prefix", "shop.search-prompt", "shop.quick-search-prompt"}:
         continue
     if key not in used_messages and not key.startswith("ban-screen"):
         warn(f"messages.yml key '{key}' is never referenced from Java")

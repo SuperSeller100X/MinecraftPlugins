@@ -37,6 +37,9 @@ public abstract class Enchantment implements Keyed {
             throw new UnsupportedOperationException();
         }
     };
+    public static final Enchantment LUNGE = new Enchantment() {
+        @Override public org.bukkit.NamespacedKey getKey() { return org.bukkit.NamespacedKey.minecraft("lunge"); }
+    };
     public static final Enchantment RIPTIDE = new Enchantment() {
         @Override
         public org.bukkit.NamespacedKey getKey() {

@@ -1,5 +1,6 @@
 package net.kyori.adventure.text;
-public interface Component {
+public interface Component extends ComponentLike {
+    default Component asComponent() { return this; }
     static Component empty() { return new StubComponent(""); }
     Component append(Component other);
     Component decoration(net.kyori.adventure.text.format.TextDecoration decoration, boolean value);

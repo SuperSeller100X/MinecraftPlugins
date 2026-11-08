@@ -46,8 +46,13 @@ find smoke -name '*.java' >target/smoke-sources.txt
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SmokeTest
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.Round12Test
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SpawnerTest
+"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.BigMoneyTest
+# Optional real JDBC integration: use a locally supplied xerial driver jar.
+if [[ -n "${SQLITE_JDBC_JAR:-}" ]]; then
+  "$JAVA_BIN" --enable-native-access=ALL-UNNAMED -cp "$OUT:$SMOKE_OUT:src/main/resources:$SQLITE_JDBC_JAR" dev.superseller.veltryx.smoke.SqliteIntegrationTest
+fi
 
-VERSION="vx-0.0.5-beta"
+VERSION="vx-0.0.6-beta"
 echo "==> assembling target/${VERSION}.jar"
 rm -rf target/jar
 mkdir -p target/jar

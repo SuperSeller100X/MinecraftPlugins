@@ -98,7 +98,7 @@ commands:
     aliases: [auction, auctions]
   order:
     description: Create a buy order (money escrowed until players fill it).
-    usage: /<command> <item> <amount> <price-per-item>
+    usage: /<command> [<item> <amount> <price-per-item>]
     aliases: [buyorder]
   orders:
     description: Browse buy orders and sell into them instantly, or manage your own.

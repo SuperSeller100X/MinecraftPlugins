@@ -44,7 +44,11 @@ public final class OrderCommand implements CommandExecutor, TabCompleter {
             gui.open(player, args.length > 0 && args[0].equalsIgnoreCase("mine"), 0);
             return true;
         }
-        // /order <item> <amount> <price>
+        // /order opens the creation screen; the traditional direct command remains available.
+        if (args.length == 0) {
+            gui.openCreate(player);
+            return true;
+        }
         if (args.length < 3) {
             sender.sendMessage(messages.render("order.usage"));
             return true;

@@ -10,4 +10,6 @@ public final class StubPersistentDataContainer implements PersistentDataContaine
     @SuppressWarnings("unchecked") public <T,Z> T getOrDefault(NamespacedKey key, PersistentDataType<T,Z> type, T fallback){return (T)values.getOrDefault(key,fallback);}
     public void remove(NamespacedKey key){values.remove(key);}
     public <T,Z> boolean has(NamespacedKey key, PersistentDataType<T,Z> type){return values.containsKey(key);}
+    @Override public boolean equals(Object other){return other instanceof StubPersistentDataContainer p && values.equals(p.values);}
+    @Override public int hashCode(){return values.hashCode();}
 }

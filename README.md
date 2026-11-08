@@ -297,14 +297,15 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**vx-0.0.5-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
+**vx-0.0.6-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
 balances, and YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
 - **`/shop` (`/store`) + `/sell`** — 1,530 curated 26.3 survival items,
   excluding elytra, the dragon egg and unobtainable/operator items. Potion,
   tipped-arrow, book and explorer-map purchases retain their variants or
-  destinations. Sell prices are capped against bundled modeled recipes and
+  destinations. Search uses a sign editor; `/sell` accepts deposited items
+  and confirms with a green pane. Sell prices are capped against bundled modeled recipes and
   selected transformations; this does not cover every trade, farm or plugin.
   Prices are in `shop.yml` and existing values are preserved on upgrade.
 - **`/settings`** — per-player, persistent natural-mob and phantom spawning
@@ -338,8 +339,9 @@ balances, and YAML **or** SQLite storage.
   they cannot cause false bans.
 - `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
   levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
-- `/ah` auction house (list/buy/reclaim, 48h, capped) · `/order`/`/orders` buy
-  orders with escrow · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
+- `/ah` auction house (list/buy/reclaim, 48h, capped) · `/order` creation GUI
+  and `/orders` marketplace with escrow and buyer collection (see the module
+  README before upgrading historical orders) · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
   max 45) with **per-home rename and any-item icons** · `/tpa`/`/tpahere`/`/tp`
   with per-counterpart cooldowns
 - **`/sell` values enchants and wear**: enchantments raise the price
@@ -347,17 +349,20 @@ balances, and YAML **or** SQLite storage.
   durability) — always strictly below the shop buy price
 - **Shards (`/shard`)** — a second currency earned **1 shard per minute** of
   play (*"you earned 1 shard for playing the server"*). The shard shop sells
-  the **Shard Spear** (lunge dash, 90% less hunger drain while lunging),
-  **Shard Trident** (riptide without water, 3s cooldown), **Shard Axe**
-  (whole-tree felling, 128-log chain), **Shard Pickaxe** (3×3 with amethyst
+  the **Shard Spear** (native Lunge III, 90% less Lunge exhaustion),
+  **Shard Trident** (Riptide III, immediate dry launch with 5s dry cooldown;
+  wet use remains vanilla), **Shard Axe**
+  (whole-tree felling, configurable log cap), **Shard Pickaxe** (3×3 with amethyst
   particles) at 500 shards each — self-destructing **24h after purchase**
   like the ShardTools plugin — plus the **Void Totem** (150) that rescues
   you from the void. No way to buy shards with money: earned, paid or given.
 - **`/shard spawners`** (also linked from the shard shop) sells permanent pig,
   sheep, cow, iron golem, skeleton, zombie and creeper spawners for **1,000
-  shards each**. Silk Touch returns them directly to inventory with their
-  contents. Right-click to toggle normal spawning or loot storage, with
-  **20 pages × 45 slots**, and all light levels allowed. Inventory mode uses
+  shards each**. Right-click with a matching spawner to stack up to **1,024**;
+  output scales in mob or inventory mode. Silk Touch returns the whole stack
+  with its contents. Each component retains **20 pages × 45 slots**. Large
+  stacks can cause severe lag, and normal non-light spawn rules still apply.
+  Inventory mode uses
   the no-player-killer loot table; rolls that do not fit are discarded, and
   normal non-light spawn requirements still apply. Back up `spawners/` with world and
   player data. Spawners are blocked from Veltryx's material-only auctions and
@@ -368,11 +373,15 @@ balances, and YAML **or** SQLite storage.
   **10 million block radius**, async **safe-block search** (never lava,
   fire, the void or the nether roof) and a **3 second countdown**
 - **QuickShop & search** — `/quickshop` (`/qs`) has 45 independently
-  configurable per-player item/amount slots; search privately in chat, select
-  a variant, then save. Prices are looked up again at purchase time.
+  configurable per-player item/amount slots; search with a private sign editor,
+  select a variant, then save. Prices are looked up again at purchase time.
 - **Stats display** — cash, shards, deaths, kills and playtime with hidden
   ordering numbers, prompt balance/stat updates and a configurable refresh
-  interval; optional nametags are mirrored to viewers.
+  interval. Other players optionally see only money below names; no stats are
+  added to the tab list.
+- **Money suffixes** — `k/m/b/t/q/d/g/l` represent consecutive thousand-fold
+  steps from 10³ through 10²⁴; `/eco` balances and transfers retain exact cents.
+  Back up economy data before upgrading and do not downgrade large balances.
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
   `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
   `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`
@@ -384,5 +393,6 @@ See [Veltryx/README.md](Veltryx/README.md) for full commands, permissions, confi
 storage and API details. Build with `mvn -B clean verify` in `Veltryx/` (JDK 25 required);
 an offline stub build + regression tests run via `./build.sh` (not a real Paper
 validation and no shaded SQLite driver). Offline consistency checks:
-`cd Veltryx && python3 tools/check_consistency.py`. A CI workflow is included at
-`Veltryx/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/` to activate it).
+`cd Veltryx && python3 tools/check_consistency.py`. A CI workflow template is
+included at `Veltryx/.github/workflows/build.yml`; copy it to the repo root
+`.github/workflows/` to activate it (requires GitHub workflow permission).

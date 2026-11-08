@@ -82,7 +82,7 @@ public final class LookupCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(messages.render("lookup.unknown"));
         }
         sender.sendMessage(messages.render("lookup.money", Map.of(
-                "amount", economy.format(economy.getBalance(target.getUniqueId())))));
+                "amount", economy.format(economy.getBalanceExact(target.getUniqueId())))));
 
         Player online = Bukkit.getPlayerExact(name);
         if (online != null) {

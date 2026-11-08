@@ -1,6 +1,7 @@
 package dev.superseller.veltryx.shop;
 
 import dev.superseller.veltryx.economy.EconomyService;
+import dev.superseller.veltryx.util.Money;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,7 +91,7 @@ public final class ShopService {
         if (!economy.withdraw(player.getUniqueId(), player.getName(), total)) {
             return new BuyResult(0, 0, "shop.cannot-afford", Map.of(
                     "price", dev.superseller.veltryx.util.Money.formatCompact(total),
-                    "balance", dev.superseller.veltryx.util.Money.formatCompact(economy.getBalance(player.getUniqueId()))));
+                    "balance", dev.superseller.veltryx.util.Money.formatCompact(economy.getBalanceExact(player.getUniqueId()))));
         }
         ItemStack stack;
         try {
@@ -226,9 +227,28 @@ public final class ShopService {
     }
 
 
+    /** Sell only the explicitly deposited stacks; unsellable stacks stay untouched. */
+    public SellResult sellDeposited(Player player, java.util.List<ItemStack> stacks) {
+        long earned = 0; int sold = 0;
+        java.util.List<ItemStack> accepted = new java.util.ArrayList<>();
+        for (ItemStack stack : stacks) {
+            if (stack == null || stack.getType() == Material.AIR || stack.getAmount() <= 0) continue;
+            PriceTable.Entry entry = prices.get(stack.getType().name());
+            if (entry == null || entry.sellCents() <= 0) continue;
+            long unit = ItemValue.valueCents(entry.sellCents(), entry.buyCents(), stack);
+            if (unit <= 0) continue;
+            earned = Money.addSaturated(earned, Money.multiplySaturated(unit, stack.getAmount()));
+            sold += stack.getAmount(); accepted.add(stack);
+        }
+        if (sold == 0) return new SellResult(0, 0, "shop.nothing");
+        economy.deposit(player.getUniqueId(), player.getName(), earned);
+        for (ItemStack stack : accepted) stack.setAmount(0);
+        return new SellResult(sold, earned, null);
+    }
+
     /** Money in the player's balance — used in GUI lore. */
-    public long balance(Player player) {
-        return economy.getBalance(player.getUniqueId());
+    public java.math.BigInteger balance(Player player) {
+        return economy.getBalanceExact(player.getUniqueId());
     }
 
     /** Formatted money, e.g. {@code $12.50}. */

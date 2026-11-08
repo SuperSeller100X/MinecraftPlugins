@@ -76,7 +76,7 @@ public final class ShardShopGui implements Listener {
     public void open(Player player) {
         PlatformScheduler.runForPlayer(player, () -> {
             ShopHolder holder = new ShopHolder();
-            Inventory inventory = Bukkit.createInventory(holder, 54, Txt.legacy("§8§lShard shop"));
+            Inventory inventory = Bukkit.createInventory(holder, 54, Txt.legacy("§8✦ §b§lShard shop"));
             holder.inventory = inventory;
 
             int[] slots = {10, 12, 14, 20, 22};
@@ -88,8 +88,8 @@ public final class ShardShopGui implements Listener {
             }
             inventory.setItem(24, item(Material.SPAWNER, 1,
                     Txt.legacy("§bSpawner shop"),
-                    List.of(Txt.legacy("§7Seven permanent spawners"),
-                            Txt.legacy("§6Each costs 1,000 shards"), Txt.legacy("§eClick to browse"))));
+                    List.of(Txt.legacy("§7Seven §bpermanent §7spawners"),
+                            Txt.legacy("§7Price: §61,000 shards §7each"), Txt.legacy("§eClick to browse"))));
             inventory.setItem(45, item(Material.PAPER, 1,
                     Txt.legacy("§bShards"),
                     List.of(Txt.legacy("§7Earned by playing: §f1 shard per minute"),
@@ -106,7 +106,7 @@ public final class ShardShopGui implements Listener {
         PlatformScheduler.runForPlayer(player, () -> {
             ChoiceHolder holder = new ChoiceHolder(entry);
             Inventory inventory = Bukkit.createInventory(holder, 27,
-                    Txt.legacy("§8§l" + entry.displayName() + " §7- pick an enchant"));
+                    Txt.legacy("§8✦ §b" + entry.displayName() + " §7- pick an enchant"));
             holder.inventory = inventory;
 
             List<ShardCatalog.EnchantSpec> choices = entry.choice();
@@ -146,6 +146,10 @@ public final class ShardShopGui implements Listener {
                 return;
             }
             ShardCatalog.Entry entry = shop.slots.get(index);
+            if (!items.available(entry)) {
+                messages.send(player, "shop.item-unavailable", Map.of());
+                return;
+            }
             if (entry.hasChoice()) {
                 openChoice(player, entry);
             } else {
@@ -184,19 +188,35 @@ public final class ShardShopGui implements Listener {
 
     /** Buys one catalog entry with the given enchant choice. */
     private void buy(Player player, ShardCatalog.Entry entry, int choiceIndex) {
+        if (!items.available(entry)) {
+            messages.send(player, "shop.item-unavailable", Map.of());
+            return;
+        }
+        ItemStack item;
+        try {
+            item = items.create(entry, choiceIndex);
+        } catch (RuntimeException ex) {
+            java.util.logging.Logger.getLogger("Veltryx").log(java.util.logging.Level.WARNING,
+                    "Could not create shard item " + entry.id(), ex);
+            messages.send(player, "shop.item-unavailable", Map.of());
+            return;
+        }
         if (!service.take(player.getUniqueId(), entry.priceShards())) {
             messages.send(player, "shards.shop-cannot-afford",
                     Map.of("price", String.valueOf(entry.priceShards()),
                             "balance", String.valueOf(service.balance(player.getUniqueId()))));
             return;
         }
-        ItemStack item = items.create(entry, choiceIndex);
         Map<Integer, ItemStack> leftover = player.getInventory().addItem(item);
         if (!leftover.isEmpty()) {
             service.give(player.getUniqueId(), entry.priceShards());
             messages.send(player, "shards.shop-full", Map.of());
             return;
         }
+        player.playSound(player.getLocation(), "block.amethyst_block.resonate", 1.0f, 1.8f);
+        var location = player.getLocation();
+        player.getWorld().spawnParticle(org.bukkit.Particle.PORTAL, location.getX(), location.getY() + 1, location.getZ(),
+                10, 0.35, 0.35, 0.35, 0.01);
         messages.send(player, "shards.bought",
                 Map.of("item", entry.displayName(), "price", String.valueOf(entry.priceShards())));
         open(player);

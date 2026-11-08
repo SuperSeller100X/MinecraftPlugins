@@ -4,9 +4,13 @@ import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
 import dev.superseller.veltryx.config.Messages;
+import dev.superseller.veltryx.util.PlatformScheduler;
 
 /**
  * The wall-clock self-destruct: shard tools live 24 real-time hours and
@@ -14,7 +18,7 @@ import dev.superseller.veltryx.config.Messages;
  * inventories of online players removes expired items and sends the
  * remaining-time warnings.
  */
-public final class ShardExpiryService {
+public final class ShardExpiryService implements Listener {
 
     /** Warning thresholds in minutes, descending (bit 0 = soonest sent first). */
     private static final long[] WARN_MINUTES = {60, 10};
@@ -45,8 +49,20 @@ public final class ShardExpiryService {
                 messages.send(player, "shards.expired", Map.of("item", displayName(stack)));
                 continue;
             }
+            ItemStack upgraded = items.upgradeLegacy(stack);
+            if (upgraded != stack) {
+                player.getInventory().setItem(slot, upgraded);
+                stack = upgraded;
+            }
             warnIfNeeded(player, stack, nowMs);
         }
+    }
+
+    /** Refresh existing shard items as soon as their owner joins. */
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        PlatformScheduler.runForPlayer(player, () -> sweep(player, System.currentTimeMillis()));
     }
 
     private void warnIfNeeded(Player player, ItemStack stack, long nowMs) {
@@ -71,10 +87,10 @@ public final class ShardExpiryService {
         return entry == null ? "shard item" : entry.displayName();
     }
 
-    /** Convenience: sweep every online player (used by the plugin timer). */
+    /** Schedule inventory access on each player's owning region (Folia-safe). */
     public void sweepAll(Iterable<? extends Player> players, long nowMs) {
         for (Player player : players) {
-            sweep(player, nowMs);
+            PlatformScheduler.runForPlayer(player, () -> sweep(player, nowMs));
         }
     }
 }

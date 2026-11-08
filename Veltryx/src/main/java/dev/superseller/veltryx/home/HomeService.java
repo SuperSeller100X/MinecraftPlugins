@@ -99,13 +99,12 @@ public final class HomeService {
         }
         long cost = HomePricing.costCents(homes.size() + 1, config.freeHomes(), config.homePriceStep());
         if (cost > 0) {
-            long balance = economy.getBalance(player.getUniqueId());
-            if (!economy.has(player.getUniqueId(), cost)) {
+            java.math.BigInteger balance = economy.getBalanceExact(player.getUniqueId());
+            if (!economy.withdraw(player.getUniqueId(), player.getName(), cost)) {
                 return Result.fail("home.cannot-afford", Map.of(
                         "price", Money.formatCompact(cost),
                         "balance", Money.formatCompact(balance)));
             }
-            economy.withdraw(player.getUniqueId(), player.getName(), cost);
             base.put("price", Money.formatCompact(cost));
             store.saveHome(updated);
             return Result.ok("home.paid", base);

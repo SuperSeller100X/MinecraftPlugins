@@ -1,6 +1,9 @@
 package dev.superseller.veltryx.spawner;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -9,6 +12,7 @@ import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -43,10 +47,12 @@ public final class SpawnerListener implements Listener {
     private final Logger logger;
     private final Map<BlockPlaceEvent, Pending> placements = new ConcurrentHashMap<>();
     private final Map<BlockBreakEvent, Pending> breaks = new ConcurrentHashMap<>();
+    private final Set<java.util.UUID> repairs = ConcurrentHashMap.newKeySet();
 
     public SpawnerListener(SpawnerItems items, SpawnerStore store, SpawnerLootGui gui,
                            Messages messages, Logger logger) {
         this.items = items; this.store = store; this.gui = gui; this.messages = messages; this.logger = logger;
+        gui.attachModeHandler(this::requestToggle);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -100,8 +106,10 @@ public final class SpawnerListener implements Listener {
         if (store.modeAt(identity, position) == null) return;
         try {
             SpawnerItems.Identity current = items.identity(block);
+            int count = store.stackSizeAt(identity, position);
+            SpawnerStore.Mode mode = store.modeAt(identity, position);
             if (block.getType() == Material.SPAWNER && (current == null || current.equals(identity))
-                    && items.configure(block, identity)) return;
+                    && count > 0 && mode != null && items.configure(block, identity, count, mode)) return;
         } catch (RuntimeException ex) {
             logger.log(Level.SEVERE, "Could not configure placed spawner " + identity.id(), ex);
         }
@@ -115,7 +123,7 @@ public final class SpawnerListener implements Listener {
         if (block.getType() == Material.SPAWNER && (current == null || current.equals(identity))) {
             block.setType(Material.AIR);
         }
-        org.bukkit.entity.Item refund = block.getWorld().dropItemNaturally(block.getLocation(), items.create(identity));
+        org.bukkit.entity.Item refund = block.getWorld().dropItemNaturally(block.getLocation(), items.create(identity, store.stackSize(identity)));
         Player player = event.getPlayer();
         refund.setOwner(player.getUniqueId());
         refund.setUnlimitedLifetime(true);
@@ -147,7 +155,7 @@ public final class SpawnerListener implements Listener {
             return;
         }
         try {
-            ItemStack pickup = items.create(identity);
+            ItemStack pickup = items.create(identity, store.stackSizeAt(identity, position));
             event.setDropItems(false);
             event.setExpToDrop(0);
             breaks.put(event, new Pending(identity, position, pickup));
@@ -209,7 +217,84 @@ public final class SpawnerListener implements Listener {
             messages.send(event.getPlayer(), "spawner.unavailable", Map.of());
             return;
         }
-        gui.open(event.getPlayer(), identity, position, 0);
+        Player player = event.getPlayer();
+        ItemStack held = player.getInventory().getItemInMainHand();
+        SpawnerItems.Identity source = items.identity(held);
+        if (source != null) {
+            if (held.getAmount() != 1) { messages.send(player, "spawner.unavailable", Map.of()); return; }
+            SpawnerStore.Merge result = store.merge(identity, position, source);
+            switch (result) {
+                case DIFFERENT_TYPE -> messages.send(player, "spawner.stack-wrong-type", Map.of());
+                case FULL -> messages.send(player, "spawner.stack-full", Map.of("max", Integer.toString(SpawnerStore.MAX_STACK)));
+                case ERROR -> messages.send(player, "spawner.storage-error", Map.of());
+                case INVALID -> messages.send(player, "spawner.unavailable", Map.of());
+                case OK -> {
+                    // The parent link is already durable: copied/old source items can no longer be placed.
+                    player.getInventory().setItemInMainHand(null);
+                    int count = store.stackSizeAt(identity, position);
+                    SpawnerStore.Mode mode = store.modeAt(identity, position);
+                    if (!items.updateCounts(block, identity, count, mode)) requestRepair(identity, position, block.getLocation());
+                    messages.send(player, "spawner.stacked", Map.of("count", Integer.toString(count),
+                            "max", Integer.toString(SpawnerStore.MAX_STACK)));
+                    gui.refreshViewers(identity.id());
+                }
+            }
+            return;
+        }
+        gui.open(player, identity, position, block.getLocation(), 0);
+    }
+
+    /** Change mode and native spawn parameters on the spawner's owning region. */
+    private void requestToggle(Player player, SpawnerItems.Identity identity, SpawnerStore.Position position, Location location) {
+        try {
+            PlatformScheduler.runForLocation(location, () -> {
+                Block block = location.getBlock();
+                if (!identity.equals(items.identity(block))) {
+                    PlatformScheduler.runForPlayer(player, () -> messages.send(player, "spawner.unavailable", Map.of()));
+                    return;
+                }
+                SpawnerStore.Mode before = store.modeAt(identity, position);
+                int count = store.stackSizeAt(identity, position);
+                SpawnerStore.Mode next = before == null || count == 0 ? null : store.toggle(identity, position);
+                if (next == null) {
+                    PlatformScheduler.runForPlayer(player, () -> messages.send(player, "spawner.unavailable", Map.of()));
+                    return;
+                }
+                if (!items.updateCounts(block, identity, count, next)) {
+                    if (store.toggle(identity, position) != before) logger.severe("Could not roll back spawner mode for " + identity.id());
+                    requestRepair(identity, position, location);
+                    PlatformScheduler.runForPlayer(player, () -> messages.send(player, "spawner.storage-error", Map.of()));
+                } else {
+                    PlatformScheduler.runForPlayer(player, () -> messages.send(player, "spawner.mode",
+                            Map.of("mode", next == SpawnerStore.Mode.SPAWNER ? "Spawner" : "Inventory")));
+                }
+                gui.refreshViewers(identity.id());
+            });
+        } catch (RuntimeException ex) {
+            logger.log(Level.SEVERE, "Could not schedule spawner mode change", ex);
+            messages.send(player, "spawner.storage-error", Map.of());
+        }
+    }
+
+    /** Never allow a stale native spawn count to multiply output twice. */
+    private void requestRepair(SpawnerItems.Identity identity, SpawnerStore.Position position, Location location) {
+        if (!repairs.add(identity.id())) return;
+        try {
+            PlatformScheduler.runForLocation(location, () -> {
+                try {
+                    Block block = location.getBlock();
+                    int count = store.stackSizeAt(identity, position);
+                    SpawnerStore.Mode mode = store.modeAt(identity, position);
+                    if (count > 0 && mode != null && identity.equals(items.identity(block))
+                            && !items.updateCounts(block, identity, count, mode)) {
+                        logger.severe("Could not repair spawner spawn parameters " + identity.id());
+                    }
+                } finally { repairs.remove(identity.id()); }
+            });
+        } catch (RuntimeException ex) {
+            repairs.remove(identity.id());
+            logger.log(Level.SEVERE, "Could not schedule spawner repair " + identity.id(), ex);
+        }
     }
 
     // Convert only after normal-priority and HIGHEST spawn protections have
@@ -223,8 +308,14 @@ public final class SpawnerListener implements Listener {
         if (identity == null) return; // Vanilla or another plugin's spawner.
         SpawnerStore.Position position = SpawnerStore.Position.of(spawner.getBlock());
         SpawnerStore.Mode mode = store.modeAt(identity, position);
-        if (mode == null || event.getEntity().getType() != identity.type().entityType()) {
+        int count = store.stackSizeAt(identity, position);
+        if (mode == null || count == 0 || event.getEntity().getType() != identity.type().entityType()) {
+            event.setCancelled(true); return;
+        }
+        if (spawner.getSpawnCount() != SpawnerItems.spawnCount(count, mode)
+                || spawner.getMaxNearbyEntities() != SpawnerItems.nearbyLimit(count, mode)) {
             event.setCancelled(true);
+            requestRepair(identity, position, spawner.getBlock().getLocation());
             return;
         }
         if (mode == SpawnerStore.Mode.SPAWNER) return;
@@ -240,7 +331,13 @@ public final class SpawnerListener implements Listener {
             }
             LootContext context = new LootContext.Builder(event.getEntity().getLocation())
                     .lootedEntity(event.getEntity()).build();
-            Collection<ItemStack> loot = table.populateLoot(ThreadLocalRandom.current(), context);
+            List<ItemStack> loot = new ArrayList<>();
+            // Inventory mode keeps the native count at four; independently roll
+            // once per represented spawner for every native attempt.
+            for (int i = 0; i < count; i++) {
+                Collection<ItemStack> roll = table.populateLoot(ThreadLocalRandom.current(), context);
+                for (ItemStack item : roll) combine(loot, item);
+            }
             SpawnerStore.Deposit result = store.deposit(identity, position, loot);
             if (result == SpawnerStore.Deposit.CHANGED_MODE) {
                 // A remote viewer switched modes while the loot roll was in progress.
@@ -252,6 +349,18 @@ public final class SpawnerListener implements Listener {
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "Could not generate loot for custom spawner " + identity.id(), e);
         }
+    }
+
+    private static void combine(List<ItemStack> batch, ItemStack item) {
+        if (item == null || item.getType() == Material.AIR || item.getAmount() <= 0) return;
+        int remaining = item.getAmount();
+        for (ItemStack stored : batch) {
+            if (!stored.isSimilar(item)) continue;
+            int add = Math.min(remaining, Integer.MAX_VALUE - stored.getAmount());
+            stored.setAmount(stored.getAmount() + add); remaining -= add;
+            if (remaining == 0) return;
+        }
+        ItemStack copy = item.clone(); copy.setAmount(remaining); batch.add(copy);
     }
 
     /** Explosions cannot silently destroy a purchased spawner or its contents. */

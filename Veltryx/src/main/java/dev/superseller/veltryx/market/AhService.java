@@ -136,7 +136,7 @@ public final class AhService {
         if (!economy.withdraw(buyer.getUniqueId(), buyer.getName(), listing.priceCents())) {
             return Result.fail("shop.cannot-afford", Map.of(
                     "price", Money.formatCompact(listing.priceCents()),
-                    "balance", Money.formatCompact(economy.getBalance(buyer.getUniqueId()))));
+                    "balance", Money.formatCompact(economy.getBalanceExact(buyer.getUniqueId()))));
         }
         Material material = Material.matchMaterial(listing.material());
         if (material == null) {
@@ -153,7 +153,7 @@ public final class AhService {
                 listing.material(), listing.amount(), listing.priceCents(), listing.listed(),
                 listing.expires(), true));
         // pay the seller (works offline)
-        long sellerBalance = economy.deposit(listing.seller(), listing.sellerName(), listing.priceCents());
+        java.math.BigInteger sellerBalance = economy.depositExact(listing.seller(), listing.sellerName(), java.math.BigInteger.valueOf(listing.priceCents()));
         Player seller = Bukkit.getPlayer(listing.seller());
         if (seller != null) {
             SellNotices.show(seller, messages, "ah.sold", Map.of(
@@ -226,7 +226,7 @@ public final class AhService {
     /** Removes up to {@code max} items of a type from the player's inventory. */
     static int removeFromInventory(Player player, Material material, int max) {
         int removed = 0;
-        ItemStack[] contents = player.getInventory().getContents();
+        ItemStack[] contents = player.getInventory().getStorageContents();
         for (int i = 0; i < contents.length && removed < max; i++) {
             ItemStack stack = contents[i];
             if (stack == null || stack.getType() != material) {

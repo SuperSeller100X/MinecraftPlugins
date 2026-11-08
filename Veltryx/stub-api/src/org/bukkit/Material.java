@@ -201,9 +201,10 @@ public enum Material {
     YELLOW_CONCRETE_STAIRS, YELLOW_CUSHION, YELLOW_DYE, YELLOW_GLAZED_TERRACOTTA, YELLOW_HARNESS, YELLOW_POPLAR_LEAVES, YELLOW_STAINED_GLASS, YELLOW_STAINED_GLASS_PANE,
     YELLOW_TERRACOTTA, YELLOW_WOOL, YELLOW_WOOL_SLAB, YELLOW_WOOL_STAIRS;
     public boolean isSolid() { return false; }
+    public boolean isLegacy() { return false; }
     public boolean isItem() { return this != AIR && this != WATER && this != LAVA; }
     public int getMaxStackSize() { return 64; }
-    public int getMaxDurability() { return 0; }
+    public short getMaxDurability() { return 0; }
     public BlockData createBlockData() { return null; }
 
     public static Material matchMaterial(String name) {

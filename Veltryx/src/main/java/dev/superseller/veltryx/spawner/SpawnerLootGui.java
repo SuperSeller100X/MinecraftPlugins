@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,9 +32,11 @@ public final class SpawnerLootGui implements Listener {
         private final SpawnerItems.Identity identity;
         private final SpawnerStore.Position position;
         private final int page;
+        private final Location location;
+        private int totalPages;
         private Inventory inventory;
-        Holder(Player viewer, SpawnerItems.Identity identity, SpawnerStore.Position position, int page) {
-            this.viewer = viewer; this.identity = identity; this.position = position; this.page = page;
+        Holder(Player viewer, SpawnerItems.Identity identity, SpawnerStore.Position position, Location location, int page) {
+            this.viewer = viewer; this.identity = identity; this.position = position; this.location = location; this.page = page;
         }
         @Override public Inventory getInventory() { return inventory; }
     }
@@ -42,16 +45,21 @@ public final class SpawnerLootGui implements Listener {
     private final Messages messages;
     private final Map<UUID, Set<Holder>> viewers = new ConcurrentHashMap<>();
 
+    @FunctionalInterface public interface ModeHandler {
+        void toggle(Player player, SpawnerItems.Identity identity, SpawnerStore.Position position, Location location);
+    }
+    private ModeHandler modeHandler;
     public SpawnerLootGui(SpawnerStore store, Messages messages) { this.store = store; this.messages = messages; }
+    public void attachModeHandler(ModeHandler handler) { this.modeHandler = handler; }
 
-    public void open(Player player, SpawnerItems.Identity identity, SpawnerStore.Position position, int page) {
-        if (page < 0 || page >= SpawnerStore.PAGES) return;
+    public void open(Player player, SpawnerItems.Identity identity, SpawnerStore.Position position, Location location, int page) {
+        if (page < 0 || page >= SpawnerStore.PAGES * SpawnerStore.MAX_STACK) return;
         PlatformScheduler.runForPlayer(player, () -> {
             SpawnerStore.Page data = store.page(identity, position, page);
             if (data == null) { messages.send(player, "spawner.unavailable", Map.of()); return; }
-            Holder holder = new Holder(player, identity, position, page);
+            Holder holder = new Holder(player, identity, position, location, page);
             Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Txt.legacy("§8" + data.type().displayName() + " Spawner §7(" + (page + 1) + "/20)"));
+                    Txt.legacy("§8" + data.type().displayName() + " Spawner §7(" + (page + 1) + "/" + data.totalPages() + ")"));
             holder.inventory = inventory;
             render(holder, data);
             player.openInventory(inventory);
@@ -64,18 +72,20 @@ public final class SpawnerLootGui implements Listener {
     }
 
     private void render(Holder holder, SpawnerStore.Page data) {
+        holder.totalPages = data.totalPages();
         for (int i = 0; i < SpawnerStore.PAGE_SIZE; i++) holder.inventory.setItem(i, data.items()[i]);
         for (int i = 45; i < 54; i++) holder.inventory.setItem(i,
                 named(Material.GRAY_STAINED_GLASS_PANE, "§8 ", List.of()));
         if (holder.page > 0) holder.inventory.setItem(45, named(Material.ARROW, "§bPrevious page", List.of()));
-        holder.inventory.setItem(47, named(Material.BOOK, "§bPage " + (holder.page + 1) + " / 20",
-                List.of("§7Click a stack to collect it.", "§7Right-click to collect one item.")));
+        holder.inventory.setItem(47, named(Material.BOOK, "§bPage " + (holder.page + 1) + " / " + data.totalPages(),
+                List.of("§7Spawners in stack: §f" + data.stackSize() + "/" + SpawnerStore.MAX_STACK,
+                        "§7Click a stack to collect it.", "§7Right-click to collect one item.")));
         String current = data.mode() == SpawnerStore.Mode.SPAWNER ? "Spawner" : "Inventory";
         String next = data.mode() == SpawnerStore.Mode.SPAWNER ? "Inventory" : "Spawner";
         holder.inventory.setItem(49, named(Material.LEVER, "§aMode: §f" + current,
                 List.of("§7Spawner: creates mobs normally.", "§7Inventory: stores their loot-table drops.",
                         "§eClick to switch to " + next + " mode.")));
-        if (holder.page < SpawnerStore.PAGES - 1) holder.inventory.setItem(53, named(Material.ARROW, "§bNext page", List.of()));
+        if (holder.page < data.totalPages() - 1) holder.inventory.setItem(53, named(Material.ARROW, "§bNext page", List.of()));
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -85,13 +95,11 @@ public final class SpawnerLootGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)
                 || event.getClickedInventory() == null || event.getClickedInventory().getHolder() != holder) return;
         int slot = event.getSlot();
-        if (slot == 45 && holder.page > 0) { open(player, holder.identity, holder.position, holder.page - 1); return; }
-        if (slot == 53 && holder.page < SpawnerStore.PAGES - 1) { open(player, holder.identity, holder.position, holder.page + 1); return; }
+        if (slot == 45 && holder.page > 0) { open(player, holder.identity, holder.position, holder.location, holder.page - 1); return; }
+        if (slot == 53 && holder.page < holder.totalPages - 1) { open(player, holder.identity, holder.position, holder.location, holder.page + 1); return; }
         if (slot == 49) {
-            SpawnerStore.Mode mode = store.toggle(holder.identity, holder.position);
-            if (mode == null) messages.send(player, "spawner.unavailable", Map.of());
-            else messages.send(player, "spawner.mode", Map.of("mode", mode == SpawnerStore.Mode.SPAWNER ? "Spawner" : "Inventory"));
-            refreshViewers(holder.identity.id());
+            if (modeHandler == null) messages.send(player, "spawner.unavailable", Map.of());
+            else modeHandler.toggle(player, holder.identity, holder.position, holder.location);
             return;
         }
         if (slot < 0 || slot >= SpawnerStore.PAGE_SIZE) return;

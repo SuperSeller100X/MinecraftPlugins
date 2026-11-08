@@ -56,7 +56,7 @@ public final class SpawnerShopGui implements Listener {
                 return;
             }
             Holder holder = new Holder();
-            Inventory inventory = Bukkit.createInventory(holder, 27, Txt.legacy("§8§lSpawner shop"));
+            Inventory inventory = Bukkit.createInventory(holder, 27, Txt.legacy("§8✦ §b§lSpawner shop"));
             holder.inventory = inventory;
             SpawnerType[] types = SpawnerType.values();
             for (int i = 0; i < types.length; i++) inventory.setItem(10 + i, items.icon(types[i]));

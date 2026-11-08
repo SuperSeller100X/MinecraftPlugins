@@ -10,6 +10,9 @@ public class InventoryClickEvent extends Event implements Cancellable {
     public Inventory getInventory() { return null; }
     public Inventory getClickedInventory() { return null; }
     public ItemStack getCurrentItem() { return null; }
+    public ItemStack getCursor() { return null; }
+    public InventoryAction getAction() { return InventoryAction.NOTHING; }
+    public ClickType getClick() { return ClickType.LEFT; }
     public boolean isRightClick() { return false; }
     public boolean isShiftClick() { return false; }
     public int getSlot() { return 0; }

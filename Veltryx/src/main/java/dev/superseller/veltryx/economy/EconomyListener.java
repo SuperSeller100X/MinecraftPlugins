@@ -35,12 +35,12 @@ public final class EconomyListener implements Listener {
         UUID uuid = player.getUniqueId();
         String name = player.getName();
         long now = System.currentTimeMillis();
-        boolean firstJoin = store.getProfile(uuid) == null && store.getBalance(uuid) == 0L;
+        boolean firstJoin = store.getProfile(uuid) == null && store.getBalanceExact(uuid).signum() == 0;
         joinTimes.put(uuid, now);
         store.upsertProfile(uuid, name, now, 0L, true);
         if (firstJoin) {
-            long granted = economy.grantStartingBalance(uuid, name);
-            if (granted > 0) {
+            java.math.BigInteger granted = economy.grantStartingBalanceExact(uuid, name);
+            if (granted.signum() > 0) {
                 messages.send(player, "economy.starting-balance",
                         Map.of("amount", economy.format(granted)));
             }

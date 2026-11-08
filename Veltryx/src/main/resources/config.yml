@@ -23,8 +23,8 @@ economy:
   baltop-size: 10
 
 # The stats display: a scoreboard on the right side of the screen with
-# cash, shards, deaths, kills and playtime, plus multi-line nametags
-# (money, shards, deaths, kills) above every player's username.
+# cash, shards, deaths, kills and playtime. Other players see only cash
+# below a player's name; no stats are added to the tab list.
 scoreboard:
   enabled: true
   nametag: true
@@ -66,9 +66,9 @@ shards:
   area-radius: 1
   # The shard axe fells whole trees; this caps the log chain length.
   tree:
-    max-blocks: 128
+    max-blocks: 256
     break-leaves: true
-    replant: true
+    replant: false
   # Haste II duration of the shard potion of haste, in minutes.
   haste-minutes: 60
 

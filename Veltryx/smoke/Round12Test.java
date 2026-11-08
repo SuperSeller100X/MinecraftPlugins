@@ -8,6 +8,10 @@ import dev.superseller.veltryx.economy.EconomyService;
 import dev.superseller.veltryx.home.HomeService;
 import dev.superseller.veltryx.home.HomesGui;
 import dev.superseller.veltryx.model.HomeLocation;
+import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.market.OrderGui;
+import dev.superseller.veltryx.market.OrderService;
+import dev.superseller.veltryx.market.OrderCommand;
 import dev.superseller.veltryx.settings.PreferencesStore;
 import dev.superseller.veltryx.settings.SettingsGui;
 import dev.superseller.veltryx.settings.SettingsListener;
@@ -16,7 +20,7 @@ import dev.superseller.veltryx.storage.DataStore;
 import dev.superseller.veltryx.stats.ScoreboardService;
 import dev.superseller.veltryx.stats.StatsService;
 import dev.superseller.veltryx.stats.StatsListener;
-import dev.superseller.veltryx.shards.ShardService;
+import dev.superseller.veltryx.shards.*;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import dev.superseller.veltryx.util.Txt;
 import dev.superseller.veltryx.util.YamlTextMerge;
@@ -192,6 +196,11 @@ public final class Round12Test {
         eq("fallback preserves translation", fallback.get("a"), "custom");
         eq("fallback supplies missing default", fallback.get("b"), "default b");
         eq("fallback keeps extra custom message", fallback.get("c"), "custom c");
+        Map<String,String> palette = Messages.mergeTemplates(Map.of("old", "new colors", "edited", "new", "empty", "new"),
+                Map.of("old", "old colors", "edited", "server custom", "empty", ""), Map.of("old", "old colors", "edited", "old", "empty", "old"));
+        eq("exact old default receives colors", palette.get("old"), "new colors");
+        eq("custom message kept", palette.get("edited"), "server custom");
+        eq("empty custom message kept", palette.get("empty"), "");
     }
 
     private static void testPersistence(Path dir) throws Exception {
@@ -314,20 +323,74 @@ public final class Round12Test {
 
         sellGui.open(player); scheduler.drain();
         eq("sell GUI size", state.open.getSize(), 54);
-        eq("sell GUI star", state.open.getItem(49).getType(), Material.NETHER_STAR);
+        eq("sell tray placeholder", state.open.getItem(0).getType(), Material.GRAY_STAINED_GLASS_PANE);
+        eq("sell confirm pane", state.open.getItem(49).getType(), Material.LIME_STAINED_GLASS_PANE);
         before = economy.getBalance(state.id);
+        sellGui.onClick(new Click(state.open, state.open, player, 49, false, false)); scheduler.drain();
+        eq("empty tray does not sell inventory", state.inventory.count(Material.COPPER_INGOT), 24);
+        eq("empty tray grants no payout", economy.getBalance(state.id), before);
+        int copperSlot = -1;
+        for (int i = 0; i < state.inventory.getSize(); i++) if (state.inventory.getItem(i) != null && state.inventory.getItem(i).getType() == Material.COPPER_INGOT) { copperSlot = i; break; }
+        Click deposit = new Click(state.open, state.inventory, player, copperSlot, false, true);
+        sellGui.onClick(deposit);
+        check("shift deposit is controlled", deposit.cancelled);
+        eq("deposited copper shown in tray", state.open.getItem(0).getType(), Material.COPPER_INGOT);
+        eq("deposit removed from player inventory", state.inventory.count(Material.COPPER_INGOT), 0);
+        state.inventory.setItem(copperSlot, new ItemStack(Material.BARRIER, 2));
+        sellGui.onClick(new Click(state.open, state.inventory, player, copperSlot, false, true));
+        eq("unsellable stack deposited", state.open.getItem(1).getType(), Material.BARRIER);
+        state.cursor = new ItemStack(Material.COPPER_INGOT, 7);
+        Click place = new Click(state.open, state.open, player, 2, false, false); place.cursor = state.cursor; sellGui.onClick(place);
+        eq("left click replaces gray placeholder with cursor stack", state.open.getItem(2).getAmount(), 7);
+        check("left click clears cursor after deposit", state.cursor == null);
+        Click split = new Click(state.open, state.open, player, 2, true, false); sellGui.onClick(split);
+        eq("right click takes half", state.cursor.getAmount(), 4);
+        eq("right click leaves remaining half", state.open.getItem(2).getAmount(), 3);
+        Click putOne = new Click(state.open, state.open, player, 2, true, false); putOne.cursor = state.cursor; sellGui.onClick(putOne);
+        eq("right click deposits one", state.open.getItem(2).getAmount(), 4);
+        eq("right click retains cursor remainder", state.cursor.getAmount(), 3);
+        Click merge = new Click(state.open, state.open, player, 2, false, false); merge.cursor = state.cursor; sellGui.onClick(merge);
+        eq("left click merges remaining stack", state.open.getItem(2).getAmount(), 7);
+        check("merge clears cursor", state.cursor == null);
+        Drag sellDrag = new Drag(state.open, state.inventory); sellDrag.raw = Set.of(1); sellGui.onDrag(sellDrag);
+        check("drag into input is cancelled safely", sellDrag.cancelled);
         Click sell = new Click(state.open, state.open, player, 49, false, false);
         sellGui.onClick(sell); scheduler.drain();
-        check("sell all grants payout", economy.getBalance(state.id) > before);
-        eq("sell all removes sold items", state.inventory.count(Material.COPPER_INGOT), 0);
+        check("deposited sale grants payout", economy.getBalance(state.id) > before);
+        eq("sold slot resets to placeholder", state.open.getItem(0).getType(), Material.GRAY_STAINED_GLASS_PANE);
+        eq("unsellable remains in tray", state.open.getItem(1).getAmount(), 2);
+        Close close = new Close(state.open, player); sellGui.onClose(close); sellGui.onClose(close);
+        eq("unsold stack returned exactly once on close", state.inventory.count(Material.BARRIER), 2);
+        eq("placeholder panes were not returned as items", state.inventory.count(Material.GRAY_STAINED_GLASS_PANE), 0);
+        sellGui.open(player); scheduler.drain();
+        state.inventory.setItem(copperSlot, new ItemStack(Material.BARRIER, 3));
+        sellGui.onClick(new Click(state.open, state.inventory, player, copperSlot, false, true));
+        state.inventory.capacity = 0;
+        sellGui.onClose(new Close(state.open, player));
+        eq("full inventory drops overflow stack", world.dropped.getAmount(), 3);
+        eq("overflow is owner-locked", world.dropOwner, state.id);
+        check("overflow has unlimited lifetime", world.unlimitedDrop);
+        state.inventory.capacity = Integer.MAX_VALUE;
+        testShardItemsAndLunge(dir, state, messages);
+        testShardTools(dir, state, world);
+        testShardVoid(dir, state, world, scheduler, messages);
 
+        world.fakeBlock = true;
+        extras.openSearchPrompt(player); scheduler.drain();
+        check("search opens virtual sign", state.signOpened);
+        SignInput wrong = new SignInput(player, 101, 64, 200, "diamond"); extras.onSign(wrong);
+        check("wrong sign position ignored", !wrong.cancelled);
+        SignInput sign = new SignInput(player, 100, 64, 200, "NETHERITE", "INGOT"); extras.onSign(sign); scheduler.drain();
+        check("sign response handled privately", sign.cancelled);
+        eq("sign search finds item", state.open.getItem(0).getType(), Material.NETHERITE_INGOT);
+        check("virtual block restored", state.blockChanges >= 2);
         extras.openQuickshop(player); scheduler.drain();
         eq("quick GUI has 45 configurable slots", state.open.getSize(), 45);
         eq("quick empty slot", state.open.getItem(2).getType(), Material.GRAY_STAINED_GLASS_PANE);
         click(extras, state, scheduler, 2, false, false);
         check("quick prompt closes GUI on next tick", state.open == null);
-        Chat query = new Chat(player, "NETHERITE_INGOT"); extras.onChat(query);
-        check("quick search is private", query.cancelled); scheduler.drain();
+        SignInput query = new SignInput(player, 100, 64, 200, "NETHERITE", "INGOT"); extras.onSign(query);
+        check("quick sign search is private", query.cancelled); scheduler.drain();
         eq("search finds selected item", state.open.getItem(0).getType(), Material.NETHERITE_INGOT);
         click(extras, state, scheduler, 0, false, false);
         eq("quick amount screen", state.open.getSize(), 27);
@@ -351,7 +414,7 @@ public final class Round12Test {
         saved.load(); check("shift-right clears even a stale quick slot", saved.get(state.id, 2) == null);
         Files.writeString(shopPath, shopText); shop.reload();
 
-        // Only one private chat prompt per player; search must not rename a home.
+        // Sign search and home-rename chat prompts must not overlap.
         HomeLocation home = new HomeLocation(state.id, "base", "world", 10, 64, 20, 0, 0);
         balances.homes.put(state.id, List.of(home));
         HomesGui homes = new HomesGui(new HomeService(balances.proxy, economy, messages, new VeltryxConfig(new YamlConfiguration())),
@@ -362,16 +425,16 @@ public final class Round12Test {
         homes.onClick(new Click(state.open, state.open, player, 12, false, false)); scheduler.drain();
         check("home rename prompt closes on next tick", state.open == null);
         extras.openSearchPrompt(player); scheduler.drain();
-        Chat searchWhileRenaming = new Chat(player, "diamond"); extras.onChat(searchWhileRenaming); homes.onChat(searchWhileRenaming); scheduler.drain();
-        check("search consumed privately instead of renaming home", searchWhileRenaming.cancelled);
+        SignInput searchWhileRenaming = new SignInput(player, 100, 64, 200, "diamond"); extras.onSign(searchWhileRenaming); scheduler.drain();
+        check("sign search consumed instead of renaming home", searchWhileRenaming.cancelled);
         Chat normal = new Chat(player, "ordinary chat"); homes.onChat(normal);
         check("superseded home prompt does not capture later chat", !normal.cancelled);
         extras.openSearchPrompt(player); scheduler.drain();
-        Chat alreadyCancelled = new Chat(player, "ignored"); alreadyCancelled.cancelled = true; extras.onChat(alreadyCancelled);
         homes.openDetail(player, "base"); scheduler.drain();
         homes.onClick(new Click(state.open, state.open, player, 12, false, false)); scheduler.drain();
-        Chat cancelRename = new Chat(player, "cancel"); extras.onChat(cancelRename);
-        check("home prompt cancels pending search", !cancelRename.cancelled);
+        SignInput staleSign = new SignInput(player, 100, 64, 200, "diamond"); extras.onSign(staleSign);
+        check("home prompt cancels pending sign search", !staleSign.cancelled);
+        Chat cancelRename = new Chat(player, "cancel");
         homes.onChat(cancelRename); check("home prompt consumes its own response", cancelRename.cancelled);
 
         // Exercise both GUI pickers, metadata delivery, invalid variants and refund paths.
@@ -425,6 +488,8 @@ public final class Round12Test {
         eq("no destination refunded", economy.getBalance(state.id), before);
         world.findStructure = true;
 
+        testOrders(world, scheduler, messages);
+        Bukkit.testOnlinePlayers = List.of(player);
         PreferencesStore prefs = new PreferencesStore(dir.resolve("gui-settings.properties"), LOG);
         SettingsListener listener = new SettingsListener(prefs, plugin);
         SettingsGui settings = new SettingsGui(prefs, listener, messages);
@@ -451,6 +516,269 @@ public final class Round12Test {
         check("external night vision never removed", state.effects.get(PotionEffectType.NIGHT_VISION) == external);
         PreferencesStore prefsRestart = new PreferencesStore(dir.resolve("gui-settings.properties"), LOG); prefsRestart.load();
         check("GUI phantom setting survives restart", prefsRestart.get(state.id).phantomsDisabled());
+    }
+
+    private static void testOrders(TestWorld world, FakeScheduler scheduler, Messages messages) {
+        PlayerState buyer=new PlayerState(world.proxy,"Buyer"), seller=new PlayerState(world.proxy,"Seller");
+        Bukkit.testOnlinePlayers=List.of(buyer.proxy,seller.proxy);
+        BalanceData data=new BalanceData();
+        VeltryxConfig config=new VeltryxConfig(new YamlConfiguration());
+        EconomyService economy=new EconomyService(data.proxy,config);
+        economy.setBalance(buyer.id,"Buyer",50_000);
+        OrderService service=new OrderService(data.proxy,economy,messages,config);
+        OrderGui gui=new OrderGui(service,economy,messages);
+        OrderCommand command=new OrderCommand(gui,service,messages);
+        org.bukkit.command.Command order=new org.bukkit.command.Command(){@Override public String getName(){return "order";}};
+        org.bukkit.command.Command orders=new org.bukkit.command.Command(){@Override public String getName(){return "orders";}};
+        command.onCommand(buyer.proxy,order,"order",new String[0]); scheduler.drain();
+        check("/order opens creation GUI",buyer.open!=null && buyer.open.getSize()==54);
+        eq("default item is unselected",buyer.open.getItem(4).getType(),Material.PAPER);
+        click(gui,buyer,scheduler,4,false,false);
+        check("item picker opens",buyer.open.getItem(0)!=null && buyer.open.getItem(49).getType()==Material.BARRIER);
+        click(gui,buyer,scheduler,49,false,false);
+        buyer.inventory.setItem(10,new ItemStack(Material.DIAMOND,1));
+        Click select=new Click(buyer.open,buyer.inventory,buyer.proxy,10,false,false);gui.onClick(select);scheduler.drain();
+        check("selecting from own inventory is cancelled",select.cancelled);
+        eq("order GUI selects clicked material",buyer.open.getItem(4).getType(),Material.DIAMOND);
+        eq("selection does not consume original",buyer.inventory.count(Material.DIAMOND),1);
+        click(gui,buyer,scheduler,15,false,false); // amount 2
+        click(gui,buyer,scheduler,24,false,false); // $2 each
+        long before=economy.getBalance(buyer.id);
+        Click confirm=new Click(buyer.open,buyer.open,buyer.proxy,49,false,false);
+        gui.onClick(confirm);gui.onClick(confirm);scheduler.drain();
+        eq("one order despite double click",data.orders.size(),1);
+        eq("GUI escrows confirmed amount and price",before-economy.getBalance(buyer.id),400L);
+        BuyOrder placed=data.orders.values().iterator().next();
+        eq("GUI amount",placed.amount(),2);eq("GUI price",placed.priceEachCents(),200L);
+        Drag drag=new Drag(buyer.open,buyer.inventory);gui.onDrag(drag);check("order GUI blocks drags",drag.cancelled);
+        seller.inventory.setItem(0,new ItemStack(Material.DIAMOND,2));
+        command.onCommand(seller.proxy,orders,"orders",new String[0]);scheduler.drain();
+        click(gui,seller,scheduler,0,false,false);
+        eq("seller gets escrow payout",economy.getBalance(seller.id),400L);
+        eq("seller supplied items removed",seller.inventory.count(Material.DIAMOND),0);
+        BuyOrder fulfilled=data.orders.get(placed.id());
+        check("filled order is closed and claimable",fulfilled.closed() && fulfilled.claimable()==2);
+        eq("non-owner cannot claim",service.claim(seller.proxy,placed.id()).templateKey(),"order.gone");
+        command.onCommand(buyer.proxy,orders,"orders",new String[]{"mine"});scheduler.drain();
+        check("closed order remains visible for collection",buyer.open.getItem(0).getType()==Material.DIAMOND);
+        click(gui,buyer,scheduler,0,false,false);
+        eq("buyer receives supplied items once",buyer.inventory.count(Material.DIAMOND),3);
+        eq("claim count saved",data.orders.get(placed.id()).claimable(),0);
+        eq("repeated claim delivers nothing",service.claim(buyer.proxy,placed.id()).templateKey(),"order.nothing-to-claim");
+        eq("repeated claim does not duplicate items",buyer.inventory.count(Material.DIAMOND),3);
+        check("fully claimed closed order no longer visible",service.ordersOf(buyer.id).isEmpty());
+
+        OrderService.Result created=service.create(buyer.proxy,"IRON_INGOT",5,100);
+        check("direct order syntax remains functional",created.ok());
+        String id=created.values().get("id");
+        seller.inventory.setItem(0,new ItemStack(Material.IRON_INGOT,3));
+        Logger orderLog=Logger.getLogger(OrderService.class.getName());
+        java.util.logging.Level previousLogLevel=orderLog.getLevel();
+        orderLog.setLevel(java.util.logging.Level.OFF); // expected injected persistence failures
+        data.failOrderWrites=true;
+        eq("failed fill reports storage problem",service.fill(seller.proxy,id,3).templateKey(),"order.storage-error");
+        eq("failed fill restores seller items",seller.inventory.count(Material.IRON_INGOT),3);
+        eq("failed fill leaves buyer claim unchanged",data.orders.get(id).claimable(),0);
+        data.failOrderWrites=false;
+        data.failNextBalance=true;
+        eq("failed seller payout reports storage problem",service.fill(seller.proxy,id,3).templateKey(),"order.storage-error");
+        eq("failed payout restores seller items",seller.inventory.count(Material.IRON_INGOT),3);
+        eq("failed payout rolls back order",data.orders.get(id).filled(),0);
+        check("partial order fill succeeds",service.fill(seller.proxy,id,3).ok());
+        buyer.inventory.capacity=1;
+        check("partial-capacity claim succeeds",service.claim(buyer.proxy,id).ok());
+        eq("only one item fits",buyer.inventory.count(Material.IRON_INGOT),1);
+        eq("uncollected items remain",data.orders.get(id).claimable(),2);
+        buyer.inventory.capacity=Integer.MAX_VALUE;
+        data.failOrderWrites=true;
+        eq("failed claim is rejected",service.claim(buyer.proxy,id).templateKey(),"order.storage-error");
+        eq("failed claim rolls back delivered items",buyer.inventory.count(Material.IRON_INGOT),1);
+        eq("failed claim remains available",data.orders.get(id).claimable(),2);
+        data.failOrderWrites=false;
+        long prior=economy.getBalance(buyer.id);
+        check("cancel refunds unfilled portion",service.cancel(buyer.proxy,id).ok());
+        eq("cancel refund only remaining escrow",economy.getBalance(buyer.id)-prior,200L);
+        check("cancelled order keeps purchased items",data.orders.get(id).closed() && data.orders.get(id).claimable()==2);
+        check("claim survives cancellation",service.claim(buyer.proxy,id).ok());
+        eq("buyer collects all supplied items",buyer.inventory.count(Material.IRON_INGOT),3);
+        ItemStack named=new ItemStack(Material.IRON_INGOT,1);
+        ItemMeta meta=named.getItemMeta();meta.displayName(new StubComponent("custom"));named.setItemMeta(meta);
+        seller.inventory.setItem(0,named);
+        String second=service.create(buyer.proxy,"IRON_INGOT",1,100).values().get("id");
+        eq("custom metadata cannot be silently erased",service.fill(seller.proxy,second,1).templateKey(),"order.no-metadata");
+        eq("metadata item remains with seller",seller.inventory.getItem(0).getType(),Material.IRON_INGOT);
+        data.failOrderWrites=true;
+        long beforeFailedCreate=economy.getBalance(buyer.id);
+        eq("failed order creation reports failure",service.create(buyer.proxy,"DIAMOND",1,100).templateKey(),"order.storage-error");
+        eq("failed order creation refunds escrow",economy.getBalance(buyer.id),beforeFailedCreate);
+        eq("failed cancellation reports failure",service.cancel(buyer.proxy,second).templateKey(),"order.storage-error");
+        check("failed cancellation leaves order open",!data.orders.get(second).closed());
+        data.failOrderWrites=false;
+        data.failNextBalance=true;
+        eq("failed cancellation refund reports failure",service.cancel(buyer.proxy,second).templateKey(),"order.storage-error");
+        check("failed refund restores open order",!data.orders.get(second).closed());
+        orderLog.setLevel(previousLogLevel);
+        scheduler.drain();
+        // Competing sellers in different regions must never fill the same final item twice.
+        PlayerState other=new PlayerState(world.proxy,"Other");
+        seller.inventory.setItem(0,new ItemStack(Material.DIAMOND,1));
+        other.inventory.setItem(0,new ItemStack(Material.DIAMOND,1));
+        String raceId=service.create(buyer.proxy,"DIAMOND",1,100).values().get("id");
+        Bukkit.testOnlinePlayers=List.of(); // no cross-thread notification scheduling in this test
+        java.util.concurrent.ExecutorService pool=java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var first=pool.submit(() -> service.fill(seller.proxy,raceId,1));
+            var secondFill=pool.submit(() -> service.fill(other.proxy,raceId,1));
+            int successes=(first.get().ok()?1:0)+(secondFill.get().ok()?1:0);
+            eq("concurrent sellers fill final item once",successes,1);
+            eq("concurrent fill creates one buyer claim",data.orders.get(raceId).claimable(),1);
+            eq("only one seller item consumed",seller.inventory.count(Material.DIAMOND)+other.inventory.count(Material.DIAMOND),1);
+        } catch(Exception e) { throw new RuntimeException(e); }
+        finally {pool.shutdownNow();}
+    }
+
+    private static void testShardItemsAndLunge(Path dir, PlayerState state, Messages messages) {
+        ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
+        ItemStack spear = items.create(catalog.byId("shard_spear"), 0);
+        eq("native spear material", spear.getType(), Material.NETHERITE_SPEAR);
+        eq("native Lunge III on spear", spear.getEnchantmentLevel(Enchantment.LUNGE), 3);
+        eq("totem model", items.create(catalog.byId("void_totem"), 0).getItemMeta().getItemModel(), ShardItems.VOID_TOTEM_MODEL);
+        eq("totem icon model", items.displayIcon(catalog.byId("void_totem"), 150).getItemMeta().getItemModel(), ShardItems.VOID_TOTEM_MODEL);
+        ItemStack old = spear.clone(); old.setType(Material.NETHERITE_SWORD);
+        ItemMeta oldMeta = old.getItemMeta(); oldMeta.removeEnchant(Enchantment.LUNGE);
+        ((Damageable)oldMeta).setDamage(37); old.setItemMeta(oldMeta);
+        long created = items.created(old), lifetime = items.lifetime(old);
+        ItemStack migrated = items.upgradeLegacy(old);
+        eq("legacy spear becomes spear", migrated.getType(), Material.NETHERITE_SPEAR);
+        eq("legacy creation retained", items.created(migrated), created);
+        eq("legacy lifetime retained", items.lifetime(migrated), lifetime);
+        eq("legacy existing enchant retained", migrated.getEnchantmentLevel(Enchantment.SHARPNESS), 5);
+        eq("legacy spear gains Lunge III", migrated.getEnchantmentLevel(Enchantment.LUNGE), 3);
+        eq("legacy damage retained", ((Damageable)migrated.getItemMeta()).getDamage(), 37);
+        ItemStack customizedTotem = items.create(catalog.byId("void_totem"), 0);
+        ItemMeta customMeta = customizedTotem.getItemMeta(); customMeta.setItemModel(NamespacedKey.fromString("other:my_totem")); customizedTotem.setItemMeta(customMeta);
+        check("custom totem model not overwritten", items.upgradeLegacy(customizedTotem) == customizedTotem);
+        ItemStack legacyTotem = items.create(catalog.byId("void_totem"), 0);
+        ItemMeta legacyMeta = legacyTotem.getItemMeta(); legacyMeta.setItemModel(null); legacyTotem.setItemMeta(legacyMeta);
+        long totemCreated = items.created(legacyTotem);
+        ItemStack updatedTotem = items.upgradeLegacy(legacyTotem);
+        eq("legacy totem receives model", updatedTotem.getItemMeta().getItemModel(), ShardItems.VOID_TOTEM_MODEL);
+        eq("legacy totem timestamp retained", items.created(updatedTotem), totemCreated);
+        legacyMeta = legacyTotem.getItemMeta(); legacyMeta.setCustomModelData(123); legacyTotem.setItemMeta(legacyMeta);
+        check("custom model data is not overwritten", items.upgradeLegacy(legacyTotem) == legacyTotem);
+        check("vanilla totem is never migrated", items.upgradeLegacy(new ItemStack(Material.TOTEM_OF_UNDYING)).getItemMeta().getItemModel() == null);
+        ItemStack.testRejectItemMeta = true;
+        boolean failedClosed = false;
+        try { items.create(catalog.byId("void_totem"), 0); } catch (IllegalStateException expected) { failedClosed = true; }
+        finally { ItemStack.testRejectItemMeta = false; }
+        check("item creation fails closed when metadata rejected", failedClosed);
+        state.inventory.setItemInMainHand(spear);
+        ShardWeaponListener listener = new ShardWeaponListener(items, catalog, messages);
+        Exhaust sprint = new Exhaust(state.proxy, Exhaust.ExhaustionReason.SPRINT, 3f);
+        listener.onLunge(new Lunge(state.proxy)); listener.onExhaustion(sprint);
+        eq("sprint exhaustion unchanged", sprint.value, 3f);
+        Exhaust lunge = new Exhaust(state.proxy, Exhaust.ExhaustionReason.ENCHANTMENT_EFFECT, 12f);
+        listener.onExhaustion(lunge);
+        check("native Lunge exhaustion reduced by 90 percent", Math.abs(lunge.value - 1.2f) < .001f);
+        Exhaust unrelated = new Exhaust(state.proxy, Exhaust.ExhaustionReason.ENCHANTMENT_EFFECT, 12f);
+        listener.onExhaustion(unrelated);
+        eq("unmarked enchantment exhaustion unchanged", unrelated.value, 12f);
+        listener.onLunge(new Lunge(state.proxy));
+        Exhaust different = new Exhaust(state.proxy, Exhaust.ExhaustionReason.ENCHANTMENT_EFFECT, 2f);
+        listener.onExhaustion(different);
+        eq("other exhaustion amount unchanged", different.value, 2f);
+        ItemStack trident = items.create(catalog.byId("shard_trident"), 0);
+        eq("native Riptide III on trident", trident.getEnchantmentLevel(Enchantment.RIPTIDE), 3);
+        state.inventory.setItemInMainHand(trident);
+        listener.onInteract(new Interact(state.proxy)); listener.onInteract(new Interact(state.proxy));
+        eq("dry trident activates only once during cooldown", state.riptides, 1);
+        eq("dry trident uses server durability handling", state.durabilityUses, 1);
+        try {
+            Field f = ShardWeaponListener.class.getDeclaredField("nextRiptide"); f.setAccessible(true);
+            @SuppressWarnings("unchecked") Map<UUID,Long> cooldowns = (Map<UUID,Long>)f.get(listener);
+            long remaining = cooldowns.get(state.id) - System.currentTimeMillis();
+            check("dry cooldown is five seconds", remaining > 4_000L && remaining <= 5_000L);
+        } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
+        state.inWater = true; listener.onInteract(new Interact(state.proxy)); listener.onInteract(new Interact(state.proxy));
+        eq("wet use is passed through to vanilla without plugin cooldown", state.riptides, 1);
+        state.inWater = false;
+        state.inventory.setItemInMainHand(null);
+    }
+    private static void testShardTools(Path dir, PlayerState state, TestWorld world) {
+        ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
+        ShardToolListener listener = new ShardToolListener(items, catalog, new VeltryxConfig(new YamlConfiguration()));
+        world.fakeBlock = true; world.blockType = Material.STONE; world.breaks = 0; int sounds = state.sounds;
+        state.inventory.setItemInMainHand(items.create(catalog.byId("shard_spear"), 0));
+        listener.onBlockBreak(new BreakBlock(state.proxy, world.block));
+        state.inventory.setItemInMainHand(items.create(catalog.byId("shard_trident"), 0));
+        listener.onBlockBreak(new BreakBlock(state.proxy, world.block));
+        eq("weapons do not area mine", world.breaks, 0);
+        eq("weapons do not play mining sound", state.sounds, sounds);
+        state.inventory.setItemInMainHand(items.create(catalog.byId("shard_pickaxe"), 0));
+        listener.onBlockBreak(new BreakBlock(state.proxy, world.block));
+        eq("pickaxe mines eight extra allowed blocks", world.breaks, 8);
+        eq("one amethyst sound per pickaxe use", state.sounds - sounds, 1);
+        eq("pickaxe uses ShardTools mining sound", state.lastSound, "block.amethyst_block.step");
+        world.breaks = 0; sounds = state.sounds;
+        state.inventory.setItemInMainHand(items.create(catalog.byId("shard_axe"), 0));
+        listener.onBlockBreak(new BreakBlock(state.proxy, world.block));
+        eq("axe mines eight extra allowed non-log blocks", world.breaks, 8);
+        eq("one amethyst sound per axe use", state.sounds - sounds, 1);
+        world.breaks = 0; world.blockType = Material.DIAMOND_BLOCK;
+        listener.onBlockBreak(new BreakBlock(state.proxy, world.block));
+        eq("valuable block outside allowed list is not area mined", world.breaks, 0);
+        state.inventory.setItemInMainHand(null); world.fakeBlock = false; world.blockType = Material.STONE;
+    }
+    private static void testShardVoid(Path dir, PlayerState state, TestWorld world, FakeScheduler scheduler, Messages messages) {
+        ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
+        ShardVoidListener listener = new ShardVoidListener(items, catalog, messages);
+        ItemStack totem = items.create(catalog.byId("void_totem"), 0); totem.setAmount(2);
+        state.inventory.setItem(10, totem); state.health = 10; state.absorption = 5;
+        VoidDamage survivable = new VoidDamage(state.proxy, 9.0); listener.onDamage(survivable);
+        check("absorption prevents premature totem consumption", !survivable.cancelled);
+        eq("survivable damage keeps both totems", state.inventory.getItem(10).getAmount(), 2);
+        VoidDamage lethal = new VoidDamage(state.proxy, 10.0); listener.onDamage(lethal); scheduler.drain();
+        check("lethal void hit cancelled", lethal.cancelled);
+        eq("exactly one totem consumed", state.inventory.getItem(10).getAmount(), 1);
+        eq("rescue heals to max", state.health, 20.0);
+        eq("rescue clears absorption", state.absorption, 0.0);
+        eq("resistance lasts 45 seconds", state.effects.get(PotionEffectType.RESISTANCE).getDuration(), 900);
+        eq("slow falling lasts 30 seconds", state.effects.get(PotionEffectType.SLOW_FALLING).getDuration(), 600);
+        check("spawn fallback teleported", state.teleportDestination != null);
+        VoidDamage repeat = new VoidDamage(state.proxy, 30.0); listener.onDamage(repeat);
+        check("rescue lock prevents repeat lethal void", repeat.cancelled);
+        eq("rescue lock does not consume another totem", state.inventory.getItem(10).getAmount(), 1);
+        state.inventory.setItem(10, null);
+        state.teleportSuccess = false; state.online = false; state.health = 10; state.absorption = 0;
+        ItemStack another = items.create(catalog.byId("void_totem"), 0); state.inventory.setItem(10, another);
+        ShardVoidListener failing = new ShardVoidListener(items, catalog, messages);
+        VoidDamage failed = new VoidDamage(state.proxy, 15); failing.onDamage(failed); scheduler.drain();
+        state.online = true; failing.onJoin(new Join(state.proxy)); scheduler.drain();
+        int refunded = 0; for (ItemStack item : state.inventory.getContents()) if ("void_totem".equals(items.itemId(item))) refunded += item.getAmount();
+        eq("failed teleport refunds on reconnect", refunded, 1);
+        for (int i = 0; i < state.inventory.getSize(); i++) if ("void_totem".equals(items.itemId(state.inventory.getItem(i)))) state.inventory.setItem(i, null);
+        state.teleportSuccess = true;
+        state.inventory.setItem(10, new ItemStack(Material.TOTEM_OF_UNDYING)); state.health = 5;
+        VoidDamage vanilla = new VoidDamage(state.proxy, 50); new ShardVoidListener(items, catalog, messages).onDamage(vanilla);
+        check("vanilla totem is not treated as a shard totem", !vanilla.cancelled);
+        state.inventory.setItem(10, null);
+        state.effects.clear(); state.health = 20; state.absorption = 0; state.teleportDestination = null;
+        PlayerState slow=new PlayerState(world.proxy,"Slow");
+        slow.health=10; slow.teleportFuture=new java.util.concurrent.CompletableFuture<>();
+        ItemStack pair=items.create(catalog.byId("void_totem"),0);pair.setAmount(2);slow.inventory.setItem(0,pair);
+        ShardVoidListener awaiting=new ShardVoidListener(items,catalog,messages);
+        awaiting.onDamage(new VoidDamage(slow.proxy,15));
+        try {
+            Field field=ShardVoidListener.class.getDeclaredField("pending");field.setAccessible(true);
+            @SuppressWarnings("unchecked") Map<UUID,Object> locks=(Map<UUID,Object>)field.get(awaiting);
+            Object pending=locks.get(slow.id);Field until=pending.getClass().getDeclaredField("until");until.setAccessible(true);
+            eq("pending rescue stays locked until teleport finishes",until.getLong(pending),Long.MAX_VALUE);
+        } catch(ReflectiveOperationException e){throw new RuntimeException(e);}
+        VoidDamage during=new VoidDamage(slow.proxy,15);awaiting.onDamage(during);
+        check("pending teleport cancels repeated void damage",during.cancelled);
+        eq("pending teleport consumes just one totem",slow.inventory.count(Material.TOTEM_OF_UNDYING),1);
+        slow.teleportFuture.complete(false);scheduler.drain();
+        eq("failed pending teleport refunds its totem",slow.inventory.count(Material.TOTEM_OF_UNDYING),2);
     }
 
     private static void testScoreboard(TestWorld world, PlayerState alice, FakeScheduler scheduler,
@@ -496,11 +824,45 @@ public final class Round12Test {
         scheduler.timer.run();
         eq("timer delegates to viewer threads", scheduler.tasks.size(), 2); scheduler.drain();
         check("all refreshed rows still blank numbers", aliceBoard.objective.scores.values().stream().allMatch(s -> s.format == NumberFormat.BLANK));
+
+        ScoreboardService moneyBoards = new ScoreboardService(stats, economy, shards, 1, true);
+        economy.onChange(moneyBoards::refreshChanged);
+        moneyBoards.refreshAll(); scheduler.drain();
+        TestBoard av=(TestBoard)alice.board, bv=(TestBoard)bob.board;
+        TestObjective aNames=av.objectives.get("vx_money"), bNames=bv.objectives.get("vx_money");
+        check("other players' money uses below-name slot",aNames != null && aNames.display==DisplaySlot.BELOW_NAME);
+        check("no own below-name score",!aNames.scores.containsKey("Alice") && !bNames.scores.containsKey("Bob"));
+        check("each viewer sees the other player's score",aNames.scores.containsKey("Bob") && bNames.scores.containsKey("Alice"));
+        check("no tab objective or team suffixes",av.objectives.values().stream().noneMatch(x -> x.display==DisplaySlot.PLAYER_LIST) && av.teamCalls==0 && bv.teamCalls==0);
+        economy.setBalanceExact(bob.id,"Bob",dev.superseller.veltryx.util.Money.parseExact("1l")); scheduler.drain();
+        NumberFormat format=aNames.scores.get("Bob").format;
+        check("other viewer sees full-range compact money",format instanceof NumberFormat.TestFixed
+                && text(((NumberFormat.TestFixed)format).component).equals("§a$ §f1l"));
+        check("sidebar uses full-range compact money",bv.objective.scores.keySet().stream().anyMatch(x -> x.contains("1l")));
+        org.bukkit.event.player.PlayerQuitEvent quit=new org.bukkit.event.player.PlayerQuitEvent() {
+            @Override public Player getPlayer(){return bob.proxy;}
+        };
+        moneyBoards.onQuit(quit); scheduler.drain();
+        check("quit removes stale below-name score",!aNames.scores.containsKey("Bob"));
+
+        dev.superseller.veltryx.command.EcoCommand command = new dev.superseller.veltryx.command.EcoCommand(
+                economy, new Messages(new FakePlugin(Path.of("."))), new VeltryxConfig(new YamlConfiguration()));
+        org.bukkit.command.Command dummy = new org.bukkit.command.Command() { };
+        java.math.BigInteger prior= economy.getBalanceExact(alice.id);
+        economy.setBalanceExact(alice.id,"Alice",dev.superseller.veltryx.util.Money.parseExact("3l"));
+        command.onCommand(alice.proxy,dummy,"eco",new String[]{"pay","Bob","1.5l"}); scheduler.drain();
+        eq("eco pay accepts l and debits exactly",economy.getBalanceExact(alice.id),dev.superseller.veltryx.util.Money.parseExact("1.5l"));
+        eq("eco pay credits recipient exactly",economy.getBalanceExact(bob.id),dev.superseller.veltryx.util.Money.parseExact("2.5l"));
+        command.onCommand(alice.proxy,dummy,"eco",new String[]{"set","Bob","2g"}); scheduler.drain();
+        eq("admin set accepts g",economy.getBalanceExact(bob.id),dev.superseller.veltryx.util.Money.parseExact("2g"));
+        command.onCommand(alice.proxy,dummy,"eco",new String[]{"reset","Bob"}); scheduler.drain();
+        eq("admin reset needs no amount",economy.getBalanceExact(bob.id),java.math.BigInteger.ZERO);
+        economy.setBalanceExact(alice.id,"Alice",prior); scheduler.drain();
     }
 
     private static void click(Object listener, PlayerState state, FakeScheduler scheduler, int slot, boolean right, boolean shift) {
         Click e = new Click(state.open, state.open, state.proxy, slot, right, shift);
-        if (listener instanceof ShopGui g) g.onClick(e); else if (listener instanceof ShopExtrasGui g) g.onClick(e);
+        if (listener instanceof ShopGui g) g.onClick(e); else if (listener instanceof ShopExtrasGui g) g.onClick(e); else if (listener instanceof OrderGui g) g.onClick(e);
         check("GUI click cancelled", e.cancelled); scheduler.drain();
     }
     private static String text(Component c) { return ((StubComponent)c).content; }
@@ -565,16 +927,30 @@ public final class Round12Test {
     private static final class PlayerState implements InvocationHandler {
         final UUID id=UUID.randomUUID(); final TestInventory inventory=new TestInventory(null, 36); final TestPdc pdc=new TestPdc();
         final Map<PotionEffectType,PotionEffect> effects=new HashMap<>(); final World world; final Player proxy; final String name;
-        Inventory open; Scoreboard board; Player killer; boolean allowSell=true;
+        Inventory open; ItemStack cursor; Scoreboard board; Player killer; boolean allowSell=true, signOpened, inWater, inRain, teleportSuccess=true, online=true;
+        int blockChanges, riptides, durabilityUses, sounds; String lastSound; double health=20, absorption; Location teleportDestination;
+        java.util.concurrent.CompletableFuture<Boolean> teleportFuture;
         PlayerState(World world) { this(world, "Alice"); }
         PlayerState(World world, String name) { this.world=world; this.name=name; proxy=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},this); }
         public Object invoke(Object o, Method m, Object[] a) {
             return switch(m.getName()) {
-                case "getUniqueId" -> id; case "getName" -> name; case "isOnline" -> true;
+                case "getUniqueId" -> id; case "getName" -> name; case "isOnline" -> online;
                 case "hasPermission" -> !"veltryx.sell".equals(a[0]) || allowSell;
                 case "getKiller" -> killer; case "setScoreboard" -> { board=(Scoreboard)a[0]; yield null; }
-                case "getScoreboard" -> board;
-                case "getInventory" -> inventory; case "getWorld" -> world; case "getLocation" -> new Location(world,100,64,200);
+                case "getScoreboard" -> board; case "getGameMode" -> GameMode.SURVIVAL;
+                case "playSound" -> { sounds++; lastSound=(String)a[1]; yield null; }
+                case "setItemOnCursor" -> { cursor=(ItemStack)a[0]; yield null; }
+                case "openVirtualSign" -> { signOpened=true; yield null; }
+                case "sendBlockChange" -> { blockChanges++; yield null; }
+                case "getInventory" -> inventory; case "getWorld" -> world;
+                case "getLocation" -> new Location(world,100,64,200) { @Override public org.bukkit.util.Vector getDirection(){return new org.bukkit.util.Vector(0,0,1);} };
+                case "getVelocity" -> new org.bukkit.util.Vector(0,0,0);
+                case "isInWater" -> inWater; case "isInRain" -> inRain;
+                case "damageItemStack" -> { durabilityUses++; yield null; }
+                case "startRiptideAttack" -> { riptides++; yield null; }
+                case "getHealth" -> health; case "setHealth" -> {health=(Double)a[0]; yield null;}
+                case "getAbsorptionAmount" -> absorption; case "setAbsorptionAmount" -> {absorption=(Double)a[0]; yield null;}
+                case "teleportAsync" -> {teleportDestination=(Location)a[0]; yield teleportFuture != null ? teleportFuture : java.util.concurrent.CompletableFuture.completedFuture(teleportSuccess);}
                 case "getPersistentDataContainer" -> pdc; case "getPotionEffect" -> effects.get(a[0]);
                 case "addPotionEffect" -> { PotionEffect e=(PotionEffect)a[0]; effects.put(e.getType(),e); yield true; }
                 case "removePotionEffect" -> { effects.remove(a[0]); yield null; }
@@ -586,13 +962,21 @@ public final class Round12Test {
         }
     }
     private static final class BalanceData implements InvocationHandler {
-        final Map<UUID,Long> balances=new HashMap<>(), shards=new HashMap<>(), kills=new HashMap<>(), deaths=new HashMap<>();
+        final Map<UUID,java.math.BigInteger> balances=new HashMap<>();
+        final Map<UUID,Long> shards=new HashMap<>(), kills=new HashMap<>(), deaths=new HashMap<>();
         final Map<UUID,List<HomeLocation>> homes = new HashMap<>();
+        final Map<String,BuyOrder> orders = new HashMap<>();
+        boolean failOrderWrites, failNextBalance;
         final DataStore proxy=(DataStore)Proxy.newProxyInstance(DataStore.class.getClassLoader(),new Class<?>[]{DataStore.class},this);
         public Object invoke(Object o, Method m, Object[] a) {
             return switch (m.getName()) {
-                case "getBalance" -> balances.getOrDefault((UUID)a[0],0L);
-                case "setBalance" -> { balances.put((UUID)a[0],(Long)a[2]); yield null; }
+                case "getBalance" -> dev.superseller.veltryx.util.Money.legacyLong(balances.getOrDefault((UUID)a[0],java.math.BigInteger.ZERO));
+                case "getBalanceExact" -> balances.getOrDefault((UUID)a[0],java.math.BigInteger.ZERO);
+                case "setBalance" -> { balances.put((UUID)a[0],java.math.BigInteger.valueOf((Long)a[2])); yield null; }
+                case "setBalanceExact" -> { if(failNextBalance){failNextBalance=false;throw new IllegalStateException("simulated balance failure");} balances.put((UUID)a[0],(java.math.BigInteger)a[2]); yield null; }
+                case "allBuyOrders" -> List.copyOf(orders.values());
+                case "saveBuyOrder" -> {if(failOrderWrites)throw new IllegalStateException("simulated order failure"); BuyOrder order=(BuyOrder)a[0];orders.put(order.id(),order);yield null;}
+                case "setBalancesExact" -> { for (dev.superseller.veltryx.model.Account account : (List<dev.superseller.veltryx.model.Account>) a[0]) balances.put(account.uuid(),account.balanceExact()); yield null; }
                 case "shards" -> shards.getOrDefault((UUID)a[0],0L);
                 case "setShards" -> { shards.put((UUID)a[0],(Long)a[1]); yield null; }
                 case "kills" -> kills.getOrDefault((UUID)a[0],0L);
@@ -608,12 +992,15 @@ public final class Round12Test {
         final Player player; Death(Player p) { player=p; } @Override public Player getEntity() { return player; }
     }
     private static final class TestBoard implements Scoreboard {
-        TestObjective objective;
-        public Objective registerNewObjective(String name, Criteria criteria, Component title, RenderType render) { return objective=new TestObjective(this, name, title); }
-        public Objective getObjective(String name) { return objective; }
-        public Team registerNewTeam(String name) { return null; }
-        public Team getTeam(String name) { return null; }
-        public void resetScores(String entry) { if(objective!=null)objective.scores.remove(entry); }
+        TestObjective objective; final Map<String,TestObjective> objectives=new HashMap<>(); int teamCalls;
+        public Objective registerNewObjective(String name, Criteria criteria, Component title, RenderType render) {
+            TestObjective result=new TestObjective(this,name,title); objectives.put(name,result);
+            if(name.equals("veltryx")) objective=result; return result;
+        }
+        public Objective getObjective(String name) { return objectives.get(name); }
+        public Team registerNewTeam(String name) { teamCalls++; return null; }
+        public Team getTeam(String name) { teamCalls++; return null; }
+        public void resetScores(String entry) { for(TestObjective obj:objectives.values()) obj.scores.remove(entry); }
     }
     private static final class TestObjective implements Objective {
         final TestBoard board; final String name; Component title; DisplaySlot display; final Map<String,TestScore> scores=new LinkedHashMap<>();
@@ -633,15 +1020,54 @@ public final class Round12Test {
         public void resetScore(){objective.scores.remove(entry);} public boolean isScoreSet(){return true;}
     }
     private static final class Click extends InventoryClickEvent {
-        final Inventory top, clicked; final Player player; final int slot; final boolean right, shift; boolean cancelled;
+        final Inventory top, clicked; final Player player; final int slot; final boolean right, shift; boolean cancelled; ItemStack cursor;
         Click(Inventory top, Inventory clicked, Player player, int slot, boolean right, boolean shift) { this.top=top;this.clicked=clicked;this.player=player;this.slot=slot;this.right=right;this.shift=shift; }
         @Override public Inventory getInventory() { return top; } @Override public Inventory getClickedInventory() { return clicked; }
+        @Override public ItemStack getCursor() { return cursor; }
         @Override public HumanEntity getWhoClicked() { return player; } @Override public int getSlot() { return slot; }
         @Override public boolean isRightClick() { return right; } @Override public boolean isShiftClick() { return shift; }
+        @Override public ClickType getClick() { return shift ? (right ? ClickType.SHIFT_RIGHT : ClickType.SHIFT_LEFT) : (right ? ClickType.RIGHT : ClickType.LEFT); }
         @Override public void setCancelled(boolean b) { cancelled=b; } @Override public boolean isCancelled() { return cancelled; }
     }
+    private static final class Close extends InventoryCloseEvent {
+        final Inventory inventory; final Player player; Close(Inventory i, Player p){inventory=i;player=p;}
+        @Override public Inventory getInventory(){return inventory;} @Override public HumanEntity getPlayer(){return player;}
+    }
+    private static final class Join extends org.bukkit.event.player.PlayerJoinEvent {
+        final Player player; Join(Player p){player=p;} @Override public Player getPlayer(){return player;}
+    }
+    private static final class BreakBlock extends org.bukkit.event.block.BlockBreakEvent {
+        final Player player; final org.bukkit.block.Block block; BreakBlock(Player p,org.bukkit.block.Block b){player=p;block=b;}
+        @Override public Player getPlayer(){return player;} @Override public org.bukkit.block.Block getBlock(){return block;}
+    }
+    private static final class Interact extends org.bukkit.event.player.PlayerInteractEvent {
+        final Player player; Interact(Player p){player=p;} @Override public Player getPlayer(){return player;}
+        @Override public org.bukkit.event.block.Action getAction(){return org.bukkit.event.block.Action.RIGHT_CLICK_AIR;}
+        @Override public EquipmentSlot getHand(){return EquipmentSlot.HAND;}
+    }
+    private static final class VoidDamage extends org.bukkit.event.entity.EntityDamageEvent {
+        final Player player; final double damage; boolean cancelled; VoidDamage(Player p,double d){player=p;damage=d;}
+        @Override public Entity getEntity(){return player;} @Override public DamageCause getCause(){return DamageCause.VOID;}
+        @Override public double getFinalDamage(){return damage;} @Override public void setCancelled(boolean b){cancelled=b;} @Override public boolean isCancelled(){return cancelled;}
+    }
+    private static final class Lunge extends io.papermc.paper.event.entity.EntityLungeEvent {
+        final Player player; Lunge(Player p){player=p;} @Override public Entity getEntity(){return player;} @Override public int getLungePower(){return 3;}
+    }
+    private static final class Exhaust extends org.bukkit.event.entity.EntityExhaustionEvent {
+        final Player player; final ExhaustionReason reason; float value;
+        Exhaust(Player p, ExhaustionReason r, float v){player=p;reason=r;value=v;}
+        @Override public org.bukkit.entity.HumanEntity getEntity(){return player;} @Override public ExhaustionReason getExhaustionReason(){return reason;}
+        @Override public float getExhaustion(){return value;} @Override public void setExhaustion(float v){value=v;}
+    }
+    private static final class SignInput extends io.papermc.paper.event.packet.UncheckedSignChangeEvent {
+        final Player player; final io.papermc.paper.math.BlockPosition pos; final List<Component> lines; boolean cancelled;
+        SignInput(Player player,int x,int y,int z,String... lines) { this.player=player; this.pos=io.papermc.paper.math.Position.block(x,y,z); this.lines=Arrays.stream(lines).map(StubComponent::new).map(c -> (Component)c).toList(); }
+        @Override public Player getPlayer(){return player;} @Override public io.papermc.paper.math.BlockPosition getEditedBlockPosition(){return pos;}
+        @Override public List<Component> lines(){return lines;} @Override public void setCancelled(boolean b){cancelled=b;} @Override public boolean isCancelled(){return cancelled;}
+    }
     private static final class Drag extends InventoryDragEvent {
-        final Inventory top,bottom; boolean cancelled; Drag(Inventory top,Inventory bottom){this.top=top;this.bottom=bottom;}
+        final Inventory top,bottom; boolean cancelled; Set<Integer> raw=Set.of(); Drag(Inventory top,Inventory bottom){this.top=top;this.bottom=bottom;}
+        @Override public Set<Integer> getRawSlots(){return raw;}
         @Override public InventoryView getView() { return new InventoryView() { public Inventory getTopInventory(){return top;} public Inventory getBottomInventory(){return bottom;} public ItemStack getCursor(){return null;} public void setCursor(ItemStack s){} }; }
         @Override public void setCancelled(boolean b){cancelled=b;}
     }
@@ -667,8 +1093,30 @@ public final class Round12Test {
     private static final class TestMap implements MapView { int x,z; Scale scale; public void setScale(Scale s){scale=s;} public void setCenterX(int x){this.x=x;} public void setCenterZ(int z){this.z=z;} }
     private static final class TestWorld implements InvocationHandler {
         final World proxy=(World)Proxy.newProxyInstance(World.class.getClassLoader(),new Class<?>[]{World.class},this);
-        boolean findStructure=true, findUnexplored; final List<String> searched=new ArrayList<>(); TestMap lastMap;
+        boolean findStructure=true, findUnexplored, fakeBlock, unlimitedDrop; int breaks; Material blockType=Material.STONE; UUID dropOwner; ItemStack dropped;
+        final List<String> searched=new ArrayList<>(); TestMap lastMap;
+        final org.bukkit.block.data.BlockData blockData = new org.bukkit.block.data.BlockData() { public org.bukkit.block.data.BlockData clone(){return this;} };
+        final org.bukkit.block.Block block = (org.bukkit.block.Block)Proxy.newProxyInstance(org.bukkit.block.Block.class.getClassLoader(),new Class<?>[]{org.bukkit.block.Block.class},
+                (o,m,a) -> switch(m.getName()) {
+                    case "getBlockData" -> blockData; case "getType" -> blockType; case "getWorld" -> proxy;
+                    case "getX" -> 100; case "getY" -> 64; case "getZ" -> 200;
+                    case "getLocation" -> new Location(proxy, 100, 64, 200);
+                    case "breakNaturally" -> { breaks++; yield true; }
+                    default -> defaultValue(m.getReturnType());
+                });
         public Object invoke(Object o,Method m,Object[] a) {
+            if(m.getName().equals("equals")) return o == a[0];
+            if(m.getName().equals("hashCode")) return System.identityHashCode(o);
+            if(m.getName().equals("getBlockAt")) return fakeBlock ? block : null;
+            if(m.getName().equals("isChunkLoaded")) return true;
+            if(m.getName().equals("getSpawnLocation")) return new Location(proxy, 0, 80, 0);
+            if(m.getName().equals("dropItemNaturally")) {
+                dropped=(ItemStack)a[1];
+                return Proxy.newProxyInstance(org.bukkit.entity.Item.class.getClassLoader(),new Class<?>[]{org.bukkit.entity.Item.class},
+                        (obj,method,args) -> { if(method.getName().equals("setOwner")) dropOwner=(UUID)args[0];
+                            if(method.getName().equals("setUnlimitedLifetime")) unlimitedDrop=(Boolean)args[0];
+                            return defaultValue(method.getReturnType()); });
+            }
             if(m.getName().equals("locateNearestStructure")) {
                 searched.add(((Structure)a[1]).getKey().toString()); findUnexplored=(boolean)a[3];
                 if(!findStructure)return null;

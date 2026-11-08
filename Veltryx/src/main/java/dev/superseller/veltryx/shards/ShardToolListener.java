@@ -25,6 +25,14 @@ import dev.superseller.veltryx.config.VeltryxConfig;
  */
 public final class ShardToolListener implements Listener {
 
+    private static final java.util.Set<String> AREA_MATERIALS = java.util.Set.of(
+            "STONE", "COBBLESTONE", "DEEPSLATE", "COBBLED_DEEPSLATE", "GRANITE", "DIORITE", "ANDESITE", "TUFF", "CALCITE",
+            "NETHERRACK", "BLACKSTONE", "BASALT", "END_STONE", "OBSIDIAN", "CRYING_OBSIDIAN", "SANDSTONE", "RED_SANDSTONE",
+            "STONE_BRICKS", "DEEPSLATE_BRICKS", "POLISHED_BLACKSTONE_BRICKS", "PURPUR_BLOCK", "NETHER_BRICKS", "QUARTZ_BLOCK",
+            "AMETHYST_BLOCK", "BUDDING_AMETHYST", "DRIPSTONE_BLOCK", "MOSS_BLOCK", "SCULK", "INFESTED_STONE", "CONCRETE",
+            "GLOWSTONE", "NETHER_QUARTZ_ORE", "NETHER_GOLD_ORE", "ANCIENT_DEBRIS", "DIRT", "GRASS_BLOCK", "COARSE_DIRT",
+            "ROOTED_DIRT", "PODZOL", "MYCELIUM", "SAND", "RED_SAND", "GRAVEL", "CLAY", "MUD", "SOUL_SAND", "SOUL_SOIL",
+            "SNOW_BLOCK", "TERRACOTTA", "WHITE_TERRACOTTA");
     private final ShardItems items;
     private final ShardCatalog catalog;
     private final VeltryxConfig config;
@@ -46,9 +54,8 @@ public final class ShardToolListener implements Listener {
             return;
         }
         ShardCatalog.Entry entry = catalog.byId(id);
-        if (entry == null || entry.behavior() == Behavior.NONE
-                || entry.behavior() == Behavior.HASTE_POTION
-                || entry.behavior() == Behavior.VOID_TOTEM) {
+        if (entry == null || (entry.behavior() != Behavior.AREA_MINE
+                && entry.behavior() != Behavior.TREE_AXE)) {
             return;
         }
         if (!items.abilityEnabled(tool)) {
@@ -61,6 +68,7 @@ public final class ShardToolListener implements Listener {
             return;
         }
         Block origin = event.getBlock();
+        player.playSound(player.getLocation(), "block.amethyst_block.step", 1.0f, 1.0f);
         if (entry.behavior() == Behavior.TREE_AXE && Tag.LOGS.isTagged(origin.getType())) {
             // Breaking a log with the axe fells the whole tree.
             fellTree(player, tool, origin);
@@ -78,6 +86,7 @@ public final class ShardToolListener implements Listener {
         var direction = player.getLocation().getDirection();
         List<int[]> offsets = AreaPlane.offsets(direction.getX(), direction.getY(), direction.getZ(),
                 config.shardAreaRadius());
+        boolean any = false;
         for (int[] offset : offsets) {
             int x = origin.getX() + offset[0];
             int y = origin.getY() + offset[1];
@@ -87,7 +96,8 @@ public final class ShardToolListener implements Listener {
             }
             Block block = world.getBlockAt(x, y, z);
             Material type = block.getType();
-            if (type == Material.AIR || isProtected(type)) {
+            if (type == Material.AIR || isProtected(type)
+                    || !(AREA_MATERIALS.contains(type.name()) || type.name().endsWith("_ORE") || Tag.LOGS.isTagged(type))) {
                 continue;
             }
             // breakNaturally(tool, false): the tool's fortune/silk applies to the
@@ -96,14 +106,25 @@ public final class ShardToolListener implements Listener {
             if (!silkTouch) {
                 dropOreXp(block, type);
             }
-            amethystBurst(block);
+            amethystBurst(block); any = true;
         }
+        if (!any) amethystBurst(origin);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEquip(org.bukkit.event.player.PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        ItemStack held = player.getInventory().getItem(event.getNewSlot());
+        if (items.itemId(held) == null) return;
+        player.playSound(player.getLocation(), "block.amethyst_block.resonate", 1.0f, 1.0f);
+        var p = player.getLocation();
+        player.getWorld().spawnParticle(org.bukkit.Particle.PORTAL, p.getX(), p.getY() + 1, p.getZ(), 10, 0.35, 0.35, 0.35, 0.01);
     }
 
     /** Amethyst-like purple glints on every block the shard tool mines. */
     private void amethystBurst(Block block) {
-        block.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT,
-                block.getX() + 0.5, block.getY() + 0.5, block.getZ() + 0.5, 6);
+        block.getWorld().spawnParticle(org.bukkit.Particle.PORTAL,
+                block.getX() + 0.5, block.getY() + 0.5, block.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.01);
     }
 
     private void fellTree(Player player, ItemStack tool, Block origin) {
@@ -173,7 +194,10 @@ public final class ShardToolListener implements Listener {
     /** Never hit containers or bedrock-like blocks. */
     private boolean isProtected(Material type) {
         String name = type.name();
-        return type == Material.BARRIER || name.equals("BEDROCK")
+        return type == Material.BARRIER || name.equals("BEDROCK") || name.equals("COMMAND_BLOCK")
+                || name.equals("CHAIN_COMMAND_BLOCK") || name.equals("REPEATING_COMMAND_BLOCK")
+                || name.equals("STRUCTURE_BLOCK") || name.equals("STRUCTURE_VOID") || name.equals("JIGSAW")
+                || name.equals("END_PORTAL_FRAME") || name.equals("END_PORTAL") || name.equals("REINFORCED_DEEPSLATE")
                 || name.equals("SPAWNER") || name.equals("TRIAL_SPAWNER")
                 || name.equals("CHEST") || name.equals("TRAPPED_CHEST") || name.equals("BARREL")
                 || name.equals("HOPPER") || name.equals("DISPENSER") || name.equals("DROPPER")
@@ -181,27 +205,18 @@ public final class ShardToolListener implements Listener {
                 || name.equals("BREWING_STAND") || name.endsWith("SHULKER_BOX");
     }
 
-    /** Vanilla-style ore XP for the extra broken blocks (worst case, like multi-drops). */
+    /** ShardTools' default vanilla-style random XP ranges for extra ores. */
     private void dropOreXp(Block block, Material type) {
         String name = type.name();
-        int xpValue = 0;
-        if (name.contains("COAL_ORE")) {
-            xpValue = 1;
-        } else if (name.contains("DIAMOND_ORE") || name.contains("EMERALD_ORE")) {
-            xpValue = 7;
-        } else if (name.contains("LAPIS_ORE") || name.contains("REDSTONE_ORE")) {
-            xpValue = 5;
-        } else if (name.contains("NETHER_QUARTZ_ORE")) {
-            xpValue = 3;
-        } else if (name.contains("COPPER_ORE")) {
-            xpValue = 2;
-        } else if (name.equals("SCULK")) {
-            xpValue = 1;
-        }
-        final int xp = xpValue;
-        if (xp > 0) {
-            block.getWorld().spawn(block.getLocation(), org.bukkit.entity.ExperienceOrb.class,
-                    orb -> orb.setExperience(xp));
-        }
+        int min = 0, max = 0;
+        if (name.contains("COAL_ORE")) max = 2;
+        else if (name.contains("DIAMOND_ORE") || name.contains("EMERALD_ORE")) { min = 3; max = 7; }
+        else if (name.contains("LAPIS_ORE") || name.equals("NETHER_QUARTZ_ORE")) { min = 2; max = 5; }
+        else if (name.contains("REDSTONE_ORE")) { min = 1; max = 5; }
+        else if (name.equals("NETHER_GOLD_ORE")) max = 1;
+        int xp = max == 0 ? 0 : java.util.concurrent.ThreadLocalRandom.current().nextInt(min, max + 1);
+        if (xp > 0) block.getWorld().spawn(block.getLocation(), org.bukkit.entity.ExperienceOrb.class,
+                orb -> orb.setExperience(xp));
     }
+
 }

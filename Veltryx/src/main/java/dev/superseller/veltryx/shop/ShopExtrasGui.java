@@ -14,7 +14,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -58,7 +57,7 @@ public final class ShopExtrasGui implements Listener {
         final Purchase purchase; final int quickSlot, amount;
         AmountHolder(Purchase purchase, int quickSlot, int amount) { this.purchase = purchase; this.quickSlot = quickSlot; this.amount = amount; }
     }
-    private record PendingSearch(int quickSlot) { }
+    private record PendingSearch(int quickSlot, org.bukkit.Location location, org.bukkit.block.data.BlockData original) { }
     private final Map<UUID, PendingSearch> pending = new ConcurrentHashMap<>();
     private final ShopService shop;
     private final Messages messages;
@@ -73,7 +72,8 @@ public final class ShopExtrasGui implements Listener {
     public void attachShopGui(ShopGui gui) { this.gui = gui; }
     public void attachPromptCancellation(java.util.function.Consumer<Player> cancel) { this.cancelOtherPrompt = cancel; }
     public void cancelPendingSearch(Player player) {
-        if (pending.remove(player.getUniqueId()) != null) messages.send(player, "shop.search-cancelled", Map.of());
+        PendingSearch old = pending.remove(player.getUniqueId());
+        if (old != null) { restoreSign(player, old); messages.send(player, "shop.search-cancelled", Map.of()); }
     }
     public void save() { slots.save(); }
 
@@ -102,9 +102,24 @@ public final class ShopExtrasGui implements Listener {
     private void prompt(Player player, int quickSlot) {
         PlatformScheduler.runForPlayer(player, () -> {
             cancelOtherPrompt.accept(player);
-            pending.put(player.getUniqueId(), new PendingSearch(quickSlot));
+            cancelPendingSearch(player);
             player.closeInventory();
-            messages.send(player, quickSlot < 0 ? "shop.search-prompt" : "shop.quick-search-prompt", Map.of());
+            org.bukkit.Location at = player.getLocation();
+            org.bukkit.Location location = new org.bukkit.Location(player.getWorld(), at.getBlockX(), at.getBlockY(), at.getBlockZ());
+            org.bukkit.block.data.BlockData original = null;
+            try {
+                original = location.getBlock().getBlockData();
+                PendingSearch session = new PendingSearch(quickSlot, location, original);
+                pending.put(player.getUniqueId(), session);
+                player.sendBlockChange(location, org.bukkit.Material.OAK_SIGN.createBlockData());
+                player.sendSignChange(location, new String[]{"", "", "", ""});
+                player.openVirtualSign(io.papermc.paper.math.Position.block(at.getBlockX(), at.getBlockY(), at.getBlockZ()), org.bukkit.block.sign.Side.FRONT);
+            } catch (RuntimeException ex) {
+                pending.remove(player.getUniqueId());
+                if (original != null) player.sendBlockChange(location, original);
+                messages.send(player, "shop.search-unavailable", Map.of());
+                if (quickSlot >= 0) openQuickshop(player); else if (gui != null) gui.openMain(player);
+            }
         });
     }
     public void openSearch(Player player, String query, int page) { openSearch(player, query, page, -1); }
@@ -138,23 +153,31 @@ public final class ShopExtrasGui implements Listener {
         }
         return out;
     }
-    /** Consume the search text privately; it must never be broadcast. */
-    @SuppressWarnings("deprecation")
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onChat(AsyncPlayerChatEvent event) {
-        if (event.isCancelled()) return;
-        Player player = event.getPlayer();
-        PendingSearch search = pending.remove(player.getUniqueId());
-        if (search == null) return;
-        event.setCancelled(true);
-        String query = event.getMessage().trim();
-        if (query.equalsIgnoreCase("cancel")) {
-            PlatformScheduler.runForPlayer(player, () -> {
-                messages.send(player, "shop.search-cancelled", Map.of());
-                if (search.quickSlot() >= 0) openQuickshop(player); else if (gui != null) gui.openMain(player);
-            });
-        } else openSearch(player, query, 0, search.quickSlot());
+    private void restoreSign(Player player, PendingSearch session) {
+        if (session.location() != null && session.original() != null && player.getWorld().equals(session.location().getWorld()))
+            player.sendBlockChange(session.location(), session.original());
     }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onSign(io.papermc.paper.event.packet.UncheckedSignChangeEvent event) {
+        Player player = event.getPlayer();
+        PendingSearch session = pending.get(player.getUniqueId());
+        var pos = event.getEditedBlockPosition();
+        if (session == null || session.location() == null || !player.getWorld().equals(session.location().getWorld())
+                || event.getSide() != org.bukkit.block.sign.Side.FRONT
+                || pos.blockX() != session.location().getBlockX() || pos.blockY() != session.location().getBlockY()
+                || pos.blockZ() != session.location().getBlockZ() || !pending.remove(player.getUniqueId(), session)) return;
+        event.setCancelled(true);
+        String query = event.lines().stream().map(c -> net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(c).trim())
+                .filter(s -> !s.isEmpty()).collect(java.util.stream.Collectors.joining(" "));
+        PlatformScheduler.runForPlayer(player, () -> { restoreSign(player, session); finishSearch(player, session, query); });
+    }
+    private void finishSearch(Player player, PendingSearch session, String query) {
+        if (query.isBlank() || query.equalsIgnoreCase("cancel")) {
+            messages.send(player, "shop.search-cancelled", Map.of());
+            if (session.quickSlot() >= 0) openQuickshop(player); else if (gui != null) gui.openMain(player);
+        } else openSearch(player, query, 0, session.quickSlot());
+    }
+
     @EventHandler public void onQuit(PlayerQuitEvent e) { pending.remove(e.getPlayer().getUniqueId()); }
 
     /** Called by category/search when an item requires a potion or enchantment choice. */

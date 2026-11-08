@@ -59,9 +59,16 @@ public final class VeltryxConfig {
         return parsed == Money.INVALID ? 10_000L : parsed;
     }
 
-    public long minTransfer() {
-        long parsed = Money.parse(config.getString("economy.min-transfer", "0.01"));
-        return parsed == Money.INVALID ? 1L : parsed;
+    public java.math.BigInteger startingBalanceExact() {
+        java.math.BigInteger parsed = Money.parseExact(config.getString("economy.starting-balance", "100"));
+        return parsed == null ? java.math.BigInteger.valueOf(10_000L) : parsed;
+    }
+
+    public long minTransfer() { return Money.legacyLong(minTransferExact()); }
+
+    public java.math.BigInteger minTransferExact() {
+        java.math.BigInteger parsed = Money.parseExact(config.getString("economy.min-transfer", "0.01"));
+        return parsed == null ? java.math.BigInteger.ONE : parsed;
     }
 
     public int baltopSize() {
@@ -399,7 +406,7 @@ public final class VeltryxConfig {
 
     /** Hard cap of blocks a tree felling may break (log chain limit). */
     public int shardTreeMaxBlocks() {
-        return Math.max(16, config.getInt("shards.tree.max-blocks", 128));
+        return Math.max(16, config.getInt("shards.tree.max-blocks", 256));
     }
 
     /** Whether the shard axe also breaks the tree's leaves. */
@@ -409,7 +416,7 @@ public final class VeltryxConfig {
 
     /** Whether the shard axe replants a sapling where the tree stood. */
     public boolean shardTreeReplant() {
-        return config.getBoolean("shards.tree.replant", true);
+        return config.getBoolean("shards.tree.replant", false);
     }
 
     /** Haste II duration of the shard potion, in minutes. */

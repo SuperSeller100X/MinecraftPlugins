@@ -109,7 +109,7 @@ public final class AhGui implements Listener {
                     List.of(Txt.legacy("§7Switch the view."))));
             inventory.setItem(49, item(Material.GOLD_INGOT, 1,
                     Txt.legacy("§6Your balance: §a$§f" + Money.formatCompact(
-                            economy.getBalance(player.getUniqueId()))),
+                            economy.getBalanceExact(player.getUniqueId()))),
                     List.of(Txt.legacy("§7Page §f" + (pageNow + 1) + "§7/§f" + pages))));
             inventory.setItem(51, item(Material.CHEST, 1,
                     Txt.legacy("§eSell an item"),

@@ -5,6 +5,7 @@ import dev.superseller.veltryx.config.VeltryxConfig;
 import dev.superseller.veltryx.economy.EconomyService;
 import dev.superseller.veltryx.model.Account;
 import dev.superseller.veltryx.util.Money;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -64,7 +65,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             }
             String name = target.getName() == null ? args[1] : target.getName();
             messages.send(sender, "economy.balance-other",
-                    Map.of("player", name, "amount", economy.format(economy.getBalance(target.getUniqueId()))));
+                    Map.of("player", name, "amount", economy.format(economy.getBalanceExact(target.getUniqueId()))));
             return;
         }
         if (!(sender instanceof Player player)) {
@@ -76,7 +77,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             return;
         }
         messages.send(player, "economy.balance-self",
-                Map.of("amount", economy.format(economy.getBalance(player.getUniqueId()))));
+                Map.of("amount", economy.format(economy.getBalanceExact(player.getUniqueId()))));
     }
 
     private void pay(CommandSender sender, String[] args) {
@@ -101,21 +102,21 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "economy.pay-self");
             return;
         }
-        long amount = Money.parse(args[2]);
-        if (!Money.isValid(amount)) {
+        BigInteger amount = Money.parseExact(args[2]);
+        if (amount == null) {
             messages.send(sender, "general.invalid-amount", Map.of("input", args[2]));
             return;
         }
-        if (amount <= 0) {
+        if (amount.signum() <= 0) {
             messages.send(sender, "general.invalid-amount", Map.of("input", args[2]));
             return;
         }
-        if (amount < config.minTransfer()) {
+        if (amount.compareTo(config.minTransferExact()) < 0) {
             messages.send(sender, "economy.below-minimum",
-                    Map.of("amount", economy.format(config.minTransfer())));
+                    Map.of("amount", economy.format(config.minTransferExact())));
             return;
         }
-        boolean ok = economy.transfer(player.getUniqueId(), player.getName(),
+        boolean ok = economy.transferExact(player.getUniqueId(), player.getName(),
                 target.getUniqueId(), target.getName(), amount);
         if (!ok) {
             messages.send(sender, "economy.not-enough",
@@ -140,7 +141,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(messages.render("economy.top-entry", Map.of(
                     "position", String.valueOf(i + 1),
                     "player", account.name() == null ? "?" : account.name(),
-                    "amount", economy.format(account.balance()))));
+                    "amount", economy.format(account.balanceExact()))));
         }
     }
 
@@ -149,7 +150,7 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "general.no-permission");
             return;
         }
-        if (args.length < 3) {
+        if (args.length < 2 || (!action.equals("reset") && args.length < 3)) {
             messages.send(sender, "economy.usage-admin", Map.of("command", "/" + "eco " + action));
             return;
         }
@@ -158,8 +159,8 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "general.player-not-found", Map.of("input", args[1]));
             return;
         }
-        long amount = Money.parse(args[2]);
-        if (!Money.isValid(amount)) {
+        BigInteger amount = action.equals("reset") ? BigInteger.ZERO : Money.parseExact(args[2]);
+        if (amount == null) {
             messages.send(sender, "general.invalid-amount", Map.of("input", args[2]));
             return;
         }
@@ -167,23 +168,23 @@ public final class EcoCommand implements CommandExecutor, TabCompleter {
         UUID uuid = target.getUniqueId();
         switch (action) {
             case "give" -> {
-                economy.deposit(uuid, name, amount);
+                economy.depositExact(uuid, name, amount);
                 messages.send(sender, "economy.admin-given",
                         Map.of("player", name, "amount", economy.format(amount),
-                                "balance", economy.format(economy.getBalance(uuid))));
+                                "balance", economy.format(economy.getBalanceExact(uuid))));
             }
             case "take" -> {
-                boolean ok = economy.withdraw(uuid, name, amount);
+                boolean ok = economy.withdrawExact(uuid, name, amount);
                 if (!ok) {
                     messages.send(sender, "economy.not-enough", Map.of("amount", economy.format(amount)));
                     return;
                 }
                 messages.send(sender, "economy.admin-taken",
                         Map.of("player", name, "amount", economy.format(amount),
-                                "balance", economy.format(economy.getBalance(uuid))));
+                                "balance", economy.format(economy.getBalanceExact(uuid))));
             }
             case "set" -> {
-                economy.setBalance(uuid, name, amount);
+                economy.setBalanceExact(uuid, name, amount);
                 messages.send(sender, "economy.admin-set",
                         Map.of("player", name, "amount", economy.format(amount)));
             }

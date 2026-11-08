@@ -34,12 +34,14 @@ public final class SpawnerItems {
         logger = plugin.getLogger();
     }
 
-    public ItemStack create(Identity identity) {
+    public ItemStack create(Identity identity) { return create(identity, 1); }
+    public ItemStack create(Identity identity, int count) {
         ItemStack item = new ItemStack(Material.SPAWNER, 1);
         ItemMeta meta = item.getItemMeta();
         if (meta == null) throw new IllegalStateException("Spawner item has no metadata");
         meta.displayName(Txt.legacy("§b" + identity.type().displayName() + " Spawner"));
-        meta.lore(Txt.legacy(List.of("§7Permanent custom spawner",
+        meta.lore(Txt.legacy(List.of("§7Permanent custom spawner stack: §f" + count + "/" + SpawnerStore.MAX_STACK,
+                "§7Place onto a matching spawner to stack.",
                 "§7Right-click after placing to view loot and change mode.",
                 "§7Mine with Silk Touch to pick it up with its storage.")));
         write(meta.getPersistentDataContainer(), identity);
@@ -77,6 +79,9 @@ public final class SpawnerItems {
 
     /** Configure both the current spawn and the potential list to ignore light. */
     public boolean configure(Block block, Identity identity) {
+        return configure(block, identity, 1, SpawnerStore.Mode.SPAWNER);
+    }
+    public boolean configure(Block block, Identity identity, int count, SpawnerStore.Mode mode) {
         if (!(block.getState() instanceof CreatureSpawner spawner)) return false;
         try {
             spawner.setSpawnedType(identity.type().entityType());
@@ -86,12 +91,36 @@ public final class SpawnerItems {
             spawner.setSpawnedEntity(entry);
             // Vanilla picks from potential spawns when resetting its timer.
             spawner.setPotentialSpawns(List.of(entry));
+            setCounts(spawner, count, mode);
             write(spawner.getPersistentDataContainer(), identity);
             return spawner.update(true, false);
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "Could not configure custom spawner " + identity.id(), e);
             return false;
         }
+    }
+
+    /** Update only spawn parameters, retaining the tile's loot/type metadata. Must run on the block's region. */
+    public boolean updateCounts(Block block, Identity identity, int count, SpawnerStore.Mode mode) {
+        if (!(block.getState() instanceof CreatureSpawner spawner) || !identity.equals(identity(spawner))) return false;
+        try {
+            setCounts(spawner, count, mode);
+            return spawner.update(true, false);
+        } catch (RuntimeException ex) {
+            logger.log(Level.SEVERE, "Could not update spawner stack " + identity.id(), ex);
+            return false;
+        }
+    }
+    public static int spawnCount(int count, SpawnerStore.Mode mode) {
+        return 4 * (mode == SpawnerStore.Mode.SPAWNER ? count : 1);
+    }
+    public static int nearbyLimit(int count, SpawnerStore.Mode mode) {
+        return 6 * (mode == SpawnerStore.Mode.SPAWNER ? count : 1);
+    }
+    private static void setCounts(CreatureSpawner spawner, int count, SpawnerStore.Mode mode) {
+        if (count < 1 || count > SpawnerStore.MAX_STACK || mode == null) throw new IllegalArgumentException("invalid spawner stack");
+        spawner.setSpawnCount(spawnCount(count, mode));
+        spawner.setMaxNearbyEntities(nearbyLimit(count, mode));
     }
 
     private void write(PersistentDataContainer pdc, Identity identity) {

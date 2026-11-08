@@ -1,151 +1,100 @@
 package dev.superseller.veltryx.util;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-/**
- * Money math for the Veltryx economy.
- *
- * <p>Balances are stored as integer <b>cents</b> (minor units) so arithmetic is
- * exact — no floating point drift. Parsing accepts plain numbers and the
- * {@code k / m / b / t} suffixes used in chat commands ({@code 1.5k} =
- * {@code $1,500.00}).
- *
- * <p>This class is pure (no live server state) so it can be unit tested offline.
- */
+/** Exact cent arithmetic and the server's case-insensitive money abbreviations. */
 public final class Money {
-
-    /** Returned by {@link #parse(String)} for every unparseable input. */
+    /** Sentinel for the legacy long parser. */
     public static final long INVALID = Long.MIN_VALUE;
-
-    /** Always formats with ROOT symbols (1,250.50) on every host locale. */
+    private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private static final NumberFormat FORMAT =
             new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.ROOT));
-
-    private Money() {
-    }
+    private static final int[] EXPONENTS = {24, 21, 18, 15, 12, 9, 6, 3};
+    private static final String[] SUFFIXES = {"l", "g", "d", "q", "T", "B", "M", "k"};
+    private Money() { }
 
     /**
-     * Parses a user-entered amount into cents.
-     *
-     * <p>Accepts an optional {@code $} or currency-style prefix, thousands
-     * commas and the suffixes {@code k}, {@code m}, {@code b} and {@code t}
-     * (case-insensitive). The result is rounded to whole cents and must be
-     * zero or positive.
-     *
-     * @return amount in cents, or {@link #INVALID}
+     * Parse nonnegative currency units into exact cents. k/m/b/t/q/d/g/l
+     * correspond to 10^3/6/9/12/15/18/21/24. The input length is limited to
+     * keep untrusted command input inexpensive. Sub-cent amounts round half up.
+     * Returns null for invalid input.
      */
-    public static long parse(String raw) {
-        if (raw == null) {
-            return INVALID;
-        }
+    public static BigInteger parseExact(String raw) {
+        if (raw == null || raw.length() > 160) return null;
         String s = raw.trim().toLowerCase(Locale.ROOT).replace("$", "").replace(",", "");
-        if (s.isEmpty()) {
-            return INVALID;
+        if (s.isEmpty()) return null;
+        int exponent = switch (s.charAt(s.length() - 1)) {
+            case 'k' -> 3; case 'm' -> 6; case 'b' -> 9; case 't' -> 12;
+            case 'q' -> 15; case 'd' -> 18; case 'g' -> 21; case 'l' -> 24;
+            default -> 0;
+        };
+        if (exponent != 0) s = s.substring(0, s.length() - 1);
+        // No exponent notation, NaN, infinity or signs other than a leading +.
+        if (!s.matches("\\+?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)")) return null;
+        try {
+            return new BigDecimal(s).movePointRight(exponent + 2)
+                    .setScale(0, RoundingMode.HALF_UP).toBigIntegerExact();
+        } catch (ArithmeticException | NumberFormatException ex) {
+            return null;
         }
-        long multiplier = 1L;
-        char last = s.charAt(s.length() - 1);
-        switch (last) {
-            case 'k' -> multiplier = 1_000L;
-            case 'm' -> multiplier = 1_000_000L;
-            case 'b' -> multiplier = 1_000_000_000L;
-            case 't' -> multiplier = 1_000_000_000_000L;
-            default -> {
-                return parseDecimal(s, 1L);
+    }
+
+    /** Legacy long-cent parser; rejects, rather than wraps, amounts it cannot represent. */
+    public static long parse(String raw) {
+        BigInteger value = parseExact(raw);
+        return value == null || value.compareTo(LONG_MAX) > 0 ? INVALID : value.longValue();
+    }
+
+    /** Clamp an exact balance only at the legacy API boundary. */
+    public static long legacyLong(BigInteger cents) {
+        return cents.signum() <= 0 ? 0L : cents.min(LONG_MAX).longValue();
+    }
+
+    public static String format(long cents) { return "$" + formatNumber(cents); }
+    public static String format(BigInteger cents) { return "$" + formatNumber(cents); }
+    public static String formatNumber(long cents) { return formatNumber(BigInteger.valueOf(cents)); }
+    public static String formatNumber(BigInteger cents) {
+        synchronized (FORMAT) { return FORMAT.format(new BigDecimal(cents, 2)); }
+    }
+
+    /** Compact display, with exact input and at most one rounded decimal place. */
+    public static String formatCompact(long cents) { return formatCompact(BigInteger.valueOf(cents)); }
+    public static String formatCompact(BigInteger cents) {
+        BigInteger absolute = cents.abs();
+        for (int i = 0; i < EXPONENTS.length; i++) {
+            int exponent = EXPONENTS[i] + 2; // cents, not units
+            if (absolute.compareTo(BigInteger.TEN.pow(exponent)) >= 0) {
+                BigDecimal scaled = new BigDecimal(cents, exponent).setScale(1, RoundingMode.HALF_UP);
+                return scaled.stripTrailingZeros().toPlainString() + SUFFIXES[i];
             }
         }
-        return parseDecimal(s.substring(0, s.length() - 1), multiplier);
-    }
-
-    private static long parseDecimal(String s, long multiplier) {
-        if (s.isEmpty()) {
-            return INVALID;
-        }
-        double units;
-        try {
-            units = Double.parseDouble(s);
-        } catch (NumberFormatException e) {
-            return INVALID;
-        }
-        if (!Double.isFinite(units) || units < 0) {
-            return INVALID;
-        }
-        double cents = units * 100.0 * multiplier;
-        if (cents > Long.MAX_VALUE / 2.0) {
-            return INVALID;
-        }
-        long rounded = Math.round(cents);
-        return rounded < 0 ? INVALID : rounded;
-    }
-
-    /** Formats cents as {@code $1,250.50}. */
-    public static String format(long cents) {
-        return "$" + formatNumber(cents);
-    }
-
-    /** Formats cents as {@code 1,250.50} without the currency symbol. */
-    public static String formatNumber(long cents) {
-        synchronized (FORMAT) {
-            return FORMAT.format(cents / 100.0);
-        }
-    }
-
-    /**
-     * Formats cents compactly for HUD/chat display: {@code 250}, {@code 12.50},
-     * {@code 2.3k}, {@code 500k}, {@code 1.2M}, {@code 3.4B}. No currency
-     * symbol — templates add it (so the {@code $} can be colored).
-     */
-    public static String formatCompact(long cents) {
-        double dollars = cents / 100.0;
-        double abs = Math.abs(dollars);
-        if (abs >= 1_000_000_000.0) {
-            return trimDecimal(dollars / 1_000_000_000.0) + "B";
-        }
-        if (abs >= 1_000_000.0) {
-            return trimDecimal(dollars / 1_000_000.0) + "M";
-        }
-        if (abs >= 1_000.0) {
-            return trimDecimal(dollars / 1_000.0) + "k";
-        }
-        if (cents % 100 == 0) {
-            return String.format(Locale.ROOT, "%,d", cents / 100);
+        if (cents.remainder(BigInteger.valueOf(100)).signum() == 0) {
+            synchronized (FORMAT) {
+                DecimalFormat whole = new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(Locale.ROOT));
+                return whole.format(cents.divide(BigInteger.valueOf(100)));
+            }
         }
         return formatNumber(cents);
     }
 
-    /** {@code 2.35} -> {@code 2.4}, {@code 2.00} -> {@code 2}, {@code 500.25} -> {@code 500.3}. */
-    private static String trimDecimal(double value) {
-        String one = String.format(Locale.ROOT, "%.1f", value);
-        return one.endsWith(".0") ? one.substring(0, one.length() - 2) : one;
-    }
-
-    /** Formats cents as {@code 1,500} when whole, {@code 1,500.50} otherwise. */
     public static String formatShort(long cents) {
-        if (cents % 100 == 0) {
-            return String.format(Locale.ROOT, "%,d", cents / 100);
-        }
+        if (cents % 100 == 0) return String.format(Locale.ROOT, "%,d", cents / 100);
         return formatNumber(cents);
     }
-
-    /** Whether the amount is a legal non-negative balance. */
-    public static boolean isValid(long cents) {
-        return cents >= 0 && cents != INVALID;
-    }
-
-    /** Multiplies nonnegative amounts without overflowing. */
+    public static boolean isValid(long cents) { return cents >= 0 && cents != INVALID; }
     public static long multiplySaturated(long a, long b) {
         if (a <= 0 || b <= 0) return 0L;
         return a > Long.MAX_VALUE / b ? Long.MAX_VALUE : a * b;
     }
-
-    /** Adds amounts without overflowing past {@link Long#MAX_VALUE}. */
     public static long addSaturated(long a, long b) {
         long sum = a + b;
-        if (((a ^ sum) & (b ^ sum)) < 0) {
-            return Long.MAX_VALUE;
-        }
+        if (((a ^ sum) & (b ^ sum)) < 0) return Long.MAX_VALUE;
         return Math.max(0L, sum);
     }
 }

@@ -744,7 +744,7 @@ public final class SmokeTest {
         t("playtime zero", dev.superseller.veltryx.util.TimeUtil.formatPlaytime(0L), "0m");
         t("nametag line order",
                 String.join("|", dev.superseller.veltryx.stats.StatLines.nametagLines(230_000L, 11_600L, 849L, 126L)),
-                "§a$ §f2.3k|§d" + star + " §f11.6k|§6" + skull + " §f849|§c" + sword + " §f126");
+                "§a$ §f2.3k");
         t("sidebar row order",
                 String.join("|", dev.superseller.veltryx.stats.StatLines.sidebarRows(230_000L, 2L, 3L, 4L, 5L)),
                 "§a$ §f2.3k|§d" + star + " §f2|§6" + skull + " §f3|§c" + sword + " §f4|§e" + clock + " §f0m");

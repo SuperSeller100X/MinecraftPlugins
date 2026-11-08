@@ -33,6 +33,8 @@ public final class SellNotices {
     }
 
     /** Compact balance string for templates ({@code 2.3k}). */
+    public static String compact(java.math.BigInteger cents) { return Money.formatCompact(cents); }
+
     public static String compact(long cents) {
         return Money.formatCompact(cents);
     }

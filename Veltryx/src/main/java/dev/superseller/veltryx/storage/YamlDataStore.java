@@ -13,6 +13,10 @@ import dev.superseller.veltryx.model.ReportEntry;
 import dev.superseller.veltryx.model.WarnEntry;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,6 +37,9 @@ public final class YamlDataStore implements DataStore {
 
     private final File folder;
     private final Logger logger;
+    private final Object economyLock = new Object();
+    private final Object marketLock = new Object();
+    private volatile boolean loaded;
 
     private final ConcurrentMap<UUID, Account> accounts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Profile> profiles = new ConcurrentHashMap<>();
@@ -56,9 +63,10 @@ public final class YamlDataStore implements DataStore {
 
     @Override
     public void load() {
+        loaded = false;
         folder.mkdirs();
         accounts.clear();
-        YamlConfiguration economy = read("economy.yml");
+        YamlConfiguration economy = readEconomy();
         for (String key : economy.getKeys(false)) {
             ConfigurationSection section = economy.getConfigurationSection(key);
             if (section == null) {
@@ -70,7 +78,7 @@ public final class YamlDataStore implements DataStore {
             }
             accounts.put(uuid, new Account(uuid,
                     section.getString("name", "?"),
-                    section.getLong("balance", 0L)));
+                    parseBalance(section.getString("balance", "0"))));
         }
 
         profiles.clear();
@@ -125,7 +133,7 @@ public final class YamlDataStore implements DataStore {
 
         ahListings.clear();
         buyOrders.clear();
-        YamlConfiguration market = read("market.yml");
+        YamlConfiguration market = readMarket();
         ConfigurationSection ahSection = market.getConfigurationSection("ah");
         if (ahSection != null) {
             for (String key : ahSection.getKeys(false)) {
@@ -151,14 +159,18 @@ public final class YamlDataStore implements DataStore {
                     continue;
                 }
                 UUID buyer = parseUuid(s.getString("buyer", ""));
-                if (buyer == null) {
-                    continue;
-                }
+                if (buyer == null) throw new IllegalStateException("Invalid buyer in order " + key);
+                int filled = s.getInt("filled", -1);
+                boolean legacy = !s.getKeys(false).contains("collected");
+                // Old versions did not track delivery. Do not mint potentially duplicated
+                // items: an operator must reconcile any historical fills from a backup.
+                if (legacy && filled > 0) logger.warning("Legacy order " + key + " has " + filled
+                        + " filled items with unknown delivery; reconcile manually before compensating.");
                 buyOrders.put(key, new BuyOrder(key, buyer, s.getString("buyer-name", "?"),
-                        s.getString("material", "PAPER"), s.getInt("amount", 1),
-                        s.getInt("filled", 0), s.getLong("price-each", 0L),
+                        s.getString("material", ""), s.getInt("amount", -1),
+                        filled, s.getLong("price-each", -1L),
                         s.getLong("created", 0L), s.getLong("expires", 0L),
-                        s.getBoolean("closed", false)));
+                        s.getBoolean("closed", false), legacy ? filled : s.getInt("collected", -1)));
             }
         }
 
@@ -205,6 +217,7 @@ public final class YamlDataStore implements DataStore {
                 stats.put(uuid, new long[]{s.getLong("kills", 0L), s.getLong("deaths", 0L)});
             }
         }
+        loaded = true;
     }
 
     private void loadPunishments(ConfigurationSection section) {
@@ -309,13 +322,9 @@ public final class YamlDataStore implements DataStore {
 
     @Override
     public void save() {
-        YamlConfiguration economy = new YamlConfiguration();
-        for (Account account : accounts.values()) {
-            String path = account.uuid().toString();
-            economy.set(path + ".name", account.name());
-            economy.set(path + ".balance", account.balance());
-        }
-        write("economy.yml", economy);
+        // A failed/partial startup must never overwrite the original files on disable.
+        if (!loaded) return;
+        synchronized (economyLock) { saveAccounts(); }
 
         YamlConfiguration prof = new YamlConfiguration();
         for (Profile profile : profiles.values()) {
@@ -393,31 +402,10 @@ public final class YamlDataStore implements DataStore {
         }
         write("flags.yml", flagFile);
 
-        YamlConfiguration market = new YamlConfiguration();
-        for (AhListing a : ahListings.values()) {
-            String path = "ah." + a.id();
-            market.set(path + ".seller", a.seller().toString());
-            market.set(path + ".seller-name", a.sellerName());
-            market.set(path + ".material", a.material());
-            market.set(path + ".amount", a.amount());
-            market.set(path + ".price", a.priceCents());
-            market.set(path + ".listed", a.listed());
-            market.set(path + ".expires", a.expires());
-            market.set(path + ".closed", a.closed());
+        synchronized (marketLock) {
+            try { saveMarket(); }
+            catch (RuntimeException ex) { logger.log(Level.SEVERE, "Could not save market data", ex); }
         }
-        for (BuyOrder o : buyOrders.values()) {
-            String path = "orders." + o.id();
-            market.set(path + ".buyer", o.buyer().toString());
-            market.set(path + ".buyer-name", o.buyerName());
-            market.set(path + ".material", o.material());
-            market.set(path + ".amount", o.amount());
-            market.set(path + ".filled", o.filled());
-            market.set(path + ".price-each", o.priceEachCents());
-            market.set(path + ".created", o.created());
-            market.set(path + ".expires", o.expires());
-            market.set(path + ".closed", o.closed());
-        }
-        write("market.yml", market);
 
         YamlConfiguration shardFile = new YamlConfiguration();
         for (java.util.Map.Entry<UUID, Long> e : shards.entrySet()) {
@@ -447,6 +435,61 @@ public final class YamlDataStore implements DataStore {
             }
         }
         write("homes.yml", homeFile);
+    }
+
+    // The market state is written as one file so order claim counts cannot be torn.
+    private void saveMarket() {
+        YamlConfiguration market = new YamlConfiguration();
+        for (AhListing a : ahListings.values()) {
+            String path = "ah." + a.id();
+            market.set(path + ".seller", a.seller().toString());
+            market.set(path + ".seller-name", a.sellerName());
+            market.set(path + ".material", a.material());
+            market.set(path + ".amount", a.amount());
+            market.set(path + ".price", a.priceCents());
+            market.set(path + ".listed", a.listed());
+            market.set(path + ".expires", a.expires());
+            market.set(path + ".closed", a.closed());
+        }
+        for (BuyOrder o : buyOrders.values()) {
+            String path = "orders." + o.id();
+            market.set(path + ".buyer", o.buyer().toString());
+            market.set(path + ".buyer-name", o.buyerName());
+            market.set(path + ".material", o.material());
+            market.set(path + ".amount", o.amount());
+            market.set(path + ".filled", o.filled());
+            market.set(path + ".collected", o.collected());
+            market.set(path + ".price-each", o.priceEachCents());
+            market.set(path + ".created", o.created());
+            market.set(path + ".expires", o.expires());
+            market.set(path + ".closed", o.closed());
+        }
+        saveMarketAtomically(market);
+
+    }
+
+    private YamlConfiguration readMarket() {
+        File file = new File(folder, "market.yml");
+        YamlConfiguration market = new YamlConfiguration();
+        if (!file.exists()) return market;
+        try { market.load(file); }
+        catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            throw new IllegalStateException("Could not load market.yml safely", ex);
+        }
+        return market;
+    }
+
+    private void saveMarketAtomically(YamlConfiguration market) {
+        try {
+            Files.createDirectories(folder.toPath());
+            java.nio.file.Path temp = folder.toPath().resolve("market.yml.tmp");
+            java.nio.file.Path target = folder.toPath().resolve("market.yml");
+            market.save(temp.toFile());
+            try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException ex) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
+        } catch (IOException | RuntimeException ex) {
+            throw new IllegalStateException("Could not persist buy orders", ex);
+        }
     }
 
     @Override
@@ -510,23 +553,72 @@ public final class YamlDataStore implements DataStore {
 
     // ------------------------------------------------------------- economy
 
-    @Override
-    public long getBalance(UUID uuid) {
+    @Override public long getBalance(UUID uuid) {
+        return dev.superseller.veltryx.util.Money.legacyLong(getBalanceExact(uuid));
+    }
+    @Override public BigInteger getBalanceExact(UUID uuid) {
         Account account = accounts.get(uuid);
-        return account == null ? 0L : account.balance();
+        return account == null ? BigInteger.ZERO : account.balanceExact();
     }
-
-    @Override
-    public void setBalance(UUID uuid, String name, long cents) {
-        accounts.put(uuid, new Account(uuid, name, Math.max(0L, cents)));
-        save();
+    @Override public void setBalance(UUID uuid, String name, long cents) {
+        setBalanceExact(uuid, name, BigInteger.valueOf(Math.max(0L, cents)));
     }
-
-    @Override
-    public List<Account> top(int limit) {
+    @Override public void setBalanceExact(UUID uuid, String name, BigInteger cents) {
+        setBalancesExact(List.of(new Account(uuid, name, cents)));
+    }
+    @Override public void setBalancesExact(List<Account> updates) {
+        if (!loaded) throw new IllegalStateException("YAML storage has not loaded successfully");
+        synchronized (economyLock) {
+            java.util.Map<UUID, Account> before = new java.util.HashMap<>();
+            for (Account account : updates) {
+                before.putIfAbsent(account.uuid(), accounts.get(account.uuid()));
+                accounts.put(account.uuid(), account);
+            }
+            try { saveAccounts(); }
+            catch (RuntimeException ex) {
+                for (var entry : before.entrySet()) {
+                    if (entry.getValue() == null) accounts.remove(entry.getKey());
+                    else accounts.put(entry.getKey(), entry.getValue());
+                }
+                throw ex;
+            }
+        }
+    }
+    @Override public List<Account> top(int limit) {
         List<Account> sorted = new ArrayList<>(accounts.values());
-        sorted.sort(Comparator.comparingLong(Account::balance).reversed());
-        return sorted.subList(0, Math.min(limit, sorted.size()));
+        sorted.sort(Comparator.comparing(Account::balanceExact).reversed());
+        return sorted.subList(0, Math.min(Math.max(0, limit), sorted.size()));
+    }
+
+    private static BigInteger parseBalance(String raw) {
+        try {
+            BigInteger result = new BigInteger(raw);
+            if (result.signum() < 0) throw new NumberFormatException("negative balance");
+            return result;
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("Invalid stored economy balance; restore the account from backup", ex);
+        }
+    }
+
+    /** One atomic replacement for all accounts, including both sides of a transfer. */
+    private void saveAccounts() {
+        YamlConfiguration economy = new YamlConfiguration();
+        for (Account account : accounts.values()) {
+            String path = account.uuid().toString();
+            economy.set(path + ".name", account.name());
+            // A quoted decimal string remains exact even beyond YAML's integer range.
+            economy.set(path + ".balance", account.balanceExact().toString());
+        }
+        try {
+            Files.createDirectories(folder.toPath());
+            java.nio.file.Path temp = folder.toPath().resolve("economy.yml.tmp");
+            java.nio.file.Path target = folder.toPath().resolve("economy.yml");
+            economy.save(temp.toFile());
+            try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException ex) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
+        } catch (IOException | RuntimeException ex) {
+            throw new IllegalStateException("Could not persist economy accounts", ex);
+        }
     }
 
     // ------------------------------------------------------------- profile
@@ -711,8 +803,15 @@ public final class YamlDataStore implements DataStore {
 
     @Override
     public void saveBuyOrder(BuyOrder entry) {
-        buyOrders.put(entry.id(), entry);
-        save();
+        synchronized (marketLock) {
+            if (!loaded) throw new IllegalStateException("Market data has not been loaded");
+            BuyOrder previous = buyOrders.put(entry.id(), entry);
+            try { saveMarket(); }
+            catch (RuntimeException ex) {
+                if (previous == null) buyOrders.remove(entry.id()); else buyOrders.put(entry.id(), previous);
+                throw ex;
+            }
+        }
     }
 
     @Override
@@ -737,6 +836,16 @@ public final class YamlDataStore implements DataStore {
     public void removeHome(UUID owner, String name) {
         homes.remove(owner.toString() + ":" + name);
         save();
+    }
+
+    private YamlConfiguration readEconomy() {
+        File file = new File(folder, "economy.yml");
+        YamlConfiguration yaml = new YamlConfiguration();
+        if (!file.exists()) return yaml;
+        try { yaml.load(file); return yaml; }
+        catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            throw new IllegalStateException("Could not read economy.yml safely; restore from backup", ex);
+        }
     }
 
     private YamlConfiguration read(String name) {
