@@ -48,9 +48,8 @@
     </dependencies>
 
     <build>
-    <!-- The jar is named exactly the version: vx-0.0.4-beta.jar -->
-    <finalName>${project.version}</finalName>
-        <finalName>Veltryx-${project.version}</finalName>
+        <!-- The jar is named exactly the version: vx-0.0.4-beta.jar -->
+        <finalName>${project.version}</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
