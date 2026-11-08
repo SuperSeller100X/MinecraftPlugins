@@ -42,6 +42,8 @@ public final class PlayerTrace {
     private long jumpChainUntilNanos;
     private long speedGraceUntilMillis;
     private int speedExcessStreak;
+    private long flyPullAtMillis;
+    private int jesusStreak;
     private final ArrayDeque<Long> moveTimesMillis = new ArrayDeque<>();
 
     // combat state
@@ -179,6 +181,24 @@ public final class PlayerTrace {
 
     public void setSpeedExcessStreak(int streak) {
         speedExcessStreak = streak;
+    }
+
+    /** Throttles the smooth fly gravity pull to at most one per 500 ms. */
+    public long flyPullAtMillis() {
+        return flyPullAtMillis;
+    }
+
+    public void setFlyPullAtMillis(long millis) {
+        flyPullAtMillis = millis;
+    }
+
+    /** Consecutive surface-skimming samples (jesus check). */
+    public int jesusStreak() {
+        return jesusStreak;
+    }
+
+    public void setJesusStreak(int streak) {
+        jesusStreak = streak;
     }
 
     public void recordPosition(double x, double y, double z, long nowNanos) {

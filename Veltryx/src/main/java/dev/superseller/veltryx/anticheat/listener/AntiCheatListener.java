@@ -1,6 +1,8 @@
 package dev.superseller.veltryx.anticheat.listener;
 
 import dev.superseller.veltryx.anticheat.AntiCheatService;
+import dev.superseller.veltryx.anticheat.FlyGuard;
+import dev.superseller.veltryx.anticheat.JesusGuard;
 import dev.superseller.veltryx.anticheat.SpeedGuard;
 import org.bukkit.util.Vector;
 import dev.superseller.veltryx.anticheat.CheckType;
@@ -185,12 +187,22 @@ public final class AntiCheatListener implements Listener {
         Material feet = to.getBlock().getType();
         boolean inLiquid = feet == Material.WATER || feet == Material.LAVA;
 
-        // Jesus: skating across the water surface at walking speed.
+        // Jesus: skating across the water surface at walking speed. Only true
+        // surface skating counts — diving into water, walking on the sea floor,
+        // swimming and depth-strider/dolphin movement never false-flag — and it
+        // takes several consecutive skimming samples before anything is said.
         if (inLiquid && !player.isSwimming() && !climbing && seconds > 0.02) {
-            double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
-            if (horizontal > 2.8 * factor) {
-                service.flag(player, CheckType.JESUS, 1.2,
-                        String.format(Locale.ROOT, "%.1f b/s on water", horizontal));
+            boolean headInWater = to.clone().add(0, 1.5, 0).getBlock().getType() == Material.WATER;
+            boolean solidBelow = to.clone().subtract(0, 0.2, 0).getBlock().getType().isSolid();
+            if (JesusGuard.skimming(headInWater, solidBelow, dy, player.getFallDistance())) {
+                double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
+                trace.setJesusStreak(horizontal > 2.8 * factor ? trace.jesusStreak() + 1 : 0);
+                if (JesusGuard.shouldFlag(trace.jesusStreak())) {
+                    service.flag(player, CheckType.JESUS, 1.2,
+                            String.format(Locale.ROOT, "%.1f b/s on water", horizontal));
+                }
+            } else {
+                trace.setJesusStreak(0);
             }
         }
 
@@ -213,13 +225,15 @@ public final class AntiCheatListener implements Listener {
         // Speed: horizontal distance per second above any legitimate baseline.
         // The limit covers the fastest legitimate vanilla movement (sprint-jump
         // chains, speed potions, ice, soul speed, slime launches) and grows with
-        // ping/lag — no false flags. Falling and elytra carry unbounded momentum
-        // and never flag. Mild excess is only counted after THREE consecutive
-        // samples; movement above the hard cap is impossible for vanilla clients
-        // and gets rolled back by server authority.
-        boolean falling = dy < -0.08 || player.getFallDistance() > 0.4F;
+        // ping/lag — no false flags. Flags only fire for grounded movement, so
+        // air movement is always judged as FLY (never mislabeled "speed");
+        // impossible movement mid-air still gets clamped. Mild excess is only
+        // counted after THREE consecutive samples and isolated impossible
+        // samples (lag corrections) are ignored entirely — corrections never
+        // touch the player and never feed a violation level.
+        boolean falling = dy < FlyGuard.REAL_FALL_DY || player.getFallDistance() > 0.4F;
         boolean elytraAir = !onGround && hasElytra(player);
-        if (!falling && !elytraAir && seconds > 0.02 && seconds < 2.0) {
+        if (!elytraAir && seconds > 0.02 && seconds < 2.0) {
             double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
             Material below = to.clone().subtract(0, 0.2, 0).getBlock().getType();
             double multiplier = SpeedGuard.situationalMultiplier(
@@ -232,18 +246,18 @@ public final class AntiCheatListener implements Listener {
             double limit = SpeedGuard.limit(config.maxMoveSpeed(), factor, multiplier);
             int streak = trace.speedExcessStreak();
             int verdict = SpeedGuard.verdict(horizontal, limit, config.speedHardCap(), streak);
+            boolean grounded = (onGround || trace.inJumpChain(nowNanos)) && !falling;
             if (verdict == SpeedGuard.OK) {
                 trace.setSpeedExcessStreak(0);
             } else {
                 trace.setSpeedExcessStreak(streak + 1);
                 String detail = String.format(Locale.ROOT, "%.1f b/s (limit %.1f)", horizontal, limit);
                 if (verdict == SpeedGuard.ROLLBACK) {
-                    // Server authority, smoothly: instead of snapping the player
-                    // back (rubber-band = lag feel), the movement is clamped
-                    // along its own direction to the hard cap. The player glides
-                    // at the limit — speed hacks cannot outrun it and nothing
-                    // ever looks like lag or bugs the player into geometry.
-                    if (config.serverAuthority()) {
+                    // Server authority, smoothly: sustained impossible movement
+                    // is clamped along its own direction (glide at the cap — no
+                    // rubber-band, no lag feel). Isolated impossible samples are
+                    // lag corrections and are ignored completely.
+                    if (config.serverAuthority() && streak >= 1) {
                         double maxDist = limit * config.speedHardCap() * seconds;
                         double[] clamped = SpeedGuard.clampDelta(dx, dz, maxDist);
                         double nx = from.getX() + clamped[0];
@@ -252,44 +266,42 @@ public final class AntiCheatListener implements Listener {
                                 to.getYaw(), to.getPitch()));
                         trace.recordPosition(nx, to.getY(), nz, nowNanos);
                         trace.setSpeedGraceUntilMillis(nowMillis + 250L);
+                        // Airborne impossible movement is a FLY offence, not a
+                        // speed one — the label always matches the hack.
+                        service.flag(player, grounded ? CheckType.SPEED : CheckType.FLY,
+                                2.5, detail + " — clamped");
                     }
-                    service.flag(player, CheckType.SPEED, streak >= 1 ? 2.5 : 0.8, detail + " — clamped");
-                } else if (verdict == SpeedGuard.FLAG) {
+                } else if (grounded && verdict == SpeedGuard.FLAG) {
                     service.flag(player, CheckType.SPEED, 1.0 + Math.min(3.0, (horizontal - limit) / 2.0), detail);
                 }
             }
         }
 
         // Fly: staying airborne far longer than any jump without really falling.
-        // Slow descents (dy >= -0.08) count as flight too — hovering and
-        // drifting must be stopped even without sprinting. Fast descents decay
-        // the counter instead of resetting it, so bobbing cannot evade
-        // detection while real falls never accumulate. Levitation and slow
-        // falling are legitimate air states and high jump-boost levels
-        // legitimately extend air time; creative, spectator, elytra, vehicles
-        // and riptide never reach this check at all.
-        if (onGround || potionAmplifier(player, PotionEffectType.LEVITATION) >= 0
-                || potionAmplifier(player, PotionEffectType.SLOW_FALLING) >= 0) {
-            trace.setAirTicks(0);
-        } else if (dy < -0.08) {
-            trace.setAirTicks(Math.max(0, trace.airTicks() - 4));
-        } else {
-            trace.setAirTicks(trace.airTicks() + 1);
+        // Three vertical tiers: real falls (dy < -0.35) drain the counter, while
+        // slow descents and hovering accumulate — a "no-fall" style slow-descent
+        // fly can no longer hide behind fake falling. Honey wall-slides are slow
+        // legitimate descents and reset the counter. Ground contact, levitation
+        // and slow falling reset it; creative, spectator, elytra, vehicles and
+        // riptide never reach this check at all.
+        boolean honeySlide = nearHoney(to) || nearHoney(from);
+        trace.setAirTicks(FlyGuard.step(trace.airTicks(), dy, onGround || honeySlide,
+                potionAmplifier(player, PotionEffectType.LEVITATION) >= 0,
+                potionAmplifier(player, PotionEffectType.SLOW_FALLING) >= 0));
+        if (trace.airTicks() > 0) {
             int jumpBoost = potionAmplifier(player, PotionEffectType.JUMP_BOOST);
-            double maxAirSeconds = (1.3 + 0.12 * Math.max(0, jumpBoost)) * factor;
+            double maxAirSeconds = FlyGuard.maxAirSeconds(jumpBoost, factor);
             double airborneSeconds = trace.airTicks() * 0.05;
             if (airborneSeconds > maxAirSeconds) {
                 service.flag(player, CheckType.FLY,
                         1.2 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
                         String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)",
                                 airborneSeconds, dy));
-                // Server authority, smoothly: once flight is confirmed (never
-                // fires for legitimate air time), a gentle gravity-like pull
-                // drains the hacked elevation. Velocity is client-predicted, so
-                // this looks and feels like normal falling — no rubber-band
-                // stutter, no "lag in the air", no getting stuck — while the
-                // kick/ban escalation handles anything that keeps defying it.
-                if (config.serverAuthority()) {
+                // Server authority, smoothly: a gentle gravity-like pull (at
+                // most twice a second — no stutter) drains the hacked elevation
+                // while the kick/ban escalation handles anything that persists.
+                if (config.serverAuthority() && nowMillis - trace.flyPullAtMillis() >= 500L) {
+                    trace.setFlyPullAtMillis(nowMillis);
                     Vector velocity = player.getVelocity();
                     player.setVelocity(new Vector(velocity.getX() * 0.92, -0.32, velocity.getZ() * 0.92));
                 }
@@ -508,6 +520,18 @@ public final class AntiCheatListener implements Listener {
                 && !player.hasPermission("veltryx.anticheat.bypass")
                 && player.getGameMode() != GameMode.CREATIVE
                 && player.getGameMode() != GameMode.SPECTATOR;
+    }
+
+    /** Honey blocks on any side (or below) let players wall-slide down slowly. */
+    private static boolean nearHoney(Location location) {
+        if (location.getBlock().getType() == Material.HONEY_BLOCK) {
+            return true;
+        }
+        return location.clone().add(1, 0, 0).getBlock().getType() == Material.HONEY_BLOCK
+                || location.clone().add(-1, 0, 0).getBlock().getType() == Material.HONEY_BLOCK
+                || location.clone().add(0, 0, 1).getBlock().getType() == Material.HONEY_BLOCK
+                || location.clone().add(0, 0, -1).getBlock().getType() == Material.HONEY_BLOCK
+                || location.clone().subtract(0, 1, 0).getBlock().getType() == Material.HONEY_BLOCK;
     }
 
     private static boolean isClimbing(Material material) {

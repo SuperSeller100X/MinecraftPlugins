@@ -57,22 +57,25 @@ anticheat:
   # Escalation per check: alert staff -> kick -> automatic ban.
   # ban-duration uses s/m/h/d/w or "perm". A check inherits defaults when
   # its section is omitted.
+  # Auto-bans follow the fixed rule (also used by the ban escalation below):
+  # xray/esp = 30 days, every hacking check (fly, speed, jesus, ...) = permanent.
+  # A player kicked twice for the same check within 24h is banned instead.
   checks:
     movement:
-      fly:      { enabled: true, alert-vl: 6, kick-vl: 18, ban-vl: 40, ban-duration: 7d, ban-reason: "Hacking (Fly)" }
-      speed:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Speed)" }
-      jesus:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Jesus)" }
-      phase:    { enabled: true, alert-vl: 5, kick-vl: 14, ban-vl: 30, ban-duration: 7d, ban-reason: "Hacking (Phase)" }
-      timer:    { enabled: true, alert-vl: 8, kick-vl: 25, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (Timer)" }
+      fly:      { enabled: true, alert-vl: 6, kick-vl: 18, ban-vl: 40, ban-duration: perm, ban-reason: "Hacking (Fly)" }
+      speed:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Speed)" }
+      jesus:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Jesus)" }
+      phase:    { enabled: true, alert-vl: 5, kick-vl: 14, ban-vl: 30, ban-duration: perm, ban-reason: "Hacking (Phase)" }
+      timer:    { enabled: true, alert-vl: 8, kick-vl: 25, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (Timer)" }
     combat:
-      autoclicker: { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (AutoClicker)" }
-      reach:       { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: 7d, ban-reason: "Hacking (Reach)" }
-      multiaura:   { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (MultiAura)" }
-      aim:         { enabled: true, alert-vl: 8, kick-vl: 30, ban-vl: 60, ban-duration: 7d, ban-reason: "Hacking (Aim)" }
+      autoclicker: { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (AutoClicker)" }
+      reach:       { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Reach)" }
+      multiaura:   { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (MultiAura)" }
+      aim:         { enabled: true, alert-vl: 8, kick-vl: 30, ban-vl: 60, ban-duration: perm, ban-reason: "Hacking (Aim)" }
     interact:
-      fastplace:      { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (FastPlace)" }
-      fastuse:        { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (FastUse)" }
-      interact-reach: { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: 7d, ban-reason: "Hacking (InteractReach)" }
+      fastplace:      { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (FastPlace)" }
+      fastuse:        { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (FastUse)" }
+      interact-reach: { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (InteractReach)" }
     xray:
       xray: { enabled: true, alert-vl: 4, kick-vl: 12, ban-vl: 25, ban-duration: 30d, ban-reason: "X-Ray" }
 

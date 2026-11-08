@@ -75,7 +75,23 @@ violation-level decay keep false positives near zero.
   vanilla movement — sprint-jump chains (~7.5–8 b/s, the way everyone moves),
   speed potions, ice, soul speed and slime launches all widen it automatically,
   and it grows with ping/lag. Mild excess is only counted after three
-  consecutive samples; falls, elytra, jumping and lag corrections never flag.
+  consecutive samples; isolated impossible samples (lag corrections) are
+  ignored completely and never touch the player. Speed only reports **grounded**
+  movement — anything in the air is judged and labeled as **Fly**, so hacks are
+  always named correctly.
+- **Fly catches everything, fast:** flight is flagged after ~0.8s of
+  unexplained airtime (jump-boost and ping aware). Vertical movement is judged
+  in three tiers — real falls drain the counter, while hovering, bobbing **and
+  slow "no-fall" descents** accumulate, so fake-falling fly hacks can't hide.
+  Honey wall-slides and every legitimate air state (jumping, elytra, vehicles,
+  riptide, levitation, slow falling, water, ladders) never flag.
+- **Jesus is surface-only:** only skating across the water surface counts —
+  diving in, walking on the sea floor, swimming and depth-strider/dolphin
+  movement never flag, and it takes several consecutive skimming samples.
+- **Kicks escalate to bans:** a player kicked twice for the same check within
+  24 hours is **banned instead** — permanent for hacking (fly, speed, jesus,
+  …), 30 days for xray/esp. Kicking alone used to reset the violation levels,
+  which is why hacks mostly just got kicked; now repeat offenders are banned.
 - **Anti-xray (obfuscation):** **every** ore (configurable) is sent to clients
   as stone the moment the client receives the chunk — X-Ray texture packs and
   ESP overlays show plain stone across the whole view distance, with **no

@@ -37,6 +37,8 @@ import org.bukkit.entity.Player;
 public final class AntiCheatService {
 
     private final DataStore store;
+    /** Kicks per player/check — a repeat kick within 24h becomes a ban. */
+    private final Map<UUID, Map<CheckType, Long>> kickMemory = new java.util.concurrent.ConcurrentHashMap<>();
     private final Messages messages;
     private final VeltryxConfig config;
     private final BanService bans;
@@ -161,6 +163,19 @@ public final class AntiCheatService {
     }
 
     private void autoKick(Player player, CheckType check, CheckType.Plan plan) {
+        long now = System.currentTimeMillis();
+        Map<CheckType, Long> past = kickMemory.computeIfAbsent(player.getUniqueId(),
+                k -> new java.util.concurrent.ConcurrentHashMap<>());
+        Long lastKick = past.get(check);
+        if (lastKick != null && now - lastKick < 24L * 60 * 60 * 1000L) {
+            // Hacking that comes back after a kick is BANNED, not kicked again.
+            // Kicking alone can never reach the ban VL (the session ends at the
+            // kick and violation levels reset), so this is what makes auto-ban
+            // real: xray/esp = 30 days, everything else = permanent.
+            autoBan(player, check, plan);
+            return;
+        }
+        past.put(check, now);
         player.kick(messages.render("anticheat.kick", Map.of(
                 "check", check.display(),
                 "reason", plan.banReason())));
@@ -170,14 +185,15 @@ public final class AntiCheatService {
     private void autoBan(Player player, CheckType check, CheckType.Plan plan) {
         PlayerTrace trace = trace(player);
         String evidence = evidenceSummary(trace, check);
+        long seconds = check.specBanSeconds();
         bans.ban(player.getUniqueId(), player.getName(),
                 "auto-" + check.name().toLowerCase(java.util.Locale.ROOT),
                 plan.banReason(), evidence, "Veltryx AntiCheat",
-                TimeUtil.expiryMillis(System.currentTimeMillis(), plan.banSeconds()), true);
+                TimeUtil.expiryMillis(System.currentTimeMillis(), seconds), true);
         notifyPunishment(player.getName(), check,
-                plan.banSeconds() == Long.MAX_VALUE ? "permanently banned"
-                        : "banned for " + TimeUtil.format(plan.banSeconds()),
-                plan.banSeconds() == Long.MAX_VALUE ? "perm" : TimeUtil.format(plan.banSeconds()));
+                seconds == Long.MAX_VALUE ? "permanently banned"
+                        : "banned for " + TimeUtil.format(seconds),
+                seconds == Long.MAX_VALUE ? "perm" : TimeUtil.format(seconds));
     }
 
     private void notifyPunishment(String name, CheckType check, String action, String duration) {

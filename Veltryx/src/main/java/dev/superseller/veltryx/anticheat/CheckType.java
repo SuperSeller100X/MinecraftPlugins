@@ -51,4 +51,13 @@ public enum CheckType {
     public record Plan(boolean enabled, double alertVl, double kickVl, double banVl,
                        long banSeconds, String banReason) {
     }
+
+    /**
+     * Spec-mandated auto-ban duration: xray/esp = 30 days, every other check
+     * ("hacking": fly, speed, jesus, phase, timer, combat, interact) =
+     * permanent.
+     */
+    public long specBanSeconds() {
+        return this == XRAY ? 30L * 24 * 60 * 60 : Long.MAX_VALUE;
+    }
 }

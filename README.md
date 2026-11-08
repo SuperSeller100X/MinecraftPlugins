@@ -322,11 +322,17 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   tolerances scale with lag, checks skip on bad connections and auto kicks/bans only fire
   while ping and TPS are healthy — designed not to false ban. Creative, spectator
   and bypassed players are never checked. Flag → alert → kick → auto-ban
-  escalation, fully configurable per check. Anti-xray is client-side and
-  flash-free (ores ride behind the chunk packet). **Server authority without
-  lag feel**: impossible movement is clamped smoothly (no rubber-band, players
-  never bug out) and confirmed flight gets a gentle gravity pull — clamped
-  movement never feeds violation levels, so corrections cannot cause false bans.
+  escalation, fully configurable per check — and a second kick for the same
+  check within 24h becomes a **ban** (permanent for hacking, 30 days for
+  xray/esp), so repeat offenders don't just get kicked forever. Fly detection
+  catches slow "no-fall" descents and bobbing too (~0.8s), speed only reports
+  grounded movement (airborne = Fly), and Jesus is surface-only — divers and
+  sea-floor walkers never flag. Anti-xray is client-side and flash-free (ores
+  ride behind the chunk packet). **Server authority without lag feel**:
+  impossible movement is clamped smoothly (no rubber-band, players never bug
+  out), isolated lag corrections are ignored entirely, and confirmed flight
+  gets a gentle gravity pull — corrections never feed violation levels, so
+  they cannot cause false bans.
 - `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
   levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
