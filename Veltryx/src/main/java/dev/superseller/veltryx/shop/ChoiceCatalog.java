@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * The configurable shop extras: potions (choose the type), tipped arrows
+ * Selectable shop extras: potions (choose the type), tipped arrows
  * (choose the effect) and enchanted books (choose the enchantment and its
- * level). Prices are plain tables so the smoke suite can verify them; the
+ * level). Per-choice prices are fixed in these tables; the
  * items they describe are never /sell-able, so no buy-sell loop can exist.
  */
 public final class ChoiceCatalog {
@@ -26,9 +26,9 @@ public final class ChoiceCatalog {
         List<PotionOption> out = new ArrayList<>();
         out.add(new PotionOption("NIGHT_VISION", "Night Vision", 45_00));
         out.add(new PotionOption("INVISIBILITY", "Invisibility", 90_00));
-        out.add(new PotionOption("JUMP_BOOST", "Leaping", 55_00));
+        out.add(new PotionOption("LEAPING", "Leaping", 55_00));
         out.add(new PotionOption("FIRE_RESISTANCE", "Fire Resistance", 60_00));
-        out.add(new PotionOption("SPEED", "Swiftness", 55_00));
+        out.add(new PotionOption("SWIFTNESS", "Swiftness", 55_00));
         out.add(new PotionOption("SLOWNESS", "Slowness", 35_00));
         out.add(new PotionOption("WATER_BREATHING", "Water Breathing", 50_00));
         out.add(new PotionOption("HEALING", "Healing", 50_00));
@@ -39,10 +39,20 @@ public final class ChoiceCatalog {
         out.add(new PotionOption("WEAKNESS", "Weakness", 35_00));
         out.add(new PotionOption("TURTLE_MASTER", "Turtle Master", 85_00));
         out.add(new PotionOption("SLOW_FALLING", "Slow Falling", 55_00));
+        // Brewable base, extended, and upgraded variants (LUCK is creative-only).
+        for (String key : List.of("WATER", "MUNDANE", "THICK", "AWKWARD", "INFESTED", "OOZING",
+                "WEAVING", "WIND_CHARGED", "LONG_FIRE_RESISTANCE", "LONG_INVISIBILITY",
+                "LONG_LEAPING", "LONG_NIGHT_VISION", "LONG_POISON", "LONG_REGENERATION",
+                "LONG_SLOW_FALLING", "LONG_SLOWNESS", "LONG_STRENGTH", "LONG_SWIFTNESS",
+                "LONG_TURTLE_MASTER", "LONG_WATER_BREATHING", "LONG_WEAKNESS", "STRONG_HARMING",
+                "STRONG_HEALING", "STRONG_LEAPING", "STRONG_POISON", "STRONG_REGENERATION",
+                "STRONG_SLOWNESS", "STRONG_STRENGTH", "STRONG_SWIFTNESS", "STRONG_TURTLE_MASTER")) {
+            out.add(new PotionOption(key, PriceTable.displayName(key), 65_00));
+        }
         return out;
     }
 
-    /** Tipped arrows are sold in packs of 8 at 1.25x the matching potion. */
+    /** Eight-arrow reference price is 1.25x the matching potion; GUI amounts are selectable. */
     public static final int TIPPED_ARROW_PACK = 8;
 
     /** Price of one tipped-arrow pack for a potion option. */
@@ -86,7 +96,29 @@ public final class ChoiceCatalog {
         out.add(new BookOption("MENDING", "Mending", 1, 800_00, "rare"));
         out.add(new BookOption("SILK_TOUCH", "Silk Touch", 1, 800_00, "rare"));
         out.add(new BookOption("INFINITY", "Infinity", 1, 800_00, "rare"));
+        out.add(new BookOption("BINDING_CURSE", "Curse of Binding", 1, 800_00, "rare"));
+        out.add(new BookOption("VANISHING_CURSE", "Curse of Vanishing", 1, 800_00, "rare"));
+        out.add(new BookOption("BREACH", "Breach", 4, 450_00, "uncommon"));
+        out.add(new BookOption("DENSITY", "Density", 5, 450_00, "uncommon"));
+        out.add(new BookOption("FROST_WALKER", "Frost Walker", 2, 450_00, "uncommon"));
+        out.add(new BookOption("LUNGE", "Lunge", 3, 450_00, "uncommon"));
+        out.add(new BookOption("MULTISHOT", "Multishot", 1, 450_00, "uncommon"));
+        out.add(new BookOption("PIERCING", "Piercing", 4, 450_00, "uncommon"));
+        out.add(new BookOption("QUICK_CHARGE", "Quick Charge", 3, 450_00, "uncommon"));
+        out.add(new BookOption("SOUL_SPEED", "Soul Speed", 3, 800_00, "rare"));
+        out.add(new BookOption("SWEEPING_EDGE", "Sweeping Edge", 3, 450_00, "uncommon"));
+        out.add(new BookOption("SWIFT_SNEAK", "Swift Sneak", 3, 800_00, "rare"));
+        out.add(new BookOption("WIND_BURST", "Wind Burst", 3, 800_00, "rare"));
         return out;
+    }
+
+    public static PotionOption potion(String key) {
+        for (PotionOption option : potions()) if (option.key().equals(key)) return option;
+        return null;
+    }
+    public static BookOption book(String key) {
+        for (BookOption option : books()) if (option.key().equals(key)) return option;
+        return null;
     }
 
     /** Price of one enchanted book for a given option and level. */
@@ -100,7 +132,7 @@ public final class ChoiceCatalog {
         if (query == null || query.isBlank()) {
             return false;
         }
-        String needle = query.toLowerCase(Locale.ROOT).trim();
+        String needle = query.toLowerCase(Locale.ROOT).trim().replace('_', ' ');
         if (displayName != null && displayName.toLowerCase(Locale.ROOT).contains(needle)) {
             return true;
         }

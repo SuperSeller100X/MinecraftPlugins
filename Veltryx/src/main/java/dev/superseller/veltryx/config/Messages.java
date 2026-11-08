@@ -1,6 +1,6 @@
 package dev.superseller.veltryx.config;
 
-import dev.superseller.veltryx.VeltryxPlugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,25 +29,52 @@ public final class Messages {
 
     /** Matches an unfilled placeholder like {@code {reason}}. */
     private static final Pattern UNFILLED = Pattern.compile("\\{[a-zA-Z0-9_-]+}");
+    // Earlier shipped templates used <lime>, which is not a MiniMessage named color.
+    // Translate it at render time for existing custom files without rewriting them.
+    private static final Pattern LEGACY_LIME = Pattern.compile("(?i)(?<!\\\\)<(/?)lime>");
 
-    private final VeltryxPlugin plugin;
+    private final JavaPlugin plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private volatile Map<String, String> templates = Map.of();
 
-    public Messages(VeltryxPlugin plugin) {
+    public Messages(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
+    /**
+     * Start with the bundled messages, then overlay the server's custom file.
+     * Even an old/incomplete file (or a failed update merge) can never hide a
+     * message supplied in the current jar. Existing translations win.
+     */
     public void reload() {
-        File file = new File(plugin.getDataFolder(), "messages.yml");
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-        Map<String, String> loaded = new HashMap<>();
-        for (String key : yaml.getKeys(true)) {
-            if (yaml.isString(key)) {
-                loaded.put(key, yaml.getString(key, ""));
+        Map<String, String> defaults = new HashMap<>();
+        try (java.io.InputStream in = plugin.getResource("messages.yml")) {
+            if (in != null) {
+                YamlConfiguration bundled = YamlConfiguration.loadConfiguration(
+                        new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+                collect(bundled, defaults);
+            } else {
+                plugin.getLogger().severe("The bundled messages.yml is missing from the plugin jar.");
             }
+        } catch (java.io.IOException e) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Could not read default messages.yml", e);
         }
-        templates = Map.copyOf(loaded);
+        Map<String, String> custom = new HashMap<>();
+        collect(YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "messages.yml")), custom);
+        templates = mergeTemplates(defaults, custom);
+    }
+
+    private static void collect(YamlConfiguration yaml, Map<String, String> destination) {
+        for (String key : yaml.getKeys(true)) {
+            if (yaml.isString(key)) destination.put(key, yaml.getString(key, ""));
+        }
+    }
+
+    /** Merge is intentionally independent of disk I/O, to make the fallback testable. */
+    public static Map<String, String> mergeTemplates(Map<String, String> defaults, Map<String, String> custom) {
+        Map<String, String> combined = new HashMap<>(defaults);
+        combined.putAll(custom);
+        return Map.copyOf(combined);
     }
 
     public Component render(String key, Map<String, String> values) {
@@ -81,7 +108,7 @@ public final class Messages {
      * value is removed.
      */
     private Component renderRaw(String raw, Map<String, String> values) {
-        String out = raw;
+        String out = LEGACY_LIME.matcher(raw).replaceAll("<$1green>");
         List<TagResolver> resolvers = new ArrayList<>();
         int i = 0;
         for (Map.Entry<String, String> entry : values.entrySet()) {

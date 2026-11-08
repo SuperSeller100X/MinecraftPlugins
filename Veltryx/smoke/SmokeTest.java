@@ -339,7 +339,7 @@ public final class SmokeTest {
             boolean sane = true;
             for (var cat : shop.categories()) {
                 for (var e : cat.items()) {
-                    if (!(e.sellCents() > 0 && e.sellCents() < e.buyCents())) {
+                    if (!(e.sellCents() >= 0 && e.sellCents() < e.buyCents())) {
                         sane = false;
                     }
                 }
@@ -682,7 +682,7 @@ public final class SmokeTest {
         t("rtp null ground", dev.superseller.veltryx.rtp.RtpSafety.isSafe(null, true, "AIR", "AIR"), false);
 
         // Choice catalog: potions, tipped arrows, enchanted books
-        t("potions offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.potions().size()), Integer.valueOf(15));
+        t("potions offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.potions().size()), Integer.valueOf(45));
         boolean potionPricesOk = true;
         long healingPrice = 0;
         for (var potion : dev.superseller.veltryx.shop.ChoiceCatalog.potions()) {
@@ -699,7 +699,7 @@ public final class SmokeTest {
                 new dev.superseller.veltryx.shop.ChoiceCatalog.PotionOption("HEALING", "Healing", 5000L))),
                 Long.valueOf(6250L));
         t("arrow pack size", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.TIPPED_ARROW_PACK), Integer.valueOf(8));
-        t("books offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.books().size()), Integer.valueOf(30));
+        t("books offered", Integer.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.books().size()), Integer.valueOf(43));
         dev.superseller.veltryx.shop.ChoiceCatalog.BookOption sharpness = null;
         dev.superseller.veltryx.shop.ChoiceCatalog.BookOption mending = null;
         for (var book : dev.superseller.veltryx.shop.ChoiceCatalog.books()) {
@@ -825,7 +825,7 @@ public final class SmokeTest {
         String[][] groups = {
                 {"OAK_LOG", "STRIPPED_OAK_LOG", "OAK_WOOD", "STRIPPED_OAK_WOOD"},
                 {"PALE_OAK_LOG", "STRIPPED_PALE_OAK_LOG", "PALE_OAK_WOOD", "STRIPPED_PALE_OAK_WOOD"},
-                {"CRIMSON_STEM", "STRIPPED_CRIMSON_STEM", "CRIMSON_WOOD", "STRIPPED_CRIMSON_WOOD"},
+                {"CRIMSON_STEM", "STRIPPED_CRIMSON_STEM", "CRIMSON_HYPHAE", "STRIPPED_CRIMSON_HYPHAE"},
         };
         for (String[] g : groups) {
             double[] first = p.get(g[0]);
@@ -849,7 +849,7 @@ public final class SmokeTest {
         }
         for (var e : p.entrySet()) {
             double[] v = e.getValue();
-            if (!(v[1] < v[0]) || v[0] <= 0 || v[1] <= 0) {
+            if (!(v[1] < v[0]) || v[0] <= 0 || v[1] < 0) {
                 return false;
             }
         }

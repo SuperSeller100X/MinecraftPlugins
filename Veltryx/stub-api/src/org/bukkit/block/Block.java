@@ -10,6 +10,7 @@ public interface Block {
     Block getRelative(BlockFace face);
     Location getLocation();
     BlockData getBlockData();
+    BlockState getState();
     void setType(Material type);
     boolean breakNaturally();
     boolean breakNaturally(org.bukkit.inventory.ItemStack tool, boolean triggerEffect);

@@ -37,9 +37,7 @@ public final class StatsListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        if (!(event.getEntity() instanceof Player victim)) {
-            return;
-        }
+        Player victim = event.getEntity();
         Player killer = victim.getKiller();
         stats.recordDeath(victim, killer);
         onChange.run();

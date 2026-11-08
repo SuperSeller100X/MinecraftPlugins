@@ -4,283 +4,312 @@
 #   buy  = what the shop charges when a player buys the item
 #   sell = what /sell pays (always less than buy)
 #
-# Anti-arbitrage rules baked into these prices:
-#   - gathered resources sell at ~65% of buy (mining/farming earns money)
-#   - crafted items sell at ~50% of buy and cost barely more than their
-#     materials, so buy-materials -> craft -> sell always loses money:
-#     you earn by gathering and selling, not by market games.
-#
-# Admins can edit prices freely on a live server; plugin updates only ADD
-# missing items and keep your values. See README for the full format.
+# Runtime safety caps base sells to half the cheapest *modeled* way to
+# acquire the item and caps enchantment bonuses. The bundled model covers
+# vanilla recipes and selected transformations, Fortune and container returns;
+# it does not model every trade, farm, plugin or game mechanic. Values on disk
+# are preserved during upgrades, even when a lower effective cap is applied.
+# Potion, tipped-arrow and enchanted-book variants have fixed choice prices.
+# Metadata-dependent items such as maps and potions are buy-only.
 
 ores:
-  display: "Ores & Minerals"
-  icon: DIAMOND
+  display: "Resources"
+  icon: IRON_INGOT
   items:
-    COAL: { buy: 0.55, sell: 0.35 }
+    COAL: { buy: 0.55, sell: 0.17 }
     CHARCOAL: { buy: 0.18, sell: 0.09 }
-    RAW_IRON: { buy: 0.75, sell: 0.45 }
-    IRON_INGOT: { buy: 0.65, sell: 0.42 }
-    IRON_NUGGET: { buy: 0.08, sell: 0.04 }
-    RAW_COPPER: { buy: 0.28, sell: 0.18 }
-    COPPER_INGOT: { buy: 0.32, sell: 0.16 }
-    RAW_GOLD: { buy: 0.85, sell: 0.55 }
-    GOLD_INGOT: { buy: 1.20, sell: 0.78 }
-    GOLD_NUGGET: { buy: 0.14, sell: 0.07 }
-    REDSTONE: { buy: 0.40, sell: 0.25 }
-    LAPIS_LAZULI: { buy: 0.75, sell: 0.45 }
-    DIAMOND: { buy: 8.00, sell: 5.20 }
-    EMERALD: { buy: 7.00, sell: 4.55 }
-    QUARTZ: { buy: 0.55, sell: 0.35 }
-    AMETHYST_SHARD: { buy: 0.45, sell: 0.29 }
-    ANCIENT_DEBRIS: { buy: 25.00, sell: 16.25 }
-    NETHERITE_SCRAP: { buy: 30.00, sell: 15.00 }
-    NETHERITE_INGOT: { buy: 120.00, sell: 60.00 }
-    IRON_BLOCK: { buy: 6.20, sell: 3.10 }
-    COPPER_BLOCK: { buy: 3.00, sell: 1.50 }
-    GOLD_BLOCK: { buy: 11.50, sell: 5.75 }
-    REDSTONE_BLOCK: { buy: 2.75, sell: 1.38 }
+    RAW_IRON: { buy: 0.75, sell: 0.23 }
+    IRON_INGOT: { buy: 0.65, sell: 0.23 }
+    IRON_NUGGET: { buy: 0.08, sell: 0.02 }
+    RAW_COPPER: { buy: 0.28, sell: 0.11 }
+    COPPER_INGOT: { buy: 0.32, sell: 0.11 }
+    RAW_GOLD: { buy: 0.85, sell: 0.42 }
+    GOLD_INGOT: { buy: 1.20, sell: 0.37 }
+    GOLD_NUGGET: { buy: 0.14, sell: 0.04 }
+    REDSTONE: { buy: 0.40, sell: 0.15 }
+    LAPIS_LAZULI: { buy: 0.75, sell: 0.26 }
+    DIAMOND: { buy: 8.00, sell: 4.00 }
+    EMERALD: { buy: 7.00, sell: 3.50 }
+    QUARTZ: { buy: 0.55, sell: 0.27 }
+    AMETHYST_SHARD: { buy: 0.45, sell: 0.22 }
+    ANCIENT_DEBRIS: { buy: 25.00, sell: 12.50 }
+    NETHERITE_SCRAP: { buy: 30.00, sell: 12.50 }
+    NETHERITE_INGOT: { buy: 120.00, sell: 51.50 }
+    IRON_BLOCK: { buy: 6.20, sell: 2.15 }
+    COPPER_BLOCK: { buy: 3.00, sell: 1.05 }
+    GOLD_BLOCK: { buy: 11.50, sell: 3.37 }
+    REDSTONE_BLOCK: { buy: 2.75, sell: 1.37 }
     LAPIS_BLOCK: { buy: 4.80, sell: 2.40 }
-    DIAMOND_BLOCK: { buy: 76.00, sell: 38.00 }
-    EMERALD_BLOCK: { buy: 66.00, sell: 33.00 }
-    COAL_BLOCK: { buy: 3.50, sell: 1.75 }
-    NETHERITE_BLOCK: { buy: 1150.00, sell: 575.00 }
+    DIAMOND_BLOCK: { buy: 76.00, sell: 36.00 }
+    EMERALD_BLOCK: { buy: 66.00, sell: 31.50 }
+    COAL_BLOCK: { buy: 3.50, sell: 1.57 }
+    NETHERITE_BLOCK: { buy: 1150.00, sell: 463.50 }
     RAW_IRON_BLOCK: { buy: 4.30, sell: 2.15 }
     RAW_COPPER_BLOCK: { buy: 2.10, sell: 1.05 }
-    RAW_GOLD_BLOCK: { buy: 8.10, sell: 4.05 }
-    BUDDING_AMETHYST: { buy: 12.00, sell: 7.80 }
-    CALCITE: { buy: 0.15, sell: 0.10 }
-    COAL_ORE: { buy: 0.35, sell: 0.23 }
-    DEEPSLATE_COAL_ORE: { buy: 0.35, sell: 0.23 }
-    IRON_ORE: { buy: 0.55, sell: 0.36 }
-    DEEPSLATE_IRON_ORE: { buy: 0.55, sell: 0.36 }
-    COPPER_ORE: { buy: 1.55, sell: 1.01 }
-    DEEPSLATE_COPPER_ORE: { buy: 1.55, sell: 1.01 }
-    GOLD_ORE: { buy: 1.05, sell: 0.68 }
-    DEEPSLATE_GOLD_ORE: { buy: 1.05, sell: 0.68 }
-    NETHER_GOLD_ORE: { buy: 0.75, sell: 0.49 }
-    REDSTONE_ORE: { buy: 0.85, sell: 0.55 }
-    DEEPSLATE_REDSTONE_ORE: { buy: 0.85, sell: 0.55 }
-    LAPIS_ORE: { buy: 3.10, sell: 2.02 }
-    DEEPSLATE_LAPIS_ORE: { buy: 3.10, sell: 2.02 }
-    DIAMOND_ORE: { buy: 8.60, sell: 5.59 }
-    DEEPSLATE_DIAMOND_ORE: { buy: 8.60, sell: 5.59 }
-    EMERALD_ORE: { buy: 8.00, sell: 5.20 }
-    DEEPSLATE_EMERALD_ORE: { buy: 8.00, sell: 5.20 }
-    NETHER_QUARTZ_ORE: { buy: 1.25, sell: 0.81 }
+    RAW_GOLD_BLOCK: { buy: 8.10, sell: 3.82 }
+
+    CALCITE: { buy: 0.15, sell: 0.07 }
+    COAL_ORE: { buy: 3.00, sell: 0.17 }
+    DEEPSLATE_COAL_ORE: { buy: 3.00, sell: 0.17 }
+    IRON_ORE: { buy: 6.00, sell: 0.27 }
+    DEEPSLATE_IRON_ORE: { buy: 6.00, sell: 0.27 }
+    COPPER_ORE: { buy: 7.00, sell: 0.77 }
+    DEEPSLATE_COPPER_ORE: { buy: 7.00, sell: 0.77 }
+    GOLD_ORE: { buy: 5.00, sell: 0.52 }
+    DEEPSLATE_GOLD_ORE: { buy: 5.00, sell: 0.52 }
+    NETHER_GOLD_ORE: { buy: 4.00, sell: 0.37 }
+    REDSTONE_ORE: { buy: 4.00, sell: 0.42 }
+    DEEPSLATE_REDSTONE_ORE: { buy: 4.00, sell: 0.42 }
+    LAPIS_ORE: { buy: 30.00, sell: 1.55 }
+    DEEPSLATE_LAPIS_ORE: { buy: 30.00, sell: 1.55 }
+    DIAMOND_ORE: { buy: 40.00, sell: 4.30 }
+    DEEPSLATE_DIAMOND_ORE: { buy: 40.00, sell: 4.30 }
+    EMERALD_ORE: { buy: 35.00, sell: 4.00 }
+    DEEPSLATE_EMERALD_ORE: { buy: 35.00, sell: 4.00 }
+    NETHER_QUARTZ_ORE: { buy: 3.00, sell: 0.62 }
+    AMETHYST_BLOCK: { buy: 1.00, sell: 0.50 }
+    AMETHYST_CLUSTER: { buy: 10.00, sell: 0.50 }
+    COPPER_NUGGET: { buy: 0.04, sell: 0.01 }
+    CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    EXPOSED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    EXPOSED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    EXPOSED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    LARGE_AMETHYST_BUD: { buy: 1.00, sell: 0.50 }
+    MEDIUM_AMETHYST_BUD: { buy: 1.00, sell: 0.50 }
+    OXIDIZED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    OXIDIZED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    OXIDIZED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    SMALL_AMETHYST_BUD: { buy: 1.00, sell: 0.50 }
+    WAXED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    WAXED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    WAXED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    WAXED_EXPOSED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    WAXED_EXPOSED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    WAXED_EXPOSED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    WAXED_OXIDIZED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    WAXED_OXIDIZED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    WAXED_OXIDIZED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    WAXED_WEATHERED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    WAXED_WEATHERED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    WAXED_WEATHERED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
+    WEATHERED_CUT_COPPER: { buy: 0.63, sell: 0.26 }
+    WEATHERED_CUT_COPPER_SLAB: { buy: 0.30, sell: 0.13 }
+    WEATHERED_CUT_COPPER_STAIRS: { buy: 0.30, sell: 0.15 }
 
 building:
   display: "Building Blocks"
-  icon: BRICKS
+  icon: CRAFTING_TABLE
   items:
-    STONE: { buy: 0.10, sell: 0.05 }
-    COBBLESTONE: { buy: 0.06, sell: 0.04 }
+    STONE: { buy: 0.10, sell: 0.03 }
+    COBBLESTONE: { buy: 0.06, sell: 0.03 }
     MOSSY_COBBLESTONE: { buy: 0.12, sell: 0.06 }
-    SMOOTH_STONE: { buy: 0.11, sell: 0.06 }
-    STONE_BRICKS: { buy: 0.13, sell: 0.07 }
-    MOSSY_STONE_BRICKS: { buy: 0.18, sell: 0.09 }
-    CRACKED_STONE_BRICKS: { buy: 0.12, sell: 0.06 }
-    CHISELED_STONE_BRICKS: { buy: 0.16, sell: 0.08 }
-    GRANITE: { buy: 0.08, sell: 0.05 }
-    POLISHED_GRANITE: { buy: 0.12, sell: 0.06 }
-    DIORITE: { buy: 0.08, sell: 0.05 }
-    POLISHED_DIORITE: { buy: 0.12, sell: 0.06 }
-    ANDESITE: { buy: 0.08, sell: 0.05 }
-    POLISHED_ANDESITE: { buy: 0.12, sell: 0.06 }
-    DEEPSLATE: { buy: 0.09, sell: 0.06 }
-    COBBLED_DEEPSLATE: { buy: 0.08, sell: 0.05 }
-    POLISHED_DEEPSLATE: { buy: 0.11, sell: 0.06 }
-    DEEPSLATE_BRICKS: { buy: 0.13, sell: 0.07 }
-    DEEPSLATE_TILES: { buy: 0.13, sell: 0.07 }
-    CHISELED_DEEPSLATE: { buy: 0.15, sell: 0.07 }
-    TUFF: { buy: 0.08, sell: 0.05 }
-    POLISHED_TUFF: { buy: 0.11, sell: 0.06 }
-    TUFF_BRICKS: { buy: 0.12, sell: 0.06 }
-    MUD_BRICKS: { buy: 0.13, sell: 0.07 }
-    BRICKS: { buy: 0.85, sell: 0.42 }
-    PRISMARINE: { buy: 1.35, sell: 0.68 }
+    SMOOTH_STONE: { buy: 0.11, sell: 0.03 }
+    STONE_BRICKS: { buy: 0.13, sell: 0.03 }
+    MOSSY_STONE_BRICKS: { buy: 0.18, sell: 0.07 }
+    CRACKED_STONE_BRICKS: { buy: 0.12, sell: 0.03 }
+    CHISELED_STONE_BRICKS: { buy: 0.16, sell: 0.03 }
+    GRANITE: { buy: 0.08, sell: 0.04 }
+    POLISHED_GRANITE: { buy: 0.12, sell: 0.04 }
+    DIORITE: { buy: 0.08, sell: 0.04 }
+    POLISHED_DIORITE: { buy: 0.12, sell: 0.04 }
+    ANDESITE: { buy: 0.08, sell: 0.03 }
+    POLISHED_ANDESITE: { buy: 0.12, sell: 0.03 }
+    DEEPSLATE: { buy: 0.09, sell: 0.04 }
+    COBBLED_DEEPSLATE: { buy: 0.08, sell: 0.04 }
+    POLISHED_DEEPSLATE: { buy: 0.11, sell: 0.04 }
+    DEEPSLATE_BRICKS: { buy: 0.13, sell: 0.04 }
+    DEEPSLATE_TILES: { buy: 0.13, sell: 0.04 }
+    CHISELED_DEEPSLATE: { buy: 0.15, sell: 0.04 }
+    TUFF: { buy: 0.08, sell: 0.04 }
+    POLISHED_TUFF: { buy: 0.11, sell: 0.04 }
+    TUFF_BRICKS: { buy: 0.12, sell: 0.04 }
+    MUD_BRICKS: { buy: 0.13, sell: 0.06 }
+    BRICKS: { buy: 0.85, sell: 0.30 }
+    PRISMARINE: { buy: 1.35, sell: 0.67 }
     PRISMARINE_BRICKS: { buy: 0.40, sell: 0.20 }
-    DARK_PRISMARINE: { buy: 0.45, sell: 0.23 }
+    DARK_PRISMARINE: { buy: 0.45, sell: 0.22 }
     SEA_LANTERN: { buy: 2.50, sell: 1.25 }
-    PURPUR_BLOCK: { buy: 0.30, sell: 0.20 }
-    PURPUR_PILLAR: { buy: 0.32, sell: 0.16 }
-    END_STONE: { buy: 0.10, sell: 0.07 }
-    END_STONE_BRICKS: { buy: 0.13, sell: 0.07 }
-    OBSIDIAN: { buy: 0.95, sell: 0.60 }
+    PURPUR_BLOCK: { buy: 0.30, sell: 0.15 }
+    PURPUR_PILLAR: { buy: 0.32, sell: 0.15 }
+    END_STONE: { buy: 0.10, sell: 0.05 }
+    END_STONE_BRICKS: { buy: 0.13, sell: 0.05 }
+    OBSIDIAN: { buy: 0.95, sell: 0.47 }
     CRYING_OBSIDIAN: { buy: 1.20, sell: 0.60 }
-    BASALT: { buy: 0.08, sell: 0.05 }
-    POLISHED_BASALT: { buy: 0.11, sell: 0.06 }
-    SMOOTH_BASALT: { buy: 0.11, sell: 0.06 }
-    BLACKSTONE: { buy: 0.08, sell: 0.05 }
-    POLISHED_BLACKSTONE: { buy: 0.11, sell: 0.06 }
-    POLISHED_BLACKSTONE_BRICKS: { buy: 0.13, sell: 0.07 }
+    BASALT: { buy: 0.08, sell: 0.04 }
+    POLISHED_BASALT: { buy: 0.11, sell: 0.04 }
+    SMOOTH_BASALT: { buy: 0.11, sell: 0.04 }
+    BLACKSTONE: { buy: 0.08, sell: 0.04 }
+    POLISHED_BLACKSTONE: { buy: 0.11, sell: 0.04 }
+    POLISHED_BLACKSTONE_BRICKS: { buy: 0.13, sell: 0.04 }
     GILDED_BLACKSTONE: { buy: 0.35, sell: 0.17 }
-    NETHERRACK: { buy: 0.08, sell: 0.05 }
+    NETHERRACK: { buy: 0.08, sell: 0.04 }
     NETHER_BRICKS: { buy: 0.26, sell: 0.12 }
     RED_NETHER_BRICKS: { buy: 0.30, sell: 0.15 }
     CHISELED_NETHER_BRICKS: { buy: 0.25, sell: 0.12 }
-    QUARTZ_BLOCK: { buy: 1.65, sell: 0.83 }
+    QUARTZ_BLOCK: { buy: 1.65, sell: 0.82 }
     SMOOTH_QUARTZ: { buy: 1.00, sell: 0.50 }
-    QUARTZ_BRICKS: { buy: 1.05, sell: 0.53 }
+    QUARTZ_BRICKS: { buy: 1.05, sell: 0.52 }
     QUARTZ_PILLAR: { buy: 1.00, sell: 0.50 }
-    CHISELED_QUARTZ_BLOCK: { buy: 1.05, sell: 0.53 }
-    SANDSTONE: { buy: 0.12, sell: 0.08 }
-    SMOOTH_SANDSTONE: { buy: 0.14, sell: 0.07 }
-    CHISELED_SANDSTONE: { buy: 0.15, sell: 0.07 }
-    RED_SANDSTONE: { buy: 0.14, sell: 0.09 }
-    SMOOTH_RED_SANDSTONE: { buy: 0.16, sell: 0.08 }
-    CHISELED_RED_SANDSTONE: { buy: 0.17, sell: 0.09 }
+    CHISELED_QUARTZ_BLOCK: { buy: 1.05, sell: 0.50 }
+    SANDSTONE: { buy: 0.12, sell: 0.06 }
+    SMOOTH_SANDSTONE: { buy: 0.14, sell: 0.06 }
+    CHISELED_SANDSTONE: { buy: 0.15, sell: 0.06 }
+    RED_SANDSTONE: { buy: 0.14, sell: 0.07 }
+    SMOOTH_RED_SANDSTONE: { buy: 0.16, sell: 0.07 }
+    CHISELED_RED_SANDSTONE: { buy: 0.17, sell: 0.07 }
     PACKED_MUD: { buy: 0.14, sell: 0.07 }
-    MUD: { buy: 0.06, sell: 0.04 }
-    DRIPSTONE_BLOCK: { buy: 0.10, sell: 0.07 }
-    POINTED_DRIPSTONE: { buy: 0.12, sell: 0.08 }
-    SMOOTH_STONE_SLAB: { buy: 0.08, sell: 0.04 }
-    GLASS: { buy: 0.13, sell: 0.07 }
-    GLASS_PANE: { buy: 0.08, sell: 0.04 }
+    MUD: { buy: 0.06, sell: 0.03 }
+    DRIPSTONE_BLOCK: { buy: 0.10, sell: 0.05 }
+    POINTED_DRIPSTONE: { buy: 0.12, sell: 0.06 }
+    SMOOTH_STONE_SLAB: { buy: 0.08, sell: 0.01 }
+    GLASS: { buy: 0.13, sell: 0.04 }
+    GLASS_PANE: { buy: 0.08, sell: 0.01 }
     TINTED_GLASS: { buy: 0.20, sell: 0.10 }
-    SNOW_BLOCK: { buy: 0.24, sell: 0.12 }
-    CLAY: { buy: 0.75, sell: 0.38 }
-    BRICK: { buy: 0.18, sell: 0.09 }
-    NETHER_BRICK: { buy: 0.12, sell: 0.06 }
-    BONE_BLOCK: { buy: 0.65, sell: 0.33 }
-    HAY_BLOCK: { buy: 2.45, sell: 1.23 }
+    SNOW_BLOCK: { buy: 0.24, sell: 0.10 }
+    CLAY: { buy: 0.75, sell: 0.30 }
+    BRICK: { buy: 0.18, sell: 0.07 }
+    NETHER_BRICK: { buy: 0.12, sell: 0.04 }
+    BONE_BLOCK: { buy: 0.65, sell: 0.32 }
+    HAY_BLOCK: { buy: 2.45, sell: 1.22 }
     SLIME_BLOCK: { buy: 4.60, sell: 2.30 }
-    HONEY_BLOCK: { buy: 2.60, sell: 1.30 }
-    HONEYCOMB_BLOCK: { buy: 2.80, sell: 1.30 }
+    HONEY_BLOCK: { buy: 2.60, sell: 0.90 }
+    HONEYCOMB_BLOCK: { buy: 2.80, sell: 0.70 }
     GLOWSTONE: { buy: 0.90, sell: 0.45 }
-    SHROOMLIGHT: { buy: 1.10, sell: 0.72 }
-    GLOW_LICHEN: { buy: 0.25, sell: 0.16 }
-    MOSS_BLOCK: { buy: 0.12, sell: 0.08 }
+    SHROOMLIGHT: { buy: 1.10, sell: 0.55 }
+    GLOW_LICHEN: { buy: 0.25, sell: 0.12 }
+    MOSS_BLOCK: { buy: 0.12, sell: 0.06 }
     MOSS_CARPET: { buy: 0.08, sell: 0.04 }
-    REINFORCED_DEEPSLATE: { buy: 8.00, sell: 4.00 }
-    SCULK: { buy: 1.50, sell: 0.98 }
-    SCULK_CATALYST: { buy: 15.00, sell: 9.75 }
+
+    SCULK: { buy: 1.50, sell: 0.75 }
+    SCULK_CATALYST: { buy: 15.00, sell: 7.50 }
     RESPAWN_ANCHOR: { buy: 6.00, sell: 3.00 }
-    LODESTONE: { buy: 9.00, sell: 4.50 }
+    LODESTONE: { buy: 9.00, sell: 0.47 }
     BEACON: { buy: 95.00, sell: 47.50 }
     CONDUIT: { buy: 22.00, sell: 11.00 }
     COPPER_GRATE: { buy: 0.40, sell: 0.20 }
     IRON_BARS: { buy: 0.16, sell: 0.08 }
     IRON_DOOR: { buy: 0.95, sell: 0.47 }
     IRON_TRAPDOOR: { buy: 0.85, sell: 0.42 }
-    CHAIN: { buy: 0.55, sell: 0.28 }
-    LANTERN: { buy: 0.75, sell: 0.38 }
-    SOUL_LANTERN: { buy: 0.80, sell: 0.40 }
-    LIGHTNING_ROD: { buy: 1.10, sell: 0.55 }
-    STONE_SLAB: { buy: 0.07, sell: 0.04 }
-    STONE_STAIRS: { buy: 0.12, sell: 0.06 }
-    COBBLESTONE_SLAB: { buy: 0.04, sell: 0.02 }
-    COBBLESTONE_STAIRS: { buy: 0.07, sell: 0.04 }
-    COBBLESTONE_WALL: { buy: 0.07, sell: 0.04 }
-    STONE_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    STONE_BRICK_STAIRS: { buy: 0.16, sell: 0.08 }
-    STONE_BRICK_WALL: { buy: 0.14, sell: 0.07 }
-    BRICK_SLAB: { buy: 0.55, sell: 0.28 }
-    BRICK_STAIRS: { buy: 1.06, sell: 0.53 }
-    DEEPSLATE_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    DEEPSLATE_BRICK_STAIRS: { buy: 0.16, sell: 0.08 }
-    DEEPSLATE_TILE_SLAB: { buy: 0.08, sell: 0.04 }
-    DEEPSLATE_TILE_STAIRS: { buy: 0.16, sell: 0.08 }
-    POLISHED_BLACKSTONE_SLAB: { buy: 0.07, sell: 0.04 }
-    POLISHED_BLACKSTONE_STAIRS: { buy: 0.14, sell: 0.07 }
-    POLISHED_BLACKSTONE_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    POLISHED_BLACKSTONE_BRICK_STAIRS: { buy: 0.16, sell: 0.08 }
-    POLISHED_BLACKSTONE_BRICK_WALL: { buy: 0.14, sell: 0.07 }
-    BLACKSTONE_SLAB: { buy: 0.05, sell: 0.03 }
-    BLACKSTONE_STAIRS: { buy: 0.10, sell: 0.05 }
+    IRON_CHAIN: { buy: 0.55, sell: 0.27 }
+    LANTERN: { buy: 0.75, sell: 0.24 }
+    SOUL_LANTERN: { buy: 0.80, sell: 0.24 }
+    LIGHTNING_ROD: { buy: 1.10, sell: 0.35 }
+    STONE_SLAB: { buy: 0.07, sell: 0.01 }
+    STONE_STAIRS: { buy: 0.12, sell: 0.03 }
+    COBBLESTONE_SLAB: { buy: 0.04, sell: 0.01 }
+    COBBLESTONE_STAIRS: { buy: 0.07, sell: 0.03 }
+    COBBLESTONE_WALL: { buy: 0.07, sell: 0.03 }
+    STONE_BRICK_SLAB: { buy: 0.08, sell: 0.01 }
+    STONE_BRICK_STAIRS: { buy: 0.16, sell: 0.03 }
+    STONE_BRICK_WALL: { buy: 0.14, sell: 0.03 }
+    BRICK_SLAB: { buy: 0.55, sell: 0.15 }
+    BRICK_STAIRS: { buy: 1.06, sell: 0.30 }
+    DEEPSLATE_BRICK_SLAB: { buy: 0.08, sell: 0.02 }
+    DEEPSLATE_BRICK_STAIRS: { buy: 0.16, sell: 0.04 }
+    DEEPSLATE_TILE_SLAB: { buy: 0.08, sell: 0.02 }
+    DEEPSLATE_TILE_STAIRS: { buy: 0.16, sell: 0.04 }
+    POLISHED_BLACKSTONE_SLAB: { buy: 0.07, sell: 0.02 }
+    POLISHED_BLACKSTONE_STAIRS: { buy: 0.14, sell: 0.04 }
+    POLISHED_BLACKSTONE_BRICK_SLAB: { buy: 0.08, sell: 0.02 }
+    POLISHED_BLACKSTONE_BRICK_STAIRS: { buy: 0.16, sell: 0.04 }
+    POLISHED_BLACKSTONE_BRICK_WALL: { buy: 0.14, sell: 0.04 }
+    BLACKSTONE_SLAB: { buy: 0.05, sell: 0.02 }
+    BLACKSTONE_STAIRS: { buy: 0.10, sell: 0.04 }
     BLACKSTONE_WALL: { buy: 0.09, sell: 0.04 }
-    NETHER_BRICK_SLAB: { buy: 0.16, sell: 0.08 }
-    NETHER_BRICK_STAIRS: { buy: 0.30, sell: 0.15 }
+    NETHER_BRICK_SLAB: { buy: 0.16, sell: 0.06 }
+    NETHER_BRICK_STAIRS: { buy: 0.30, sell: 0.13 }
     NETHER_BRICK_WALL: { buy: 0.26, sell: 0.13 }
-    QUARTZ_SLAB: { buy: 0.62, sell: 0.31 }
+    QUARTZ_SLAB: { buy: 0.62, sell: 0.25 }
     QUARTZ_STAIRS: { buy: 1.19, sell: 0.59 }
-    SANDSTONE_SLAB: { buy: 0.08, sell: 0.04 }
-    SANDSTONE_STAIRS: { buy: 0.15, sell: 0.07 }
-    SANDSTONE_WALL: { buy: 0.13, sell: 0.07 }
-    RED_SANDSTONE_SLAB: { buy: 0.09, sell: 0.04 }
-    RED_SANDSTONE_STAIRS: { buy: 0.18, sell: 0.09 }
+    SANDSTONE_SLAB: { buy: 0.08, sell: 0.03 }
+    SANDSTONE_STAIRS: { buy: 0.15, sell: 0.06 }
+    SANDSTONE_WALL: { buy: 0.13, sell: 0.06 }
+    RED_SANDSTONE_SLAB: { buy: 0.09, sell: 0.03 }
+    RED_SANDSTONE_STAIRS: { buy: 0.18, sell: 0.07 }
     RED_SANDSTONE_WALL: { buy: 0.15, sell: 0.07 }
-    PRISMARINE_BRICK_SLAB: { buy: 0.26, sell: 0.13 }
-    PRISMARINE_BRICK_STAIRS: { buy: 0.50, sell: 0.25 }
-    END_STONE_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    END_STONE_BRICK_STAIRS: { buy: 0.16, sell: 0.08 }
-    MUD_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    MUD_BRICK_STAIRS: { buy: 0.16, sell: 0.08 }
-    MUD_BRICK_WALL: { buy: 0.14, sell: 0.07 }
-    TUFF_BRICK_SLAB: { buy: 0.08, sell: 0.04 }
-    TUFF_BRICK_STAIRS: { buy: 0.15, sell: 0.07 }
-    MOSSY_STONE_BRICK_SLAB: { buy: 0.12, sell: 0.06 }
-    MOSSY_STONE_BRICK_STAIRS: { buy: 0.22, sell: 0.11 }
-    MOSSY_STONE_BRICK_WALL: { buy: 0.20, sell: 0.10 }
-    MOSSY_COBBLESTONE_SLAB: { buy: 0.08, sell: 0.04 }
-    MOSSY_COBBLESTONE_STAIRS: { buy: 0.15, sell: 0.07 }
-    MOSSY_COBBLESTONE_WALL: { buy: 0.13, sell: 0.07 }
-    NETHER_BRICK_FENCE: { buy: 0.30, sell: 0.15 }
+    PRISMARINE_BRICK_SLAB: { buy: 0.26, sell: 0.10 }
+    PRISMARINE_BRICK_STAIRS: { buy: 0.50, sell: 0.20 }
+    END_STONE_BRICK_SLAB: { buy: 0.08, sell: 0.02 }
+    END_STONE_BRICK_STAIRS: { buy: 0.16, sell: 0.05 }
+    MUD_BRICK_SLAB: { buy: 0.08, sell: 0.03 }
+    MUD_BRICK_STAIRS: { buy: 0.16, sell: 0.06 }
+    MUD_BRICK_WALL: { buy: 0.14, sell: 0.06 }
+    TUFF_BRICK_SLAB: { buy: 0.08, sell: 0.02 }
+    TUFF_BRICK_STAIRS: { buy: 0.15, sell: 0.04 }
+    MOSSY_STONE_BRICK_SLAB: { buy: 0.12, sell: 0.03 }
+    MOSSY_STONE_BRICK_STAIRS: { buy: 0.22, sell: 0.07 }
+    MOSSY_STONE_BRICK_WALL: { buy: 0.20, sell: 0.07 }
+    MOSSY_COBBLESTONE_SLAB: { buy: 0.08, sell: 0.03 }
+    MOSSY_COBBLESTONE_STAIRS: { buy: 0.15, sell: 0.06 }
+    MOSSY_COBBLESTONE_WALL: { buy: 0.13, sell: 0.06 }
+    NETHER_BRICK_FENCE: { buy: 0.30, sell: 0.10 }
 
-    RESIN_BRICK: { buy: 0.42, sell: 0.21 }
+    RESIN_BRICK: { buy: 0.42, sell: 0.15 }
 
-    RESIN_BLOCK: { buy: 2.80, sell: 1.40 }
+    RESIN_BLOCK: { buy: 2.80, sell: 1.35 }
 
-    RESIN_BRICKS: { buy: 2.00, sell: 1.00 }
+    RESIN_BRICKS: { buy: 2.00, sell: 0.60 }
 
-    RESIN_BRICK_STAIRS: { buy: 0.75, sell: 0.38 }
+    RESIN_BRICK_STAIRS: { buy: 0.75, sell: 0.37 }
 
-    RESIN_BRICK_SLAB: { buy: 0.35, sell: 0.18 }
+    RESIN_BRICK_SLAB: { buy: 0.35, sell: 0.17 }
 
     RESIN_BRICK_WALL: { buy: 0.60, sell: 0.30 }
 
-    CHISELED_RESIN_BRICKS: { buy: 0.85, sell: 0.43 }
+    CHISELED_RESIN_BRICKS: { buy: 0.85, sell: 0.35 }
 
-    CREAKING_HEART: { buy: 4.50, sell: 2.90 }
+    CREAKING_HEART: { buy: 4.50, sell: 1.73 }
 
-    TUFF_STAIRS: { buy: 0.16, sell: 0.08 }
+    TUFF_STAIRS: { buy: 0.16, sell: 0.04 }
 
-    TUFF_SLAB: { buy: 0.06, sell: 0.03 }
+    TUFF_SLAB: { buy: 0.06, sell: 0.02 }
 
-    TUFF_WALL: { buy: 0.10, sell: 0.05 }
+    TUFF_WALL: { buy: 0.10, sell: 0.04 }
 
-    POLISHED_TUFF_STAIRS: { buy: 0.18, sell: 0.09 }
+    POLISHED_TUFF_STAIRS: { buy: 0.18, sell: 0.04 }
 
-    POLISHED_TUFF_SLAB: { buy: 0.07, sell: 0.04 }
+    POLISHED_TUFF_SLAB: { buy: 0.07, sell: 0.02 }
 
-    POLISHED_TUFF_WALL: { buy: 0.13, sell: 0.07 }
+    POLISHED_TUFF_WALL: { buy: 0.13, sell: 0.04 }
 
-    TUFF_BRICK_WALL: { buy: 0.15, sell: 0.07 }
+    TUFF_BRICK_WALL: { buy: 0.15, sell: 0.04 }
 
-    CHISELED_TUFF: { buy: 0.12, sell: 0.06 }
+    CHISELED_TUFF: { buy: 0.12, sell: 0.04 }
 
-    CHISELED_TUFF_BRICKS: { buy: 0.18, sell: 0.09 }
+    CHISELED_TUFF_BRICKS: { buy: 0.18, sell: 0.04 }
 
-    EXPOSED_COPPER: { buy: 3.00, sell: 1.50 }
+    EXPOSED_COPPER: { buy: 3.00, sell: 1.05 }
 
-    WEATHERED_COPPER: { buy: 3.00, sell: 1.50 }
+    WEATHERED_COPPER: { buy: 3.00, sell: 1.05 }
 
-    OXIDIZED_COPPER: { buy: 3.00, sell: 1.50 }
+    OXIDIZED_COPPER: { buy: 3.00, sell: 1.05 }
 
-    WAXED_COPPER_BLOCK: { buy: 3.40, sell: 1.70 }
+    WAXED_COPPER_BLOCK: { buy: 3.40, sell: 1.05 }
 
-    WAXED_EXPOSED_COPPER: { buy: 3.40, sell: 1.70 }
+    WAXED_EXPOSED_COPPER: { buy: 3.40, sell: 1.05 }
 
-    WAXED_WEATHERED_COPPER: { buy: 3.40, sell: 1.70 }
+    WAXED_WEATHERED_COPPER: { buy: 3.40, sell: 1.05 }
 
-    WAXED_OXIDIZED_COPPER: { buy: 3.40, sell: 1.70 }
+    WAXED_OXIDIZED_COPPER: { buy: 3.40, sell: 1.05 }
 
-    EXPOSED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+    EXPOSED_CHISELED_COPPER: { buy: 0.55, sell: 0.26 }
 
-    WEATHERED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+    WEATHERED_CHISELED_COPPER: { buy: 0.55, sell: 0.26 }
 
-    OXIDIZED_CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
+    OXIDIZED_CHISELED_COPPER: { buy: 0.55, sell: 0.26 }
 
-    WAXED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+    WAXED_CHISELED_COPPER: { buy: 0.95, sell: 0.26 }
 
-    WAXED_EXPOSED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+    WAXED_EXPOSED_CHISELED_COPPER: { buy: 0.95, sell: 0.26 }
 
-    WAXED_WEATHERED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
+    WAXED_WEATHERED_CHISELED_COPPER: { buy: 0.95, sell: 0.26 }
 
-    WAXED_OXIDIZED_CHISELED_COPPER: { buy: 0.95, sell: 0.48 }
-    CHISELED_COPPER: { buy: 0.55, sell: 0.28 }
-    COPPER_DOOR: { buy: 0.55, sell: 0.28 }
-    COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+    WAXED_OXIDIZED_CHISELED_COPPER: { buy: 0.95, sell: 0.26 }
+    CHISELED_COPPER: { buy: 0.55, sell: 0.26 }
+    COPPER_DOOR: { buy: 0.55, sell: 0.23 }
+    COPPER_TRAPDOOR: { buy: 1.10, sell: 0.46 }
 
     EXPOSED_COPPER_GRATE: { buy: 0.40, sell: 0.20 }
 
@@ -288,1026 +317,1422 @@ building:
 
     OXIDIZED_COPPER_GRATE: { buy: 0.40, sell: 0.20 }
 
-    WAXED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+    WAXED_COPPER_GRATE: { buy: 0.80, sell: 0.20 }
 
-    WAXED_EXPOSED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+    WAXED_EXPOSED_COPPER_GRATE: { buy: 0.80, sell: 0.20 }
 
-    WAXED_WEATHERED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+    WAXED_WEATHERED_COPPER_GRATE: { buy: 0.80, sell: 0.20 }
 
-    WAXED_OXIDIZED_COPPER_GRATE: { buy: 0.80, sell: 0.40 }
+    WAXED_OXIDIZED_COPPER_GRATE: { buy: 0.80, sell: 0.20 }
 
-    EXPOSED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+    EXPOSED_COPPER_BULB: { buy: 0.55, sell: 0.27 }
 
-    WEATHERED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+    WEATHERED_COPPER_BULB: { buy: 0.55, sell: 0.27 }
 
-    OXIDIZED_COPPER_BULB: { buy: 0.55, sell: 0.28 }
+    OXIDIZED_COPPER_BULB: { buy: 0.55, sell: 0.27 }
 
-    WAXED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+    WAXED_COPPER_BULB: { buy: 0.95, sell: 0.27 }
 
-    WAXED_EXPOSED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+    WAXED_EXPOSED_COPPER_BULB: { buy: 0.95, sell: 0.27 }
 
-    WAXED_WEATHERED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+    WAXED_WEATHERED_COPPER_BULB: { buy: 0.95, sell: 0.27 }
 
-    WAXED_OXIDIZED_COPPER_BULB: { buy: 0.95, sell: 0.48 }
+    WAXED_OXIDIZED_COPPER_BULB: { buy: 0.95, sell: 0.27 }
 
-    EXPOSED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+    EXPOSED_COPPER_DOOR: { buy: 0.55, sell: 0.23 }
 
-    WEATHERED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+    WEATHERED_COPPER_DOOR: { buy: 0.55, sell: 0.23 }
 
-    OXIDIZED_COPPER_DOOR: { buy: 0.55, sell: 0.28 }
+    OXIDIZED_COPPER_DOOR: { buy: 0.55, sell: 0.23 }
 
-    WAXED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+    WAXED_COPPER_DOOR: { buy: 0.95, sell: 0.23 }
 
-    WAXED_EXPOSED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+    WAXED_EXPOSED_COPPER_DOOR: { buy: 0.95, sell: 0.23 }
 
-    WAXED_WEATHERED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+    WAXED_WEATHERED_COPPER_DOOR: { buy: 0.95, sell: 0.23 }
 
-    WAXED_OXIDIZED_COPPER_DOOR: { buy: 0.95, sell: 0.48 }
+    WAXED_OXIDIZED_COPPER_DOOR: { buy: 0.95, sell: 0.23 }
 
-    EXPOSED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+    EXPOSED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.46 }
 
-    WEATHERED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+    WEATHERED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.46 }
 
-    OXIDIZED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.55 }
+    OXIDIZED_COPPER_TRAPDOOR: { buy: 1.10, sell: 0.46 }
 
-    WAXED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+    WAXED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.46 }
 
-    WAXED_EXPOSED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+    WAXED_EXPOSED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.46 }
 
-    WAXED_WEATHERED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+    WAXED_WEATHERED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.46 }
 
-    WAXED_OXIDIZED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.75 }
+    WAXED_OXIDIZED_COPPER_TRAPDOOR: { buy: 1.50, sell: 0.46 }
+    ANDESITE_SLAB: { buy: 0.05, sell: 0.01 }
+    ANDESITE_STAIRS: { buy: 0.08, sell: 0.03 }
+    ANDESITE_WALL: { buy: 0.08, sell: 0.03 }
+    BRICK_WALL: { buy: 0.18, sell: 0.09 }
+    CHISELED_CINNABAR: { buy: 0.72, sell: 0.30 }
+    CHISELED_POLISHED_BLACKSTONE: { buy: 0.10, sell: 0.04 }
+    CHISELED_SULFUR: { buy: 0.72, sell: 0.30 }
+    CINNABAR: { buy: 1.00, sell: 0.50 }
+    CINNABAR_BRICKS: { buy: 1.00, sell: 0.50 }
+    CINNABAR_BRICK_SLAB: { buy: 0.30, sell: 0.15 }
+    CINNABAR_BRICK_STAIRS: { buy: 0.30, sell: 0.15 }
+    CINNABAR_BRICK_WALL: { buy: 0.30, sell: 0.15 }
+    CINNABAR_SLAB: { buy: 0.30, sell: 0.15 }
+    CINNABAR_STAIRS: { buy: 0.30, sell: 0.15 }
+    CINNABAR_WALL: { buy: 0.30, sell: 0.15 }
+    COBBLED_DEEPSLATE_SLAB: { buy: 0.05, sell: 0.02 }
+    COBBLED_DEEPSLATE_STAIRS: { buy: 0.08, sell: 0.04 }
+    COBBLED_DEEPSLATE_WALL: { buy: 0.08, sell: 0.04 }
+    COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    CRACKED_DEEPSLATE_BRICKS: { buy: 0.10, sell: 0.04 }
+    CRACKED_DEEPSLATE_TILES: { buy: 0.10, sell: 0.04 }
+    CRACKED_NETHER_BRICKS: { buy: 0.32, sell: 0.13 }
+    CRACKED_POLISHED_BLACKSTONE_BRICKS: { buy: 0.10, sell: 0.04 }
+    CUT_RED_SANDSTONE: { buy: 0.17, sell: 0.07 }
+    CUT_RED_SANDSTONE_SLAB: { buy: 0.09, sell: 0.03 }
+    CUT_SANDSTONE: { buy: 0.15, sell: 0.06 }
+    CUT_SANDSTONE_SLAB: { buy: 0.08, sell: 0.03 }
+    DARK_PRISMARINE_SLAB: { buy: 0.27, sell: 0.11 }
+    DARK_PRISMARINE_STAIRS: { buy: 0.45, sell: 0.22 }
+    DEEPSLATE_BRICK_WALL: { buy: 0.10, sell: 0.04 }
+    DEEPSLATE_TILE_WALL: { buy: 0.10, sell: 0.04 }
+    DIORITE_SLAB: { buy: 0.05, sell: 0.02 }
+    DIORITE_STAIRS: { buy: 0.08, sell: 0.04 }
+    DIORITE_WALL: { buy: 0.08, sell: 0.04 }
+    END_STONE_BRICK_WALL: { buy: 0.12, sell: 0.05 }
+    EXPOSED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    GRANITE_SLAB: { buy: 0.05, sell: 0.02 }
+    GRANITE_STAIRS: { buy: 0.08, sell: 0.04 }
+    GRANITE_WALL: { buy: 0.08, sell: 0.04 }
+    MAGMA_BLOCK: { buy: 1.00, sell: 0.50 }
+    OXIDIZED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    POLISHED_ANDESITE_SLAB: { buy: 0.05, sell: 0.01 }
+    POLISHED_ANDESITE_STAIRS: { buy: 0.09, sell: 0.03 }
+    POLISHED_BLACKSTONE_BUTTON: { buy: 0.10, sell: 0.04 }
+    POLISHED_BLACKSTONE_PRESSURE_PLATE: { buy: 0.20, sell: 0.08 }
+    POLISHED_BLACKSTONE_WALL: { buy: 0.10, sell: 0.04 }
+    POLISHED_CINNABAR: { buy: 1.00, sell: 0.50 }
+    POLISHED_CINNABAR_SLAB: { buy: 0.30, sell: 0.15 }
+    POLISHED_CINNABAR_STAIRS: { buy: 0.30, sell: 0.15 }
+    POLISHED_CINNABAR_WALL: { buy: 0.30, sell: 0.15 }
+    POLISHED_DEEPSLATE_SLAB: { buy: 0.05, sell: 0.02 }
+    POLISHED_DEEPSLATE_STAIRS: { buy: 0.10, sell: 0.04 }
+    POLISHED_DEEPSLATE_WALL: { buy: 0.10, sell: 0.04 }
+    POLISHED_DIORITE_SLAB: { buy: 0.05, sell: 0.02 }
+    POLISHED_DIORITE_STAIRS: { buy: 0.10, sell: 0.04 }
+    POLISHED_GRANITE_SLAB: { buy: 0.05, sell: 0.02 }
+    POLISHED_GRANITE_STAIRS: { buy: 0.10, sell: 0.04 }
+    POLISHED_SULFUR: { buy: 1.00, sell: 0.50 }
+    POLISHED_SULFUR_SLAB: { buy: 0.30, sell: 0.15 }
+    POLISHED_SULFUR_STAIRS: { buy: 0.30, sell: 0.15 }
+    POLISHED_SULFUR_WALL: { buy: 0.30, sell: 0.15 }
+    POTENT_SULFUR: { buy: 1.00, sell: 0.50 }
+    PRISMARINE_SLAB: { buy: 0.81, sell: 0.33 }
+    PRISMARINE_STAIRS: { buy: 1.35, sell: 0.67 }
+    PRISMARINE_WALL: { buy: 1.35, sell: 0.67 }
+    PURPUR_SLAB: { buy: 0.18, sell: 0.07 }
+    PURPUR_STAIRS: { buy: 0.30, sell: 0.15 }
+    RED_NETHER_BRICK_SLAB: { buy: 0.18, sell: 0.07 }
+    RED_NETHER_BRICK_STAIRS: { buy: 0.30, sell: 0.15 }
+    RED_NETHER_BRICK_WALL: { buy: 0.30, sell: 0.15 }
+    SMOOTH_QUARTZ_SLAB: { buy: 0.60, sell: 0.25 }
+    SMOOTH_QUARTZ_STAIRS: { buy: 1.00, sell: 0.50 }
+    SMOOTH_RED_SANDSTONE_SLAB: { buy: 0.09, sell: 0.03 }
+    SMOOTH_RED_SANDSTONE_STAIRS: { buy: 0.16, sell: 0.07 }
+    SMOOTH_SANDSTONE_SLAB: { buy: 0.08, sell: 0.03 }
+    SMOOTH_SANDSTONE_STAIRS: { buy: 0.14, sell: 0.06 }
+    SPONGE: { buy: 1.00, sell: 0.50 }
+    SULFUR: { buy: 1.00, sell: 0.50 }
+    SULFUR_BRICKS: { buy: 1.00, sell: 0.50 }
+    SULFUR_BRICK_SLAB: { buy: 0.30, sell: 0.15 }
+    SULFUR_BRICK_STAIRS: { buy: 0.30, sell: 0.15 }
+    SULFUR_BRICK_WALL: { buy: 0.30, sell: 0.15 }
+    SULFUR_SLAB: { buy: 0.30, sell: 0.15 }
+    SULFUR_SPIKE: { buy: 1.00, sell: 0.50 }
+    SULFUR_STAIRS: { buy: 0.30, sell: 0.15 }
+    SULFUR_WALL: { buy: 0.30, sell: 0.15 }
+    WAXED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    WAXED_EXPOSED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    WAXED_OXIDIZED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    WAXED_WEATHERED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    WEATHERED_COPPER_GOLEM_STATUE: { buy: 1.00, sell: 0.50 }
+    WET_SPONGE: { buy: 1.00, sell: 0.50 }
 
 nature:
   display: "Nature"
-  icon: OAK_SAPLING
+  icon: GRASS_BLOCK
   items:
-    DIRT: { buy: 0.05, sell: 0.03 }
-    GRASS_BLOCK: { buy: 0.10, sell: 0.07 }
-    PODZOL: { buy: 0.08, sell: 0.05 }
-    MYCELIUM: { buy: 0.12, sell: 0.08 }
-    ROOTED_DIRT: { buy: 0.08, sell: 0.05 }
-    COARSE_DIRT: { buy: 0.05, sell: 0.03 }
-    FARMLAND: { buy: 0.08, sell: 0.04 }
-    DIRT_PATH: { buy: 0.07, sell: 0.04 }
-    SAND: { buy: 0.08, sell: 0.05 }
-    RED_SAND: { buy: 0.09, sell: 0.06 }
-    GRAVEL: { buy: 0.05, sell: 0.03 }
-    CLAY_BALL: { buy: 0.15, sell: 0.10 }
-    SNOWBALL: { buy: 0.05, sell: 0.03 }
-    ICE: { buy: 0.22, sell: 0.13 }
-    PACKED_ICE: { buy: 0.50, sell: 0.30 }
-    BLUE_ICE: { buy: 1.25, sell: 0.80 }
-    KELP: { buy: 0.05, sell: 0.03 }
-    DRIED_KELP: { buy: 0.06, sell: 0.03 }
-    DRIED_KELP_BLOCK: { buy: 0.55, sell: 0.28 }
-    SEAGRASS: { buy: 0.05, sell: 0.03 }
-    SEA_PICKLE: { buy: 0.30, sell: 0.20 }
-    LILY_PAD: { buy: 0.12, sell: 0.08 }
-    SUGAR_CANE: { buy: 0.24, sell: 0.16 }
-    BAMBOO: { buy: 0.05, sell: 0.03 }
-    CACTUS: { buy: 0.10, sell: 0.07 }
-    PUMPKIN: { buy: 0.40, sell: 0.25 }
-    MELON: { buy: 0.55, sell: 0.36 }
-    MELON_SLICE: { buy: 0.08, sell: 0.05 }
-    GLOW_BERRIES: { buy: 0.24, sell: 0.16 }
-    SWEET_BERRIES: { buy: 0.18, sell: 0.12 }
-    CHORUS_FRUIT: { buy: 0.55, sell: 0.35 }
-    WEEPING_VINES: { buy: 0.12, sell: 0.08 }
-    TWISTING_VINES: { buy: 0.12, sell: 0.08 }
-    VINE: { buy: 0.08, sell: 0.05 }
-    AZALEA: { buy: 0.30, sell: 0.20 }
-    FLOWERING_AZALEA: { buy: 0.45, sell: 0.29 }
-    BIG_DRIPLEAF: { buy: 0.18, sell: 0.12 }
-    SMALL_DRIPLEAF: { buy: 0.15, sell: 0.10 }
-    SPORE_BLOSSOM: { buy: 0.80, sell: 0.52 }
-    HANGING_ROOTS: { buy: 0.10, sell: 0.07 }
-    GLOW_INK_SAC: { buy: 0.40, sell: 0.26 }
-    DANDELION: { buy: 0.18, sell: 0.12 }
-    POPPY: { buy: 0.18, sell: 0.12 }
-    BLUE_ORCHID: { buy: 0.18, sell: 0.12 }
-    ALLIUM: { buy: 0.18, sell: 0.12 }
-    AZURE_BLUET: { buy: 0.18, sell: 0.12 }
-    RED_TULIP: { buy: 0.18, sell: 0.12 }
-    ORANGE_TULIP: { buy: 0.18, sell: 0.12 }
-    WHITE_TULIP: { buy: 0.18, sell: 0.12 }
-    PINK_TULIP: { buy: 0.18, sell: 0.12 }
-    OXEYE_DAISY: { buy: 0.18, sell: 0.12 }
-    CORNFLOWER: { buy: 0.18, sell: 0.12 }
-    LILY_OF_THE_VALLEY: { buy: 0.18, sell: 0.12 }
-    TORCHFLOWER: { buy: 0.18, sell: 0.12 }
-    PINK_PETALS: { buy: 0.18, sell: 0.12 }
-    OPEN_EYEBLOSSOM: { buy: 0.18, sell: 0.12 }
-    CLOSED_EYEBLOSSOM: { buy: 0.18, sell: 0.12 }
-    WITHER_ROSE: { buy: 0.45, sell: 0.29 }
-    SUNFLOWER: { buy: 0.35, sell: 0.23 }
-    LILAC: { buy: 0.35, sell: 0.23 }
-    ROSE_BUSH: { buy: 0.35, sell: 0.23 }
-    PEONY: { buy: 0.35, sell: 0.23 }
-    PITCHER_PLANT: { buy: 0.35, sell: 0.23 }
-    CRIMSON_FUNGUS: { buy: 0.18, sell: 0.12 }
-    WARPED_FUNGUS: { buy: 0.18, sell: 0.12 }
-    BROWN_MUSHROOM: { buy: 0.18, sell: 0.12 }
-    RED_MUSHROOM: { buy: 0.18, sell: 0.12 }
-    CRIMSON_ROOTS: { buy: 0.18, sell: 0.12 }
-    WARPED_ROOTS: { buy: 0.18, sell: 0.12 }
-    NETHER_SPROUTS: { buy: 0.18, sell: 0.12 }
-    OAK_SAPLING: { buy: 0.35, sell: 0.23 }
-    SPRUCE_SAPLING: { buy: 0.35, sell: 0.23 }
-    BIRCH_SAPLING: { buy: 0.35, sell: 0.23 }
-    JUNGLE_SAPLING: { buy: 0.35, sell: 0.23 }
-    ACACIA_SAPLING: { buy: 0.35, sell: 0.23 }
-    DARK_OAK_SAPLING: { buy: 0.35, sell: 0.23 }
-    MANGROVE_PROPAGULE: { buy: 0.35, sell: 0.23 }
-    CHERRY_SAPLING: { buy: 0.35, sell: 0.23 }
-    PALE_OAK_SAPLING: { buy: 0.35, sell: 0.23 }
-    OAK_LEAVES: { buy: 0.12, sell: 0.08 }
-    SPRUCE_LEAVES: { buy: 0.12, sell: 0.08 }
-    BIRCH_LEAVES: { buy: 0.12, sell: 0.08 }
-    JUNGLE_LEAVES: { buy: 0.12, sell: 0.08 }
-    ACACIA_LEAVES: { buy: 0.12, sell: 0.08 }
-    DARK_OAK_LEAVES: { buy: 0.12, sell: 0.08 }
-    MANGROVE_LEAVES: { buy: 0.12, sell: 0.08 }
-    CHERRY_LEAVES: { buy: 0.12, sell: 0.08 }
-    PALE_OAK_LEAVES: { buy: 0.12, sell: 0.08 }
-    AZALEA_LEAVES: { buy: 0.12, sell: 0.08 }
-    FLOWERING_AZALEA_LEAVES: { buy: 0.12, sell: 0.08 }
+    DIRT: { buy: 0.05, sell: 0.02 }
+    GRASS_BLOCK: { buy: 0.10, sell: 0.05 }
+    PODZOL: { buy: 0.08, sell: 0.04 }
+    MYCELIUM: { buy: 0.12, sell: 0.06 }
+    ROOTED_DIRT: { buy: 0.08, sell: 0.04 }
+    COARSE_DIRT: { buy: 0.05, sell: 0.02 }
 
-    PALE_MOSS_BLOCK: { buy: 0.25, sell: 0.16 }
+    SAND: { buy: 0.08, sell: 0.04 }
+    RED_SAND: { buy: 0.09, sell: 0.04 }
+    GRAVEL: { buy: 0.05, sell: 0.02 }
+    CLAY_BALL: { buy: 0.15, sell: 0.07 }
+    SNOWBALL: { buy: 0.05, sell: 0.02 }
+    ICE: { buy: 0.22, sell: 0.11 }
+    PACKED_ICE: { buy: 0.50, sell: 0.25 }
+    BLUE_ICE: { buy: 1.25, sell: 0.62 }
+    KELP: { buy: 0.05, sell: 0.02 }
+    DRIED_KELP: { buy: 0.06, sell: 0.02 }
+    DRIED_KELP_BLOCK: { buy: 0.55, sell: 0.22 }
+    SEAGRASS: { buy: 0.05, sell: 0.02 }
+    SEA_PICKLE: { buy: 0.30, sell: 0.15 }
+    LILY_PAD: { buy: 0.12, sell: 0.06 }
+    SUGAR_CANE: { buy: 0.24, sell: 0.12 }
+    BAMBOO: { buy: 0.05, sell: 0.02 }
+    CACTUS: { buy: 0.10, sell: 0.05 }
+    PUMPKIN: { buy: 0.40, sell: 0.20 }
+    MELON: { buy: 0.55, sell: 0.27 }
+    MELON_SLICE: { buy: 0.08, sell: 0.03 }
+    GLOW_BERRIES: { buy: 0.24, sell: 0.12 }
+    SWEET_BERRIES: { buy: 0.18, sell: 0.09 }
+    CHORUS_FRUIT: { buy: 0.55, sell: 0.27 }
+    WEEPING_VINES: { buy: 0.12, sell: 0.06 }
+    TWISTING_VINES: { buy: 0.12, sell: 0.06 }
+    VINE: { buy: 0.08, sell: 0.04 }
+    AZALEA: { buy: 0.30, sell: 0.15 }
+    FLOWERING_AZALEA: { buy: 0.45, sell: 0.22 }
+    BIG_DRIPLEAF: { buy: 0.18, sell: 0.09 }
+    SMALL_DRIPLEAF: { buy: 0.15, sell: 0.07 }
+    SPORE_BLOSSOM: { buy: 0.80, sell: 0.40 }
+    HANGING_ROOTS: { buy: 0.10, sell: 0.05 }
+    GLOW_INK_SAC: { buy: 0.40, sell: 0.20 }
+    DANDELION: { buy: 0.18, sell: 0.09 }
+    POPPY: { buy: 0.18, sell: 0.09 }
+    BLUE_ORCHID: { buy: 0.18, sell: 0.09 }
+    ALLIUM: { buy: 0.18, sell: 0.09 }
+    AZURE_BLUET: { buy: 0.18, sell: 0.09 }
+    RED_TULIP: { buy: 0.18, sell: 0.09 }
+    ORANGE_TULIP: { buy: 0.18, sell: 0.09 }
+    WHITE_TULIP: { buy: 0.18, sell: 0.09 }
+    PINK_TULIP: { buy: 0.18, sell: 0.09 }
+    OXEYE_DAISY: { buy: 0.18, sell: 0.09 }
+    CORNFLOWER: { buy: 0.18, sell: 0.09 }
+    LILY_OF_THE_VALLEY: { buy: 0.18, sell: 0.09 }
+    TORCHFLOWER: { buy: 0.18, sell: 0.09 }
+    PINK_PETALS: { buy: 0.18, sell: 0.09 }
+    OPEN_EYEBLOSSOM: { buy: 0.18, sell: 0.09 }
+    CLOSED_EYEBLOSSOM: { buy: 0.18, sell: 0.09 }
+    WITHER_ROSE: { buy: 0.45, sell: 0.22 }
+    SUNFLOWER: { buy: 0.35, sell: 0.17 }
+    LILAC: { buy: 0.35, sell: 0.17 }
+    ROSE_BUSH: { buy: 0.35, sell: 0.17 }
+    PEONY: { buy: 0.35, sell: 0.17 }
+    PITCHER_PLANT: { buy: 0.35, sell: 0.17 }
+    CRIMSON_FUNGUS: { buy: 0.18, sell: 0.09 }
+    WARPED_FUNGUS: { buy: 0.18, sell: 0.09 }
+    BROWN_MUSHROOM: { buy: 0.18, sell: 0.09 }
+    RED_MUSHROOM: { buy: 0.18, sell: 0.09 }
+    CRIMSON_ROOTS: { buy: 0.18, sell: 0.09 }
+    WARPED_ROOTS: { buy: 0.18, sell: 0.09 }
+    NETHER_SPROUTS: { buy: 0.18, sell: 0.09 }
+    OAK_SAPLING: { buy: 0.35, sell: 0.17 }
+    SPRUCE_SAPLING: { buy: 0.35, sell: 0.17 }
+    BIRCH_SAPLING: { buy: 0.35, sell: 0.17 }
+    JUNGLE_SAPLING: { buy: 0.35, sell: 0.17 }
+    ACACIA_SAPLING: { buy: 0.35, sell: 0.17 }
+    DARK_OAK_SAPLING: { buy: 0.35, sell: 0.17 }
+    MANGROVE_PROPAGULE: { buy: 0.35, sell: 0.17 }
+    CHERRY_SAPLING: { buy: 0.35, sell: 0.17 }
+    PALE_OAK_SAPLING: { buy: 0.35, sell: 0.17 }
+    OAK_LEAVES: { buy: 0.12, sell: 0.06 }
+    SPRUCE_LEAVES: { buy: 0.12, sell: 0.06 }
+    BIRCH_LEAVES: { buy: 0.12, sell: 0.06 }
+    JUNGLE_LEAVES: { buy: 0.12, sell: 0.06 }
+    ACACIA_LEAVES: { buy: 0.12, sell: 0.06 }
+    DARK_OAK_LEAVES: { buy: 0.12, sell: 0.06 }
+    MANGROVE_LEAVES: { buy: 0.12, sell: 0.06 }
+    CHERRY_LEAVES: { buy: 0.12, sell: 0.06 }
+    PALE_OAK_LEAVES: { buy: 0.12, sell: 0.06 }
+    AZALEA_LEAVES: { buy: 0.12, sell: 0.06 }
+    FLOWERING_AZALEA_LEAVES: { buy: 0.12, sell: 0.06 }
+
+    PALE_MOSS_BLOCK: { buy: 0.25, sell: 0.12 }
 
     PALE_MOSS_CARPET: { buy: 0.12, sell: 0.06 }
 
-    PALE_HANGING_MOSS: { buy: 0.15, sell: 0.10 }
+    PALE_HANGING_MOSS: { buy: 0.15, sell: 0.07 }
 
-    SHORT_DRY_GRASS: { buy: 0.10, sell: 0.07 }
+    SHORT_DRY_GRASS: { buy: 0.10, sell: 0.05 }
 
-    TALL_DRY_GRASS: { buy: 0.12, sell: 0.08 }
+    TALL_DRY_GRASS: { buy: 0.12, sell: 0.06 }
 
-    BUSH: { buy: 0.12, sell: 0.08 }
+    BUSH: { buy: 0.12, sell: 0.06 }
 
-    CACTUS_FLOWER: { buy: 0.20, sell: 0.13 }
+    CACTUS_FLOWER: { buy: 0.20, sell: 0.10 }
 
-    FIREFLY_BUSH: { buy: 0.18, sell: 0.12 }
+    FIREFLY_BUSH: { buy: 0.18, sell: 0.09 }
 
-    WILDFLOWERS: { buy: 0.15, sell: 0.10 }
+    WILDFLOWERS: { buy: 0.15, sell: 0.07 }
 
-    LEAF_LITTER: { buy: 0.10, sell: 0.07 }
+    LEAF_LITTER: { buy: 0.10, sell: 0.05 }
+    BRAIN_CORAL: { buy: 1.00, sell: 0.50 }
+    BRAIN_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    BRAIN_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    BROWN_MUSHROOM_BLOCK: { buy: 1.00, sell: 0.50 }
+    BUBBLE_CORAL: { buy: 1.00, sell: 0.50 }
+    BUBBLE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    BUBBLE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    CHORUS_FLOWER: { buy: 1.00, sell: 0.50 }
+    CRIMSON_NYLIUM: { buy: 1.00, sell: 0.50 }
+    DEAD_BRAIN_CORAL: { buy: 1.00, sell: 0.50 }
+    DEAD_BRAIN_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    DEAD_BRAIN_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    DEAD_BUBBLE_CORAL: { buy: 1.00, sell: 0.50 }
+    DEAD_BUBBLE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    DEAD_BUBBLE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    DEAD_FIRE_CORAL: { buy: 1.00, sell: 0.50 }
+    DEAD_FIRE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    DEAD_FIRE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    DEAD_HORN_CORAL: { buy: 1.00, sell: 0.50 }
+    DEAD_HORN_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    DEAD_HORN_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    DEAD_TUBE_CORAL: { buy: 1.00, sell: 0.50 }
+    DEAD_TUBE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    DEAD_TUBE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    FERN: { buy: 1.00, sell: 0.50 }
+    FIRE_CORAL: { buy: 1.00, sell: 0.50 }
+    FIRE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    FIRE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    GOLDEN_DANDELION: { buy: 1.00, sell: 0.42 }
+    HORN_CORAL: { buy: 1.00, sell: 0.50 }
+    HORN_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    HORN_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    MUSHROOM_STEM: { buy: 1.00, sell: 0.50 }
+    OCHRE_FROGLIGHT: { buy: 1.00, sell: 0.50 }
+    ORANGE_POPLAR_LEAVES: { buy: 1.00, sell: 0.50 }
+    PEARLESCENT_FROGLIGHT: { buy: 1.00, sell: 0.50 }
+    RED_MUSHROOM_BLOCK: { buy: 1.00, sell: 0.50 }
+    RED_POPLAR_LEAVES: { buy: 1.00, sell: 0.50 }
+    RED_SHRUB: { buy: 1.00, sell: 0.50 }
+    SCULK_SHRIEKER: { buy: 1.00, sell: 0.50 }
+    SCULK_VEIN: { buy: 1.00, sell: 0.50 }
+    SHELF_MUSHROOM: { buy: 1.00, sell: 0.50 }
+    SHORT_GRASS: { buy: 1.00, sell: 0.50 }
+    SNIFFER_EGG: { buy: 1.00, sell: 0.50 }
+    SNOW: { buy: 0.12, sell: 0.05 }
+    SULFUR_CUBE_BUCKET: { buy: 20.00, sell: 10.00 }
+    TUBE_CORAL: { buy: 1.00, sell: 0.50 }
+    TUBE_CORAL_BLOCK: { buy: 1.00, sell: 0.50 }
+    TUBE_CORAL_FAN: { buy: 1.00, sell: 0.50 }
+    TURTLE_EGG: { buy: 1.00, sell: 0.50 }
+    VERDANT_FROGLIGHT: { buy: 1.00, sell: 0.50 }
+    WARPED_NYLIUM: { buy: 1.00, sell: 0.50 }
+    YELLOW_POPLAR_LEAVES: { buy: 1.00, sell: 0.50 }
 
 wood:
   display: "Wood"
   icon: OAK_LOG
   items:
-    OAK_LOG: { buy: 0.35, sell: 0.23 }
-    OAK_PLANKS: { buy: 0.12, sell: 0.06 }
-    OAK_SLAB: { buy: 0.08, sell: 0.04 }
-    OAK_STAIRS: { buy: 0.15, sell: 0.07 }
-    OAK_FENCE: { buy: 0.16, sell: 0.08 }
+    OAK_LOG: { buy: 0.35, sell: 0.17 }
+    OAK_PLANKS: { buy: 0.12, sell: 0.04 }
+    OAK_SLAB: { buy: 0.08, sell: 0.02 }
+    OAK_STAIRS: { buy: 0.15, sell: 0.06 }
+    OAK_FENCE: { buy: 0.16, sell: 0.07 }
     OAK_FENCE_GATE: { buy: 0.18, sell: 0.09 }
     OAK_DOOR: { buy: 0.14, sell: 0.07 }
     OAK_TRAPDOOR: { buy: 0.16, sell: 0.08 }
-    OAK_BUTTON: { buy: 0.05, sell: 0.03 }
+    OAK_BUTTON: { buy: 0.05, sell: 0.02 }
     OAK_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
     OAK_SIGN: { buy: 0.16, sell: 0.08 }
-    SPRUCE_LOG: { buy: 0.35, sell: 0.23 }
-    SPRUCE_PLANKS: { buy: 0.12, sell: 0.06 }
-    SPRUCE_SLAB: { buy: 0.08, sell: 0.04 }
-    SPRUCE_STAIRS: { buy: 0.15, sell: 0.07 }
-    SPRUCE_FENCE: { buy: 0.16, sell: 0.08 }
+    SPRUCE_LOG: { buy: 0.35, sell: 0.17 }
+    SPRUCE_PLANKS: { buy: 0.12, sell: 0.04 }
+    SPRUCE_SLAB: { buy: 0.08, sell: 0.02 }
+    SPRUCE_STAIRS: { buy: 0.15, sell: 0.06 }
+    SPRUCE_FENCE: { buy: 0.16, sell: 0.07 }
     SPRUCE_FENCE_GATE: { buy: 0.18, sell: 0.09 }
     SPRUCE_DOOR: { buy: 0.14, sell: 0.07 }
     SPRUCE_TRAPDOOR: { buy: 0.16, sell: 0.08 }
-    SPRUCE_BUTTON: { buy: 0.05, sell: 0.03 }
+    SPRUCE_BUTTON: { buy: 0.05, sell: 0.02 }
     SPRUCE_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
     SPRUCE_SIGN: { buy: 0.16, sell: 0.08 }
-    BIRCH_LOG: { buy: 0.35, sell: 0.23 }
-    BIRCH_PLANKS: { buy: 0.12, sell: 0.06 }
-    BIRCH_SLAB: { buy: 0.08, sell: 0.04 }
-    BIRCH_STAIRS: { buy: 0.15, sell: 0.07 }
-    BIRCH_FENCE: { buy: 0.16, sell: 0.08 }
+    BIRCH_LOG: { buy: 0.35, sell: 0.17 }
+    BIRCH_PLANKS: { buy: 0.12, sell: 0.04 }
+    BIRCH_SLAB: { buy: 0.08, sell: 0.02 }
+    BIRCH_STAIRS: { buy: 0.15, sell: 0.06 }
+    BIRCH_FENCE: { buy: 0.16, sell: 0.07 }
     BIRCH_FENCE_GATE: { buy: 0.18, sell: 0.09 }
     BIRCH_DOOR: { buy: 0.14, sell: 0.07 }
     BIRCH_TRAPDOOR: { buy: 0.16, sell: 0.08 }
-    BIRCH_BUTTON: { buy: 0.05, sell: 0.03 }
+    BIRCH_BUTTON: { buy: 0.05, sell: 0.02 }
     BIRCH_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
     BIRCH_SIGN: { buy: 0.16, sell: 0.08 }
-    JUNGLE_LOG: { buy: 0.35, sell: 0.23 }
-    JUNGLE_PLANKS: { buy: 0.12, sell: 0.06 }
-    JUNGLE_SLAB: { buy: 0.08, sell: 0.04 }
-    JUNGLE_STAIRS: { buy: 0.15, sell: 0.07 }
-    JUNGLE_FENCE: { buy: 0.16, sell: 0.08 }
+    JUNGLE_LOG: { buy: 0.35, sell: 0.17 }
+    JUNGLE_PLANKS: { buy: 0.12, sell: 0.04 }
+    JUNGLE_SLAB: { buy: 0.08, sell: 0.02 }
+    JUNGLE_STAIRS: { buy: 0.15, sell: 0.06 }
+    JUNGLE_FENCE: { buy: 0.16, sell: 0.07 }
     JUNGLE_FENCE_GATE: { buy: 0.18, sell: 0.09 }
     JUNGLE_DOOR: { buy: 0.14, sell: 0.07 }
     JUNGLE_TRAPDOOR: { buy: 0.16, sell: 0.08 }
-    JUNGLE_BUTTON: { buy: 0.05, sell: 0.03 }
+    JUNGLE_BUTTON: { buy: 0.05, sell: 0.02 }
     JUNGLE_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
     JUNGLE_SIGN: { buy: 0.16, sell: 0.08 }
-    ACACIA_LOG: { buy: 0.38, sell: 0.25 }
-    ACACIA_PLANKS: { buy: 0.13, sell: 0.07 }
-    ACACIA_SLAB: { buy: 0.08, sell: 0.04 }
-    ACACIA_STAIRS: { buy: 0.16, sell: 0.08 }
-    ACACIA_FENCE: { buy: 0.17, sell: 0.09 }
+    ACACIA_LOG: { buy: 0.38, sell: 0.19 }
+    ACACIA_PLANKS: { buy: 0.13, sell: 0.04 }
+    ACACIA_SLAB: { buy: 0.08, sell: 0.02 }
+    ACACIA_STAIRS: { buy: 0.16, sell: 0.07 }
+    ACACIA_FENCE: { buy: 0.17, sell: 0.07 }
     ACACIA_FENCE_GATE: { buy: 0.20, sell: 0.10 }
     ACACIA_DOOR: { buy: 0.15, sell: 0.07 }
     ACACIA_TRAPDOOR: { buy: 0.18, sell: 0.09 }
     ACACIA_BUTTON: { buy: 0.06, sell: 0.03 }
     ACACIA_PRESSURE_PLATE: { buy: 0.10, sell: 0.05 }
-    ACACIA_SIGN: { buy: 0.17, sell: 0.09 }
-    DARK_OAK_LOG: { buy: 0.38, sell: 0.25 }
-    DARK_OAK_PLANKS: { buy: 0.13, sell: 0.07 }
-    DARK_OAK_SLAB: { buy: 0.08, sell: 0.04 }
-    DARK_OAK_STAIRS: { buy: 0.16, sell: 0.08 }
-    DARK_OAK_FENCE: { buy: 0.17, sell: 0.09 }
+    ACACIA_SIGN: { buy: 0.17, sell: 0.08 }
+    DARK_OAK_LOG: { buy: 0.38, sell: 0.19 }
+    DARK_OAK_PLANKS: { buy: 0.13, sell: 0.04 }
+    DARK_OAK_SLAB: { buy: 0.08, sell: 0.02 }
+    DARK_OAK_STAIRS: { buy: 0.16, sell: 0.07 }
+    DARK_OAK_FENCE: { buy: 0.17, sell: 0.07 }
     DARK_OAK_FENCE_GATE: { buy: 0.20, sell: 0.10 }
     DARK_OAK_DOOR: { buy: 0.15, sell: 0.07 }
     DARK_OAK_TRAPDOOR: { buy: 0.18, sell: 0.09 }
     DARK_OAK_BUTTON: { buy: 0.06, sell: 0.03 }
     DARK_OAK_PRESSURE_PLATE: { buy: 0.10, sell: 0.05 }
-    DARK_OAK_SIGN: { buy: 0.17, sell: 0.09 }
-    MANGROVE_LOG: { buy: 0.38, sell: 0.25 }
-    MANGROVE_PLANKS: { buy: 0.13, sell: 0.07 }
-    MANGROVE_SLAB: { buy: 0.08, sell: 0.04 }
-    MANGROVE_STAIRS: { buy: 0.16, sell: 0.08 }
-    MANGROVE_FENCE: { buy: 0.17, sell: 0.09 }
+    DARK_OAK_SIGN: { buy: 0.17, sell: 0.08 }
+    MANGROVE_LOG: { buy: 0.38, sell: 0.19 }
+    MANGROVE_PLANKS: { buy: 0.13, sell: 0.04 }
+    MANGROVE_SLAB: { buy: 0.08, sell: 0.02 }
+    MANGROVE_STAIRS: { buy: 0.16, sell: 0.07 }
+    MANGROVE_FENCE: { buy: 0.17, sell: 0.07 }
     MANGROVE_FENCE_GATE: { buy: 0.20, sell: 0.10 }
     MANGROVE_DOOR: { buy: 0.15, sell: 0.07 }
     MANGROVE_TRAPDOOR: { buy: 0.18, sell: 0.09 }
     MANGROVE_BUTTON: { buy: 0.06, sell: 0.03 }
     MANGROVE_PRESSURE_PLATE: { buy: 0.10, sell: 0.05 }
-    MANGROVE_SIGN: { buy: 0.17, sell: 0.09 }
-    CHERRY_LOG: { buy: 0.43, sell: 0.28 }
-    CHERRY_PLANKS: { buy: 0.15, sell: 0.07 }
-    CHERRY_SLAB: { buy: 0.10, sell: 0.05 }
-    CHERRY_STAIRS: { buy: 0.19, sell: 0.10 }
-    CHERRY_FENCE: { buy: 0.20, sell: 0.10 }
+    MANGROVE_SIGN: { buy: 0.17, sell: 0.08 }
+    CHERRY_LOG: { buy: 0.43, sell: 0.21 }
+    CHERRY_PLANKS: { buy: 0.15, sell: 0.05 }
+    CHERRY_SLAB: { buy: 0.10, sell: 0.02 }
+    CHERRY_STAIRS: { buy: 0.19, sell: 0.08 }
+    CHERRY_FENCE: { buy: 0.20, sell: 0.08 }
     CHERRY_FENCE_GATE: { buy: 0.22, sell: 0.11 }
-    CHERRY_DOOR: { buy: 0.17, sell: 0.09 }
+    CHERRY_DOOR: { buy: 0.17, sell: 0.08 }
     CHERRY_TRAPDOOR: { buy: 0.20, sell: 0.10 }
-    CHERRY_BUTTON: { buy: 0.07, sell: 0.04 }
-    CHERRY_PRESSURE_PLATE: { buy: 0.11, sell: 0.06 }
+    CHERRY_BUTTON: { buy: 0.07, sell: 0.03 }
+    CHERRY_PRESSURE_PLATE: { buy: 0.11, sell: 0.05 }
     CHERRY_SIGN: { buy: 0.20, sell: 0.10 }
-    PALE_OAK_LOG: { buy: 0.38, sell: 0.25 }
-    PALE_OAK_PLANKS: { buy: 0.13, sell: 0.07 }
-    PALE_OAK_SLAB: { buy: 0.08, sell: 0.04 }
-    PALE_OAK_STAIRS: { buy: 0.16, sell: 0.08 }
-    PALE_OAK_FENCE: { buy: 0.17, sell: 0.09 }
+    PALE_OAK_LOG: { buy: 0.38, sell: 0.19 }
+    PALE_OAK_PLANKS: { buy: 0.13, sell: 0.04 }
+    PALE_OAK_SLAB: { buy: 0.08, sell: 0.02 }
+    PALE_OAK_STAIRS: { buy: 0.16, sell: 0.07 }
+    PALE_OAK_FENCE: { buy: 0.17, sell: 0.07 }
     PALE_OAK_FENCE_GATE: { buy: 0.20, sell: 0.10 }
     PALE_OAK_DOOR: { buy: 0.15, sell: 0.07 }
     PALE_OAK_TRAPDOOR: { buy: 0.18, sell: 0.09 }
     PALE_OAK_BUTTON: { buy: 0.06, sell: 0.03 }
     PALE_OAK_PRESSURE_PLATE: { buy: 0.10, sell: 0.05 }
-    PALE_OAK_SIGN: { buy: 0.17, sell: 0.09 }
-    CRIMSON_STEM: { buy: 0.45, sell: 0.29 }
-    CRIMSON_PLANKS: { buy: 0.14, sell: 0.07 }
-    CRIMSON_SLAB: { buy: 0.09, sell: 0.04 }
-    CRIMSON_STAIRS: { buy: 0.18, sell: 0.09 }
-    CRIMSON_FENCE: { buy: 0.18, sell: 0.09 }
+    PALE_OAK_SIGN: { buy: 0.17, sell: 0.08 }
+    CRIMSON_STEM: { buy: 0.45, sell: 0.22 }
+    CRIMSON_PLANKS: { buy: 0.14, sell: 0.05 }
+    CRIMSON_SLAB: { buy: 0.09, sell: 0.02 }
+    CRIMSON_STAIRS: { buy: 0.18, sell: 0.08 }
+    CRIMSON_FENCE: { buy: 0.18, sell: 0.08 }
     CRIMSON_FENCE_GATE: { buy: 0.21, sell: 0.10 }
     CRIMSON_DOOR: { buy: 0.16, sell: 0.08 }
-    CRIMSON_TRAPDOOR: { buy: 0.19, sell: 0.10 }
+    CRIMSON_TRAPDOOR: { buy: 0.19, sell: 0.09 }
     CRIMSON_BUTTON: { buy: 0.06, sell: 0.03 }
-    CRIMSON_PRESSURE_PLATE: { buy: 0.11, sell: 0.06 }
+    CRIMSON_PRESSURE_PLATE: { buy: 0.11, sell: 0.05 }
     CRIMSON_SIGN: { buy: 0.18, sell: 0.09 }
-    WARPED_STEM: { buy: 0.45, sell: 0.29 }
-    WARPED_PLANKS: { buy: 0.14, sell: 0.07 }
-    WARPED_SLAB: { buy: 0.09, sell: 0.04 }
-    WARPED_STAIRS: { buy: 0.18, sell: 0.09 }
-    WARPED_FENCE: { buy: 0.18, sell: 0.09 }
+    WARPED_STEM: { buy: 0.45, sell: 0.22 }
+    WARPED_PLANKS: { buy: 0.14, sell: 0.05 }
+    WARPED_SLAB: { buy: 0.09, sell: 0.02 }
+    WARPED_STAIRS: { buy: 0.18, sell: 0.08 }
+    WARPED_FENCE: { buy: 0.18, sell: 0.08 }
     WARPED_FENCE_GATE: { buy: 0.21, sell: 0.10 }
     WARPED_DOOR: { buy: 0.16, sell: 0.08 }
-    WARPED_TRAPDOOR: { buy: 0.19, sell: 0.10 }
+    WARPED_TRAPDOOR: { buy: 0.19, sell: 0.09 }
     WARPED_BUTTON: { buy: 0.06, sell: 0.03 }
-    WARPED_PRESSURE_PLATE: { buy: 0.11, sell: 0.06 }
+    WARPED_PRESSURE_PLATE: { buy: 0.11, sell: 0.05 }
     WARPED_SIGN: { buy: 0.18, sell: 0.09 }
-    OAK_BOAT: { buy: 0.85, sell: 0.42 }
-    SPRUCE_BOAT: { buy: 0.85, sell: 0.42 }
-    BIRCH_BOAT: { buy: 0.85, sell: 0.42 }
-    JUNGLE_BOAT: { buy: 0.85, sell: 0.42 }
-    ACACIA_BOAT: { buy: 0.85, sell: 0.42 }
-    DARK_OAK_BOAT: { buy: 0.85, sell: 0.42 }
-    MANGROVE_BOAT: { buy: 0.85, sell: 0.42 }
-    CHERRY_BOAT: { buy: 0.85, sell: 0.42 }
-    PALE_OAK_BOAT: { buy: 0.85, sell: 0.42 }
-    BAMBOO_RAFT: { buy: 0.85, sell: 0.42 }
-    OAK_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    SPRUCE_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    BIRCH_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    JUNGLE_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    ACACIA_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    DARK_OAK_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    MANGROVE_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    CHERRY_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    PALE_OAK_CHEST_BOAT: { buy: 1.25, sell: 0.62 }
-    CHEST_BAMBOO_RAFT: { buy: 1.25, sell: 0.62 }
+    OAK_BOAT: { buy: 0.85, sell: 0.21 }
+    SPRUCE_BOAT: { buy: 0.85, sell: 0.21 }
+    BIRCH_BOAT: { buy: 0.85, sell: 0.21 }
+    JUNGLE_BOAT: { buy: 0.85, sell: 0.21 }
+    ACACIA_BOAT: { buy: 0.85, sell: 0.23 }
+    DARK_OAK_BOAT: { buy: 0.85, sell: 0.23 }
+    MANGROVE_BOAT: { buy: 0.85, sell: 0.23 }
+    CHERRY_BOAT: { buy: 0.85, sell: 0.26 }
+    PALE_OAK_BOAT: { buy: 0.85, sell: 0.23 }
+    BAMBOO_RAFT: { buy: 0.85, sell: 0.30 }
+    OAK_CHEST_BOAT: { buy: 1.25, sell: 0.56 }
+    SPRUCE_CHEST_BOAT: { buy: 1.25, sell: 0.56 }
+    BIRCH_CHEST_BOAT: { buy: 1.25, sell: 0.56 }
+    JUNGLE_CHEST_BOAT: { buy: 1.25, sell: 0.56 }
+    ACACIA_CHEST_BOAT: { buy: 1.25, sell: 0.58 }
+    DARK_OAK_CHEST_BOAT: { buy: 1.25, sell: 0.58 }
+    MANGROVE_CHEST_BOAT: { buy: 1.25, sell: 0.58 }
+    CHERRY_CHEST_BOAT: { buy: 1.25, sell: 0.61 }
+    PALE_OAK_CHEST_BOAT: { buy: 1.25, sell: 0.58 }
+    BAMBOO_CHEST_RAFT: { buy: 1.25, sell: 0.62 }
     BAMBOO_BLOCK: { buy: 0.38, sell: 0.19 }
     BAMBOO_PLANKS: { buy: 0.12, sell: 0.06 }
-    BAMBOO_MOSAIC: { buy: 0.14, sell: 0.07 }
-    BAMBOO_SLAB: { buy: 0.08, sell: 0.04 }
+    BAMBOO_MOSAIC: { buy: 0.14, sell: 0.06 }
+    BAMBOO_SLAB: { buy: 0.08, sell: 0.03 }
     BAMBOO_STAIRS: { buy: 0.15, sell: 0.07 }
     BAMBOO_FENCE: { buy: 0.16, sell: 0.08 }
     BAMBOO_FENCE_GATE: { buy: 0.18, sell: 0.09 }
     BAMBOO_DOOR: { buy: 0.14, sell: 0.07 }
     BAMBOO_TRAPDOOR: { buy: 0.16, sell: 0.08 }
-    BAMBOO_BUTTON: { buy: 0.05, sell: 0.03 }
+    BAMBOO_BUTTON: { buy: 0.05, sell: 0.02 }
     BAMBOO_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
     BAMBOO_SIGN: { buy: 0.16, sell: 0.08 }
     BAMBOO_HANGING_SIGN: { buy: 0.22, sell: 0.11 }
-    MANGROVE_ROOTS: { buy: 0.12, sell: 0.08 }
-    MUDDY_MANGROVE_ROOTS: { buy: 0.10, sell: 0.07 }
-    LADDER: { buy: 0.14, sell: 0.07 }
-    CRAFTING_TABLE: { buy: 0.50, sell: 0.25 }
-    CHEST: { buy: 1.05, sell: 0.53 }
-    BARREL: { buy: 1.15, sell: 0.57 }
-    TRAPPED_CHEST: { buy: 1.35, sell: 0.68 }
+    MANGROVE_ROOTS: { buy: 0.12, sell: 0.06 }
+    MUDDY_MANGROVE_ROOTS: { buy: 0.10, sell: 0.05 }
+    LADDER: { buy: 0.14, sell: 0.05 }
+    CRAFTING_TABLE: { buy: 0.50, sell: 0.17 }
+    CHEST: { buy: 1.05, sell: 0.35 }
+    BARREL: { buy: 1.15, sell: 0.30 }
+    TRAPPED_CHEST: { buy: 1.35, sell: 0.50 }
     BOOKSHELF: { buy: 2.30, sell: 1.15 }
     LECTERN: { buy: 1.60, sell: 0.80 }
-    COMPOSTER: { buy: 0.80, sell: 0.40 }
-    BEEHIVE: { buy: 1.90, sell: 0.95 }
-    BEE_NEST: { buy: 4.00, sell: 2.60 }
+    COMPOSTER: { buy: 0.80, sell: 0.15 }
+    BEEHIVE: { buy: 1.90, sell: 0.78 }
+    BEE_NEST: { buy: 4.00, sell: 2.00 }
     JUKEBOX: { buy: 1.95, sell: 0.97 }
-    NOTE_BLOCK: { buy: 1.85, sell: 0.93 }
-    ARMOR_STAND: { buy: 1.20, sell: 0.60 }
-    ITEM_FRAME: { buy: 0.75, sell: 0.38 }
-    GLOW_ITEM_FRAME: { buy: 1.20, sell: 0.60 }
-    PAINTING: { buy: 0.85, sell: 0.42 }
+    NOTE_BLOCK: { buy: 1.85, sell: 0.50 }
+    ARMOR_STAND: { buy: 1.20, sell: 0.14 }
+    ITEM_FRAME: { buy: 0.75, sell: 0.37 }
+    GLOW_ITEM_FRAME: { buy: 1.20, sell: 0.57 }
+    PAINTING: { buy: 0.85, sell: 0.32 }
 
-    STRIPPED_OAK_LOG: { buy: 0.35, sell: 0.23 }
+    STRIPPED_OAK_LOG: { buy: 0.35, sell: 0.17 }
 
-    OAK_WOOD: { buy: 0.35, sell: 0.23 }
+    OAK_WOOD: { buy: 0.35, sell: 0.17 }
 
-    STRIPPED_OAK_WOOD: { buy: 0.35, sell: 0.23 }
+    STRIPPED_OAK_WOOD: { buy: 0.35, sell: 0.17 }
 
-    OAK_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+    OAK_HANGING_SIGN: { buy: 0.69, sell: 0.26 }
 
-    STRIPPED_SPRUCE_LOG: { buy: 0.35, sell: 0.23 }
+    STRIPPED_SPRUCE_LOG: { buy: 0.35, sell: 0.17 }
 
-    SPRUCE_WOOD: { buy: 0.35, sell: 0.23 }
+    SPRUCE_WOOD: { buy: 0.35, sell: 0.17 }
 
-    STRIPPED_SPRUCE_WOOD: { buy: 0.35, sell: 0.23 }
+    STRIPPED_SPRUCE_WOOD: { buy: 0.35, sell: 0.17 }
 
-    SPRUCE_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+    SPRUCE_HANGING_SIGN: { buy: 0.69, sell: 0.26 }
 
-    STRIPPED_BIRCH_LOG: { buy: 0.35, sell: 0.23 }
+    STRIPPED_BIRCH_LOG: { buy: 0.35, sell: 0.17 }
 
-    BIRCH_WOOD: { buy: 0.35, sell: 0.23 }
+    BIRCH_WOOD: { buy: 0.35, sell: 0.17 }
 
-    STRIPPED_BIRCH_WOOD: { buy: 0.35, sell: 0.23 }
+    STRIPPED_BIRCH_WOOD: { buy: 0.35, sell: 0.17 }
 
-    BIRCH_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+    BIRCH_HANGING_SIGN: { buy: 0.69, sell: 0.26 }
 
-    STRIPPED_JUNGLE_LOG: { buy: 0.35, sell: 0.23 }
+    STRIPPED_JUNGLE_LOG: { buy: 0.35, sell: 0.17 }
 
-    JUNGLE_WOOD: { buy: 0.35, sell: 0.23 }
+    JUNGLE_WOOD: { buy: 0.35, sell: 0.17 }
 
-    STRIPPED_JUNGLE_WOOD: { buy: 0.35, sell: 0.23 }
+    STRIPPED_JUNGLE_WOOD: { buy: 0.35, sell: 0.17 }
 
-    JUNGLE_HANGING_SIGN: { buy: 0.69, sell: 0.34 }
+    JUNGLE_HANGING_SIGN: { buy: 0.69, sell: 0.26 }
 
-    STRIPPED_ACACIA_LOG: { buy: 0.38, sell: 0.25 }
+    STRIPPED_ACACIA_LOG: { buy: 0.38, sell: 0.19 }
 
-    ACACIA_WOOD: { buy: 0.38, sell: 0.25 }
+    ACACIA_WOOD: { buy: 0.38, sell: 0.19 }
 
-    STRIPPED_ACACIA_WOOD: { buy: 0.38, sell: 0.25 }
+    STRIPPED_ACACIA_WOOD: { buy: 0.38, sell: 0.19 }
 
-    ACACIA_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+    ACACIA_HANGING_SIGN: { buy: 0.73, sell: 0.28 }
 
-    STRIPPED_DARK_OAK_LOG: { buy: 0.38, sell: 0.25 }
+    STRIPPED_DARK_OAK_LOG: { buy: 0.38, sell: 0.19 }
 
-    DARK_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+    DARK_OAK_WOOD: { buy: 0.38, sell: 0.19 }
 
-    STRIPPED_DARK_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+    STRIPPED_DARK_OAK_WOOD: { buy: 0.38, sell: 0.19 }
 
-    DARK_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+    DARK_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.28 }
 
-    STRIPPED_MANGROVE_LOG: { buy: 0.38, sell: 0.25 }
+    STRIPPED_MANGROVE_LOG: { buy: 0.38, sell: 0.19 }
 
-    MANGROVE_WOOD: { buy: 0.38, sell: 0.25 }
+    MANGROVE_WOOD: { buy: 0.38, sell: 0.19 }
 
-    STRIPPED_MANGROVE_WOOD: { buy: 0.38, sell: 0.25 }
+    STRIPPED_MANGROVE_WOOD: { buy: 0.38, sell: 0.19 }
 
-    MANGROVE_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+    MANGROVE_HANGING_SIGN: { buy: 0.73, sell: 0.28 }
 
-    STRIPPED_CHERRY_LOG: { buy: 0.43, sell: 0.28 }
+    STRIPPED_CHERRY_LOG: { buy: 0.43, sell: 0.21 }
 
-    CHERRY_WOOD: { buy: 0.43, sell: 0.28 }
+    CHERRY_WOOD: { buy: 0.43, sell: 0.21 }
 
-    STRIPPED_CHERRY_WOOD: { buy: 0.43, sell: 0.28 }
+    STRIPPED_CHERRY_WOOD: { buy: 0.43, sell: 0.21 }
 
-    CHERRY_HANGING_SIGN: { buy: 0.80, sell: 0.40 }
+    CHERRY_HANGING_SIGN: { buy: 0.80, sell: 0.30 }
 
-    STRIPPED_PALE_OAK_LOG: { buy: 0.38, sell: 0.25 }
+    STRIPPED_PALE_OAK_LOG: { buy: 0.38, sell: 0.19 }
 
-    PALE_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+    PALE_OAK_WOOD: { buy: 0.38, sell: 0.19 }
 
-    STRIPPED_PALE_OAK_WOOD: { buy: 0.38, sell: 0.25 }
+    STRIPPED_PALE_OAK_WOOD: { buy: 0.38, sell: 0.19 }
 
-    PALE_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.36 }
+    PALE_OAK_HANGING_SIGN: { buy: 0.73, sell: 0.28 }
 
-    STRIPPED_CRIMSON_STEM: { buy: 0.45, sell: 0.29 }
+    STRIPPED_CRIMSON_STEM: { buy: 0.45, sell: 0.22 }
 
-    CRIMSON_WOOD: { buy: 0.45, sell: 0.29 }
+    CRIMSON_HYPHAE: { buy: 0.45, sell: 0.22 }
 
-    STRIPPED_CRIMSON_WOOD: { buy: 0.45, sell: 0.29 }
+    STRIPPED_CRIMSON_HYPHAE: { buy: 0.45, sell: 0.22 }
 
-    CRIMSON_HANGING_SIGN: { buy: 0.82, sell: 0.41 }
+    CRIMSON_HANGING_SIGN: { buy: 0.82, sell: 0.31 }
 
-    STRIPPED_WARPED_STEM: { buy: 0.45, sell: 0.29 }
+    STRIPPED_WARPED_STEM: { buy: 0.45, sell: 0.22 }
 
-    WARPED_WOOD: { buy: 0.45, sell: 0.29 }
+    WARPED_HYPHAE: { buy: 0.45, sell: 0.22 }
 
-    STRIPPED_WARPED_WOOD: { buy: 0.45, sell: 0.29 }
+    STRIPPED_WARPED_HYPHAE: { buy: 0.45, sell: 0.22 }
 
-    WARPED_HANGING_SIGN: { buy: 0.82, sell: 0.41 }
+    WARPED_HANGING_SIGN: { buy: 0.82, sell: 0.31 }
+    ACACIA_SHELF: { buy: 0.46, sell: 0.19 }
+    BAMBOO_MOSAIC_SLAB: { buy: 0.08, sell: 0.03 }
+    BAMBOO_MOSAIC_STAIRS: { buy: 0.14, sell: 0.07 }
+    BAMBOO_SHELF: { buy: 1.20, sell: 0.19 }
+    BIRCH_SHELF: { buy: 0.42, sell: 0.17 }
+    CHERRY_SHELF: { buy: 0.52, sell: 0.21 }
+    CRIMSON_SHELF: { buy: 0.54, sell: 0.22 }
+    DARK_OAK_SHELF: { buy: 0.46, sell: 0.19 }
+    JUNGLE_SHELF: { buy: 0.42, sell: 0.17 }
+    MANGROVE_SHELF: { buy: 0.46, sell: 0.19 }
+    OAK_SHELF: { buy: 0.42, sell: 0.17 }
+    PALE_OAK_SHELF: { buy: 0.46, sell: 0.19 }
+    POPLAR_BOAT: { buy: 0.53, sell: 0.21 }
+    POPLAR_BUTTON: { buy: 0.05, sell: 0.02 }
+    POPLAR_CHEST_BOAT: { buy: 1.25, sell: 0.56 }
+    POPLAR_DOOR: { buy: 0.14, sell: 0.07 }
+    POPLAR_FENCE: { buy: 0.16, sell: 0.07 }
+    POPLAR_FENCE_GATE: { buy: 0.18, sell: 0.09 }
+    POPLAR_HANGING_SIGN: { buy: 0.64, sell: 0.26 }
+    POPLAR_LOG: { buy: 0.35, sell: 0.17 }
+    POPLAR_PLANKS: { buy: 0.11, sell: 0.04 }
+    POPLAR_PRESSURE_PLATE: { buy: 0.09, sell: 0.04 }
+    POPLAR_SAPLING: { buy: 0.35, sell: 0.17 }
+    POPLAR_SHELF: { buy: 0.42, sell: 0.17 }
+    POPLAR_SIGN: { buy: 0.16, sell: 0.08 }
+    POPLAR_SLAB: { buy: 0.06, sell: 0.02 }
+    POPLAR_STAIRS: { buy: 0.15, sell: 0.06 }
+    POPLAR_TRAPDOOR: { buy: 0.16, sell: 0.08 }
+    POPLAR_WOOD: { buy: 0.35, sell: 0.17 }
+    SPRUCE_SHELF: { buy: 0.42, sell: 0.17 }
+    STRIPPED_BAMBOO_BLOCK: { buy: 1.00, sell: 0.19 }
+    STRIPPED_POPLAR_LOG: { buy: 0.35, sell: 0.17 }
+    STRIPPED_POPLAR_WOOD: { buy: 0.35, sell: 0.17 }
+    WARPED_SHELF: { buy: 0.54, sell: 0.22 }
 
 colored:
-  display: "Colored & Decorative"
-  icon: RED_WOOL
+  display: "Colors & Decoration"
+  icon: LAPIS_BLOCK
   items:
     WHITE_WOOL: { buy: 0.30, sell: 0.15 }
     WHITE_CARPET: { buy: 0.14, sell: 0.07 }
-    WHITE_CONCRETE: { buy: 0.32, sell: 0.16 }
-    WHITE_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    WHITE_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    WHITE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    WHITE_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    WHITE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    WHITE_CONCRETE: { buy: 0.32, sell: 0.03 }
+    WHITE_CONCRETE_POWDER: { buy: 0.28, sell: 0.03 }
+    WHITE_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    WHITE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    WHITE_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    WHITE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     WHITE_BED: { buy: 1.15, sell: 0.57 }
-    WHITE_BANNER: { buy: 1.05, sell: 0.53 }
+    WHITE_BANNER: { buy: 1.05, sell: 0.52 }
     WHITE_CANDLE: { buy: 0.35, sell: 0.17 }
-    WHITE_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    WHITE_DYE: { buy: 0.18, sell: 0.12 }
+    WHITE_SHULKER_BOX: { buy: 5.50, sell: 2.63 }
+    WHITE_DYE: { buy: 0.18, sell: 0.03 }
     ORANGE_WOOL: { buy: 0.30, sell: 0.15 }
     ORANGE_CARPET: { buy: 0.14, sell: 0.07 }
-    ORANGE_CONCRETE: { buy: 0.32, sell: 0.16 }
-    ORANGE_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    ORANGE_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    ORANGE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    ORANGE_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    ORANGE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    ORANGE_CONCRETE: { buy: 0.32, sell: 0.04 }
+    ORANGE_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    ORANGE_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    ORANGE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    ORANGE_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    ORANGE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     ORANGE_BED: { buy: 1.15, sell: 0.57 }
-    ORANGE_BANNER: { buy: 1.05, sell: 0.53 }
+    ORANGE_BANNER: { buy: 1.05, sell: 0.52 }
     ORANGE_CANDLE: { buy: 0.35, sell: 0.17 }
-    ORANGE_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    ORANGE_DYE: { buy: 0.15, sell: 0.10 }
+    ORANGE_SHULKER_BOX: { buy: 5.50, sell: 2.67 }
+    ORANGE_DYE: { buy: 0.15, sell: 0.07 }
     MAGENTA_WOOL: { buy: 0.30, sell: 0.15 }
     MAGENTA_CARPET: { buy: 0.14, sell: 0.07 }
-    MAGENTA_CONCRETE: { buy: 0.32, sell: 0.16 }
-    MAGENTA_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    MAGENTA_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    MAGENTA_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    MAGENTA_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    MAGENTA_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    MAGENTA_CONCRETE: { buy: 0.32, sell: 0.04 }
+    MAGENTA_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    MAGENTA_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    MAGENTA_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    MAGENTA_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    MAGENTA_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     MAGENTA_BED: { buy: 1.15, sell: 0.57 }
-    MAGENTA_BANNER: { buy: 1.05, sell: 0.53 }
+    MAGENTA_BANNER: { buy: 1.05, sell: 0.52 }
     MAGENTA_CANDLE: { buy: 0.35, sell: 0.17 }
-    MAGENTA_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    MAGENTA_DYE: { buy: 0.18, sell: 0.12 }
+    MAGENTA_SHULKER_BOX: { buy: 5.50, sell: 2.67 }
+    MAGENTA_DYE: { buy: 0.18, sell: 0.07 }
     LIGHT_BLUE_WOOL: { buy: 0.30, sell: 0.15 }
     LIGHT_BLUE_CARPET: { buy: 0.14, sell: 0.07 }
-    LIGHT_BLUE_CONCRETE: { buy: 0.32, sell: 0.16 }
-    LIGHT_BLUE_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    LIGHT_BLUE_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    LIGHT_BLUE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    LIGHT_BLUE_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    LIGHT_BLUE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    LIGHT_BLUE_CONCRETE: { buy: 0.32, sell: 0.04 }
+    LIGHT_BLUE_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    LIGHT_BLUE_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    LIGHT_BLUE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    LIGHT_BLUE_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    LIGHT_BLUE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     LIGHT_BLUE_BED: { buy: 1.15, sell: 0.57 }
-    LIGHT_BLUE_BANNER: { buy: 1.05, sell: 0.53 }
+    LIGHT_BLUE_BANNER: { buy: 1.05, sell: 0.52 }
     LIGHT_BLUE_CANDLE: { buy: 0.35, sell: 0.17 }
-    LIGHT_BLUE_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    LIGHT_BLUE_DYE: { buy: 0.18, sell: 0.12 }
+    LIGHT_BLUE_SHULKER_BOX: { buy: 5.50, sell: 2.66 }
+    LIGHT_BLUE_DYE: { buy: 0.18, sell: 0.06 }
     YELLOW_WOOL: { buy: 0.30, sell: 0.15 }
     YELLOW_CARPET: { buy: 0.14, sell: 0.07 }
-    YELLOW_CONCRETE: { buy: 0.32, sell: 0.16 }
-    YELLOW_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    YELLOW_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    YELLOW_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    YELLOW_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    YELLOW_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    YELLOW_CONCRETE: { buy: 0.32, sell: 0.04 }
+    YELLOW_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    YELLOW_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    YELLOW_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    YELLOW_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    YELLOW_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     YELLOW_BED: { buy: 1.15, sell: 0.57 }
-    YELLOW_BANNER: { buy: 1.05, sell: 0.53 }
+    YELLOW_BANNER: { buy: 1.05, sell: 0.52 }
     YELLOW_CANDLE: { buy: 0.35, sell: 0.17 }
-    YELLOW_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    YELLOW_DYE: { buy: 0.14, sell: 0.09 }
+    YELLOW_SHULKER_BOX: { buy: 5.50, sell: 2.67 }
+    YELLOW_DYE: { buy: 0.14, sell: 0.07 }
     LIME_WOOL: { buy: 0.30, sell: 0.15 }
     LIME_CARPET: { buy: 0.14, sell: 0.07 }
-    LIME_CONCRETE: { buy: 0.32, sell: 0.16 }
-    LIME_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    LIME_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    LIME_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    LIME_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    LIME_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    LIME_CONCRETE: { buy: 0.32, sell: 0.03 }
+    LIME_CONCRETE_POWDER: { buy: 0.28, sell: 0.03 }
+    LIME_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    LIME_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    LIME_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    LIME_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     LIME_BED: { buy: 1.15, sell: 0.57 }
-    LIME_BANNER: { buy: 1.05, sell: 0.53 }
+    LIME_BANNER: { buy: 1.05, sell: 0.52 }
     LIME_CANDLE: { buy: 0.35, sell: 0.17 }
-    LIME_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    LIME_DYE: { buy: 0.18, sell: 0.12 }
+    LIME_SHULKER_BOX: { buy: 5.50, sell: 2.64 }
+    LIME_DYE: { buy: 0.18, sell: 0.04 }
     PINK_WOOL: { buy: 0.30, sell: 0.15 }
     PINK_CARPET: { buy: 0.14, sell: 0.07 }
-    PINK_CONCRETE: { buy: 0.32, sell: 0.16 }
-    PINK_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    PINK_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    PINK_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    PINK_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    PINK_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    PINK_CONCRETE: { buy: 0.32, sell: 0.04 }
+    PINK_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    PINK_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    PINK_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    PINK_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    PINK_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     PINK_BED: { buy: 1.15, sell: 0.57 }
-    PINK_BANNER: { buy: 1.05, sell: 0.53 }
+    PINK_BANNER: { buy: 1.05, sell: 0.52 }
     PINK_CANDLE: { buy: 0.35, sell: 0.17 }
-    PINK_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    PINK_DYE: { buy: 0.18, sell: 0.12 }
+    PINK_SHULKER_BOX: { buy: 5.50, sell: 2.66 }
+    PINK_DYE: { buy: 0.18, sell: 0.06 }
     GRAY_WOOL: { buy: 0.30, sell: 0.15 }
     GRAY_CARPET: { buy: 0.14, sell: 0.07 }
-    GRAY_CONCRETE: { buy: 0.32, sell: 0.16 }
-    GRAY_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    GRAY_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    GRAY_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    GRAY_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    GRAY_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    GRAY_CONCRETE: { buy: 0.32, sell: 0.04 }
+    GRAY_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    GRAY_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    GRAY_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    GRAY_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    GRAY_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     GRAY_BED: { buy: 1.15, sell: 0.57 }
-    GRAY_BANNER: { buy: 1.05, sell: 0.53 }
+    GRAY_BANNER: { buy: 1.05, sell: 0.52 }
     GRAY_CANDLE: { buy: 0.35, sell: 0.17 }
-    GRAY_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    GRAY_DYE: { buy: 0.15, sell: 0.10 }
+    GRAY_SHULKER_BOX: { buy: 5.50, sell: 2.66 }
+    GRAY_DYE: { buy: 0.15, sell: 0.06 }
     LIGHT_GRAY_WOOL: { buy: 0.30, sell: 0.15 }
     LIGHT_GRAY_CARPET: { buy: 0.14, sell: 0.07 }
-    LIGHT_GRAY_CONCRETE: { buy: 0.32, sell: 0.16 }
-    LIGHT_GRAY_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    LIGHT_GRAY_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    LIGHT_GRAY_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    LIGHT_GRAY_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    LIGHT_GRAY_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    LIGHT_GRAY_CONCRETE: { buy: 0.32, sell: 0.03 }
+    LIGHT_GRAY_CONCRETE_POWDER: { buy: 0.28, sell: 0.03 }
+    LIGHT_GRAY_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    LIGHT_GRAY_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    LIGHT_GRAY_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    LIGHT_GRAY_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     LIGHT_GRAY_BED: { buy: 1.15, sell: 0.57 }
-    LIGHT_GRAY_BANNER: { buy: 1.05, sell: 0.53 }
+    LIGHT_GRAY_BANNER: { buy: 1.05, sell: 0.52 }
     LIGHT_GRAY_CANDLE: { buy: 0.35, sell: 0.17 }
-    LIGHT_GRAY_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    LIGHT_GRAY_DYE: { buy: 0.15, sell: 0.10 }
+    LIGHT_GRAY_SHULKER_BOX: { buy: 5.50, sell: 2.65 }
+    LIGHT_GRAY_DYE: { buy: 0.15, sell: 0.05 }
     CYAN_WOOL: { buy: 0.30, sell: 0.15 }
     CYAN_CARPET: { buy: 0.14, sell: 0.07 }
-    CYAN_CONCRETE: { buy: 0.32, sell: 0.16 }
-    CYAN_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    CYAN_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    CYAN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    CYAN_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    CYAN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    CYAN_CONCRETE: { buy: 0.32, sell: 0.04 }
+    CYAN_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    CYAN_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    CYAN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    CYAN_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    CYAN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     CYAN_BED: { buy: 1.15, sell: 0.57 }
-    CYAN_BANNER: { buy: 1.05, sell: 0.53 }
+    CYAN_BANNER: { buy: 1.05, sell: 0.52 }
     CYAN_CANDLE: { buy: 0.35, sell: 0.17 }
-    CYAN_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    CYAN_DYE: { buy: 0.18, sell: 0.12 }
+    CYAN_SHULKER_BOX: { buy: 5.50, sell: 2.67 }
+    CYAN_DYE: { buy: 0.18, sell: 0.07 }
     PURPLE_WOOL: { buy: 0.30, sell: 0.15 }
     PURPLE_CARPET: { buy: 0.14, sell: 0.07 }
-    PURPLE_CONCRETE: { buy: 0.32, sell: 0.16 }
-    PURPLE_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    PURPLE_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    PURPLE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    PURPLE_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    PURPLE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    PURPLE_CONCRETE: { buy: 0.32, sell: 0.04 }
+    PURPLE_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    PURPLE_TERRACOTTA: { buy: 0.18, sell: 0.08 }
+    PURPLE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.08 }
+    PURPLE_STAINED_GLASS: { buy: 0.22, sell: 0.05 }
+    PURPLE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     PURPLE_BED: { buy: 1.15, sell: 0.57 }
-    PURPLE_BANNER: { buy: 1.05, sell: 0.53 }
+    PURPLE_BANNER: { buy: 1.05, sell: 0.52 }
     PURPLE_CANDLE: { buy: 0.35, sell: 0.17 }
-    PURPLE_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    PURPLE_DYE: { buy: 0.18, sell: 0.12 }
+    PURPLE_SHULKER_BOX: { buy: 5.50, sell: 2.68 }
+    PURPLE_DYE: { buy: 0.18, sell: 0.08 }
     BLUE_WOOL: { buy: 0.30, sell: 0.15 }
     BLUE_CARPET: { buy: 0.14, sell: 0.07 }
-    BLUE_CONCRETE: { buy: 0.32, sell: 0.16 }
-    BLUE_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    BLUE_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    BLUE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    BLUE_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    BLUE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    BLUE_CONCRETE: { buy: 0.32, sell: 0.04 }
+    BLUE_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    BLUE_TERRACOTTA: { buy: 0.18, sell: 0.08 }
+    BLUE_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.08 }
+    BLUE_STAINED_GLASS: { buy: 0.22, sell: 0.05 }
+    BLUE_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     BLUE_BED: { buy: 1.15, sell: 0.57 }
-    BLUE_BANNER: { buy: 1.05, sell: 0.53 }
+    BLUE_BANNER: { buy: 1.05, sell: 0.52 }
     BLUE_CANDLE: { buy: 0.35, sell: 0.17 }
-    BLUE_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    BLUE_DYE: { buy: 0.22, sell: 0.14 }
+    BLUE_SHULKER_BOX: { buy: 5.50, sell: 2.69 }
+    BLUE_DYE: { buy: 0.22, sell: 0.09 }
     BROWN_WOOL: { buy: 0.30, sell: 0.15 }
     BROWN_CARPET: { buy: 0.14, sell: 0.07 }
-    BROWN_CONCRETE: { buy: 0.32, sell: 0.16 }
-    BROWN_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    BROWN_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    BROWN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    BROWN_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    BROWN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    BROWN_CONCRETE: { buy: 0.32, sell: 0.04 }
+    BROWN_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    BROWN_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    BROWN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    BROWN_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    BROWN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     BROWN_BED: { buy: 1.15, sell: 0.57 }
-    BROWN_BANNER: { buy: 1.05, sell: 0.53 }
+    BROWN_BANNER: { buy: 1.05, sell: 0.52 }
     BROWN_CANDLE: { buy: 0.35, sell: 0.17 }
-    BROWN_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    BROWN_DYE: { buy: 0.15, sell: 0.10 }
+    BROWN_SHULKER_BOX: { buy: 5.50, sell: 2.67 }
+    BROWN_DYE: { buy: 0.15, sell: 0.07 }
     GREEN_WOOL: { buy: 0.30, sell: 0.15 }
     GREEN_CARPET: { buy: 0.14, sell: 0.07 }
-    GREEN_CONCRETE: { buy: 0.32, sell: 0.16 }
-    GREEN_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    GREEN_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    GREEN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    GREEN_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    GREEN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    GREEN_CONCRETE: { buy: 0.32, sell: 0.03 }
+    GREEN_CONCRETE_POWDER: { buy: 0.28, sell: 0.03 }
+    GREEN_TERRACOTTA: { buy: 0.18, sell: 0.07 }
+    GREEN_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.07 }
+    GREEN_STAINED_GLASS: { buy: 0.22, sell: 0.04 }
+    GREEN_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     GREEN_BED: { buy: 1.15, sell: 0.57 }
-    GREEN_BANNER: { buy: 1.05, sell: 0.53 }
+    GREEN_BANNER: { buy: 1.05, sell: 0.52 }
     GREEN_CANDLE: { buy: 0.35, sell: 0.17 }
-    GREEN_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    GREEN_DYE: { buy: 0.15, sell: 0.10 }
+    GREEN_SHULKER_BOX: { buy: 5.50, sell: 2.65 }
+    GREEN_DYE: { buy: 0.15, sell: 0.05 }
     RED_WOOL: { buy: 0.30, sell: 0.15 }
     RED_CARPET: { buy: 0.14, sell: 0.07 }
-    RED_CONCRETE: { buy: 0.32, sell: 0.16 }
-    RED_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    RED_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    RED_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    RED_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    RED_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    RED_CONCRETE: { buy: 0.32, sell: 0.04 }
+    RED_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    RED_TERRACOTTA: { buy: 0.18, sell: 0.08 }
+    RED_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.08 }
+    RED_STAINED_GLASS: { buy: 0.22, sell: 0.05 }
+    RED_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     RED_BED: { buy: 1.15, sell: 0.57 }
-    RED_BANNER: { buy: 1.05, sell: 0.53 }
+    RED_BANNER: { buy: 1.05, sell: 0.52 }
     RED_CANDLE: { buy: 0.35, sell: 0.17 }
-    RED_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    RED_DYE: { buy: 0.20, sell: 0.13 }
+    RED_SHULKER_BOX: { buy: 5.50, sell: 2.68 }
+    RED_DYE: { buy: 0.20, sell: 0.08 }
     BLACK_WOOL: { buy: 0.30, sell: 0.15 }
     BLACK_CARPET: { buy: 0.14, sell: 0.07 }
-    BLACK_CONCRETE: { buy: 0.32, sell: 0.16 }
-    BLACK_CONCRETE_POWDER: { buy: 0.28, sell: 0.14 }
-    BLACK_TERRACOTTA: { buy: 0.18, sell: 0.09 }
-    BLACK_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.12 }
-    BLACK_STAINED_GLASS: { buy: 0.22, sell: 0.11 }
-    BLACK_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.06 }
+    BLACK_CONCRETE: { buy: 0.32, sell: 0.04 }
+    BLACK_CONCRETE_POWDER: { buy: 0.28, sell: 0.04 }
+    BLACK_TERRACOTTA: { buy: 0.18, sell: 0.08 }
+    BLACK_GLAZED_TERRACOTTA: { buy: 0.24, sell: 0.08 }
+    BLACK_STAINED_GLASS: { buy: 0.22, sell: 0.05 }
+    BLACK_STAINED_GLASS_PANE: { buy: 0.12, sell: 0.01 }
     BLACK_BED: { buy: 1.15, sell: 0.57 }
-    BLACK_BANNER: { buy: 1.05, sell: 0.53 }
+    BLACK_BANNER: { buy: 1.05, sell: 0.52 }
     BLACK_CANDLE: { buy: 0.35, sell: 0.17 }
-    BLACK_SHULKER_BOX: { buy: 5.50, sell: 2.75 }
-    BLACK_DYE: { buy: 0.22, sell: 0.14 }
+    BLACK_SHULKER_BOX: { buy: 5.50, sell: 2.70 }
+    BLACK_DYE: { buy: 0.22, sell: 0.10 }
     TERRACOTTA: { buy: 0.14, sell: 0.07 }
     CANDLE: { buy: 0.28, sell: 0.14 }
     SHULKER_BOX: { buy: 5.20, sell: 2.60 }
-    GLOWSTONE_DUST: { buy: 0.30, sell: 0.20 }
-    BONE_MEAL: { buy: 0.10, sell: 0.05 }
-    INK_SAC: { buy: 0.20, sell: 0.13 }
-    COCOA_BEANS: { buy: 0.40, sell: 0.25 }
+    GLOWSTONE_DUST: { buy: 0.30, sell: 0.11 }
+    BONE_MEAL: { buy: 0.10, sell: 0.03 }
+    INK_SAC: { buy: 0.20, sell: 0.10 }
+    COCOA_BEANS: { buy: 0.40, sell: 0.20 }
 
-    BUNDLE: { buy: 1.20, sell: 0.60 }
+    BUNDLE: { buy: 1.20, sell: 0.35 }
 
-    WHITE_BUNDLE: { buy: 1.50, sell: 0.75 }
+    WHITE_BUNDLE: { buy: 1.50, sell: 0.39 }
 
-    ORANGE_BUNDLE: { buy: 1.50, sell: 0.75 }
+    ORANGE_BUNDLE: { buy: 1.50, sell: 0.43 }
 
-    MAGENTA_BUNDLE: { buy: 1.50, sell: 0.75 }
+    MAGENTA_BUNDLE: { buy: 1.50, sell: 0.43 }
 
-    LIGHT_BLUE_BUNDLE: { buy: 1.50, sell: 0.75 }
+    LIGHT_BLUE_BUNDLE: { buy: 1.50, sell: 0.41 }
 
-    YELLOW_BUNDLE: { buy: 1.50, sell: 0.75 }
+    YELLOW_BUNDLE: { buy: 1.50, sell: 0.42 }
 
-    LIME_BUNDLE: { buy: 1.50, sell: 0.75 }
+    LIME_BUNDLE: { buy: 1.50, sell: 0.39 }
 
-    PINK_BUNDLE: { buy: 1.50, sell: 0.75 }
+    PINK_BUNDLE: { buy: 1.50, sell: 0.41 }
 
-    GRAY_BUNDLE: { buy: 1.50, sell: 0.75 }
+    GRAY_BUNDLE: { buy: 1.50, sell: 0.42 }
 
-    LIGHT_GRAY_BUNDLE: { buy: 1.50, sell: 0.75 }
+    LIGHT_GRAY_BUNDLE: { buy: 1.50, sell: 0.40 }
 
-    CYAN_BUNDLE: { buy: 1.50, sell: 0.75 }
+    CYAN_BUNDLE: { buy: 1.50, sell: 0.42 }
 
-    PURPLE_BUNDLE: { buy: 1.50, sell: 0.75 }
+    PURPLE_BUNDLE: { buy: 1.50, sell: 0.44 }
 
-    BLUE_BUNDLE: { buy: 1.50, sell: 0.75 }
+    BLUE_BUNDLE: { buy: 1.50, sell: 0.44 }
 
-    BROWN_BUNDLE: { buy: 1.50, sell: 0.75 }
+    BROWN_BUNDLE: { buy: 1.50, sell: 0.43 }
 
-    GREEN_BUNDLE: { buy: 1.50, sell: 0.75 }
+    GREEN_BUNDLE: { buy: 1.50, sell: 0.40 }
 
-    RED_BUNDLE: { buy: 1.50, sell: 0.75 }
+    RED_BUNDLE: { buy: 1.50, sell: 0.44 }
 
-    BLACK_BUNDLE: { buy: 1.50, sell: 0.75 }
+    BLACK_BUNDLE: { buy: 1.50, sell: 0.45 }
+    BLACK_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    BLACK_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    BLACK_CUSHION: { buy: 0.30, sell: 0.15 }
+    BLACK_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    BLACK_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    BLUE_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    BLUE_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    BLUE_CUSHION: { buy: 0.30, sell: 0.15 }
+    BLUE_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    BLUE_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    BROWN_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    BROWN_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    BROWN_CUSHION: { buy: 0.30, sell: 0.15 }
+    BROWN_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    BROWN_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    CYAN_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    CYAN_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    CYAN_CUSHION: { buy: 0.30, sell: 0.15 }
+    CYAN_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    CYAN_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    GRAY_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    GRAY_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    GRAY_CUSHION: { buy: 0.30, sell: 0.15 }
+    GRAY_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    GRAY_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    GREEN_CONCRETE_SLAB: { buy: 0.20, sell: 0.01 }
+    GREEN_CONCRETE_STAIRS: { buy: 0.32, sell: 0.03 }
+    GREEN_CUSHION: { buy: 0.30, sell: 0.15 }
+    GREEN_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    GREEN_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    LIGHT_BLUE_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    LIGHT_BLUE_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    LIGHT_BLUE_CUSHION: { buy: 0.30, sell: 0.15 }
+    LIGHT_BLUE_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    LIGHT_BLUE_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    LIGHT_GRAY_CONCRETE_SLAB: { buy: 0.20, sell: 0.01 }
+    LIGHT_GRAY_CONCRETE_STAIRS: { buy: 0.32, sell: 0.03 }
+    LIGHT_GRAY_CUSHION: { buy: 0.30, sell: 0.15 }
+    LIGHT_GRAY_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    LIGHT_GRAY_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    LIME_CONCRETE_SLAB: { buy: 0.20, sell: 0.01 }
+    LIME_CONCRETE_STAIRS: { buy: 0.32, sell: 0.03 }
+    LIME_CUSHION: { buy: 0.30, sell: 0.15 }
+    LIME_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    LIME_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    MAGENTA_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    MAGENTA_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    MAGENTA_CUSHION: { buy: 0.30, sell: 0.15 }
+    MAGENTA_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    MAGENTA_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    ORANGE_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    ORANGE_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    ORANGE_CUSHION: { buy: 0.30, sell: 0.15 }
+    ORANGE_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    ORANGE_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    PINK_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    PINK_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    PINK_CUSHION: { buy: 0.30, sell: 0.15 }
+    PINK_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    PINK_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    PURPLE_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    PURPLE_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    PURPLE_CUSHION: { buy: 0.30, sell: 0.15 }
+    PURPLE_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    PURPLE_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    RED_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    RED_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    RED_CUSHION: { buy: 0.30, sell: 0.15 }
+    RED_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    RED_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    WHITE_CONCRETE_SLAB: { buy: 0.20, sell: 0.01 }
+    WHITE_CONCRETE_STAIRS: { buy: 0.32, sell: 0.03 }
+    WHITE_CUSHION: { buy: 0.30, sell: 0.15 }
+    WHITE_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    WHITE_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
+    YELLOW_CONCRETE_SLAB: { buy: 0.20, sell: 0.02 }
+    YELLOW_CONCRETE_STAIRS: { buy: 0.32, sell: 0.04 }
+    YELLOW_CUSHION: { buy: 0.30, sell: 0.15 }
+    YELLOW_WOOL_SLAB: { buy: 0.18, sell: 0.07 }
+    YELLOW_WOOL_STAIRS: { buy: 0.30, sell: 0.15 }
 
 tools:
   display: "Tools & Weapons"
-  icon: DIAMOND_PICKAXE
+  icon: DIAMOND_SWORD
   items:
-    WOODEN_SWORD: { buy: 1.35, sell: 0.68 }
-    WOODEN_PICKAXE: { buy: 2.08, sell: 1.04 }
-    WOODEN_AXE: { buy: 2.08, sell: 1.04 }
-    WOODEN_SHOVEL: { buy: 0.83, sell: 0.41 }
-    WOODEN_HOE: { buy: 1.46, sell: 0.73 }
-    STONE_SWORD: { buy: 0.36, sell: 0.18 }
-    STONE_PICKAXE: { buy: 0.60, sell: 0.30 }
-    STONE_AXE: { buy: 0.60, sell: 0.30 }
-    STONE_SHOVEL: { buy: 0.34, sell: 0.17 }
-    STONE_HOE: { buy: 0.47, sell: 0.23 }
-    IRON_SWORD: { buy: 1.79, sell: 0.90 }
-    IRON_PICKAXE: { buy: 2.74, sell: 1.37 }
-    IRON_AXE: { buy: 2.74, sell: 1.37 }
-    IRON_SHOVEL: { buy: 1.05, sell: 0.53 }
-    IRON_HOE: { buy: 1.90, sell: 0.95 }
-    GOLDEN_SWORD: { buy: 3.22, sell: 1.61 }
-    GOLDEN_PICKAXE: { buy: 4.89, sell: 2.44 }
-    GOLDEN_AXE: { buy: 4.89, sell: 2.44 }
-    GOLDEN_SHOVEL: { buy: 1.77, sell: 0.89 }
-    GOLDEN_HOE: { buy: 3.33, sell: 1.67 }
-    DIAMOND_SWORD: { buy: 20.90, sell: 10.45 }
-    DIAMOND_PICKAXE: { buy: 31.41, sell: 15.71 }
-    DIAMOND_AXE: { buy: 31.41, sell: 15.71 }
-    DIAMOND_SHOVEL: { buy: 10.61, sell: 5.30 }
-    DIAMOND_HOE: { buy: 21.01, sell: 10.51 }
-    NETHERITE_SWORD: { buy: 158.90, sell: 79.45 }
-    NETHERITE_PICKAXE: { buy: 169.41, sell: 84.70 }
-    NETHERITE_AXE: { buy: 169.41, sell: 84.70 }
-    NETHERITE_SHOVEL: { buy: 148.61, sell: 74.31 }
-    NETHERITE_HOE: { buy: 159.01, sell: 79.50 }
-    BOW: { buy: 1.35, sell: 0.68 }
-    CROSSBOW: { buy: 2.60, sell: 1.30 }
-    FISHING_ROD: { buy: 0.95, sell: 0.47 }
-    FLINT_AND_STEEL: { buy: 0.75, sell: 0.38 }
+    WOODEN_SWORD: { buy: 1.35, sell: 0.10 }
+    WOODEN_PICKAXE: { buy: 2.08, sell: 0.17 }
+    WOODEN_AXE: { buy: 2.08, sell: 0.17 }
+    WOODEN_SHOVEL: { buy: 0.83, sell: 0.08 }
+    WOODEN_HOE: { buy: 1.46, sell: 0.13 }
+    STONE_SWORD: { buy: 0.36, sell: 0.08 }
+    STONE_PICKAXE: { buy: 0.60, sell: 0.13 }
+    STONE_AXE: { buy: 0.60, sell: 0.13 }
+    STONE_SHOVEL: { buy: 0.34, sell: 0.07 }
+    STONE_HOE: { buy: 0.47, sell: 0.10 }
+    IRON_SWORD: { buy: 1.79, sell: 0.49 }
+    IRON_PICKAXE: { buy: 2.74, sell: 0.76 }
+    IRON_AXE: { buy: 2.74, sell: 0.76 }
+    IRON_SHOVEL: { buy: 1.05, sell: 0.28 }
+    IRON_HOE: { buy: 1.90, sell: 0.52 }
+    GOLDEN_SWORD: { buy: 3.22, sell: 0.77 }
+    GOLDEN_PICKAXE: { buy: 4.89, sell: 1.16 }
+    GOLDEN_AXE: { buy: 4.89, sell: 1.16 }
+    GOLDEN_SHOVEL: { buy: 1.77, sell: 0.41 }
+    GOLDEN_HOE: { buy: 3.33, sell: 0.79 }
+    DIAMOND_SWORD: { buy: 20.90, sell: 8.02 }
+    DIAMOND_PICKAXE: { buy: 31.41, sell: 12.04 }
+    DIAMOND_AXE: { buy: 31.41, sell: 12.04 }
+    DIAMOND_SHOVEL: { buy: 10.61, sell: 4.04 }
+    DIAMOND_HOE: { buy: 21.01, sell: 8.04 }
+    NETHERITE_SWORD: { buy: 158.90, sell: 65.52 }
+    NETHERITE_PICKAXE: { buy: 169.41, sell: 69.54 }
+    NETHERITE_AXE: { buy: 169.41, sell: 69.54 }
+    NETHERITE_SHOVEL: { buy: 148.61, sell: 61.54 }
+    NETHERITE_HOE: { buy: 159.01, sell: 65.54 }
+    BOW: { buy: 1.35, sell: 0.45 }
+    CROSSBOW: { buy: 2.60, sell: 0.71 }
+    FISHING_ROD: { buy: 0.95, sell: 0.32 }
+    FLINT_AND_STEEL: { buy: 0.75, sell: 0.26 }
     SHEARS: { buy: 0.85, sell: 0.42 }
-    BRUSH: { buy: 1.20, sell: 0.60 }
-    SPYGLASS: { buy: 2.10, sell: 1.05 }
-    SHIELD: { buy: 1.60, sell: 0.80 }
-    TRIDENT: { buy: 28.00, sell: 18.20 }
-    MACE: { buy: 55.00, sell: 27.50 }
-    CARROT_ON_A_STICK: { buy: 1.35, sell: 0.68 }
-    WARPED_FUNGUS_ON_A_STICK: { buy: 1.60, sell: 0.80 }
-    WIND_CHARGE: { buy: 1.20, sell: 0.78 }
-    FLINT: { buy: 0.05, sell: 0.03 }
-    ARROW: { buy: 0.09, sell: 0.04 }
+    BRUSH: { buy: 1.20, sell: 0.19 }
+    SPYGLASS: { buy: 2.10, sell: 0.45 }
+    SHIELD: { buy: 1.60, sell: 0.50 }
+    TRIDENT: { buy: 28.00, sell: 14.00 }
+    MACE: { buy: 55.00, sell: 17.60 }
+    CARROT_ON_A_STICK: { buy: 1.35, sell: 0.43 }
+    WARPED_FUNGUS_ON_A_STICK: { buy: 1.60, sell: 0.41 }
+    WIND_CHARGE: { buy: 1.20, sell: 0.40 }
+    FLINT: { buy: 0.05, sell: 0.02 }
+    ARROW: { buy: 0.09, sell: 0.02 }
     SPECTRAL_ARROW: { buy: 0.25, sell: 0.12 }
+    COPPER_AXE: { buy: 0.95, sell: 0.39 }
+    COPPER_HOE: { buy: 0.67, sell: 0.27 }
+    COPPER_PICKAXE: { buy: 0.95, sell: 0.39 }
+    COPPER_SHOVEL: { buy: 0.39, sell: 0.16 }
+    COPPER_SPEAR: { buy: 0.39, sell: 0.16 }
+    COPPER_SWORD: { buy: 0.62, sell: 0.25 }
+    DIAMOND_SPEAR: { buy: 6.00, sell: 3.00 }
+    GOLDEN_SPEAR: { buy: 1.01, sell: 0.41 }
+    IRON_SPEAR: { buy: 0.68, sell: 0.28 }
+    NETHERITE_SPEAR: { buy: 6.00, sell: 3.00 }
+    STONE_SPEAR: { buy: 0.18, sell: 0.07 }
+    WOODEN_SPEAR: { buy: 0.21, sell: 0.08 }
 
 armor:
   display: "Armor"
   icon: DIAMOND_CHESTPLATE
   items:
-    LEATHER_HELMET: { buy: 2.93, sell: 1.47 }
-    LEATHER_CHESTPLATE: { buy: 4.68, sell: 2.34 }
-    LEATHER_LEGGINGS: { buy: 4.09, sell: 2.04 }
-    LEATHER_BOOTS: { buy: 2.34, sell: 1.17 }
-    CHAINMAIL_HELMET: { buy: 5.53, sell: 2.77 }
+    LEATHER_HELMET: { buy: 2.93, sell: 1.12 }
+    LEATHER_CHESTPLATE: { buy: 4.68, sell: 1.80 }
+    LEATHER_LEGGINGS: { buy: 4.09, sell: 1.57 }
+    LEATHER_BOOTS: { buy: 2.34, sell: 0.90 }
+    CHAINMAIL_HELMET: { buy: 5.53, sell: 2.76 }
     CHAINMAIL_CHESTPLATE: { buy: 8.84, sell: 4.42 }
     CHAINMAIL_LEGGINGS: { buy: 7.74, sell: 3.87 }
     CHAINMAIL_BOOTS: { buy: 4.42, sell: 2.21 }
-    IRON_HELMET: { buy: 4.23, sell: 2.12 }
-    IRON_CHESTPLATE: { buy: 6.76, sell: 3.38 }
-    IRON_LEGGINGS: { buy: 5.92, sell: 2.96 }
-    IRON_BOOTS: { buy: 3.38, sell: 1.69 }
-    GOLDEN_HELMET: { buy: 7.80, sell: 3.90 }
-    GOLDEN_CHESTPLATE: { buy: 12.48, sell: 6.24 }
-    GOLDEN_LEGGINGS: { buy: 10.92, sell: 5.46 }
-    GOLDEN_BOOTS: { buy: 6.24, sell: 3.12 }
-    DIAMOND_HELMET: { buy: 52.00, sell: 26.00 }
-    DIAMOND_CHESTPLATE: { buy: 83.20, sell: 41.60 }
-    DIAMOND_LEGGINGS: { buy: 72.80, sell: 36.40 }
-    DIAMOND_BOOTS: { buy: 41.60, sell: 20.80 }
-    NETHERITE_HELMET: { buy: 190.00, sell: 95.00 }
-    NETHERITE_CHESTPLATE: { buy: 221.20, sell: 110.60 }
-    NETHERITE_LEGGINGS: { buy: 210.80, sell: 105.40 }
-    NETHERITE_BOOTS: { buy: 179.60, sell: 89.80 }
+    IRON_HELMET: { buy: 4.23, sell: 1.19 }
+    IRON_CHESTPLATE: { buy: 6.76, sell: 1.91 }
+    IRON_LEGGINGS: { buy: 5.92, sell: 1.67 }
+    IRON_BOOTS: { buy: 3.38, sell: 0.95 }
+    GOLDEN_HELMET: { buy: 7.80, sell: 1.87 }
+    GOLDEN_CHESTPLATE: { buy: 12.48, sell: 3.00 }
+    GOLDEN_LEGGINGS: { buy: 10.92, sell: 2.62 }
+    GOLDEN_BOOTS: { buy: 6.24, sell: 1.50 }
+    DIAMOND_HELMET: { buy: 52.00, sell: 20.00 }
+    DIAMOND_CHESTPLATE: { buy: 83.20, sell: 32.00 }
+    DIAMOND_LEGGINGS: { buy: 72.80, sell: 28.00 }
+    DIAMOND_BOOTS: { buy: 41.60, sell: 16.00 }
+    NETHERITE_HELMET: { buy: 190.00, sell: 77.50 }
+    NETHERITE_CHESTPLATE: { buy: 221.20, sell: 89.50 }
+    NETHERITE_LEGGINGS: { buy: 210.80, sell: 85.50 }
+    NETHERITE_BOOTS: { buy: 179.60, sell: 73.50 }
     TURTLE_HELMET: { buy: 6.50, sell: 3.25 }
     IRON_HORSE_ARMOR: { buy: 3.20, sell: 1.60 }
     GOLDEN_HORSE_ARMOR: { buy: 5.80, sell: 2.90 }
     DIAMOND_HORSE_ARMOR: { buy: 12.50, sell: 6.25 }
     WOLF_ARMOR: { buy: 4.20, sell: 2.10 }
-    SADDLE: { buy: 9.00, sell: 5.85 }
-    LEAD: { buy: 0.75, sell: 0.38 }
-    NAME_TAG: { buy: 4.50, sell: 2.93 }
+    SADDLE: { buy: 9.00, sell: 0.91 }
+    LEAD: { buy: 0.75, sell: 0.32 }
+    NAME_TAG: { buy: 4.50, sell: 0.13 }
+    BLACK_HARNESS: { buy: 2.18, sell: 0.90 }
+    BLUE_HARNESS: { buy: 2.18, sell: 0.90 }
+    BROWN_HARNESS: { buy: 2.18, sell: 0.90 }
+    COPPER_BOOTS: { buy: 1.12, sell: 0.46 }
+    COPPER_CHESTPLATE: { buy: 2.24, sell: 0.93 }
+    COPPER_HELMET: { buy: 1.40, sell: 0.58 }
+    COPPER_HORSE_ARMOR: { buy: 3.20, sell: 1.60 }
+    COPPER_LEGGINGS: { buy: 1.96, sell: 0.81 }
+    COPPER_NAUTILUS_ARMOR: { buy: 3.20, sell: 1.60 }
+    CYAN_HARNESS: { buy: 2.18, sell: 0.90 }
+    DIAMOND_NAUTILUS_ARMOR: { buy: 3.20, sell: 1.60 }
+    GOLDEN_NAUTILUS_ARMOR: { buy: 3.20, sell: 1.60 }
+    GRAY_HARNESS: { buy: 2.18, sell: 0.90 }
+    GREEN_HARNESS: { buy: 2.18, sell: 0.90 }
+    IRON_NAUTILUS_ARMOR: { buy: 3.20, sell: 1.60 }
+    LEATHER_HORSE_ARMOR: { buy: 3.20, sell: 1.57 }
+    LIGHT_BLUE_HARNESS: { buy: 2.18, sell: 0.90 }
+    LIGHT_GRAY_HARNESS: { buy: 2.18, sell: 0.90 }
+    LIME_HARNESS: { buy: 2.18, sell: 0.90 }
+    MAGENTA_HARNESS: { buy: 2.18, sell: 0.90 }
+    NETHERITE_HORSE_ARMOR: { buy: 3.20, sell: 1.60 }
+    NETHERITE_NAUTILUS_ARMOR: { buy: 3.20, sell: 1.60 }
+    ORANGE_HARNESS: { buy: 2.18, sell: 0.90 }
+    PINK_HARNESS: { buy: 2.18, sell: 0.90 }
+    PURPLE_HARNESS: { buy: 2.18, sell: 0.90 }
+    RED_HARNESS: { buy: 2.18, sell: 0.90 }
+    WHITE_HARNESS: { buy: 2.18, sell: 0.90 }
+    YELLOW_HARNESS: { buy: 2.18, sell: 0.90 }
 
 food:
   display: "Food & Farming"
-  icon: GOLDEN_APPLE
+  icon: WHEAT
   items:
-    EGG: { buy: 0.25, sell: 0.16 }
-    WHEAT: { buy: 0.28, sell: 0.18 }
-    WHEAT_SEEDS: { buy: 0.05, sell: 0.03 }
-    BEETROOT_SEEDS: { buy: 0.06, sell: 0.04 }
-    BEETROOT: { buy: 0.22, sell: 0.14 }
-    CARROT: { buy: 0.22, sell: 0.14 }
-    POTATO: { buy: 0.22, sell: 0.14 }
-    POISONOUS_POTATO: { buy: 0.08, sell: 0.05 }
-    GOLDEN_CARROT: { buy: 2.30, sell: 1.15 }
-    PUMPKIN_SEEDS: { buy: 0.08, sell: 0.05 }
-    MELON_SEEDS: { buy: 0.10, sell: 0.07 }
-    TORCHFLOWER_SEEDS: { buy: 0.15, sell: 0.10 }
-    PITCHER_POD: { buy: 0.18, sell: 0.12 }
-    BREAD: { buy: 0.75, sell: 0.38 }
-    COOKIE: { buy: 0.12, sell: 0.06 }
-    CAKE: { buy: 1.85, sell: 0.93 }
-    PUMPKIN_PIE: { buy: 1.10, sell: 0.55 }
-    APPLE: { buy: 0.35, sell: 0.23 }
-    GOLDEN_APPLE: { buy: 13.50, sell: 6.75 }
-    ENCHANTED_GOLDEN_APPLE: { buy: 250.00, sell: 162.50 }
-    MUSHROOM_STEW: { buy: 0.60, sell: 0.30 }
-    RABBIT_STEW: { buy: 1.70, sell: 0.85 }
+    EGG: { buy: 0.25, sell: 0.12 }
+    WHEAT: { buy: 0.28, sell: 0.13 }
+    WHEAT_SEEDS: { buy: 0.05, sell: 0.02 }
+    BEETROOT_SEEDS: { buy: 0.06, sell: 0.03 }
+    BEETROOT: { buy: 0.22, sell: 0.11 }
+    CARROT: { buy: 0.22, sell: 0.11 }
+    POTATO: { buy: 0.22, sell: 0.11 }
+    POISONOUS_POTATO: { buy: 0.08, sell: 0.04 }
+    GOLDEN_CARROT: { buy: 2.30, sell: 0.44 }
+    PUMPKIN_SEEDS: { buy: 0.08, sell: 0.04 }
+    MELON_SEEDS: { buy: 0.10, sell: 0.03 }
+    TORCHFLOWER_SEEDS: { buy: 0.15, sell: 0.07 }
+    PITCHER_POD: { buy: 0.18, sell: 0.09 }
+    BREAD: { buy: 0.75, sell: 0.37 }
+    COOKIE: { buy: 0.12, sell: 0.05 }
+    CAKE: { buy: 1.85, sell: 0.92 }
+    PUMPKIN_PIE: { buy: 1.10, sell: 0.36 }
+    APPLE: { buy: 0.35, sell: 0.17 }
+    GOLDEN_APPLE: { buy: 13.50, sell: 3.17 }
+    ENCHANTED_GOLDEN_APPLE: { buy: 250.00, sell: 125.00 }
+    MUSHROOM_STEW: { buy: 0.60, sell: 0.21 }
+    RABBIT_STEW: { buy: 1.70, sell: 0.51 }
     BEETROOT_SOUP: { buy: 1.30, sell: 0.65 }
-    COOKED_BEEF: { buy: 0.55, sell: 0.28 }
-    BEEF: { buy: 0.38, sell: 0.25 }
-    COOKED_PORKCHOP: { buy: 0.55, sell: 0.28 }
-    PORKCHOP: { buy: 0.38, sell: 0.25 }
-    COOKED_CHICKEN: { buy: 0.50, sell: 0.25 }
-    CHICKEN: { buy: 0.35, sell: 0.23 }
-    COOKED_MUTTON: { buy: 0.50, sell: 0.25 }
-    MUTTON: { buy: 0.33, sell: 0.21 }
-    COOKED_RABBIT: { buy: 0.55, sell: 0.28 }
-    RABBIT: { buy: 0.38, sell: 0.25 }
+    COOKED_BEEF: { buy: 0.55, sell: 0.19 }
+    BEEF: { buy: 0.38, sell: 0.19 }
+    COOKED_PORKCHOP: { buy: 0.55, sell: 0.19 }
+    PORKCHOP: { buy: 0.38, sell: 0.19 }
+    COOKED_CHICKEN: { buy: 0.50, sell: 0.17 }
+    CHICKEN: { buy: 0.35, sell: 0.17 }
+    COOKED_MUTTON: { buy: 0.50, sell: 0.16 }
+    MUTTON: { buy: 0.33, sell: 0.16 }
+    COOKED_RABBIT: { buy: 0.55, sell: 0.19 }
+    RABBIT: { buy: 0.38, sell: 0.19 }
     COOKED_COD: { buy: 0.50, sell: 0.25 }
-    COD: { buy: 0.55, sell: 0.35 }
-    COOKED_SALMON: { buy: 0.55, sell: 0.28 }
-    SALMON: { buy: 0.65, sell: 0.42 }
-    TROPICAL_FISH: { buy: 1.10, sell: 0.70 }
-    PUFFERFISH: { buy: 0.90, sell: 0.58 }
-    ROTTEN_FLESH: { buy: 0.13, sell: 0.08 }
-    SPIDER_EYE: { buy: 0.30, sell: 0.19 }
+    COD: { buy: 0.55, sell: 0.27 }
+    COOKED_SALMON: { buy: 0.55, sell: 0.27 }
+    SALMON: { buy: 0.65, sell: 0.32 }
+    TROPICAL_FISH: { buy: 1.10, sell: 0.55 }
+    PUFFERFISH: { buy: 0.90, sell: 0.45 }
+    ROTTEN_FLESH: { buy: 0.13, sell: 0.06 }
+    SPIDER_EYE: { buy: 0.30, sell: 0.15 }
     FERMENTED_SPIDER_EYE: { buy: 0.35, sell: 0.17 }
     MILK_BUCKET: { buy: 0.60, sell: 0.30 }
-    HONEY_BOTTLE: { buy: 0.45, sell: 0.29 }
-    GLISTERING_MELON_SLICE: { buy: 1.35, sell: 0.68 }
-    RABBIT_FOOT: { buy: 1.20, sell: 0.78 }
+    HONEY_BOTTLE: { buy: 0.45, sell: 0.22 }
+    GLISTERING_MELON_SLICE: { buy: 1.35, sell: 0.37 }
+    RABBIT_FOOT: { buy: 1.20, sell: 0.60 }
 
-    SUSPICIOUS_STEW: { buy: 1.30, sell: 0.55 }
+    SUSPICIOUS_STEW: { buy: 1.30, sell: 0.30 }
+    BLUE_EGG: { buy: 0.25, sell: 0.12 }
+    BROWN_EGG: { buy: 0.25, sell: 0.12 }
 
 mobs:
   display: "Mob Drops & Brewing"
-  icon: ENDER_PEARL
+  icon: GUNPOWDER
   items:
-    BONE: { buy: 0.32, sell: 0.20 }
-    STRING: { buy: 0.26, sell: 0.16 }
-    GUNPOWDER: { buy: 0.38, sell: 0.25 }
-    FEATHER: { buy: 0.12, sell: 0.08 }
-    LEATHER: { buy: 0.45, sell: 0.29 }
-    RABBIT_HIDE: { buy: 0.25, sell: 0.16 }
-    ENDER_PEARL: { buy: 3.00, sell: 1.95 }
-    BLAZE_ROD: { buy: 2.40, sell: 1.56 }
-    BLAZE_POWDER: { buy: 1.35, sell: 0.68 }
-    GHAST_TEAR: { buy: 3.50, sell: 2.27 }
+    BONE: { buy: 0.32, sell: 0.16 }
+    STRING: { buy: 0.26, sell: 0.13 }
+    GUNPOWDER: { buy: 0.38, sell: 0.19 }
+    FEATHER: { buy: 0.12, sell: 0.06 }
+    LEATHER: { buy: 0.45, sell: 0.22 }
+    RABBIT_HIDE: { buy: 0.25, sell: 0.12 }
+    ENDER_PEARL: { buy: 3.00, sell: 1.50 }
+    BLAZE_ROD: { buy: 2.40, sell: 1.20 }
+    BLAZE_POWDER: { buy: 1.35, sell: 0.60 }
+    GHAST_TEAR: { buy: 3.50, sell: 1.75 }
     MAGMA_CREAM: { buy: 1.60, sell: 0.80 }
-    SLIME_BALL: { buy: 0.75, sell: 0.49 }
-    PRISMARINE_SHARD: { buy: 0.45, sell: 0.29 }
-    PRISMARINE_CRYSTALS: { buy: 0.55, sell: 0.36 }
-    NAUTILUS_SHELL: { buy: 6.50, sell: 4.23 }
-    HEART_OF_THE_SEA: { buy: 22.00, sell: 14.30 }
-    TURTLE_SCUTE: { buy: 2.80, sell: 1.82 }
-    ARMADILLO_SCUTE: { buy: 1.20, sell: 0.78 }
-    PHANTOM_MEMBRANE: { buy: 1.80, sell: 1.17 }
-    SHULKER_SHELL: { buy: 8.00, sell: 5.20 }
-    TOTEM_OF_UNDYING: { buy: 40.00, sell: 26.00 }
-    NETHER_STAR: { buy: 150.00, sell: 97.50 }
-    DRAGON_BREATH: { buy: 12.00, sell: 7.80 }
+    SLIME_BALL: { buy: 0.75, sell: 0.25 }
+    PRISMARINE_SHARD: { buy: 0.45, sell: 0.22 }
+    PRISMARINE_CRYSTALS: { buy: 0.55, sell: 0.25 }
+    NAUTILUS_SHELL: { buy: 6.50, sell: 3.25 }
+    HEART_OF_THE_SEA: { buy: 22.00, sell: 11.00 }
+    TURTLE_SCUTE: { buy: 2.80, sell: 1.40 }
+    ARMADILLO_SCUTE: { buy: 1.20, sell: 0.60 }
+    PHANTOM_MEMBRANE: { buy: 1.80, sell: 0.90 }
+    SHULKER_SHELL: { buy: 8.00, sell: 4.00 }
+    TOTEM_OF_UNDYING: { buy: 40.00, sell: 20.00 }
+    NETHER_STAR: { buy: 150.00, sell: 75.00 }
+    DRAGON_BREATH: { buy: 12.00, sell: 6.00 }
     POPPED_CHORUS_FRUIT: { buy: 0.40, sell: 0.20 }
     SUGAR: { buy: 0.08, sell: 0.04 }
-    NETHER_WART: { buy: 0.55, sell: 0.35 }
-    ECHO_SHARD: { buy: 9.00, sell: 5.85 }
-    DISC_FRAGMENT_5: { buy: 2.20, sell: 1.43 }
-    OMINOUS_BOTTLE: { buy: 8.00, sell: 5.20 }
-    BREEZE_ROD: { buy: 3.20, sell: 2.08 }
-    COBWEB: { buy: 1.25, sell: 0.81 }
-    MUSIC_DISC_13: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_CAT: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_BLOCKS: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_CHIRP: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_FAR: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_MALL: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_MELLOHI: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_STAL: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_STRAD: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_WARD: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_11: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_WAIT: { buy: 35.00, sell: 22.75 }
-    MUSIC_DISC_PIGSTEP: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_OTHERSIDE: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_5: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_RELIC: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_CREATOR: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_CREATOR_MUSIC_BOX: { buy: 55.00, sell: 35.75 }
-    MUSIC_DISC_PRECIPICE: { buy: 55.00, sell: 35.75 }
+    NETHER_WART: { buy: 0.55, sell: 0.27 }
+    ECHO_SHARD: { buy: 9.00, sell: 4.50 }
+    DISC_FRAGMENT_5: { buy: 2.20, sell: 1.10 }
+    OMINOUS_BOTTLE: { buy: 8.00, sell: 4.00 }
+    BREEZE_ROD: { buy: 3.20, sell: 1.60 }
+    COBWEB: { buy: 1.25, sell: 0.62 }
+    MUSIC_DISC_13: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_CAT: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_BLOCKS: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_CHIRP: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_FAR: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_MALL: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_MELLOHI: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_STAL: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_STRAD: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_WARD: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_11: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_WAIT: { buy: 35.00, sell: 17.50 }
+    MUSIC_DISC_PIGSTEP: { buy: 55.00, sell: 27.50 }
+    MUSIC_DISC_OTHERSIDE: { buy: 55.00, sell: 27.50 }
+    MUSIC_DISC_5: { buy: 55.00, sell: 9.90 }
+    MUSIC_DISC_RELIC: { buy: 55.00, sell: 27.50 }
+    MUSIC_DISC_CREATOR: { buy: 55.00, sell: 27.50 }
+    MUSIC_DISC_CREATOR_MUSIC_BOX: { buy: 55.00, sell: 27.50 }
+    MUSIC_DISC_PRECIPICE: { buy: 55.00, sell: 27.50 }
+    ENCHANTED_BOOK: { buy: 250.00, sell: 0.00 }
+    LINGERING_POTION: { buy: 35.00, sell: 0.00 }
+    POTION: { buy: 35.00, sell: 0.00 }
+    SPLASH_POTION: { buy: 35.00, sell: 0.00 }
+    TIPPED_ARROW: { buy: 5.00, sell: 0.00 }
 
 redstone:
   display: "Redstone & Transport"
-  icon: PISTON
+  icon: NOTE_BLOCK
   items:
     PISTON: { buy: 1.20, sell: 0.60 }
-    STICKY_PISTON: { buy: 1.55, sell: 0.78 }
-    OBSERVER: { buy: 2.10, sell: 1.05 }
+    STICKY_PISTON: { buy: 1.55, sell: 0.77 }
+    OBSERVER: { buy: 2.10, sell: 0.76 }
     HOPPER: { buy: 2.40, sell: 1.20 }
-    DROPPER: { buy: 1.15, sell: 0.57 }
-    DISPENSER: { buy: 1.35, sell: 0.68 }
+    DROPPER: { buy: 1.15, sell: 0.36 }
+    DISPENSER: { buy: 1.35, sell: 0.67 }
     REDSTONE_LAMP: { buy: 1.25, sell: 0.62 }
-    LEVER: { buy: 0.20, sell: 0.10 }
-    STONE_BUTTON: { buy: 0.18, sell: 0.09 }
-    STONE_PRESSURE_PLATE: { buy: 0.25, sell: 0.12 }
-    TRIPWIRE_HOOK: { buy: 0.45, sell: 0.23 }
+    LEVER: { buy: 0.20, sell: 0.05 }
+    STONE_BUTTON: { buy: 0.18, sell: 0.03 }
+    STONE_PRESSURE_PLATE: { buy: 0.25, sell: 0.06 }
+    TRIPWIRE_HOOK: { buy: 0.45, sell: 0.15 }
     DAYLIGHT_DETECTOR: { buy: 1.25, sell: 0.62 }
-    COMPARATOR: { buy: 1.85, sell: 0.93 }
-    REPEATER: { buy: 1.10, sell: 0.55 }
-    TARGET: { buy: 1.35, sell: 0.68 }
+    COMPARATOR: { buy: 1.85, sell: 0.66 }
+    REPEATER: { buy: 1.10, sell: 0.44 }
+    TARGET: { buy: 1.35, sell: 0.67 }
     TNT: { buy: 1.60, sell: 0.80 }
     REDSTONE_TORCH: { buy: 0.20, sell: 0.10 }
     RAIL: { buy: 0.15, sell: 0.07 }
-    POWERED_RAIL: { buy: 0.65, sell: 0.33 }
-    DETECTOR_RAIL: { buy: 0.45, sell: 0.23 }
-    ACTIVATOR_RAIL: { buy: 0.45, sell: 0.23 }
-    MINECART: { buy: 1.35, sell: 0.68 }
+    POWERED_RAIL: { buy: 0.65, sell: 0.32 }
+    DETECTOR_RAIL: { buy: 0.45, sell: 0.22 }
+    ACTIVATOR_RAIL: { buy: 0.45, sell: 0.22 }
+    MINECART: { buy: 1.35, sell: 0.67 }
     CHEST_MINECART: { buy: 1.70, sell: 0.85 }
-    FURNACE_MINECART: { buy: 1.75, sell: 0.88 }
-    HOPPER_MINECART: { buy: 2.75, sell: 1.38 }
+    FURNACE_MINECART: { buy: 1.75, sell: 0.87 }
+    HOPPER_MINECART: { buy: 2.75, sell: 1.37 }
     TNT_MINECART: { buy: 1.90, sell: 0.95 }
-    SCULK_SENSOR: { buy: 6.50, sell: 4.23 }
-    CALIBRATED_SCULK_SENSOR: { buy: 8.50, sell: 4.25 }
-    HEAVY_WEIGHTED_PRESSURE_PLATE: { buy: 0.45, sell: 0.23 }
-    LIGHT_WEIGHTED_PRESSURE_PLATE: { buy: 0.75, sell: 0.38 }
+    SCULK_SENSOR: { buy: 6.50, sell: 3.25 }
+    CALIBRATED_SCULK_SENSOR: { buy: 8.50, sell: 3.92 }
+    HEAVY_WEIGHTED_PRESSURE_PLATE: { buy: 0.45, sell: 0.22 }
+    LIGHT_WEIGHTED_PRESSURE_PLATE: { buy: 0.75, sell: 0.37 }
     CRAFTER: { buy: 3.20, sell: 1.60 }
-    COPPER_BULB: { buy: 0.55, sell: 0.28 }
+    COPPER_BULB: { buy: 0.55, sell: 0.27 }
+    COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    EXPOSED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    EXPOSED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    EXPOSED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    EXPOSED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    OXIDIZED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    OXIDIZED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    OXIDIZED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    OXIDIZED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    WAXED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    WAXED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    WAXED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    WAXED_EXPOSED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    WAXED_EXPOSED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    WAXED_EXPOSED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    WAXED_EXPOSED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    WAXED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    WAXED_OXIDIZED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    WAXED_OXIDIZED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    WAXED_OXIDIZED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    WAXED_OXIDIZED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    WAXED_WEATHERED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    WAXED_WEATHERED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    WAXED_WEATHERED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    WAXED_WEATHERED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
+    WEATHERED_COPPER_BARS: { buy: 0.11, sell: 0.04 }
+    WEATHERED_COPPER_CHAIN: { buy: 0.35, sell: 0.14 }
+    WEATHERED_COPPER_CHEST: { buy: 1.00, sell: 0.50 }
+    WEATHERED_LIGHTNING_ROD: { buy: 0.84, sell: 0.35 }
 
 misc:
   display: "Miscellaneous"
-  icon: ENDER_CHEST
+  icon: CHEST
   items:
-    TORCH: { buy: 0.09, sell: 0.04 }
-    SOUL_TORCH: { buy: 0.12, sell: 0.06 }
-    BOWL: { buy: 0.09, sell: 0.04 }
-    HONEYCOMB: { buy: 0.35, sell: 0.23 }
+    TORCH: { buy: 0.09, sell: 0.02 }
+    SOUL_TORCH: { buy: 0.12, sell: 0.03 }
+    BOWL: { buy: 0.09, sell: 0.03 }
+    HONEYCOMB: { buy: 0.35, sell: 0.17 }
     NETHER_WART_BLOCK: { buy: 3.50, sell: 1.75 }
-    SOUL_SAND: { buy: 0.05, sell: 0.03 }
-    SOUL_SOIL: { buy: 0.05, sell: 0.03 }
+    SOUL_SAND: { buy: 0.05, sell: 0.02 }
+    SOUL_SOIL: { buy: 0.05, sell: 0.02 }
     BAKED_POTATO: { buy: 0.18, sell: 0.09 }
-    STICK: { buy: 0.08, sell: 0.04 }
-    FURNACE: { buy: 0.85, sell: 0.42 }
-    BLAST_FURNACE: { buy: 2.85, sell: 1.43 }
-    SMOKER: { buy: 1.95, sell: 0.97 }
+    STICK: { buy: 0.08, sell: 0.02 }
+    FURNACE: { buy: 0.85, sell: 0.24 }
+    BLAST_FURNACE: { buy: 2.85, sell: 1.42 }
+    SMOKER: { buy: 1.95, sell: 0.94 }
     CAMPFIRE: { buy: 1.15, sell: 0.57 }
     SOUL_CAMPFIRE: { buy: 1.15, sell: 0.57 }
     ANVIL: { buy: 6.50, sell: 3.25 }
     CHIPPED_ANVIL: { buy: 4.50, sell: 2.25 }
     DAMAGED_ANVIL: { buy: 2.50, sell: 1.25 }
-    GRINDSTONE: { buy: 0.90, sell: 0.45 }
-    STONECUTTER: { buy: 1.25, sell: 0.62 }
-    SMITHING_TABLE: { buy: 1.45, sell: 0.72 }
-    CARTOGRAPHY_TABLE: { buy: 1.25, sell: 0.62 }
-    LOOM: { buy: 1.05, sell: 0.53 }
-    FLETCHING_TABLE: { buy: 1.05, sell: 0.53 }
-    BREWING_STAND: { buy: 2.95, sell: 1.48 }
+    GRINDSTONE: { buy: 0.90, sell: 0.14 }
+    STONECUTTER: { buy: 1.25, sell: 0.32 }
+    SMITHING_TABLE: { buy: 1.45, sell: 0.65 }
+    CARTOGRAPHY_TABLE: { buy: 1.25, sell: 0.41 }
+    LOOM: { buy: 1.05, sell: 0.34 }
+    FLETCHING_TABLE: { buy: 1.05, sell: 0.22 }
+    BREWING_STAND: { buy: 2.95, sell: 1.29 }
     CAULDRON: { buy: 1.65, sell: 0.82 }
-    ENCHANTING_TABLE: { buy: 22.00, sell: 11.00 }
+    ENCHANTING_TABLE: { buy: 22.00, sell: 10.28 }
     ENDER_CHEST: { buy: 8.50, sell: 4.25 }
-    BUCKET: { buy: 0.75, sell: 0.38 }
+    BUCKET: { buy: 0.75, sell: 0.30 }
     WATER_BUCKET: { buy: 0.85, sell: 0.42 }
     LAVA_BUCKET: { buy: 1.10, sell: 0.55 }
     POWDER_SNOW_BUCKET: { buy: 0.95, sell: 0.47 }
     COD_BUCKET: { buy: 1.20, sell: 0.60 }
     SALMON_BUCKET: { buy: 1.25, sell: 0.62 }
-    PUFFERFISH_BUCKET: { buy: 1.55, sell: 0.78 }
-    TROPICAL_FISH_BUCKET: { buy: 1.85, sell: 0.93 }
+    PUFFERFISH_BUCKET: { buy: 1.55, sell: 0.77 }
+    TROPICAL_FISH_BUCKET: { buy: 1.85, sell: 0.92 }
     TADPOLE_BUCKET: { buy: 1.25, sell: 0.62 }
     AXOLOTL_BUCKET: { buy: 3.50, sell: 1.75 }
-    GLASS_BOTTLE: { buy: 0.15, sell: 0.07 }
-    EXPERIENCE_BOTTLE: { buy: 2.50, sell: 1.62 }
-    FIREWORK_ROCKET: { buy: 0.25, sell: 0.12 }
+    GLASS_BOTTLE: { buy: 0.15, sell: 0.04 }
+    EXPERIENCE_BOTTLE: { buy: 2.50, sell: 1.25 }
+    FIREWORK_ROCKET: { buy: 0.25, sell: 0.10 }
     FIREWORK_STAR: { buy: 0.35, sell: 0.17 }
     MAP: { buy: 1.25, sell: 0.62 }
-    CLOCK: { buy: 1.85, sell: 0.93 }
-    COMPASS: { buy: 1.75, sell: 0.88 }
+    CLOCK: { buy: 1.85, sell: 0.92 }
+    COMPASS: { buy: 1.75, sell: 0.87 }
     PAPER: { buy: 0.25, sell: 0.12 }
-    BOOK: { buy: 0.85, sell: 0.42 }
-    WRITABLE_BOOK: { buy: 1.05, sell: 0.53 }
+    BOOK: { buy: 0.85, sell: 0.38 }
+    WRITABLE_BOOK: { buy: 1.05, sell: 0.52 }
     FLOWER_POT: { buy: 0.25, sell: 0.12 }
     FIRE_CHARGE: { buy: 0.35, sell: 0.17 }
     BELL: { buy: 3.25, sell: 1.62 }
-    DECORATED_POT: { buy: 0.95, sell: 0.47 }
-    SUSPICIOUS_SAND: { buy: 0.35, sell: 0.23 }
-    SUSPICIOUS_GRAVEL: { buy: 0.35, sell: 0.23 }
-    ANGLED_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    ARCHER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    ARMS_UP_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    BLADE_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    BREWER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    BURN_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    DANGER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    EXPLORER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    FRIEND_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    HEART_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    HEARTBREAK_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    HOWL_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    MINER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    MOURNER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    PLENTY_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    PRIZE_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    SHEAF_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    SHELTER_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    SKULL_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    SNORT_POTTERY_SHERD: { buy: 3.20, sell: 2.08 }
-    NETHERITE_UPGRADE_SMITHING_TEMPLATE: { buy: 12.00, sell: 7.80 }
-    COAST_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    DUNE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    EYE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    HOST_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    RAISER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    RIB_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 12.00, sell: 7.80 }
-    SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    TIDE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    VEX_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    WARD_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    WILD_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    BOLT_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    FLOW_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.93 }
-    GOAT_HORN: { buy: 4.50, sell: 2.93 }
+    DECORATED_POT: { buy: 0.95, sell: 0.30 }
 
-    RESIN_CLUMP: { buy: 0.30, sell: 0.20 }
+    ANGLER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    ARCHER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    ARMS_UP_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    BLADE_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    BREWER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    BURN_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    DANGER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    EXPLORER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    FRIEND_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    HEART_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    HEARTBREAK_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    HOWL_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    MINER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    MOURNER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    PLENTY_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    PRIZE_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    SHEAF_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    SHELTER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    SKULL_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    SNORT_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    NETHERITE_UPGRADE_SMITHING_TEMPLATE: { buy: 12.00, sell: 6.00 }
+    COAST_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    DUNE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    EYE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    HOST_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    RAISER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    RIB_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 12.00, sell: 6.00 }
+    SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    TIDE_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    VEX_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    WARD_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    WILD_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    BOLT_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    FLOW_ARMOR_TRIM_SMITHING_TEMPLATE: { buy: 4.50, sell: 2.25 }
+    GOAT_HORN: { buy: 4.50, sell: 2.25 }
+
+    RESIN_CLUMP: { buy: 0.30, sell: 0.15 }
 
     HEAVY_CORE: { buy: 32.00, sell: 14.00 }
 
     TRIAL_KEY: { buy: 25.00, sell: 9.00 }
 
-    OMINOUS_KEY: { buy: 60.00, sell: 21.00 }
+    OMINOUS_TRIAL_KEY: { buy: 60.00, sell: 21.00 }
+    ABANDONED_CAMP_MAP: { buy: 150.00, sell: 0.00 }
+    BORDURE_INDENTED_BANNER_PATTERN: { buy: 0.39, sell: 0.16 }
+    BURIED_ANCIENT_CITY_MAP: { buy: 150.00, sell: 0.00 }
+    BURIED_MINESHAFT_MAP: { buy: 150.00, sell: 0.00 }
+    BURIED_TREASURE_MAP: { buy: 150.00, sell: 0.00 }
+    BURIED_TRIAL_CHAMBERS_MAP: { buy: 150.00, sell: 0.00 }
+    CARVED_PUMPKIN: { buy: 1.00, sell: 0.50 }
+    CHISELED_BOOKSHELF: { buy: 0.79, sell: 0.32 }
+    COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    COPPER_TORCH: { buy: 0.08, sell: 0.03 }
+    CREEPER_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    CREEPER_HEAD: { buy: 25.00, sell: 12.50 }
+    DEAD_BUSH: { buy: 1.00, sell: 0.50 }
+    DESERT_PYRAMID_MAP: { buy: 150.00, sell: 0.00 }
+    DESERT_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    DRAGON_HEAD: { buy: 25.00, sell: 12.50 }
+    DRIED_GHAST: { buy: 1.00, sell: 0.50 }
+    ENDER_EYE: { buy: 1.00, sell: 0.50 }
+    END_CRYSTAL: { buy: 1.00, sell: 0.50 }
+    END_ROD: { buy: 0.84, sell: 0.35 }
+    EXPOSED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    FIELD_MASONED_BANNER_PATTERN: { buy: 1.01, sell: 0.42 }
+    FILLED_MAP: { buy: 150.00, sell: 0.00 }
+    FLOWER_BANNER_PATTERN: { buy: 0.51, sell: 0.21 }
+    FLOW_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    FLOW_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    GLOBE_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    GUSTER_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    GUSTER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    JACK_O_LANTERN: { buy: 1.00, sell: 0.50 }
+    JUNGLE_PYRAMID_MAP: { buy: 150.00, sell: 0.00 }
+    MOJANG_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    MUSIC_DISC_BOUNCE: { buy: 25.00, sell: 12.50 }
+    MUSIC_DISC_LAVA_CHICKEN: { buy: 25.00, sell: 12.50 }
+    MUSIC_DISC_TEARS: { buy: 25.00, sell: 12.50 }
+    OCEAN_MONUMENT_MAP: { buy: 150.00, sell: 0.00 }
+    OXIDIZED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    PIGLIN_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    PIGLIN_HEAD: { buy: 25.00, sell: 12.50 }
+    PLAINS_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    RECOVERY_COMPASS: { buy: 1.00, sell: 0.50 }
+    SAVANNA_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    SCAFFOLDING: { buy: 0.12, sell: 0.04 }
+    SCRAPE_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
+    SKELETON_SKULL: { buy: 25.00, sell: 12.50 }
+    SKULL_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
+    SNOWY_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    STRAW_BED: { buy: 1.00, sell: 0.50 }
+    SWAMP_HUT_MAP: { buy: 150.00, sell: 0.00 }
+    TAIGA_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    WARM_OCEAN_RUINS_MAP: { buy: 150.00, sell: 0.00 }
+    WARPED_WART_BLOCK: { buy: 1.00, sell: 0.50 }
+    WAXED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    WAXED_EXPOSED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    WAXED_OXIDIZED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    WAXED_WEATHERED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    WEATHERED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
+    WITHER_SKELETON_SKULL: { buy: 25.00, sell: 12.50 }
+    WOODLAND_MANSION_MAP: { buy: 150.00, sell: 0.00 }
+    WRITTEN_BOOK: { buy: 10.00, sell: 0.00 }
+    ZOMBIE_HEAD: { buy: 25.00, sell: 12.50 }
 

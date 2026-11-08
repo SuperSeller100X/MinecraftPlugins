@@ -9,6 +9,8 @@ import org.bukkit.util.Vector;
 
 public interface Entity {
     UUID getUniqueId();
+    EntityType getType();
+    org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer();
     Location getLocation();
     World getWorld();
     BoundingBox getBoundingBox();
@@ -23,4 +25,5 @@ public interface Entity {
     boolean teleport(Location location);
     boolean isSneaking();
     boolean isInWater();
+    default void setInvulnerable(boolean value) {}
 }

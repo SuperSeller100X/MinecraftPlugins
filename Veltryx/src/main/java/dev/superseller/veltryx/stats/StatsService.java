@@ -29,16 +29,9 @@ public final class StatsService {
         sessionStart.put(player.getUniqueId(), System.currentTimeMillis());
     }
 
-    /** Ends the session and folds it into the stored playtime. */
+    /** EconomyListener persists the session on quit; only stop live accounting here. */
     public void sessionEnd(Player player) {
-        Long since = sessionStart.remove(player.getUniqueId());
-        if (since == null) {
-            return;
-        }
-        Profile profile = store.getProfile(player.getUniqueId());
-        long played = profile == null ? 0L : profile.playtimeMs();
-        store.upsertProfile(player.getUniqueId(), player.getName(),
-                System.currentTimeMillis(), played + (System.currentTimeMillis() - since), false);
+        sessionStart.remove(player.getUniqueId());
     }
 
     /** Playtime of a player including the running session, in millis. */

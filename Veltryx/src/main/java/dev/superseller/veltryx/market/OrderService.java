@@ -55,6 +55,8 @@ public final class OrderService {
         if (material == null || material == Material.AIR) {
             return Result.fail("ah.unknown-item", Map.of("item", materialName));
         }
+        // Buy orders carry a material name, not a custom spawner's identity.
+        if (material == Material.SPAWNER) return Result.fail("spawner.market-disabled", Map.of());
         if (amount < 1 || amount > 23040) {
             return Result.fail("order.bad-amount", Map.of());
         }
@@ -105,6 +107,8 @@ public final class OrderService {
         if (material == null) {
             return Result.fail("order.gone", Map.of());
         }
+        // Also protect spawners from orders created before this guard existed.
+        if (material == Material.SPAWNER) return Result.fail("spawner.market-disabled", Map.of());
         if (hasValuedStack(seller, material)) {
             return Result.fail("order.no-valued", Map.of());
         }

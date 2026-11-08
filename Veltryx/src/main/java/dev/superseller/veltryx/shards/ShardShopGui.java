@@ -57,12 +57,19 @@ public final class ShardShopGui implements Listener {
     private final ShardItems items;
     private final ShardService service;
     private final Messages messages;
+    private java.util.function.Consumer<Player> spawnerOpener;
 
     public ShardShopGui(ShardCatalog catalog, ShardItems items, ShardService service, Messages messages) {
         this.catalog = catalog;
         this.items = items;
         this.service = service;
         this.messages = messages;
+    }
+
+    public void attachSpawnerOpener(java.util.function.Consumer<Player> opener) { this.spawnerOpener = opener; }
+
+    public void openSpawnerShop(Player player) {
+        if (spawnerOpener != null) spawnerOpener.accept(player);
     }
 
     /** Opens the shard shop (Folia-safe). */
@@ -79,6 +86,10 @@ public final class ShardShopGui implements Listener {
                 inventory.setItem(slots[i], items.displayIcon(entry, entry.priceShards()));
                 holder.slots.add(entry);
             }
+            inventory.setItem(24, item(Material.SPAWNER, 1,
+                    Txt.legacy("§bSpawner shop"),
+                    List.of(Txt.legacy("§7Seven permanent spawners"),
+                            Txt.legacy("§6Each costs 1,000 shards"), Txt.legacy("§eClick to browse"))));
             inventory.setItem(45, item(Material.PAPER, 1,
                     Txt.legacy("§bShards"),
                     List.of(Txt.legacy("§7Earned by playing: §f1 shard per minute"),
@@ -124,6 +135,10 @@ public final class ShardShopGui implements Listener {
                 return;
             }
             if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != shop) {
+                return;
+            }
+            if (event.getSlot() == 24) {
+                openSpawnerShop(player);
                 return;
             }
             int index = indexOf(shop, event.getSlot());

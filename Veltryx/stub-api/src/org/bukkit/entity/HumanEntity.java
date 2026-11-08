@@ -6,11 +6,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.PlayerInventory;
-public interface HumanEntity extends Entity, CommandSender {
+public interface HumanEntity extends LivingEntity, CommandSender {
     PlayerInventory getInventory();
     GameMode getGameMode();
     void closeInventory();
     InventoryView openInventory(Inventory inventory);
+    InventoryView getOpenInventory();
     Location getLocation();
     World getWorld();
 }

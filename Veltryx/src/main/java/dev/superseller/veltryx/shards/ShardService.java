@@ -23,6 +23,12 @@ public final class ShardService {
     public record Result(boolean ok, String key) { }
 
     private final DataStore data;
+    private volatile java.util.function.Consumer<UUID> onChange = id -> { };
+
+    /** Called after successful shard balance changes. */
+    public void onChange(java.util.function.Consumer<UUID> listener) {
+        this.onChange = listener == null ? id -> { } : listener;
+    }
 
     public ShardService(DataStore data) {
         this.data = data;
@@ -34,15 +40,17 @@ public final class ShardService {
 
     public void give(UUID id, long amount) {
         if (amount > 0) {
-            data.setShards(id, data.shards(id) + amount);
+            data.setShards(id, dev.superseller.veltryx.util.Money.addSaturated(data.shards(id), amount));
+            onChange.accept(id);
         }
     }
 
-    public boolean take(UUID id, long amount) {
+    public synchronized boolean take(UUID id, long amount) {
         if (amount <= 0 || data.shards(id) < amount) {
             return false;
         }
         data.setShards(id, data.shards(id) - amount);
+        onChange.accept(id);
         return true;
     }
 

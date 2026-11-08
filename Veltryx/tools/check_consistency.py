@@ -5,7 +5,8 @@ The sandbox this runs in has no JDK and no access to Maven Central, so the real
 `mvn clean verify` happens in CI. These checks cover the class of bug a compiler
 cannot see: a message key, config path, command registration or permission
 referenced from Java that does not exist in the shipped resource files (and
-placeholders passed to messages that the template does not declare).
+placeholders passed to messages that the template does not declare, and
+missing placeholders in literal call sites).
 
 Self-contained: no third-party modules required (this file ships its own small
 YAML-subset parser because PyYAML is not guaranteed to be installed).
@@ -135,6 +136,86 @@ for key in sorted(message_keys):
         continue
     if key not in used_messages and not key.startswith("ban-screen"):
         warn(f"messages.yml key '{key}' is never referenced from Java")
+
+# A static key audit alone misses empty placeholder values: Messages strips
+# unfilled {tokens}. Inspect literal send/render calls using Map.of, including
+# nested method calls; skip dynamic maps/keys rather than guessing.
+def split_arguments(text: str) -> list[str]:
+    result: list[str] = []
+    depth = 0
+    quote = None
+    escaped = False
+    start = 0
+    for i, char in enumerate(text):
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ("\"", "'"):
+            quote = char
+        elif char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif char == "," and depth == 0:
+            result.append(text[start:i].strip())
+            start = i + 1
+    result.append(text[start:].strip())
+    return result
+
+
+def parenthesized(text: str, start: int) -> str:
+    depth = 0
+    quote = None
+    escaped = False
+    for i in range(start, len(text)):
+        char = text[i]
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ("\"", "'"):
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:i]
+    return ""
+
+
+for source in java_files:
+    text = source.read_text()
+    for call in re.finditer(r"\bmessages\.(send|render|sendMultiline)\s*\(", text):
+        args = split_arguments(parenthesized(text, text.index("(", call.start())))
+        key_index = 0 if call.group(1) == "render" else 1
+        if len(args) <= key_index or not re.fullmatch(r'"[a-z0-9.-]+"', args[key_index]):
+            continue
+        key = args[key_index][1:-1]
+        if key not in message_keys:
+            continue  # the missing-key check above reports this
+        supplied: set[str] = set()
+        if len(args) > key_index + 1:
+            values = args[key_index + 1]
+            if not (values.startswith("Map.of(") or values.startswith("java.util.Map.of(")):
+                continue
+            entries = split_arguments(parenthesized(values, values.index("(")))
+            supplied = {entries[i][1:-1] for i in range(0, len(entries), 2)
+                        if re.fullmatch(r'"[a-zA-Z0-9_-]+"', entries[i])}
+        absent = placeholder_names(message_keys[key]) - supplied
+        if absent:
+            line = text.count("\n", 0, call.start()) + 1
+            fail(f"message '{key}' ({source.name}:{line}) is missing placeholders: {sorted(absent)}")
+
+if re.search(r"</?lime>", messages_text, re.IGNORECASE):
+    fail("messages.yml contains <lime>, which is not a MiniMessage named color; use <green>")
 
 # ------------------------------------------------------- command wiring
 

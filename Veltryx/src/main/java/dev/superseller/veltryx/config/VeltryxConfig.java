@@ -79,7 +79,7 @@ public final class VeltryxConfig {
     }
 
     public long scoreboardUpdateSeconds() {
-        return config.getLong("scoreboard.update-seconds", 20L);
+        return config.getLong("scoreboard.update-seconds", 1L);
     }
 
     // ------------------------------------------------------------ anticheat

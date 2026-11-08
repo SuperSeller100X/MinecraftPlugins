@@ -297,16 +297,19 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**vx-0.0.4-beta**. More modules land in the same plugin; the public
-`VeltryxEconomy` API is ready for them. Exact cent-based balances, YAML **or** SQLite storage.
+**vx-0.0.5-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
+balances, and YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
-- **`/shop` (`/store`) + `/sell`** — buy/sell GUIs for **almost every obtainable
-  item** (1,100++, no elytra, no operator-only blocks) with fair buy and sell
-  prices; new players still start with **$100**. The pricing is
-  **exploit-proof**: buying materials, crafting and selling always loses money
-  (verified against 170+ recipes), so money is only earned by doing something —
-  mining, farming, hunting — never by market games. Prices live in `shop.yml`.
+- **`/shop` (`/store`) + `/sell`** — 1,530 curated 26.3 survival items,
+  excluding elytra, the dragon egg and unobtainable/operator items. Potion,
+  tipped-arrow, book and explorer-map purchases retain their variants or
+  destinations. Sell prices are capped against bundled modeled recipes and
+  selected transformations; this does not cover every trade, farm or plugin.
+  Prices are in `shop.yml` and existing values are preserved on upgrade.
+- **`/settings`** — per-player, persistent natural-mob and phantom spawning
+  preferences and night vision. Other players and spawners can still spawn
+  mobs nearby when a player opts out of natural spawning.
 - `/ban <player> [duration] <reason>` — general custom bans (permanent when no duration;
   shadows vanilla `/ban`, never touches Minecraft's ban list) · `/offend <player> <reason>` —
   `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
@@ -350,16 +353,26 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
   particles) at 500 shards each — self-destructing **24h after purchase**
   like the ShardTools plugin — plus the **Void Totem** (150) that rescues
   you from the void. No way to buy shards with money: earned, paid or given.
+- **`/shard spawners`** (also linked from the shard shop) sells permanent pig,
+  sheep, cow, iron golem, skeleton, zombie and creeper spawners for **1,000
+  shards each**. Silk Touch returns them directly to inventory with their
+  contents. Right-click to toggle normal spawning or loot storage, with
+  **20 pages × 45 slots**, and all light levels allowed. Inventory mode uses
+  the no-player-killer loot table; rolls that do not fit are discarded, and
+  normal non-light spawn requirements still apply. Back up `spawners/` with world and
+  player data. Spawners are blocked from Veltryx's material-only auctions and
+  buy orders. Protection plugins need to guard interactions and the
+  `SpawnerSpawnEvent`; integrations that only check `CreatureSpawnEvent`
+  cannot stop virtual loot. See the module README for details.
 - **`/rtp` random teleport** — world picker (Overworld / Nether / End),
   **10 million block radius**, async **safe-block search** (never lava,
   fire, the void or the nether roof) and a **3 second countdown**
-- **Shop extras** — `/quickshop` (`/qs`) 5-row quick-buy panel (+ ender
-  chest in the shop), **item search** (compass in the shop or
-  `/shop search`), and choose-what-you-buy **potions / tipped arrows /
-  enchanted books** (type, effect, enchantment + level)
-- **Stats display** — always-on scoreboard on the right side (cash, shards,
-  deaths, kills, playtime) and four-line nametags above every player's
-  username: money, shards (✦), deaths (☠), kills (⚔)
+- **QuickShop & search** — `/quickshop` (`/qs`) has 45 independently
+  configurable per-player item/amount slots; search privately in chat, select
+  a variant, then save. Prices are looked up again at purchase time.
+- **Stats display** — cash, shards, deaths, kills and playtime with hidden
+  ordering numbers, prompt balance/stat updates and a configurable refresh
+  interval; optional nametags are mirrored to viewers.
 - Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
   `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
   `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`
@@ -369,6 +382,7 @@ the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Versio
 
 See [Veltryx/README.md](Veltryx/README.md) for full commands, permissions, configuration,
 storage and API details. Build with `mvn -B clean verify` in `Veltryx/` (JDK 25 required);
-an offline stub build + smoke tests run via `./build.sh`. Offline consistency checks:
-`python3 Veltryx/tools/check_consistency.py`. A CI workflow is included at
+an offline stub build + regression tests run via `./build.sh` (not a real Paper
+validation and no shaded SQLite driver). Offline consistency checks:
+`cd Veltryx && python3 tools/check_consistency.py`. A CI workflow is included at
 `Veltryx/.github/workflows/build.yml` (copy it to the repo root `.github/workflows/` to activate it).

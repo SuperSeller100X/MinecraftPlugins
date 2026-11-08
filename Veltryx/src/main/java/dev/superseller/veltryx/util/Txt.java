@@ -25,6 +25,8 @@ public final class Txt {
     }
 
     public static Component legacy(String text) {
-        return LEGACY.deserialize(text);
+        // Item names and lore inherit Minecraft's italic default unless the
+        // decoration is explicitly disabled on the root component.
+        return LEGACY.deserialize(text).decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
     }
 }

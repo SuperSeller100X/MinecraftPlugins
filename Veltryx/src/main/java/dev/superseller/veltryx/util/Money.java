@@ -134,6 +134,12 @@ public final class Money {
         return cents >= 0 && cents != INVALID;
     }
 
+    /** Multiplies nonnegative amounts without overflowing. */
+    public static long multiplySaturated(long a, long b) {
+        if (a <= 0 || b <= 0) return 0L;
+        return a > Long.MAX_VALUE / b ? Long.MAX_VALUE : a * b;
+    }
+
     /** Adds amounts without overflowing past {@link Long#MAX_VALUE}. */
     public static long addSaturated(long a, long b) {
         long sum = a + b;

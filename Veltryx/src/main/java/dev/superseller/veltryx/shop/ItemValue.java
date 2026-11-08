@@ -46,6 +46,10 @@ public final class ItemValue {
         if (buyCents > 0) {
             // strict loop safety: never pay out what the shop charges
             value = Math.min(value, buyCents - 1);
+            // The base sell price is at most half of the cheapest recipe cost;
+            // cap the enchantment bonus below twice that amount too.
+            long bonusCap = sellBaseCents > Long.MAX_VALUE / 2 ? Long.MAX_VALUE : 2 * sellBaseCents - 1;
+            value = Math.min(value, bonusCap);
         }
         return Math.max(0, value);
     }

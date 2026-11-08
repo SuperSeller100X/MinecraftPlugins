@@ -83,6 +83,13 @@ public final class HomesGui implements Listener {
 
     /** Players currently typing a new home name in chat. */
     private final Map<UUID, String> pendingRenames = new ConcurrentHashMap<>();
+    private java.util.function.Consumer<Player> cancelOtherPrompt = player -> { };
+
+    public void attachPromptCancellation(java.util.function.Consumer<Player> cancel) { this.cancelOtherPrompt = cancel; }
+    public void cancelPendingRename(Player player) {
+        String name = pendingRenames.remove(player.getUniqueId());
+        if (name != null) messages.send(player, "home.rename-cancelled", Map.of("name", name));
+    }
 
     private final HomeService service;
     private final EconomyService economy;
@@ -269,11 +276,12 @@ public final class HomesGui implements Listener {
                     player.closeInventory();
                 }
             }
-            case 12 -> {
+            case 12 -> PlatformScheduler.runForPlayer(player, () -> {
+                cancelOtherPrompt.accept(player);
                 player.closeInventory();
                 pendingRenames.put(player.getUniqueId(), homeName);
                 messages.send(player, "home.rename-prompt", Map.of("name", homeName));
-            }
+            });
             case 14 -> openIcons(player, homeName, 0);
             case 16 -> {
                 HomeService.Result result = service.delete(player, homeName);
@@ -306,8 +314,9 @@ public final class HomesGui implements Listener {
     }
 
     /** Captures the typed new home name for a pending rename. */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
+        if (event.isCancelled()) return;
         Player player = event.getPlayer();
         String pending = pendingRenames.get(player.getUniqueId());
         if (pending == null) {
@@ -322,6 +331,11 @@ public final class HomesGui implements Listener {
         }
         HomeService.Result result = service.rename(player, pending, typed);
         messages.send(player, result.templateKey(), result.values());
+    }
+
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        pendingRenames.remove(event.getPlayer().getUniqueId());
     }
 
     /** The home's custom icon material, or the default ender pearl. */

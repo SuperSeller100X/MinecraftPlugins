@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -34,6 +35,8 @@ public final class PlatformScheduler {
     private static Method globalRun;
     private static Method globalRunAtFixedRate;
     private static Method globalRunDelayed;
+    private static Method regionSchedulerGet;
+    private static Method regionRun;
     private static Method asyncSchedulerGet;
     private static Method asyncRunNow;
 
@@ -66,6 +69,15 @@ public final class PlatformScheduler {
             folia = true;
         } catch (Throwable ignored) {
             globalRun = null;
+            folia = false;
+        }
+        try {
+            regionSchedulerGet = Bukkit.class.getMethod("getRegionScheduler");
+            Class<?> region = Class.forName("io.papermc.paper.threadedregions.scheduler.RegionScheduler");
+            regionRun = region.getMethod("run", org.bukkit.plugin.Plugin.class, Location.class, Consumer.class);
+        } catch (Throwable ignored) {
+            regionSchedulerGet = null;
+            regionRun = null;
         }
         try {
             asyncSchedulerGet = Bukkit.class.getMethod("getAsyncScheduler");
@@ -80,6 +92,24 @@ public final class PlatformScheduler {
     /** True when running on Folia (region schedulers present). */
     public static boolean isFolia() {
         return folia;
+    }
+
+    /** Runs next tick on the region owning a fixed block location (not an entity). */
+    public static void runForLocation(Location location, Runnable task) {
+        if (folia) {
+            if (regionSchedulerGet == null || regionRun == null) {
+                throw new IllegalStateException("Region scheduler is unavailable");
+            }
+            try {
+                Object scheduler = regionSchedulerGet.invoke(null);
+                regionRun.invoke(scheduler, plugin, location, (Consumer<Object>) ignored -> task.run());
+                return;
+            } catch (ReflectiveOperationException ex) {
+                // Never silently run block access on Folia's global thread.
+                throw new IllegalStateException("Could not schedule region task", ex);
+            }
+        }
+        Bukkit.getScheduler().runTask(plugin, task);
     }
 
     /** Runs a task on the given player's owning region thread on the next tick. */

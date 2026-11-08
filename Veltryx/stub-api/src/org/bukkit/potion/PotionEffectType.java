@@ -10,4 +10,6 @@ public class PotionEffectType implements org.bukkit.Keyed {
     public static final PotionEffectType HASTE = new PotionEffectType();
     public static final PotionEffectType RESISTANCE = new PotionEffectType();
     public static final PotionEffectType REGEN = new PotionEffectType();
+    public static final PotionEffectType NIGHT_VISION = new PotionEffectType();
+    public static final PotionEffectType INVISIBILITY = new PotionEffectType();
 }

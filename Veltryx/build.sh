@@ -43,14 +43,16 @@ echo "==> compiling and running smoke tests"
 find smoke -name '*.java' >target/smoke-sources.txt
 "$JAVA_BIN" -jar "$ECJ" -nowarn --release 25 -encoding UTF-8 \
   -cp "$OUT" -d "$SMOKE_OUT" @target/smoke-sources.txt
-"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT" dev.superseller.veltryx.smoke.SmokeTest
+"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SmokeTest
+"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.Round12Test
+"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SpawnerTest
 
-VERSION="vx-0.0.4-beta"
+VERSION="vx-0.0.5-beta"
 echo "==> assembling target/${VERSION}.jar"
 rm -rf target/jar
 mkdir -p target/jar
 cp -r "$OUT"/dev target/jar/
-cp src/main/resources/*.yml target/jar/
+cp src/main/resources/*.yml src/main/resources/*.txt target/jar/
 sed -i.bak "s/\\\${project.version}/${VERSION}/" target/jar/plugin.yml && rm -f target/jar/plugin.yml.bak
 (cd target/jar && zip -qr "../${VERSION}.jar" .)
 

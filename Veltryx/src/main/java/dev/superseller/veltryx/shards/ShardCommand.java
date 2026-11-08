@@ -53,6 +53,11 @@ public final class ShardCommand implements CommandExecutor, TabCompleter {
             case "shop" -> {
                 return shop(sender);
             }
+            case "spawners" -> {
+                if (sender instanceof Player player) shopGui.openSpawnerShop(player);
+                else sender.sendMessage(messages.render("shop.players-only"));
+                return true;
+            }
             case "toggle" -> {
                 return toggle(sender);
             }
@@ -223,7 +228,7 @@ public final class ShardCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
-            for (String s : new String[] {"balance", "pay", "top", "shop", "toggle", "info", "give", "set"}) {
+            for (String s : new String[] {"balance", "pay", "top", "shop", "spawners", "toggle", "info", "give", "set"}) {
                 if (s.startsWith(args[0].toLowerCase(java.util.Locale.ROOT))) {
                     out.add(s);
                 }

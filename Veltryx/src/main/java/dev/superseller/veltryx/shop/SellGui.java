@@ -1,166 +1,84 @@
 package dev.superseller.veltryx.shop;
 
-import dev.superseller.veltryx.util.SellNotices;
-import dev.superseller.veltryx.util.Txt;
-import dev.superseller.veltryx.config.Messages;
-import dev.superseller.veltryx.util.PlatformScheduler;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import dev.superseller.veltryx.config.Messages;
+import dev.superseller.veltryx.util.PlatformScheduler;
+import dev.superseller.veltryx.util.SellNotices;
+import dev.superseller.veltryx.util.Txt;
 
-/**
- * The {@code /sell} GUI: every sellable item in the player's inventory with
- * its payout. Click an item to sell all of it, or use the button to sell
- * everything at once. Sell prices are always below shop buy prices.
- */
+/** Gray six-row SellGUI with the nether-star sell-all control. */
 public final class SellGui implements Listener {
-
-    /** Marks the sell inventory and remembers which slot sells what. */
     public static final class Holder implements InventoryHolder {
-        private final Map<Integer, String> slotMaterials = new LinkedHashMap<>();
-        private Inventory inventory;
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
+        final Map<Integer, String> slots = new LinkedHashMap<>();
+        Inventory inventory;
+        @Override public Inventory getInventory() { return inventory; }
     }
-
     private final ShopService shop;
     private final Messages messages;
-
-    public SellGui(ShopService shop, Messages messages) {
-        this.shop = shop;
-        this.messages = messages;
-    }
-
-    /** Opens (or refreshes) the sell overview (Folia-safe). */
+    public SellGui(ShopService shop, Messages messages) { this.shop = shop; this.messages = messages; }
     public void open(Player player) {
         PlatformScheduler.runForPlayer(player, () -> {
-            Holder holder = new Holder();
-            Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Txt.legacy("§8§lSell items"));
-            holder.inventory = inventory;
-
+            Holder h = new Holder();
+            Inventory inv = Bukkit.createInventory(h, 54, Txt.legacy("§8SellGUI")); h.inventory = inv;
+            ShopItems.fill(inv);
             Map<String, Integer> counts = new LinkedHashMap<>();
             Map<String, Long> totals = new LinkedHashMap<>();
             for (ItemStack stack : player.getInventory().getContents()) {
-                if (stack == null || stack.getType() == Material.AIR) {
-                    continue;
-                }
-                dev.superseller.veltryx.shop.PriceTable.Entry priced = shop.prices().get(stack.getType().name());
-                if (priced == null || priced.sellCents() <= 0) {
-                    continue;
-                }
-                // enchanted items are worth more, damaged ones less
-                long unit = ItemValue.valueCents(priced.sellCents(), priced.buyCents(), stack);
-                counts.merge(stack.getType().name(), stack.getAmount(), Integer::sum);
-                totals.merge(stack.getType().name(), unit * stack.getAmount(), Long::sum);
+                if (stack == null || stack.getType() == Material.AIR) continue;
+                PriceTable.Entry e = shop.prices().get(stack.getType().name());
+                if (e == null || e.sellCents() <= 0) continue;
+                long unit = ItemValue.valueCents(e.sellCents(), e.buyCents(), stack);
+                if (unit <= 0) continue;
+                counts.merge(e.material(), stack.getAmount(), Integer::sum);
+                totals.merge(e.material(), dev.superseller.veltryx.util.Money.multiplySaturated(unit, stack.getAmount()),
+                        dev.superseller.veltryx.util.Money::addSaturated);
             }
-
             int slot = 0;
-            for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                if (slot >= 45) {
-                    break;
-                }
-                String materialName = entry.getKey();
-                int amount = entry.getValue();
-                long total = totals.getOrDefault(materialName, 0L);
-                long unit = amount <= 0 ? total : total / amount;
-                Material material = Material.matchMaterial(materialName);
-                inventory.setItem(slot, item(material == null ? Material.PAPER : material, amount,
-                        Txt.legacy("§f" + PriceTable.displayName(materialName)),
-                        List.of(Txt.legacy("§7Amount: §f" + amount),
-                                Txt.legacy("§7Payout: §a$§f" + SellNotices.compact(total)
-                                        + " §8(§7§a$§f" + SellNotices.compact(unit) + "§7 each§8)"),
-                                Component.text(""),
-                                Txt.legacy("§eClick to sell all"))));
-                holder.slotMaterials.put(slot, materialName);
-                slot++;
+            for (Map.Entry<String, Integer> e : counts.entrySet()) {
+                if (slot >= 45) break;
+                long total = totals.getOrDefault(e.getKey(), 0L);
+                inv.setItem(slot, ShopItems.icon(e.getKey(), Math.min(64, e.getValue()),
+                        "§b" + PriceTable.displayName(e.getKey()), List.of("§7Amount: " + e.getValue(),
+                                "§7Payout: §a$§f" + SellNotices.compact(total), "§eClick to sell")));
+                h.slots.put(slot++, e.getKey());
             }
-            if (counts.isEmpty()) {
-                inventory.setItem(22, item(Material.LIME_DYE, 1,
-                        Txt.legacy("§aNothing to sell"),
-                        List.of(Txt.legacy("§7Your inventory has no sellable items."))));
-            }
-
-            long value = 0;
-            for (long total : totals.values()) {
-                value += total;
-            }
-            inventory.setItem(49, item(Material.EMERALD, 1,
-                    Txt.legacy("§aSell everything"),
-                    List.of(Txt.legacy("§7Total payout: §a$§f" + SellNotices.compact(value)),
-                            Component.text(""),
-                            Txt.legacy("§eClick to sell it all"))));
-            inventory.setItem(53, item(Material.GOLD_INGOT, 1,
-                    Txt.legacy("§6Your balance: §a$§f" + SellNotices.compact(shop.balance(player))), List.of()));
-            player.openInventory(inventory);
+            long value = 0; for (long total : totals.values()) value = dev.superseller.veltryx.util.Money.addSaturated(value, total);
+            inv.setItem(49, ShopItems.icon("NETHER_STAR", "§bSell everything",
+                    List.of("§7Total payout: §a$§f" + SellNotices.compact(value), "§eClick to sell all")));
+            player.openInventory(inv);
         });
     }
-
-    @EventHandler
-    public void onClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder() instanceof Holder holder)) {
-            return;
-        }
-        event.setCancelled(true);
-        if (!(event.getWhoClicked() instanceof Player player)) {
-            return;
-        }
-        if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != holder) {
-            return;
-        }
-        int slot = event.getSlot();
-        if (slot == 49) {
-            ShopService.SellResult result = shop.sellAll(player);
-            if (result.ok()) {
-                SellNotices.show(player, messages, "shop.sold-all", Map.of(
-                        "balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
-            } else {
-                player.sendMessage(messages.render(result.failKey().equals("shop.no-sell")
-                        ? "shop.no-sell" : "shop.nothing"));
-            }
-            open(player);
-            return;
-        }
-        String materialName = holder.slotMaterials.get(slot);
-        if (materialName == null) {
-            return;
-        }
-        ShopService.SellResult result = shop.sell(player, materialName, Integer.MAX_VALUE);
+    @EventHandler public void onClick(InventoryClickEvent e) {
+        if (!(e.getInventory().getHolder() instanceof Holder h)) return;
+        e.setCancelled(true);
+        if (!(e.getWhoClicked() instanceof Player player) || e.getClickedInventory() == null
+                || e.getClickedInventory().getHolder() != h) return;
+        int slot = e.getSlot();
+        String material = h.slots.get(slot);
+        if (slot != 49 && material == null) return;
+        ShopService.SellResult result = slot == 49 ? shop.sellAll(player) : shop.sell(player, material, Integer.MAX_VALUE);
         if (result.ok()) {
-            SellNotices.show(player, messages, "shop.sold", Map.of(
-                    "count", String.valueOf(result.sold()),
-                    "item", PriceTable.displayName(materialName),
-                    "balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
-        } else {
-            player.sendMessage(messages.render(result.failKey().equals("shop.no-sell")
-                    ? "shop.no-sell" : "shop.nothing"));
-        }
+            if (slot == 49) SellNotices.show(player, messages, "shop.sold-all",
+                    Map.of("balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
+            else SellNotices.show(player, messages, "shop.sold", Map.of("count", String.valueOf(result.sold()),
+                    "item", PriceTable.displayName(material), "balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
+        } else if ("shop.no-sell".equals(result.failKey())) player.sendMessage(messages.render("shop.no-sell"));
+        else player.sendMessage(messages.render("shop.nothing"));
         open(player);
     }
-
-    private static ItemStack item(Material material, int amount, Component name, List<Component> lore) {
-        ItemStack item = new ItemStack(material == null ? Material.PAPER : material, amount);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(name);
-            meta.lore(new ArrayList<>(lore));
-            item.setItemMeta(meta);
-        }
-        return item;
+    @EventHandler public void onDrag(InventoryDragEvent e) {
+        if (e.getView().getTopInventory().getHolder() instanceof Holder) e.setCancelled(true);
     }
 }

@@ -13,7 +13,7 @@ commands:
     usage: /<command> [balance|pay|top|give|take|set|reset|help] [player] [amount]
     aliases: [balance, bal, money]
   shop:
-    description: Buy items at fair prices — almost every obtainable item.
+    description: Buy survival items at fair prices.
     usage: /<command> [category]
     aliases: [store]
   sell:
@@ -125,13 +125,16 @@ commands:
     description: Accept a teleport-here request — or pull a player to you (staff).
     usage: /<command> [player]
   shard:
-    description: Shard currency and shard shop — earn shards by playing, buy shard weapons and tools.
-    usage: /<command> <balance|pay|top|shop|toggle|info>
+    description: Shard currency and shops — buy shard equipment and custom spawners.
+    usage: /<command> <balance|pay|top|shop|spawners|toggle|info>
     aliases: [shardtools, st]
   quickshop:
-    description: Quick-buy panel — 5 rows of the common shop items without searching.
+    description: Quick-buy panel — 45 configurable item and amount slots.
     usage: /<command>
     aliases: [qs]
+  settings:
+    description: Configure your natural spawns, phantoms and night vision.
+    usage: /<command>
   rtp:
     description: Random teleport — pick Overworld, Nether or End, find a safe block, teleport after 3 seconds.
     usage: /<command> [overworld|nether|end]
@@ -152,6 +155,7 @@ permissions:
       veltryx.shards: true
       veltryx.shards.admin: true
       veltryx.rtp: true
+      veltryx.settings: true
       veltryx.anticheat.alerts: true
       veltryx.anticheat.bypass: true
       veltryx.sus: true
@@ -187,6 +191,9 @@ permissions:
     default: true
   veltryx.home:
     description: Set and use homes (/sethome, /home, /homes).
+    default: true
+  veltryx.settings:
+    description: Use personal settings.
     default: true
   veltryx.rtp:
     description: Use the random teleport (/rtp).

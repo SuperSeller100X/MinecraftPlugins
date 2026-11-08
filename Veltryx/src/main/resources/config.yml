@@ -28,7 +28,7 @@ economy:
 scoreboard:
   enabled: true
   nametag: true
-  update-seconds: 20
+  update-seconds: 1
 
 # Auction house (/ah) and player buy orders (/order, /orders).
 market:
@@ -84,8 +84,9 @@ rtp:
   countdown-seconds: 3
   max-attempts: 25
 
-# Quick shop (/quickshop, /qs, or the ender chest in the shop): the material
-# names shown on its 5 rows. Up to 45 items — edit to taste.
+# Legacy QuickShop list retained for older configurations; it is no longer
+# used. Each player now configures 45 slots in /quickshop, persisted separately
+# in quickshop-slots.properties. New slots begin empty.
 quickshop:
   items:
     - STONE

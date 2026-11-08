@@ -5,10 +5,13 @@
 Veltryx powers your server with one plugin: a custom **economy**, a serious
 **anti-cheat** (with anti-xray), a **custom ban system** (`/offend`, the
 DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
-**staff toolbox**. More modules (shop, and everything else) land in the same
-plugin in the next versions — the economy API is already built for it.
+**staff toolbox**, survival shop, player settings, homes, shard tools, and
+custom spawners.
 
-- Version: **vx-0.0.4-beta** · api-version `26.2` (compatibility floor — loads on Paper/Purpur 26.2 **and** 26.3; built against paper-api 26.3) · `folia-supported: true`
+- Version: **vx-0.0.5-beta** · targets Paper API 26.3 and Java 25 ·
+  `folia-supported: true`. The descriptor declares `api-version: 26.2`, but
+  compatibility with older servers has not been verified; 26.3 items are
+  filtered out when the server does not recognize them.
 - Storage: **YAML** (default) or **SQLite** — one config switch
 - No required dependencies. Vault bridge and PlaceholderAPI hooks are planned.
 
@@ -29,75 +32,62 @@ restarts and shared by every future Veltryx module through the public
 - Starting balance for new players, configurable minimum transfer, saturated
   math (balances can never overflow or go negative)
 
-### 🛛️ Shop & selling (`/shop`, `/sell`)
+### 🛛️ Shop, selling & QuickShop (`/shop`, `/sell`, `/quickshop`)
 
-- **`/shop` (`/store`)** — a category GUI with **every obtainable item**
-  (1,100+): blocks, woods, ores, tools, armor, food, redstone, mob drops,
-  the full copper/tuff/resin/pale-oak families, bundles, keys and more. The
-  only items not sold are **elytra and the dragon egg** (unique to the
-  server), operator-only items (command blocks, barriers, …) and items whose
-  value lives inside their NBT (potions, enchanted/written books, filled
-  maps) that a flat per-item price could never make fair. Left-click buys 1,
-  shift-click buys a stack; every item shows buy and sell price (with the
-  lime `$`) plus your balance.
-- **`/sell`** — a GUI listing everything sellable in your inventory with its
-  payout. Click an item to sell all of it, or sell everything with one button.
-  **Enchantments raise the price** (+12% of the flat sell price per total
-  enchant level) and **lost durability lowers it** (the payout scales with the
-  remaining durability — a broken tool is worth almost nothing). The payout is
-  always strictly below the shop buy price, so no loop can print money.
-  Every sale shows the payout above the hotbar (action bar) and in chat as a
-  compact amount like **$2.3k** / **$500k** with a lime `$`.
-- Enchanted or damaged items can't be listed on `/ah` or fill `/order`s
-  (their real worth is their `/sell` value, not a flat price) — the GUIs say
-  so and point you to `/sell`.
-- **Fair, exploit-proof prices.** You earn money by *doing something* — mining,
-  farming, hunting — never by market games: buying materials, crafting and
-  selling **always loses money** (verified against 170+ recipes in the smoke
-  tests, including compression/decompression loops like ingot ↔ block). Prices
-  live in `shop.yml`, are editable per server, and new items are added on
-  updates while keeping your values.
-- **`/quickshop` (`/qs`)** — or the **ender chest** in the shop menu — a
-  **5-row quick-buy panel** with the common items (editable list in
-  `config.yml`), so you don't have to search the big shop. Left-click buys
-  1, shift-click buys 64, exactly like the shop.
-- **Search** — the **compass** in the shop menu (or `/shop search <text>`)
-  finds any item by display or material name, with paged results you can
-  buy directly from.
-- **Choose-what-you-buy items**: **potions** (pick the type), **tipped
-  arrows** (pick the effect, packs of 8) and **enchanted books** (pick the
-  enchantment *and* its level) — priced per choice (books scale per level
-  by rarity tier), shown before every purchase. These are the shop's only
-  configurable items: written books and filled maps stay out.
-- New players still start with **$100** (`economy.starting-balance`).
-- **Stats display** (config `scoreboard`): a sidebar on the right side of the
-  screen with **cash, shards, deaths, kills and playtime** under the player's
-  name, and a **multi-line nametag** above every username — money, ✦ shards,
-  ☠ deaths, ⚔ kills — via scoreboard team suffixes, mirrored to every
-  viewer. Kills are PVP kills, deaths count every death, playtime includes
-  the running session. Refreshes every `update-seconds` (default 20) plus
-  on join/quit/death.
+- The 26.3 catalogue has **1,530 survival-obtainable item types** in 11
+  categories. Elytra, the dragon egg, operator-only and other unobtainable
+  items are excluded. Items unknown to the running server are filtered out.
+- `/shop` shows the category menu; the compass searches names and material
+  IDs. Choose an item to open its purchase screen. The `+1`, `+16`, and `+32`
+  controls change the amount (right-click to subtract); the paper buys the
+  selected amount and the chest buys 64. The yellow shulker opens SellGUI.
+- `/sell` shows sellable items in your inventory. Click one to sell that item,
+  or the nether star to sell all; sale payouts appear in chat and the action
+  bar. Enchantments add up to 12% per level before the safety caps; damage
+  reduces value. Metadata-dependent potions, arrows, books and maps are
+  **buy-only**, because a flat sell price cannot value their variants safely.
+- Potion types, tipped-arrow effects, and enchanted-book enchantments and
+  levels are selected before purchase. Their per-choice prices are fixed in
+  `ChoiceCatalog`, not controlled by the generic `shop.yml` base price.
+  Written books are supplied with a title, author, and page. Ordinary filled
+  maps cover the buyer's world. Named explorer maps look for the indicated
+  structure and carry a persistent destination marker; if a matching structure
+  cannot be found in the buyer's world, the purchase is refunded. Camp maps
+  try the available camp variants; structure lookup may take time.
+- Each player has **45 initially empty QuickShop slots**. Click a slot, type a
+  private search in chat (`*` browses all, `cancel` exits), choose the item
+  and any variant, set an amount from 1 to 64, then save. Left-click the saved
+  slot to buy that amount, right-click to edit, or shift-right-click to clear.
+  Saved slots use the **current** shop price, not a cached price. The old
+  `quickshop.items` list is retained for upgrades but is no longer used.
+- Prices are editable in `shop.yml` and existing values are preserved on
+  update. At runtime, base sell prices are capped to half the cheapest cost
+  computed from the configured buys and the bundled recipe/transformation
+  model; enchantment bonuses are capped too. The model covers 1,900+ expanded
+  recipes and selected conversions, maximum Fortune drops and container
+  returns. **It does not cover every trade, farm, datapack, plugin or game
+  mechanic**, so server owners should audit their economy and trading rules.
+  Very cheap outputs may have an effective sell price of zero.
 
-### 💰 Money making methods
+### ⚙️ Personal settings (`/settings`)
 
-Prices are tuned so **playing the game earns good money** — while buying
-materials, crafting and selling still always loses (no market tricks, checked
-against 150+ recipes on every build). What the server pays per item:
+Each player can toggle natural mob spawning attributed to them, phantom
+spawning for them, and persistent night vision. Settings are saved across
+restarts. Turning off natural spawning removes that player's chunks from
+Paper's natural-spawn selection; **other players, spawners, and other spawn
+mechanisms can still produce mobs nearby**. Phantom spawning is also blocked
+while natural mobs are disabled. Night vision avoids overwriting an existing
+external effect and removes the effect when the plugin owns it.
 
-| Job | What to do | What it pays |
-| --- | --- | --- |
-| **Ice mining** | silk-touch an ice spikes biome | ice **$0.13**, packed **$0.30**, blue **$0.80** each |
-| **Ore mining** | strip-mine or cave with fortune | diamonds **$5.20**, quartz **$0.35**, redstone **$0.25**, raw iron **$0.45**, coal **$0.35**, lapis **$0.45** |
-| **Nether mining** | ancient debris & quartz | debris **$16.25**, quartz **$0.35**, nether wart **$0.35** |
-| **Fishing** | rod + luck of the sea | tropical **$0.70**, puffer **$0.58**, salmon **$0.42**, cod **$0.35** |
-| **Mob hunting** | spawners, farms, endermen | pearls **$1.95**, bones **$0.20**, gunpowder **$0.25**, string **$0.16**, phantom membranes **$1.17** |
-| **Farming** | big crop fields | wheat **$0.18**, carrots/potatoes **$0.14**, pumpkins **$0.25**, cocoa **$0.25**, sugar cane **$0.16** |
-| **End busting** | raid end cities | shulker shells **$5.20**, chorus fruit **$0.35**, elytra (trophies, not sold) |
-| **Guardian farms** | prismarine & fish | shards **$0.29**, crystals **$0.36**, fish prices above |
+### 📊 Stats display
 
-Raw ores sell better than their smelted ingots — sell what you mine. Passive
-AFK-farmable items (bamboo, cactus, kelp, snow, melon) deliberately pay less
-so active play always wins.
+The sidebar shows cash, shards, deaths, kills, and playtime without visible
+ordering numbers. Money and shard changes schedule a refresh on the next
+player tick; death/kill changes refresh affected displays. Playtime uses the
+periodic `scoreboard.update-seconds` interval (default **1** on new installs).
+Existing configured values are preserved on upgrade, so change an older
+`20` to `1` if faster playtime updates are wanted. `scoreboard.nametag`
+controls whether the stat nametags are also mirrored to viewers.
 
 ### 🏷️ Auction house & orders (`/ah`, `/order`, `/orders`)
 
@@ -272,9 +262,44 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 - `/shard top` shows the richest shard holders; `/shard balance` yours.
 - Area mining applies the tool's Fortune/Silk Touch to **every** broken
   block and drops vanilla-style ore XP for the extras (never with Silk
-  Touch), skips containers and bedrock, and replants saplings for the axe.
-  All settings (chain cap, plane size, leaves) live under `shards:` in
-  `config.yml`.
+  Touch), skips containers, spawners and bedrock, and replants saplings for
+  the axe. All settings (chain cap, plane size, leaves) live under `shards:`
+  in `config.yml`.
+
+### 🐖 Custom spawners (`/shard spawners`)
+
+- Open the spawner shop from `/shard shop` or directly with `/shard spawners`
+  (`veltryx.shards`). **Pig, sheep, cow, iron golem, skeleton, zombie and
+  creeper** spawners cost **1,000 shards each**. They are permanent and do
+  not inherit shard-tool expiry.
+- Place one, then **right-click** it to open its storage. The lever switches
+  between normal **Spawner** mode and **Inventory** mode. Use the arrows for
+  **20 pages of 45 slots**; left-click a loot stack to collect it, or
+  right-click to collect one. The mode and loot survive pickup and restart.
+- Inventory mode converts each permitted spawn attempt into a roll of that
+  mob's server loot table, using the spawned entity but **no player killer**.
+  Player-kill-only loot, Looting, XP and separate equipment drops do not
+  apply. If a complete roll does not fit, that attempt produces no mob or
+  loot; it resumes once there is enough space. Spawning requires the chunk to
+  be loaded and still follows normal nearby-player, space, nearby-entity and
+  other non-light rules. The custom light rule permits all block and sky light
+  levels in both modes.
+- Mine a custom spawner with **Silk Touch** to put the same spawner directly
+  into your inventory, retaining its mode and contents. A full player
+  inventory or a non-Silk tool prevents the break. Explosions do not destroy
+  these spawners. If placement cannot be completed after the block-place
+  event, the original item is returned at that location as a non-expiring,
+  owner-only drop.
+- Veltryx's auction house and buy orders store only material names, so **all
+  spawner materials are blocked there** to prevent loss of custom data. Trade
+  directly using an inventory/container that preserves item metadata. Existing
+  spawner buy orders can be cancelled for their unfilled refund.
+- There is no built-in owner lock on a placed spawner. Protect access with a
+  claim/protection plugin that cancels `PlayerInteractEvent` as well as block
+  placement/breaking. Inventory conversion respects earlier cancelled
+  `SpawnerSpawnEvent`s, but no mob is actually added to the world in that
+  mode: plugins listening **only** to the later `CreatureSpawnEvent` cannot
+  block those loot rolls. Test protection integrations before enabling it.
 
 ### 🎲 Random teleport (`/rtp`)
 
@@ -296,8 +321,9 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 | `/eco` (`/bal`, `/balance`, `/money`) | `veltryx.eco.balance` / `.pay` / `.top` / `.admin` | true / op |
 | `/shop` (`/store`) [category] | `veltryx.shop` | true |
 | `/sell` | `veltryx.sell` | true |
-| `/shard` (`/shardtools`, `/st`) <balance\|pay\|top\|shop\|toggle\|info> | `veltryx.shards` (give/set: `veltryx.shards.admin`) | true / op |
+| `/shard` (`/shardtools`, `/st`) <balance\|pay\|top\|shop\|spawners\|toggle\|info> | `veltryx.shards` (give/set: `veltryx.shards.admin`) | true / op |
 | `/quickshop` (`/qs`) | `veltryx.shop` | true |
+| `/settings` | `veltryx.settings` | true |
 | `/rtp` [overworld\|nether\|end] | `veltryx.rtp` | true |
 | `/offend` | `veltryx.offend` | op |
 | `/ban` | `veltryx.bans.ban` | op |
@@ -330,9 +356,10 @@ Every command has tab completion.
 `config.yml` (reload with `/veltryx reload`) — the important knobs:
 
 > **The config updates itself.** On every start and reload the plugin adds new
-> default keys (and new message entries) to your existing `config.yml` and
-> `messages.yml` — your own values and comments are always kept. After a plugin
-> update you never have to delete the config; missing settings simply appear.
+> default keys to existing `config.yml`, `messages.yml`, and `shop.yml` while
+> keeping existing values. The runtime message loader also falls back to the
+> bundled templates for missing keys, without replacing custom translations.
+> Invalid YAML is reported in the server log; fix it to restore custom values.
 
 ```yaml
 storage:
@@ -367,11 +394,19 @@ inject formatting).
 
 - `yaml` — `economy.yml`, `profiles.yml`, `moderation.yml`, `flags.yml` in the
   plugin folder. Great for most servers.
-- `sqlite` — one `veltryx.db` file (driver is shaded into the jar).
+- `sqlite` — one `veltryx.db` file (driver is shaded into the Maven jar).
   Recommended for large servers and networks.
+- `player-preferences.properties` and `quickshop-slots.properties` — persistent
+  per-player settings and QuickShop slots, regardless of economy storage mode.
+- `spawners/<uuid>.properties` — each custom spawner's type, location, mode
+  and 900 slots; written through separately from YAML/SQLite. Back up this
+  directory **together with world and player data**, preferably while the
+  server is stopped. Many active inventory-mode spawners can increase disk
+  I/O. Missing or corrupt records disable the affected spawner rather than
+  recreate its loot; check the server log and restore the record.
 
-Both keep an in-memory cache as the source of truth; YAML autosaves on an
-interval, SQLite writes through on every change.
+The economy backends keep an in-memory cache as the source of truth; YAML
+autosaves on an interval, SQLite writes through on every change.
 
 ## 🔌 Developer API
 
@@ -383,7 +418,7 @@ VeltryxEconomy.get().ifPresent(eco -> {
 });
 ```
 
-The upcoming shop module (next version) uses exactly this API.
+The built-in shop uses this economy service.
 
 ---
 
@@ -393,21 +428,23 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.4-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.5-beta.jar
 ```
 
-Offline fallback (no Maven Central access): the bundled Eclipse compiler and
-compile-only API stubs build the plugin and run the smoke tests:
+Offline development fallback: the bundled Eclipse compiler and compile-only
+API stubs build the plugin and run the smoke/regression tests. This is **not**
+a real Paper compile or server test; its jar does not include the SQLite JDBC
+driver. Use the Maven jar for deployment:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.4-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.5-beta.jar
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
 
 ```bash
-python3 Veltryx/tools/check_consistency.py
+cd Veltryx && python3 tools/check_consistency.py
 ```
 
 A CI workflow that runs the consistency checks, the unit tests and
@@ -424,16 +461,15 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.4-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.5-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
-| `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
+| `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'` and targets 26.3; send the exact server version and error |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.4-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.5-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 
-- **Shop** — the full server shop, powered by the built-in economy API
 - Vault / VaultUnlocked bridge so existing plugins can use the Veltryx economy
 - PlaceholderAPI placeholders, Discord webhook alerts for anti-cheat flags
 - Punishment GUIs, ban appeal workflow

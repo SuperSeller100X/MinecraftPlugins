@@ -1,593 +1,285 @@
 package dev.superseller.veltryx.shop;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.logging.Logger;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
-
 import dev.superseller.veltryx.config.Messages;
-import dev.superseller.veltryx.config.VeltryxConfig;
-import dev.superseller.veltryx.economy.EconomyService;
+import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import dev.superseller.veltryx.util.Txt;
 
-/**
- * The shop extras:
- * <ul>
- *   <li><b>Quick shop</b> ({@code /quickshop}, {@code /qs}, or the ender
- *       chest in the shop) — 5 rows of the common items to buy straight
- *       from the shop without searching.</li>
- *   <li><b>Search</b> — type a query in chat, get paged results to buy.</li>
- *   <li><b>Choice purchases</b> — potions (choose the type), tipped arrows
- *       (choose the effect) and enchanted books (choose the enchantment
- *       and its level).</li>
- * </ul>
- */
+/** Search, configurable QuickShop slots, and potion/book variant pickers. */
 public final class ShopExtrasGui implements Listener {
-
-    /** Marks the quick-shop (5 rows of items). */
-    public static final class QuickHolder implements InventoryHolder {
-        private final List<PriceTable.Entry> items = new ArrayList<>();
-        private Inventory inventory;
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
+    private abstract static class Holder implements InventoryHolder {
+        Inventory inventory;
+        @Override public Inventory getInventory() { return inventory; }
+    }
+    private static final class QuickHolder extends Holder { }
+    private static final class SearchHolder extends Holder {
+        final String query; final int page, quickSlot; final List<PriceTable.Entry> results;
+        SearchHolder(String query, int page, int quickSlot, List<PriceTable.Entry> results) {
+            this.query = query; this.page = page; this.quickSlot = quickSlot; this.results = results;
         }
     }
-
-    /** Marks paged search results. */
-    public static final class SearchHolder implements InventoryHolder {
-        private final String query;
-        private final List<PriceTable.Entry> results;
-        private final int page;
-        private Inventory inventory;
-
-        SearchHolder(String query, List<PriceTable.Entry> results, int page) {
-            this.query = query;
-            this.results = results;
-            this.page = page;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
+    private static final class EffectHolder extends Holder {
+        final String material, category; final int quickSlot, page;
+        final List<ChoiceCatalog.PotionOption> options = ChoiceCatalog.potions();
+        EffectHolder(String material, int quickSlot, String category, int page) {
+            this.material = material; this.quickSlot = quickSlot; this.category = category; this.page = page;
         }
     }
-
-    /** Marks the potion or tipped-arrow effect picker (kind = "potion"/"arrow"). */
-    public static final class EffectHolder implements InventoryHolder {
-        private final String kind;
-        private final List<ChoiceCatalog.PotionOption> options = new ArrayList<>();
-        private Inventory inventory;
-
-        EffectHolder(String kind) {
-            this.kind = kind;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
+    private static final class BookHolder extends Holder {
+        final int quickSlot, page; final String category;
+        final List<ChoiceCatalog.BookOption> options = ChoiceCatalog.books();
+        BookHolder(int quickSlot, String category, int page) { this.quickSlot = quickSlot; this.category = category; this.page = page; }
+    }
+    private static final class LevelHolder extends Holder {
+        final int quickSlot, page; final String category; final ChoiceCatalog.BookOption option;
+        LevelHolder(int quickSlot, String category, int page, ChoiceCatalog.BookOption option) {
+            this.quickSlot = quickSlot; this.category = category; this.page = page; this.option = option;
         }
     }
-
-    /** Marks the enchanted-book enchantment picker. */
-    public static final class BookHolder implements InventoryHolder {
-        private final List<ChoiceCatalog.BookOption> options = new ArrayList<>();
-        private Inventory inventory;
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
+    private static final class AmountHolder extends Holder {
+        final Purchase purchase; final int quickSlot, amount;
+        AmountHolder(Purchase purchase, int quickSlot, int amount) { this.purchase = purchase; this.quickSlot = quickSlot; this.amount = amount; }
     }
-
-    /** Marks the level picker of one enchantment. */
-    public static final class LevelHolder implements InventoryHolder {
-        private final ChoiceCatalog.BookOption option;
-        private Inventory inventory;
-
-        LevelHolder(ChoiceCatalog.BookOption option) {
-            this.option = option;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
-    }
-
-    /** Players currently typing a search query in chat. */
-    private final Map<UUID, Boolean> pendingSearch = new ConcurrentHashMap<>();
-
+    private record PendingSearch(int quickSlot) { }
+    private final Map<UUID, PendingSearch> pending = new ConcurrentHashMap<>();
     private final ShopService shop;
-    private final EconomyService economy;
     private final Messages messages;
-    private final VeltryxConfig config;
+    private final QuickShopStore slots;
+    private ShopGui gui;
+    private java.util.function.Consumer<Player> cancelOtherPrompt = player -> { };
 
-    public ShopExtrasGui(ShopService shop, EconomyService economy, Messages messages, VeltryxConfig config) {
-        this.shop = shop;
-        this.economy = economy;
-        this.messages = messages;
-        this.config = config;
+    public ShopExtrasGui(ShopService shop, Messages messages, Path slotsFile, Logger logger) {
+        this.shop = shop; this.messages = messages;
+        this.slots = new QuickShopStore(slotsFile, logger); this.slots.load();
     }
+    public void attachShopGui(ShopGui gui) { this.gui = gui; }
+    public void attachPromptCancellation(java.util.function.Consumer<Player> cancel) { this.cancelOtherPrompt = cancel; }
+    public void cancelPendingSearch(Player player) {
+        if (pending.remove(player.getUniqueId()) != null) messages.send(player, "shop.search-cancelled", Map.of());
+    }
+    public void save() { slots.save(); }
 
-    // ------------------------------------------------------------- quick shop
-
-    /** Opens the quick shop: 5 rows of the most used items (Folia-safe). */
+    /** All 45 slots are individually configurable. */
     public void openQuickshop(Player player) {
         PlatformScheduler.runForPlayer(player, () -> {
-            QuickHolder holder = new QuickHolder();
-            Inventory inventory = Bukkit.createInventory(holder, 54, Txt.legacy("§8§lQuick shop"));
-            holder.inventory = inventory;
-            List<String> wanted = config.quickshopItems();
-            for (String name : wanted) {
-                if (holder.items.size() >= 45) {
-                    break;
+            QuickHolder h = new QuickHolder();
+            Inventory inv = Bukkit.createInventory(h, 45, Txt.legacy("§8QuickShop")); h.inventory = inv;
+            for (int slot = 0; slot < QuickShopStore.SLOTS; slot++) {
+                QuickShopStore.QuickSlot saved = slots.get(player.getUniqueId(), slot);
+                if (saved == null || saved.purchase().unitPrice(shop.prices()) <= 0) {
+                    inv.setItem(slot, ShopItems.icon("GRAY_STAINED_GLASS_PANE", "§bSet QuickShop item",
+                            List.of("§7Click to search and choose an amount.")));
+                } else {
+                    Purchase purchase = saved.purchase();
+                    long price = purchase.unitPrice(shop.prices());
+                    inv.setItem(slot, ShopItems.icon(purchase.material(), saved.amount(), "§b" + purchase.label(),
+                            List.of("§7Amount: §f" + saved.amount(), "§7Price: §a$§f" + Money.formatCompact(Money.multiplySaturated(price, saved.amount())),
+                                    "§eClick to buy", "§7Right-click to change", "§7Shift-right-click to clear")));
                 }
-                PriceTable.Entry entry = shop.prices().get(name);
-                if (entry == null) {
-                    continue;
-                }
-                int slot = holder.items.size();
-                holder.items.add(entry);
-                inventory.setItem(slot, item(Material.matchMaterial(entry.material()),
-                        Txt.legacy("§f" + PriceTable.displayName(entry.material())),
-                        List.of(Txt.legacy("§7Buy: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents())
-                                        + " §8×1 §7| §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents() * 64)
-                                        + " §8×64"),
-                                Txt.legacy("§7Sell: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.sellCents())),
-                                net.kyori.adventure.text.Component.text(""),
-                                Txt.legacy("§eLeft-click§7: buy 1"),
-                                Txt.legacy("§eShift-click§7: buy 64"))));
             }
-            inventory.setItem(45, item(Material.BARRIER, Txt.legacy("§cBack to the shop"), List.of()));
-            inventory.setItem(49, item(Material.GOLD_INGOT, Txt.legacy("§6Your balance: §a$§f"
-                    + dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player))), List.of()));
-            player.openInventory(inventory);
+            player.openInventory(inv);
         });
     }
-
-    // ----------------------------------------------------------------- search
-
-    /** Asks for a search query in chat. */
-    public void openSearchPrompt(Player player) {
-        player.closeInventory();
-        pendingSearch.put(player.getUniqueId(), Boolean.TRUE);
-        messages.send(player, "shop.search-prompt", Map.of());
-    }
-
-    /** Opens paged search results for a query. */
-    public void openSearch(Player player, String query, int page) {
+    public void openSearchPrompt(Player player) { prompt(player, -1); }
+    private void prompt(Player player, int quickSlot) {
         PlatformScheduler.runForPlayer(player, () -> {
-            List<PriceTable.Entry> results = search(query);
-            int pages = Math.max(1, (results.size() + 44) / 45);
-            int current = Math.max(0, Math.min(page, pages - 1));
-            SearchHolder holder = new SearchHolder(query, results, current);
-            Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Txt.legacy("§8§lSearch: §f" + query + " §7(" + (current + 1) + "/" + pages + ")"));
-            holder.inventory = inventory;
-            for (int slot = 0; slot < 45; slot++) {
-                int index = current * 45 + slot;
-                if (index >= results.size()) {
-                    break;
-                }
-                PriceTable.Entry entry = results.get(index);
-                inventory.setItem(slot, item(Material.matchMaterial(entry.material()),
-                        Txt.legacy("§f" + PriceTable.displayName(entry.material())),
-                        List.of(Txt.legacy("§7Buy: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents())
-                                        + " §8×1 §7| §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.buyCents() * 64)
-                                        + " §8×64"),
-                                Txt.legacy("§7Sell: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(entry.sellCents())),
-                                net.kyori.adventure.text.Component.text(""),
-                                Txt.legacy("§eLeft-click§7: buy 1"),
-                                Txt.legacy("§eShift-click§7: buy 64"))));
-            }
-            if (current > 0) {
-                inventory.setItem(45, item(Material.ARROW, Txt.legacy("§ePrevious page"), List.of()));
-            }
-            inventory.setItem(49, item(Material.BARRIER, Txt.legacy("§cBack to the shop"), List.of()));
-            if (current < pages - 1) {
-                inventory.setItem(53, item(Material.ARROW, Txt.legacy("§eNext page"), List.of()));
-            }
-            player.openInventory(inventory);
+            cancelOtherPrompt.accept(player);
+            pending.put(player.getUniqueId(), new PendingSearch(quickSlot));
+            player.closeInventory();
+            messages.send(player, quickSlot < 0 ? "shop.search-prompt" : "shop.quick-search-prompt", Map.of());
         });
     }
-
-    /** All shop items whose display or material name contains the query. */
+    public void openSearch(Player player, String query, int page) { openSearch(player, query, page, -1); }
+    private void openSearch(Player player, String query, int page, int quickSlot) {
+        PlatformScheduler.runForPlayer(player, () -> {
+            List<PriceTable.Entry> found = search(query);
+            int pages = Math.max(1, (found.size() + 44) / 45);
+            int current = Math.max(0, Math.min(page, pages - 1));
+            SearchHolder h = new SearchHolder(query, current, quickSlot, found);
+            Inventory inv = Bukkit.createInventory(h, 54, Txt.legacy("§8Search: §b" + query + " §7(" + (current + 1) + "/" + pages + ")"));
+            h.inventory = inv; ShopItems.fill(inv);
+            for (int i = 0; i < 45; i++) {
+                int index = current * 45 + i; if (index >= found.size()) break;
+                PriceTable.Entry entry = found.get(index);
+                inv.setItem(i, ShopItems.icon(entry.material(), "§b" + PriceTable.displayName(entry.material()),
+                        List.of("§7Shop price: §a$§f" + Money.formatCompact(entry.buyCents()),
+                                quickSlot < 0 ? "§eClick to choose" : "§eClick to set this slot")));
+            }
+            if (current > 0) inv.setItem(45, ShopItems.icon("BLUE_STAINED_GLASS_PANE", "§bPrevious Page", List.of()));
+            inv.setItem(49, ShopItems.icon("NETHER_STAR", "§bBack", List.of()));
+            if (current < pages - 1) inv.setItem(53, ShopItems.icon("BLUE_STAINED_GLASS_PANE", "§bNext Page", List.of()));
+            player.openInventory(inv);
+        });
+    }
     List<PriceTable.Entry> search(String query) {
         List<PriceTable.Entry> out = new ArrayList<>();
         for (PriceTable.Category category : shop.prices().categories()) {
             for (PriceTable.Entry entry : category.items()) {
-                if (ChoiceCatalog.matches(query, PriceTable.displayName(entry.material()), entry.material())) {
-                    out.add(entry);
-                }
+                if ("*".equals(query.trim()) || ChoiceCatalog.matches(query, PriceTable.displayName(entry.material()), entry.material())) out.add(entry);
             }
         }
         return out;
     }
-
-    /** Captures the typed search query. */
-    @EventHandler
+    /** Consume the search text privately; it must never be broadcast. */
+    @SuppressWarnings("deprecation")
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
+        if (event.isCancelled()) return;
         Player player = event.getPlayer();
-        if (!pendingSearch.containsKey(player.getUniqueId())) {
-            return;
-        }
+        PendingSearch search = pending.remove(player.getUniqueId());
+        if (search == null) return;
         event.setCancelled(true);
-        pendingSearch.remove(player.getUniqueId());
         String query = event.getMessage().trim();
         if (query.equalsIgnoreCase("cancel")) {
-            messages.send(player, "shop.search-cancelled", java.util.Map.of());
-            return;
-        }
-        openSearch(player, query, 0);
+            PlatformScheduler.runForPlayer(player, () -> {
+                messages.send(player, "shop.search-cancelled", Map.of());
+                if (search.quickSlot() >= 0) openQuickshop(player); else if (gui != null) gui.openMain(player);
+            });
+        } else openSearch(player, query, 0, search.quickSlot());
     }
+    @EventHandler public void onQuit(PlayerQuitEvent e) { pending.remove(e.getPlayer().getUniqueId()); }
 
-    // ------------------------------------------------------- choice purchases
-
-    /** Opens the potion type picker. */
-    public void openPotions(Player player) {
-        openEffectPicker(player, "potion");
+    /** Called by category/search when an item requires a potion or enchantment choice. */
+    public void openChoice(Player player, String material, int quickSlot, String category, int page) {
+        if (material.equals("ENCHANTED_BOOK")) openBooks(player, quickSlot, category, page);
+        else openEffects(player, material, quickSlot, category, page);
     }
-
-    /** Opens the tipped-arrow effect picker. */
-    public void openArrows(Player player) {
-        openEffectPicker(player, "arrow");
-    }
-
-    private void openEffectPicker(Player player, String kind) {
+    private void openEffects(Player player, String material, int quickSlot, String category, int page) {
         PlatformScheduler.runForPlayer(player, () -> {
-            EffectHolder holder = new EffectHolder(kind);
-            String title = "potion".equals(kind) ? "§8§lPotions — choose a type" : "§8§lTipped arrows — choose an effect";
-            Inventory inventory = Bukkit.createInventory(holder, 54, Txt.legacy(title));
-            holder.inventory = inventory;
-            List<ChoiceCatalog.PotionOption> options = ChoiceCatalog.potions();
-            for (int i = 0; i < options.size() && i < 45; i++) {
-                ChoiceCatalog.PotionOption option = options.get(i);
-                holder.options.add(option);
-                long price = "potion".equals(kind) ? option.priceCents() : ChoiceCatalog.arrowPackCents(option);
-                Material icon = Material.matchMaterial("potion".equals(kind) ? "POTION" : "TIPPED_ARROW");
-                inventory.setItem(i, item(icon,
-                        Txt.legacy("§b" + option.displayName()
-                                + ("potion".equals(kind) ? "" : " §7(" + ChoiceCatalog.TIPPED_ARROW_PACK + "x)")),
-                        List.of(Txt.legacy("§7Price: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(price)),
-                                net.kyori.adventure.text.Component.text(""),
-                                Txt.legacy("§eClick to buy"))));
+            EffectHolder h = new EffectHolder(material, quickSlot, category, page);
+            Inventory inv = Bukkit.createInventory(h, 54, Txt.legacy("§8Choose " + PriceTable.displayName(material))); h.inventory = inv;
+            ShopItems.fill(inv);
+            for (int i = 0; i < h.options.size() && i < 45; i++) {
+                ChoiceCatalog.PotionOption option = h.options.get(i);
+                Purchase purchase = new Purchase(material, option.key(), 0);
+                inv.setItem(i, ShopItems.icon(material, "§b" + option.displayName(),
+                        List.of("§7Each: §a$§f" + Money.formatCompact(purchase.unitPrice(shop.prices())), "§eClick to select")));
             }
-            inventory.setItem(45, item(Material.BARRIER, Txt.legacy("§cBack to the shop"), List.of()));
-            inventory.setItem(49, item(Material.GOLD_INGOT, Txt.legacy("§6Your balance: §a$§f"
-                    + dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player))), List.of()));
-            player.openInventory(inventory);
+            inv.setItem(49, ShopItems.icon("NETHER_STAR", "§bBack", List.of()));
+            player.openInventory(inv);
         });
     }
-
-    /** Opens the enchanted-book enchantment picker. */
-    public void openBooks(Player player) {
+    private void openBooks(Player player, int quickSlot, String category, int page) {
         PlatformScheduler.runForPlayer(player, () -> {
-            BookHolder holder = new BookHolder();
-            Inventory inventory = Bukkit.createInventory(holder, 54,
-                    Txt.legacy("§8§lEnchanted books — choose an enchantment"));
-            holder.inventory = inventory;
-            List<ChoiceCatalog.BookOption> options = ChoiceCatalog.books();
-            for (int i = 0; i < options.size() && i < 45; i++) {
-                ChoiceCatalog.BookOption option = options.get(i);
-                holder.options.add(option);
-                inventory.setItem(i, item(Material.ENCHANTED_BOOK,
-                        Txt.legacy("§b" + option.displayName()),
-                        List.of(Txt.legacy("§7Max level: §f" + roman(option.maxLevel())),
-                                Txt.legacy("§7Price: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(option.pricePerLevelCents())
-                                        + " §7per level"),
-                                net.kyori.adventure.text.Component.text(""),
-                                Txt.legacy("§eClick to pick the level"))));
+            BookHolder h = new BookHolder(quickSlot, category, page);
+            Inventory inv = Bukkit.createInventory(h, 54, Txt.legacy("§8Choose Enchantment")); h.inventory = inv; ShopItems.fill(inv);
+            for (int i = 0; i < h.options.size() && i < 45; i++) {
+                ChoiceCatalog.BookOption option = h.options.get(i);
+                inv.setItem(i, ShopItems.icon("ENCHANTED_BOOK", "§b" + option.displayName(),
+                        List.of("§7Maximum level: " + option.maxLevel(), "§eClick to choose a level")));
             }
-            inventory.setItem(45, item(Material.BARRIER, Txt.legacy("§cBack to the shop"), List.of()));
-            inventory.setItem(49, item(Material.GOLD_INGOT, Txt.legacy("§6Your balance: §a$§f"
-                    + dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player))), List.of()));
-            player.openInventory(inventory);
+            inv.setItem(49, ShopItems.icon("NETHER_STAR", "§bBack", List.of())); player.openInventory(inv);
         });
     }
-
-    /** Opens the level picker of one enchantment. */
-    public void openLevels(Player player, ChoiceCatalog.BookOption option) {
+    private void openLevels(Player player, BookHolder parent, ChoiceCatalog.BookOption option) {
         PlatformScheduler.runForPlayer(player, () -> {
-            LevelHolder holder = new LevelHolder(option);
-            Inventory inventory = Bukkit.createInventory(holder, 27,
-                    Txt.legacy("§8§l" + option.displayName() + " — choose the level"));
-            holder.inventory = inventory;
+            LevelHolder h = new LevelHolder(parent.quickSlot, parent.category, parent.page, option);
+            Inventory inv = Bukkit.createInventory(h, 27, Txt.legacy("§8" + option.displayName() + " — Level")); h.inventory = inv; ShopItems.fill(inv);
             for (int level = 1; level <= option.maxLevel(); level++) {
-                long price = ChoiceCatalog.bookPriceCents(option, level);
-                inventory.setItem(9 + level, item(Material.ENCHANTED_BOOK,
-                        Txt.legacy("§b" + option.displayName() + " " + roman(level)),
-                        List.of(Txt.legacy("§7Price: §a$§f"
-                                        + dev.superseller.veltryx.util.Money.formatCompact(price)),
-                                net.kyori.adventure.text.Component.text(""),
-                                Txt.legacy("§eClick to buy"))));
+                Purchase purchase = new Purchase("ENCHANTED_BOOK", option.key(), level);
+                inv.setItem(9 + level, ShopItems.icon("ENCHANTED_BOOK", level, "§b" + option.displayName() + " " + level,
+                        List.of("§7Each: §a$§f" + Money.formatCompact(purchase.unitPrice(shop.prices())), "§eClick to select")));
             }
-            inventory.setItem(22, item(Material.BARRIER, Txt.legacy("§cBack"), List.of()));
-            player.openInventory(inventory);
+            inv.setItem(22, ShopItems.icon("NETHER_STAR", "§bBack", List.of())); player.openInventory(inv);
         });
     }
-
-    // -------------------------------------------------------------- click bus
-
-    @EventHandler
-    public void onClick(InventoryClickEvent event) {
-        Object holder = event.getInventory().getHolder();
-        if (!(event.getWhoClicked() instanceof Player player)) {
-            return;
-        }
-        if (holder instanceof QuickHolder quick) {
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != quick) {
-                return;
-            }
-            int slot = event.getSlot();
-            if (slot == 45) {
-                openShop(player);
-            } else if (slot < 45 && slot < quick.items.size()) {
-                buyFlat(player, quick.items.get(slot), event.isShiftClick() ? 64 : 1);
-            }
-            return;
-        }
-        if (holder instanceof SearchHolder searchHolder) {
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != searchHolder) {
-                return;
-            }
-            int slot = event.getSlot();
+    private void selected(Player player, Purchase purchase, int quickSlot, String category, int page) {
+        if (quickSlot >= 0) openAmount(player, purchase, quickSlot, 1);
+        else if (gui != null) gui.openBuying(player, purchase, category, page, 1);
+    }
+    private void openAmount(Player player, Purchase purchase, int quickSlot, int requested) {
+        PlatformScheduler.runForPlayer(player, () -> {
+            int amount = Math.max(1, Math.min(64, requested));
+            AmountHolder h = new AmountHolder(purchase, quickSlot, amount);
+            Inventory inv = Bukkit.createInventory(h, 27, Txt.legacy("§8QuickShop Amount")); h.inventory = inv; ShopItems.fill(inv);
+            inv.setItem(9, ShopItems.icon("RED_STAINED_GLASS_PANE", 32, "§c-32", List.of()));
+            inv.setItem(10, ShopItems.icon("RED_STAINED_GLASS_PANE", 16, "§c-16", List.of()));
+            inv.setItem(11, ShopItems.icon("RED_STAINED_GLASS_PANE", 1, "§c-1", List.of()));
+            inv.setItem(13, ShopItems.icon(purchase.material(), amount, "§b" + purchase.label(),
+                    List.of("§7Amount: §f" + amount, "§7Price: §a$§f" + Money.formatCompact(Money.multiplySaturated(purchase.unitPrice(shop.prices()), amount)))));
+            inv.setItem(15, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 1, "§b+1", List.of()));
+            inv.setItem(16, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 16, "§b+16", List.of()));
+            inv.setItem(17, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 32, "§b+32", List.of()));
+            inv.setItem(18, ShopItems.icon("ARROW", "§bBack", List.of()));
+            inv.setItem(22, ShopItems.icon("LIME_STAINED_GLASS_PANE", "§aSave QuickShop slot", List.of("§7Click the saved item later to buy.")));
+            player.openInventory(inv);
+        });
+    }
+    private void back(Player player, int quickSlot, String category, int page) {
+        if (quickSlot >= 0) openQuickshop(player);
+        else if (gui != null && category != null) gui.openCategory(player, category, page);
+        else if (gui != null) gui.openMain(player);
+    }
+    @EventHandler public void onClick(InventoryClickEvent event) {
+        if (!(event.getInventory().getHolder() instanceof Holder h)) return;
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player) || event.getClickedInventory() == null
+                || event.getClickedInventory().getHolder() != h) return;
+        int slot = event.getSlot();
+        if (h instanceof QuickHolder) {
+            if (slot < 0 || slot >= QuickShopStore.SLOTS) return;
+            QuickShopStore.QuickSlot saved = slots.get(player.getUniqueId(), slot);
+            if (saved != null && event.isRightClick() && event.isShiftClick()) { slots.set(player.getUniqueId(), slot, null); openQuickshop(player); }
+            else if (saved == null || saved.purchase().unitPrice(shop.prices()) <= 0) prompt(player, slot);
+            else if (event.isRightClick() || event.isShiftClick()) prompt(player, slot);
+            else if (gui != null) gui.buy(player, saved.purchase(), saved.amount());
+        } else if (h instanceof SearchHolder search) {
             if (slot < 45) {
-                int index = searchHolder.page * 45 + slot;
-                if (index < searchHolder.results.size()) {
-                    buyFlat(player, searchHolder.results.get(index), event.isShiftClick() ? 64 : 1);
-                }
-            } else if (slot == 45) {
-                openSearch(player, searchHolder.query, searchHolder.page - 1);
-            } else if (slot == 49) {
-                openShop(player);
-            } else if (slot == 53) {
-                openSearch(player, searchHolder.query, searchHolder.page + 1);
-            }
-            return;
-        }
-        if (holder instanceof EffectHolder effects) {
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != effects) {
-                return;
-            }
-            int slot = event.getSlot();
-            if (slot == 45) {
-                openShop(player);
-            } else if (slot >= 0 && slot < effects.options.size()) {
-                buyEffect(player, effects.kind, effects.options.get(slot));
-            }
-            return;
-        }
-        if (holder instanceof BookHolder books) {
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != books) {
-                return;
-            }
-            int slot = event.getSlot();
-            if (slot == 45) {
-                openShop(player);
-            } else if (slot >= 0 && slot < books.options.size()) {
-                openLevels(player, books.options.get(slot));
-            }
-            return;
-        }
-        if (holder instanceof LevelHolder levels) {
-            event.setCancelled(true);
-            if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != levels) {
-                return;
-            }
-            int slot = event.getSlot();
-            if (slot == 22) {
-                openBooks(player);
-            } else if (slot > 9 && slot <= 9 + levels.option.maxLevel()) {
-                buyBook(player, levels.option, slot - 9);
+                int index = search.page * 45 + slot;
+                if (index >= search.results.size()) return;
+                PriceTable.Entry entry = search.results.get(index);
+                if (SurvivalItems.needsChoice(entry.material())) openChoice(player, entry.material(), search.quickSlot, null, 0);
+                else selected(player, Purchase.of(entry.material()), search.quickSlot, null, 0);
+            } else if (slot == 45 && search.page > 0) openSearch(player, search.query, search.page - 1, search.quickSlot);
+            else if (slot == 53) openSearch(player, search.query, search.page + 1, search.quickSlot);
+            else if (slot == 49) back(player, search.quickSlot, null, 0);
+        } else if (h instanceof EffectHolder effects) {
+            if (slot == 49) back(player, effects.quickSlot, effects.category, effects.page);
+            else if (slot >= 0 && slot < effects.options.size() && slot < 45)
+                selected(player, new Purchase(effects.material, effects.options.get(slot).key(), 0), effects.quickSlot, effects.category, effects.page);
+        } else if (h instanceof BookHolder books) {
+            if (slot == 49) back(player, books.quickSlot, books.category, books.page);
+            else if (slot >= 0 && slot < books.options.size() && slot < 45) openLevels(player, books, books.options.get(slot));
+        } else if (h instanceof LevelHolder levels) {
+            if (slot == 22) openBooks(player, levels.quickSlot, levels.category, levels.page);
+            else if (slot >= 10 && slot <= 9 + levels.option.maxLevel())
+                selected(player, new Purchase("ENCHANTED_BOOK", levels.option.key(), slot - 9), levels.quickSlot, levels.category, levels.page);
+        } else if (h instanceof AmountHolder amount) {
+            int change = switch (slot) { case 9 -> -32; case 10 -> -16; case 11 -> -1; case 15 -> 1; case 16 -> 16; case 17 -> 32; default -> 0; };
+            if (change != 0) openAmount(player, amount.purchase, amount.quickSlot, amount.amount + change);
+            else if (slot == 18) openQuickshop(player);
+            else if (slot == 22) {
+                if (amount.purchase.unitPrice(shop.prices()) <= 0) { messages.send(player, "shop.no-price", Map.of()); return; }
+                slots.set(player.getUniqueId(), amount.quickSlot, new QuickShopStore.QuickSlot(amount.purchase, amount.amount));
+                openQuickshop(player);
             }
         }
     }
-
-    // --------------------------------------------------------------- purchases
-
-    /** The shop GUI opens back through this hook (set in the wiring). */
-    private java.util.function.Consumer<Player> shopOpener;
-
-    public void attachShopOpener(java.util.function.Consumer<Player> opener) {
-        this.shopOpener = opener;
+    @EventHandler public void onDrag(InventoryDragEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof Holder) event.setCancelled(true);
     }
-
-    private void openShop(Player player) {
-        if (shopOpener != null) {
-            shopOpener.accept(player);
-        }
-    }
-
-    private void buyFlat(Player player, PriceTable.Entry entry, int amount) {
-        ShopService.BuyResult result = shop.buy(player, entry.material(), amount);
-        if (result.ok()) {
-            player.sendMessage(messages.render("shop.buy-done", Map.of(
-                    "amount", String.valueOf(result.given()),
-                    "item", entry.material(),
-                    "price", dev.superseller.veltryx.util.Money.formatCompact(result.spentCents()),
-                    "balance", dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player)))));
-        } else {
-            player.sendMessage(messages.render(result.failKey(), result.failValues()));
-        }
-    }
-
-    private void buyEffect(Player player, String kind, ChoiceCatalog.PotionOption option) {
-        long price = "potion".equals(kind) ? option.priceCents() : ChoiceCatalog.arrowPackCents(option);
-        org.bukkit.potion.PotionType type = resolvePotion(option.key());
-        if (type == null) {
-            messages.send(player, "shop.no-price", Map.of());
-            return;
-        }
-        Material material = Material.matchMaterial("potion".equals(kind) ? "POTION" : "TIPPED_ARROW");
-        if (material == null) {
-            messages.send(player, "shop.no-price", Map.of());
-            return;
-        }
-        int amount = "potion".equals(kind) ? 1 : ChoiceCatalog.TIPPED_ARROW_PACK;
-        ItemStack stack = new ItemStack(material, amount);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta instanceof PotionMeta potionMeta) {
-            potionMeta.setBasePotionType(type);
-        } else if (meta != null) {
-            // tipped arrows: some API versions carry the potion type on a
-            // different meta type — call setBasePotionType if it exists
-            try {
-                meta.getClass().getMethod("setBasePotionType", org.bukkit.potion.PotionType.class)
-                        .invoke(meta, type);
-            } catch (ReflectiveOperationException ignored) {
-                // leave the arrow plain rather than fail the purchase
-            }
-        }
-        if (meta != null) {
-            stack.setItemMeta(meta);
-        }
-        buyCustom(player, stack, price, option.displayName());
-    }
-
-    private void buyBook(Player player, ChoiceCatalog.BookOption option, int level) {
-        Enchantment enchantment = enchant(option.key());
-        if (enchantment == null) {
-            messages.send(player, "shop.no-price", Map.of());
-            return;
-        }
-        ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK, 1);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta instanceof EnchantmentStorageMeta storage) {
-            storage.addStoredEnchant(enchantment, level, true);
-            stack.setItemMeta(meta);
-        }
-        buyCustom(player, stack, ChoiceCatalog.bookPriceCents(option, level),
-                option.displayName() + " " + roman(level));
-    }
-
-    /** Charges the price and gives the custom-built stack. */
-    private void buyCustom(Player player, ItemStack stack, long priceCents, String label) {
-        if (!economy.has(player.getUniqueId(), priceCents)) {
-            player.sendMessage(messages.render("shop.cannot-afford", Map.of(
-                    "price", dev.superseller.veltryx.util.Money.formatCompact(priceCents),
-                    "balance", dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player)))));
-            return;
-        }
-        Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack);
-        if (!leftover.isEmpty()) {
-            player.sendMessage(messages.render("shop.no-space", Map.of()));
-            return;
-        }
-        economy.withdraw(player.getUniqueId(), player.getName(), priceCents);
-        player.sendMessage(messages.render("shop.buy-done", Map.of(
-                "amount", String.valueOf(stack.getAmount()),
-                "item", label,
-                "price", dev.superseller.veltryx.util.Money.formatCompact(priceCents),
-                "balance", dev.superseller.veltryx.util.Money.formatCompact(shop.balance(player)))));
-    }
-
-    // ----------------------------------------------------------------- helpers
-
-    /** Runtime-safe potion type resolution (handles the SPEED/SWIFTNESS rename). */
     static org.bukkit.potion.PotionType resolvePotion(String key) {
-        if ("SPEED".equals(key)) {
-            try {
-                return org.bukkit.potion.PotionType.valueOf("SWIFTNESS");
-            } catch (IllegalArgumentException ignored) {
-                // older naming
-            }
-        }
-        try {
-            return org.bukkit.potion.PotionType.valueOf(key);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    /** Compile-checked enchantment constant lookup for the book picker. */
-    static Enchantment enchant(String key) {
-        switch (key) {
-            case "PROTECTION": return Enchantment.PROTECTION;
-            case "FIRE_PROTECTION": return Enchantment.FIRE_PROTECTION;
-            case "BLAST_PROTECTION": return Enchantment.BLAST_PROTECTION;
-            case "PROJECTILE_PROTECTION": return Enchantment.PROJECTILE_PROTECTION;
-            case "FEATHER_FALLING": return Enchantment.FEATHER_FALLING;
-            case "EFFICIENCY": return Enchantment.EFFICIENCY;
-            case "SHARPNESS": return Enchantment.SHARPNESS;
-            case "SMITE": return Enchantment.SMITE;
-            case "BANE_OF_ARTHROPODS": return Enchantment.BANE_OF_ARTHROPODS;
-            case "POWER": return Enchantment.POWER;
-            case "UNBREAKING": return Enchantment.UNBREAKING;
-            case "THORNS": return Enchantment.THORNS;
-            case "RESPIRATION": return Enchantment.RESPIRATION;
-            case "AQUA_AFFINITY": return Enchantment.AQUA_AFFINITY;
-            case "DEPTH_STRIDER": return Enchantment.DEPTH_STRIDER;
-            case "FORTUNE": return Enchantment.FORTUNE;
-            case "LOOTING": return Enchantment.LOOTING;
-            case "KNOCKBACK": return Enchantment.KNOCKBACK;
-            case "FIRE_ASPECT": return Enchantment.FIRE_ASPECT;
-            case "PUNCH": return Enchantment.PUNCH;
-            case "FLAME": return Enchantment.FLAME;
-            case "LURE": return Enchantment.LURE;
-            case "LUCK_OF_THE_SEA": return Enchantment.LUCK_OF_THE_SEA;
-            case "LOYALTY": return Enchantment.LOYALTY;
-            case "IMPALING": return Enchantment.IMPALING;
-            case "RIPTIDE": return Enchantment.RIPTIDE;
-            case "CHANNELING": return Enchantment.CHANNELING;
-            case "MENDING": return Enchantment.MENDING;
-            case "SILK_TOUCH": return Enchantment.SILK_TOUCH;
-            case "INFINITY": return Enchantment.INFINITY;
-            default: return null;
-        }
-    }
-
-    /** Roman numerals for the level pickers (I..V). */
-    static String roman(int level) {
-        return switch (level) {
-            case 1 -> "I";
-            case 2 -> "II";
-            case 3 -> "III";
-            case 4 -> "IV";
-            case 5 -> "V";
-            default -> String.valueOf(level);
-        };
-    }
-
-    private static ItemStack item(Material material, net.kyori.adventure.text.Component name,
-                                  List<net.kyori.adventure.text.Component> lore) {
-        ItemStack item = new ItemStack(material == null ? Material.PAPER : material, 1);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(name);
-            meta.lore(new ArrayList<>(lore));
-            item.setItemMeta(meta);
-        }
-        return item;
+        if ("SPEED".equals(key)) key = "SWIFTNESS";
+        if ("JUMP_BOOST".equals(key)) key = "LEAPING";
+        try { return org.bukkit.potion.PotionType.valueOf(key); }
+        catch (IllegalArgumentException e) { return null; }
     }
 }

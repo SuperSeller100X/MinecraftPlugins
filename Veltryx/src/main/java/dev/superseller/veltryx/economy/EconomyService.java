@@ -16,6 +16,12 @@ public final class EconomyService implements VeltryxEconomy {
 
     private final DataStore store;
     private final VeltryxConfig config;
+    private volatile java.util.function.Consumer<UUID> onChange = id -> { };
+
+    /** Called after each successful balance change; safe to install after startup. */
+    public void onChange(java.util.function.Consumer<UUID> listener) {
+        this.onChange = listener == null ? id -> { } : listener;
+    }
 
     public EconomyService(DataStore store, VeltryxConfig config) {
         this.store = store;
@@ -39,6 +45,7 @@ public final class EconomyService implements VeltryxEconomy {
         }
         long balance = Money.addSaturated(store.getBalance(player), amountCents);
         store.setBalance(player, name, balance);
+        onChange.accept(player);
         return balance;
     }
 
@@ -52,6 +59,7 @@ public final class EconomyService implements VeltryxEconomy {
             return false;
         }
         store.setBalance(player, name, balance - amountCents);
+        onChange.accept(player);
         return true;
     }
 
@@ -66,12 +74,15 @@ public final class EconomyService implements VeltryxEconomy {
         }
         store.setBalance(from, fromName, balance - amountCents);
         store.setBalance(to, toName, Money.addSaturated(store.getBalance(to), amountCents));
+        onChange.accept(from);
+        onChange.accept(to);
         return true;
     }
 
     @Override
     public void setBalance(UUID player, String name, long amountCents) {
         store.setBalance(player, name, Math.max(0L, amountCents));
+        onChange.accept(player);
     }
 
     @Override
@@ -96,6 +107,7 @@ public final class EconomyService implements VeltryxEconomy {
             return 0L;
         }
         store.setBalance(player, name, starting);
+        onChange.accept(player);
         return starting;
     }
 }

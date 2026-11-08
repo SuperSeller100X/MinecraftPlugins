@@ -174,6 +174,7 @@ public final class ShardToolListener implements Listener {
     private boolean isProtected(Material type) {
         String name = type.name();
         return type == Material.BARRIER || name.equals("BEDROCK")
+                || name.equals("SPAWNER") || name.equals("TRIAL_SPAWNER")
                 || name.equals("CHEST") || name.equals("TRAPPED_CHEST") || name.equals("BARREL")
                 || name.equals("HOPPER") || name.equals("DISPENSER") || name.equals("DROPPER")
                 || name.equals("FURNACE") || name.equals("BLAST_FURNACE") || name.equals("SMOKER")

@@ -146,12 +146,12 @@ vanish.enabled: "<green>You are now vanished.</green>"
 vanish.disabled: "<green>You are visible again.</green>"
 
 # ------------------------------------------------------------- shop
-shop.buy-done: "<green>Bought <white>{amount}x {item}</white> for <lime>$</lime><white>{price}</white>. <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
-shop.cannot-afford: "<red>That costs <lime>$</lime><white>{price}</white> — you only have <lime>$</lime><white>{balance}</white>.</red>"
+shop.buy-done: "<green>Bought <white>{amount}x {item}</white> for <green>$</green><white>{price}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+shop.cannot-afford: "<red>That costs <green>$</green><white>{price}</white> — you only have <green>$</green><white>{balance}</white>.</red>"
 shop.no-space: "<red>Not enough inventory space.</red>"
 shop.no-price: "<red>This item cannot be bought here.</red>"
-shop.sold: "<green>Sold <white>{count}x {item}</white> — <lime>$</lime><white>{money}</white>. <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
-shop.sold-all: "<green>Sold your items — <lime>$</lime><white>{money}</white>. <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
+shop.sold: "<green>Sold <white>{count}x {item}</white> — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+shop.sold-all: "<green>Sold your items — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
 shop.nothing: "<red>Nothing in your inventory can be sold.</red>"
 shop.no-sell: "<red>This item cannot be sold here.</red>"
 shop.players-only: "<red>Only players can use this.</red>"
@@ -166,41 +166,41 @@ veltryx.info-body: "<gray>Storage:</gray> <white>{storage}</white> <dark_gray>|<
 
 # ---------------------------------------------------------- sell notices
 # The payout shown above the hotbar (action bar) when selling; the $ is lime.
-sell.actionbar: "<lime>$</lime><white>{money}</white>"
+sell.actionbar: "<green>$</green><white>{money}</white>"
 
 # ------------------------------------------------------------- auction house
 ah.usage-sell: "<gray>Hold the item to sell and run <white>/ah sell <price-per-item></white> — e.g. <white>/ah sell 2.5k</white> per item.</gray>"
 ah.hold-item: "<red>Hold the item you want to sell in your main hand.</red>"
 ah.unknown-item: "<red>Unknown item <white>{item}</white>.</red>"
 ah.bad-amount: "<red>Amount must be between 1 and 23040.</red>"
-ah.bad-price: "<red>Price must be between <lime>$</lime><white>0.01</white> and <lime>$</lime><white>{max}</white> per item.</red>"
+ah.bad-price: "<red>Price must be between <green>$</green><white>0.01</white> and <green>$</green><white>{max}</white> per item.</red>"
 ah.too-many: "<red>You already have <white>{max}</white> active listings.</red>"
 ah.not-enough: "<red>You do not have <white>{count}x {item}</white>.</red>"
-ah.listed: "<green>Listed <white>{count}x {item}</white> for <lime>$</lime><white>{money}</white>. <gray>(id <white>{id}</white>)</gray></green>"
+ah.listed: "<green>Listed <white>{count}x {item}</white> for <green>$</green><white>{money}</white>. <gray>(id <white>{id}</white>)</gray></green>"
 ah.gone: "<red>This listing is no longer available.</red>"
 ah.own-listing: "<red>This is your own listing — cancel it to take the items back.</red>"
-ah.bought: "<green>Bought <white>{count}x {item}</white> for <lime>$</lime><white>{money}</white>.</green>"
-ah.sold: "<green>Your <white>{count}x {item}</white> sold — <lime>$</lime><white>{money}</white>. <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
+ah.bought: "<green>Bought <white>{count}x {item}</white> for <green>$</green><white>{money}</white>.</green>"
+ah.sold: "<green>Your <white>{count}x {item}</white> sold — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
 ah.reclaimed: "<green>Took back <white>{count}x {item}</white>.</green>"
 
 # ------------------------------------------------------------- buy orders
 order.usage: "<gray>Usage: <white>/order <item> <amount> <price-per-item></white> — e.g. <white>/order iron_ingot 128 1.10</white>. The full price is escrowed until sellers fill the order.</gray>"
 order.bad-amount: "<red>Amount must be between 1 and 23040.</red>"
-order.bad-price: "<red>Price must be between <lime>$</lime><white>0.01</white> and <lime>$</lime><white>{max}</white> per item.</red>"
+order.bad-price: "<red>Price must be between <green>$</green><white>0.01</white> and <green>$</green><white>{max}</white> per item.</red>"
 order.too-many: "<red>You already have <white>{max}</white> open orders.</red>"
-order.created: "<green>Order <white>{id}</white>: buying <white>{count}x {item}</white> for <lime>$</lime><white>{money}</white> each — <lime>$</lime><white>{total}</white> escrowed.</green>"
+order.created: "<green>Order <white>{id}</white>: buying <white>{count}x {item}</white> for <green>$</green><white>{money}</white> each — <green>$</green><white>{total}</white> escrowed.</green>"
 order.gone: "<red>This order is no longer open.</red>"
 order.own: "<red>This is your own order — cancel it instead.</red>"
-order.filled-seller: "<green>Sold <white>{count}x {item}</white> into an order — <lime>$</lime><white>{money}</white>. <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
-order.filled-buyer: "<green>{player} filled your order: <white>{count}x {item}</white> for <lime>$</lime><white>{money}</white>. <gray>{left} left.</gray></green>"
-order.expired: "<green>Your order expired — <lime>$</lime><white>{money}</white> refunded for the unfilled <white>{count}x {item}</white>.</green>"
-order.cancelled: "<green>Order cancelled — <lime>$</lime><white>{money}</white> refunded (<white>{count}x {item}</white> left). <gray>Balance: <lime>$</lime><white>{balance}</white></gray></green>"
+order.filled-seller: "<green>Sold <white>{count}x {item}</white> into an order — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+order.filled-buyer: "<green>{player} filled your order: <white>{count}x {item}</white> for <green>$</green><white>{money}</white>. <gray>{left} left.</gray></green>"
+order.expired: "<green>Your order expired — <green>$</green><white>{money}</white> refunded for the unfilled <white>{count}x {item}</white>.</green>"
+order.cancelled: "<green>Order cancelled — <green>$</green><white>{money}</white> refunded (<white>{count}x {item}</white> left). <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
 
 # ------------------------------------------------------------------ homes
 home.set: "<green>Home <white>{name}</white> set. <gray>({count}/{max} homes)</gray></green>"
 home.moved: "<green>Home <white>{name}</white> moved here. <gray>({count}/{max} homes)</gray></green>"
-home.paid: "<green>Home <white>{name}</white> bought for <lime>$</lime><white>{price}</white>. <gray>({count}/{max} homes)</gray></green>"
-home.cannot-afford: "<red>That home slot costs <lime>$</lime><white>{price}</white> — you only have <lime>$</lime><white>{balance}</white>.</red>"
+home.paid: "<green>Home <white>{name}</white> bought for <green>$</green><white>{price}</white>. <gray>({count}/{max} homes)</gray></green>"
+home.cannot-afford: "<red>That home slot costs <green>$</green><white>{price}</white> — you only have <green>$</green><white>{balance}</white>.</red>"
 home.full: "<red>You already have the maximum of <white>{max}</white> homes.</red>"
 home.not-found: "<red>You have no home named <white>{name}</white>.</red>"
 home.teleported: "<green>Teleported to home <white>{name}</white>.</green>"
@@ -260,7 +260,8 @@ shards.info: |-
   <gray>——— <aqua>Shards</aqua> ———</gray>
   <gray>You earn <white>1 shard per minute</white> just by playing.</gray>
   <gray>Shard weapons and tools live <white>24 hours</white> and then self-destruct.</gray>
-  <gray><white>/shard shop</white> — buy the shard spear, trident, axe, pickaxe and void totem</gray>
+  <gray><white>/shard shop</white> — buy shard equipment and custom spawners</gray>
+  <gray><white>/shard spawners</white> — browse the spawner shop</gray>
   <gray><white>/shard pay <player> <amount></white> — send shards to a friend</gray>
   <gray><white>/shard top</white> — richest shard holders</gray>
   <gray><white>/shard toggle</white> — turn the held shard tool's ability on or off</gray>
@@ -288,3 +289,18 @@ rtp.failed: "<red>Could not find a safe spot — try again.</red>"
 # --------------------------------------------------- shop search
 shop.search-prompt: "<gray>Type your search in chat (or <white>cancel</white>) — e.g. <white>diamond</white>.</gray>"
 shop.search-cancelled: "<gray>Search cancelled.</gray>"
+
+shop.quick-search-prompt: "<gray>Type an item name in chat, <white>*</white> to browse everything, or <white>cancel</white>.</gray>"
+settings.updated: "<gray>{setting} is now <white>{state}</white>.</gray>"
+shop.map-unavailable: "<red>No matching structure could be found in this world. You were not charged.</red>"
+shop.item-unavailable: "<red>That item or variant is unavailable right now. You were not charged.</red>"
+
+# ------------------------------------------------ custom shard spawners
+spawner.need-silk: "<red>Use a Silk Touch tool to pick up this spawner and its storage.</red>"
+spawner.inventory-full: "<red>Your inventory is full. Make room and try again.</red>"
+spawner.storage-error: "<red>The spawner could not be saved. Please contact an administrator.</red>"
+spawner.unavailable: "<red>This spawner is unavailable or its storage could not be found.</red>"
+spawner.picked-up: "<green>Your {type} spawner and its stored loot were added to your inventory.</green>"
+spawner.mode: "<green>Spawner mode is now <white>{mode}</white>.</green>"
+spawner.market-disabled: "<red>Spawners cannot be traded through the auction house or buy orders; trade them directly to preserve their storage.</red>"
+spawner.placement-refund: "<red>Spawner placement could not finish. Your spawner was returned as an owner-only item at that location.</red>"

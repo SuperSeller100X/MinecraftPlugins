@@ -101,9 +101,15 @@ public final class VeltryxPlugin extends JavaPlugin {
     private dev.superseller.veltryx.shards.ShardItems shardItems;
     private dev.superseller.veltryx.shards.ShardShopGui shardShopGui;
     private dev.superseller.veltryx.shards.ShardExpiryService shardExpiry;
+    private dev.superseller.veltryx.spawner.SpawnerShopGui spawnerShopGui;
+    private dev.superseller.veltryx.spawner.SpawnerLootGui spawnerLootGui;
+    private dev.superseller.veltryx.spawner.SpawnerListener spawnerListener;
     private dev.superseller.veltryx.shop.ShopExtrasGui shopExtrasGui;
     private dev.superseller.veltryx.rtp.RtpService rtpService;
     private dev.superseller.veltryx.rtp.RtpGui rtpGui;
+    private dev.superseller.veltryx.settings.PreferencesStore preferences;
+    private dev.superseller.veltryx.settings.SettingsGui settingsGui;
+    private dev.superseller.veltryx.settings.SettingsListener settingsListener;
 
     @Override
     public void onEnable() {
@@ -141,6 +147,7 @@ public final class VeltryxPlugin extends JavaPlugin {
             shopService = new ShopService(economy, getDataFolder().toPath().resolve("shop.yml"));
             shopGui = new ShopGui(shopService, messages);
             sellGui = new SellGui(shopService, messages);
+            shopGui.attachSellOpener(sellGui::open);
             homeService = new HomeService(store, economy, messages, config);
             homesGui = new HomesGui(homeService, economy, messages, config);
             tpaService = new TpaService();
@@ -153,17 +160,37 @@ public final class VeltryxPlugin extends JavaPlugin {
             shardService = new dev.superseller.veltryx.shards.ShardService(store);
             shardShopGui = new dev.superseller.veltryx.shards.ShardShopGui(
                     shardCatalog, shardItems, shardService, messages);
+            var spawnerItems = new dev.superseller.veltryx.spawner.SpawnerItems(this);
+            var spawnerStore = new dev.superseller.veltryx.spawner.SpawnerStore(
+                    getDataFolder().toPath().resolve("spawners"), getLogger());
+            spawnerLootGui = new dev.superseller.veltryx.spawner.SpawnerLootGui(spawnerStore, messages);
+            spawnerShopGui = new dev.superseller.veltryx.spawner.SpawnerShopGui(
+                    shardService, spawnerItems, spawnerStore, messages, getLogger(), shardShopGui::open);
+            spawnerListener = new dev.superseller.veltryx.spawner.SpawnerListener(
+                    spawnerItems, spawnerStore, spawnerLootGui, messages, getLogger());
+            shardShopGui.attachSpawnerOpener(spawnerShopGui::open);
             shardExpiry = new dev.superseller.veltryx.shards.ShardExpiryService(
                     shardItems, shardCatalog, messages);
-            shopExtrasGui = new dev.superseller.veltryx.shop.ShopExtrasGui(shopService, economy, messages, config);
-            shopExtrasGui.attachShopOpener(shopGui::openMain);
+            shopExtrasGui = new dev.superseller.veltryx.shop.ShopExtrasGui(shopService, messages,
+                    getDataFolder().toPath().resolve("quickshop-slots.properties"), getLogger());
+            shopExtrasGui.attachShopGui(shopGui);
             shopGui.attachExtras(shopExtrasGui);
+            shopExtrasGui.attachPromptCancellation(homesGui::cancelPendingRename);
+            homesGui.attachPromptCancellation(shopExtrasGui::cancelPendingSearch);
             rtpService = new dev.superseller.veltryx.rtp.RtpService(config, messages);
             rtpGui = new dev.superseller.veltryx.rtp.RtpGui(rtpService);
+            preferences = new dev.superseller.veltryx.settings.PreferencesStore(
+                    getDataFolder().toPath().resolve("player-preferences.properties"), getLogger());
+            preferences.load();
+            settingsListener = new dev.superseller.veltryx.settings.SettingsListener(preferences, this);
+            settingsGui = new dev.superseller.veltryx.settings.SettingsGui(preferences, settingsListener, messages);
             statsService = new dev.superseller.veltryx.stats.StatsService(store);
             if (config.scoreboardEnabled()) {
                 scoreboardService = new dev.superseller.veltryx.stats.ScoreboardService(
-                        statsService, economy, shardService, config.scoreboardUpdateSeconds());
+                        statsService, economy, shardService, config.scoreboardUpdateSeconds(),
+                        config.scoreboardNametag());
+                economy.onChange(scoreboardService::refreshChanged);
+                shardService.onChange(scoreboardService::refreshChanged);
             }
 
             stage = "timers";
@@ -172,6 +199,7 @@ public final class VeltryxPlugin extends JavaPlugin {
             freeze.startGuard();
             startAutosave();
             startShardTimers();
+            settingsListener.startTimer();
             if (scoreboardService != null) {
                 scoreboardService.startTimer();
             }
@@ -221,7 +249,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         String template = readResource(name);
         if (template == null) {
             getLogger().severe(name + " is missing from the plugin jar! Build the plugin with "
-                    + "'mvn -B clean package' in Veltryx/ and use target/Veltryx-<version>.jar.");
+                    + "'mvn -B clean package' in Veltryx/ and use target/vx-<version>.jar.");
             return;
         }
         try {
@@ -255,6 +283,8 @@ public final class VeltryxPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         EconomyRegistry.unregister();
+        if (preferences != null) preferences.save();
+        if (shopExtrasGui != null) shopExtrasGui.save();
         if (store != null) {
             store.save();
             store.close();
@@ -306,6 +336,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         dev.superseller.veltryx.shop.QuickShopCommand quickShopCommand =
                 new dev.superseller.veltryx.shop.QuickShopCommand(shopExtrasGui, messages);
         bind("quickshop", quickShopCommand, quickShopCommand);
+        bind("settings", settingsGui, settingsGui);
         dev.superseller.veltryx.rtp.RtpCommand rtpCommand =
                 new dev.superseller.veltryx.rtp.RtpCommand(rtpGui, rtpService, messages);
         bind("rtp", rtpCommand, rtpCommand);
@@ -358,6 +389,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(new EconomyListener(store, economy, messages));
         register(new AntiCheatListener(anticheat, config, obfuscator));
         register(bans);
+        register(shopExtrasGui);
         register(chatListener);
         register(vanish);
         register(freeze);
@@ -369,7 +401,11 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(ahGui);
         register(orderGui);
         register(shardShopGui);
-        register(shopExtrasGui);
+        register(spawnerShopGui);
+        register(spawnerLootGui);
+        register(spawnerListener);
+        register(settingsGui);
+        register(settingsListener);
         register(rtpGui);
         Runnable statsRefresh = () -> { };
         if (scoreboardService != null) {

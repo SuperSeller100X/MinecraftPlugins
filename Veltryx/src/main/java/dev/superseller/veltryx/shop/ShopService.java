@@ -33,8 +33,20 @@ public final class ShopService {
 
     private PriceTable load() {
         try {
-            return PriceTable.parse(Files.readString(shopFile));
+            String recipes;
+            try (java.io.InputStream in = ShopService.class.getResourceAsStream("/shop-recipes.txt")) {
+                if (in == null) throw new IOException("Missing bundled shop-recipes.txt");
+                recipes = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                if (recipes.isBlank()) throw new IOException("Empty bundled shop-recipes.txt");
+            }
+            return PriceTable.parse(Files.readString(shopFile), recipes, name -> {
+                Material material = Material.matchMaterial(name);
+                return material != null && material.isItem();
+            });
         } catch (IOException | RuntimeException e) {
+            // Fail closed: trading without its recipe safety model could create money.
+            java.util.logging.Logger.getLogger(ShopService.class.getName()).log(
+                    java.util.logging.Level.SEVERE, "Could not load shop; trading is disabled until it is repaired", e);
             return PriceTable.parse("");
         }
     }
@@ -62,35 +74,84 @@ public final class ShopService {
      * in the inventory — never money for thin air.
      */
     public BuyResult buy(Player player, String materialName, int amount) {
-        PriceTable.Entry entry = prices.get(materialName);
-        if (entry == null) {
+        return buy(player, Purchase.of(materialName), amount);
+    }
+
+    /** Buy a specific potion/book variant or ordinary item; charge only for delivered items. */
+    public BuyResult buy(Player player, Purchase purchase, int requested) {
+        long unitPrice = purchase.unitPrice(prices);
+        Material material = Material.matchMaterial(purchase.material());
+        if (unitPrice <= 0 || material == null || !material.isItem())
             return new BuyResult(0, 0, "shop.no-price", Map.of());
-        }
-        amount = Math.max(1, Math.min(64, amount));
-        Material material = Material.matchMaterial(materialName);
-        if (material == null) {
-            return new BuyResult(0, 0, "shop.no-price", Map.of());
-        }
-        long unitPrice = entry.buyCents();
+        int amount = Math.max(1, Math.min(64, requested));
+        if (unitPrice > Long.MAX_VALUE / amount) return new BuyResult(0, 0, "shop.no-price", Map.of());
         long total = unitPrice * amount;
-        if (!economy.has(player.getUniqueId(), total)) {
+        // Withdraw before adding items so concurrent balance changes cannot grant free goods.
+        if (!economy.withdraw(player.getUniqueId(), player.getName(), total)) {
             return new BuyResult(0, 0, "shop.cannot-afford", Map.of(
                     "price", dev.superseller.veltryx.util.Money.formatCompact(total),
-                    "balance", dev.superseller.veltryx.util.Money.formatCompact(
-                            economy.getBalance(player.getUniqueId()))));
+                    "balance", dev.superseller.veltryx.util.Money.formatCompact(economy.getBalance(player.getUniqueId()))));
         }
-        ItemStack stack = new ItemStack(material, amount);
-        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(stack);
+        ItemStack stack;
+        try {
+            stack = createPurchaseItem(player, material, purchase, amount);
+        } catch (RuntimeException error) {
+            economy.deposit(player.getUniqueId(), player.getName(), total);
+            java.util.logging.Logger.getLogger(ShopService.class.getName()).log(
+                    java.util.logging.Level.WARNING, "Could not create purchased " + purchase.material(), error);
+            return new BuyResult(0, 0, ExplorerMaps.namedMap(purchase.material())
+                    ? "shop.map-unavailable" : "shop.item-unavailable", Map.of());
+        }
+        if (stack == null) {
+            economy.deposit(player.getUniqueId(), player.getName(), total);
+            return new BuyResult(0, 0, ExplorerMaps.namedMap(purchase.material())
+                    ? "shop.map-unavailable" : "shop.item-unavailable", Map.of());
+        }
+        Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack);
         int given = amount;
-        for (ItemStack rest : leftover.values()) {
-            given -= rest.getAmount();
+        for (ItemStack rest : leftover.values()) given -= rest.getAmount();
+        given = Math.max(0, Math.min(amount, given));
+        if (given < amount) economy.deposit(player.getUniqueId(), player.getName(), unitPrice * (amount - given));
+        if (given == 0) return new BuyResult(0, 0, "shop.no-space", Map.of());
+        return new BuyResult(given, unitPrice * given, null, Map.of());
+    }
+
+    private ItemStack createPurchaseItem(Player player, Material material, Purchase purchase, int amount) {
+        ItemStack stack = new ItemStack(material, amount);
+        org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+        if (SurvivalItems.needsChoice(purchase.material())) {
+            if (purchase.material().equals("ENCHANTED_BOOK")) {
+                org.bukkit.enchantments.Enchantment enchantment = io.papermc.paper.registry.RegistryAccess.registryAccess()
+                        .getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT)
+                        .get(org.bukkit.NamespacedKey.minecraft(purchase.choice().toLowerCase(java.util.Locale.ROOT)));
+                if (enchantment == null || !(meta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta book)) return null;
+                book.addStoredEnchant(enchantment, purchase.level(), false);
+            } else {
+                org.bukkit.potion.PotionType potion = ShopExtrasGui.resolvePotion(purchase.choice());
+                if (potion == null || !(meta instanceof org.bukkit.inventory.meta.PotionMeta potionMeta)) return null;
+                potionMeta.setBasePotionType(potion);
+            }
+        } else if (purchase.material().equals("WRITTEN_BOOK") && meta instanceof org.bukkit.inventory.meta.BookMeta book) {
+            book.title(dev.superseller.veltryx.util.Txt.legacy("§0Book"));
+            book.author(dev.superseller.veltryx.util.Txt.legacy(player.getName()));
+            book.addPages(dev.superseller.veltryx.util.Txt.legacy("§0A book from the server shop."));
+        } else if (ExplorerMaps.namedMap(purchase.material())) {
+            if (!(meta instanceof org.bukkit.inventory.meta.MapMeta map)
+                    || !ExplorerMaps.prepare(player, stack, map)) return null;
+            return stack;
+        } else if (purchase.material().equals("FILLED_MAP")) {
+            if (!(meta instanceof org.bukkit.inventory.meta.MapMeta map)) return null;
+            org.bukkit.map.MapView view = org.bukkit.Bukkit.createMap(player.getWorld());
+            if (view == null) return null;
+            view.setCenterX(player.getLocation().getBlockX());
+            view.setCenterZ(player.getLocation().getBlockZ());
+            map.setMapView(view);
+        } else if (purchase.material().endsWith("_MAP")) {
+            // Unknown future explorer maps must never silently become ordinary maps.
+            return null;
         }
-        if (given <= 0) {
-            return new BuyResult(0, 0, "shop.no-space", Map.of());
-        }
-        long spent = unitPrice * given;
-        economy.withdraw(player.getUniqueId(), player.getName(), spent);
-        return new BuyResult(given, spent, null, Map.of());
+        if (meta != null) stack.setItemMeta(meta);
+        return stack;
     }
 
     /**
@@ -116,8 +177,10 @@ public final class ShopService {
                 continue;
             }
             long unit = ItemValue.valueCents(entry.sellCents(), entry.buyCents(), stack);
+            if (unit <= 0) continue;
             int take = Math.min(stack.getAmount(), Math.max(1, maxAmount) - sold);
-            earned += unit * take;
+            earned = dev.superseller.veltryx.util.Money.addSaturated(earned,
+                    dev.superseller.veltryx.util.Money.multiplySaturated(unit, take));
             sold += take;
             int left = stack.getAmount() - take;
             stack.setAmount(left);
@@ -148,8 +211,10 @@ public final class ShopService {
                 continue;
             }
             long unit = ItemValue.valueCents(entry.sellCents(), entry.buyCents(), stack);
+            if (unit <= 0) continue;
             int amount = stack.getAmount();
-            earned += unit * amount;
+            earned = dev.superseller.veltryx.util.Money.addSaturated(earned,
+                    dev.superseller.veltryx.util.Money.multiplySaturated(unit, amount));
             sold += amount;
             stack.setAmount(0);
         }

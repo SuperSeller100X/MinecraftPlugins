@@ -6,7 +6,7 @@
 
     <groupId>dev.superseller</groupId>
     <artifactId>Veltryx</artifactId>
-    <version>vx-0.0.4-beta</version>
+    <version>vx-0.0.5-beta</version>
     <packaging>jar</packaging>
 
     <name>Veltryx</name>
@@ -48,7 +48,7 @@
     </dependencies>
 
     <build>
-        <!-- The jar is named exactly the version: vx-0.0.4-beta.jar -->
+        <!-- The jar is named exactly the version: vx-0.0.5-beta.jar -->
         <finalName>${project.version}</finalName>
         <resources>
             <resource>
