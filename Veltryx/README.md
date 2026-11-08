@@ -257,7 +257,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/Veltryx-vx-v0.0.1-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-v0.0.1-beta.jar
 ```
 
 Offline fallback (no Maven Central access): the bundled Eclipse compiler and
@@ -265,7 +265,7 @@ compile-only API stubs build the plugin and run the smoke tests:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/Veltryx-offline.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-v0.0.1-beta.jar
 ```
 
 Offline consistency checks (message keys, permissions, command wiring):
@@ -288,7 +288,7 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/Veltryx-vx-v0.0.1-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-v0.0.1-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'`, so 26.2+ servers accept it — if you still see this, tell us the exact server version |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |

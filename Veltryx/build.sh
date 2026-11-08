@@ -45,12 +45,13 @@ find smoke -name '*.java' >target/smoke-sources.txt
   -cp "$OUT" -d "$SMOKE_OUT" @target/smoke-sources.txt
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT" dev.superseller.veltryx.smoke.SmokeTest
 
-echo "==> assembling target/Veltryx-offline.jar"
+VERSION="vx-v0.0.1-beta"
+echo "==> assembling target/${VERSION}.jar"
 rm -rf target/jar
 mkdir -p target/jar
 cp -r "$OUT"/dev target/jar/
 cp src/main/resources/*.yml target/jar/
-sed -i.bak 's/\${project.version}/vx-v0.0.1-beta/' target/jar/plugin.yml && rm -f target/jar/plugin.yml.bak
-(cd target/jar && zip -qr ../Veltryx-offline.jar .)
+sed -i.bak "s/\\\${project.version}/${VERSION}/" target/jar/plugin.yml && rm -f target/jar/plugin.yml.bak
+(cd target/jar && zip -qr "../${VERSION}.jar" .)
 
-echo "OK: target/Veltryx-offline.jar"
+echo "OK: target/${VERSION}.jar"
