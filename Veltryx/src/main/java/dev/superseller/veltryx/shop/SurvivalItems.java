@@ -25,12 +25,27 @@ public final class SurvivalItems {
         return name != null && !EXCLUDED.contains(name)
                 && !name.endsWith("_SPAWN_EGG") && !name.startsWith("INFESTED_");
     }
-    /** These items have metadata-dependent values or can be cloned. */
-    public static boolean noFlatSell(String material) {
-        return material.equals("POTION") || material.equals("SPLASH_POTION")
-                || material.equals("LINGERING_POTION") || material.equals("TIPPED_ARROW")
-                || material.equals("ENCHANTED_BOOK") || material.equals("WRITTEN_BOOK")
-                || material.equals("FILLED_MAP") || material.endsWith("_MAP");
+    /** Previous defaults for these items were buy-only; recognize only exact old prices. */
+    public static long migrateOldSellDefault(String material, long buy, long sell) {
+        if (sell != 0) return sell;
+        if (buy == 3_500 && (material.equals("POTION") || material.equals("SPLASH_POTION")
+                || material.equals("LINGERING_POTION"))) return 4;
+        if (buy == 500 && material.equals("TIPPED_ARROW")) return 2;
+        if (buy == 25_000 && material.equals("ENCHANTED_BOOK")) return 38;
+        if (buy == 1_000 && material.equals("WRITTEN_BOOK")) return 50;
+        if (buy == 15_000 && material.endsWith("_MAP")) return 50;
+        return sell;
+    }
+
+    /** A conservative ingredient/blank-copy cap for variant and clonable items. */
+    public static String saleCostBase(String material) {
+        return switch (material) {
+            case "POTION", "SPLASH_POTION", "LINGERING_POTION" -> "GLASS_BOTTLE";
+            case "TIPPED_ARROW" -> "ARROW";
+            case "ENCHANTED_BOOK" -> "BOOK";
+            case "WRITTEN_BOOK" -> "WRITABLE_BOOK";
+            default -> material.endsWith("_MAP") ? "MAP" : material;
+        };
     }
     public static boolean needsChoice(String material) {
         return material.equals("POTION") || material.equals("SPLASH_POTION")

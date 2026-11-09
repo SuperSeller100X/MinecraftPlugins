@@ -1,16 +1,20 @@
 # Veltryx shop prices — the heart of the /shop and /sell GUIs.
 #
 # Format per item:   MATERIAL: { buy: <dollars>, sell: <dollars> }
-#   buy  = what the shop charges when a player buys the item
-#   sell = what /sell pays (always less than buy)
+#   buy  = ordinary-item purchase price; variant entries enable that material
+#   sell = base payout before safety caps, enchantments and durability
 #
 # Runtime safety caps base sells to half the cheapest *modeled* way to
 # acquire the item and caps enchantment bonuses. The bundled model covers
 # vanilla recipes and selected transformations, Fortune and container returns;
 # it does not model every trade, farm, plugin or game mechanic. Values on disk
 # are preserved during upgrades, even when a lower effective cap is applied.
-# Potion, tipped-arrow and enchanted-book variants have fixed choice prices.
-# Metadata-dependent items such as maps and potions are buy-only.
+# Potion and tipped-arrow buy prices derive from modeled ingredient costs;
+# enchanted-book buy prices depend on enchantment and level in ChoiceCatalog.
+# Their generic buy values enable the entry rather than setting choice prices.
+# Potion/arrow sells vary by ingredient cost and are scaled down when the
+# configured base sell is below the default; zero disables selling. Old exact
+# buy-only defaults are migrated in memory, including matching zero sells.
 
 ores:
   display: "Resources"
@@ -1496,11 +1500,11 @@ mobs:
     MUSIC_DISC_CREATOR: { buy: 55.00, sell: 27.50 }
     MUSIC_DISC_CREATOR_MUSIC_BOX: { buy: 55.00, sell: 27.50 }
     MUSIC_DISC_PRECIPICE: { buy: 55.00, sell: 27.50 }
-    ENCHANTED_BOOK: { buy: 250.00, sell: 0.00 }
-    LINGERING_POTION: { buy: 35.00, sell: 0.00 }
-    POTION: { buy: 35.00, sell: 0.00 }
-    SPLASH_POTION: { buy: 35.00, sell: 0.00 }
-    TIPPED_ARROW: { buy: 5.00, sell: 0.00 }
+    ENCHANTED_BOOK: { buy: 250.00, sell: 0.38 }
+    LINGERING_POTION: { buy: 35.00, sell: 0.04 }
+    POTION: { buy: 35.00, sell: 0.04 }
+    SPLASH_POTION: { buy: 35.00, sell: 0.04 }
+    TIPPED_ARROW: { buy: 5.00, sell: 0.02 }
 
 redstone:
   display: "Redstone & Transport"
@@ -1674,12 +1678,12 @@ misc:
     TRIAL_KEY: { buy: 25.00, sell: 9.00 }
 
     OMINOUS_TRIAL_KEY: { buy: 60.00, sell: 21.00 }
-    ABANDONED_CAMP_MAP: { buy: 150.00, sell: 0.00 }
+    ABANDONED_CAMP_MAP: { buy: 150.00, sell: 0.50 }
     BORDURE_INDENTED_BANNER_PATTERN: { buy: 0.39, sell: 0.16 }
-    BURIED_ANCIENT_CITY_MAP: { buy: 150.00, sell: 0.00 }
-    BURIED_MINESHAFT_MAP: { buy: 150.00, sell: 0.00 }
-    BURIED_TREASURE_MAP: { buy: 150.00, sell: 0.00 }
-    BURIED_TRIAL_CHAMBERS_MAP: { buy: 150.00, sell: 0.00 }
+    BURIED_ANCIENT_CITY_MAP: { buy: 150.00, sell: 0.50 }
+    BURIED_MINESHAFT_MAP: { buy: 150.00, sell: 0.50 }
+    BURIED_TREASURE_MAP: { buy: 150.00, sell: 0.50 }
+    BURIED_TRIAL_CHAMBERS_MAP: { buy: 150.00, sell: 0.50 }
     CARVED_PUMPKIN: { buy: 1.00, sell: 0.50 }
     CHISELED_BOOKSHELF: { buy: 0.79, sell: 0.32 }
     COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
@@ -1687,8 +1691,8 @@ misc:
     CREEPER_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
     CREEPER_HEAD: { buy: 25.00, sell: 12.50 }
     DEAD_BUSH: { buy: 1.00, sell: 0.50 }
-    DESERT_PYRAMID_MAP: { buy: 150.00, sell: 0.00 }
-    DESERT_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    DESERT_PYRAMID_MAP: { buy: 150.00, sell: 0.50 }
+    DESERT_VILLAGE_MAP: { buy: 150.00, sell: 0.50 }
     DRAGON_HEAD: { buy: 25.00, sell: 12.50 }
     DRIED_GHAST: { buy: 1.00, sell: 0.50 }
     ENDER_EYE: { buy: 1.00, sell: 0.50 }
@@ -1696,7 +1700,7 @@ misc:
     END_ROD: { buy: 0.84, sell: 0.35 }
     EXPOSED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
     FIELD_MASONED_BANNER_PATTERN: { buy: 1.01, sell: 0.42 }
-    FILLED_MAP: { buy: 150.00, sell: 0.00 }
+    FILLED_MAP: { buy: 150.00, sell: 0.50 }
     FLOWER_BANNER_PATTERN: { buy: 0.51, sell: 0.21 }
     FLOW_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
     FLOW_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
@@ -1704,27 +1708,27 @@ misc:
     GUSTER_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
     GUSTER_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
     JACK_O_LANTERN: { buy: 1.00, sell: 0.50 }
-    JUNGLE_PYRAMID_MAP: { buy: 150.00, sell: 0.00 }
+    JUNGLE_PYRAMID_MAP: { buy: 150.00, sell: 0.50 }
     MOJANG_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
     MUSIC_DISC_BOUNCE: { buy: 25.00, sell: 12.50 }
     MUSIC_DISC_LAVA_CHICKEN: { buy: 25.00, sell: 12.50 }
     MUSIC_DISC_TEARS: { buy: 25.00, sell: 12.50 }
-    OCEAN_MONUMENT_MAP: { buy: 150.00, sell: 0.00 }
+    OCEAN_MONUMENT_MAP: { buy: 150.00, sell: 0.50 }
     OXIDIZED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
     PIGLIN_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
     PIGLIN_HEAD: { buy: 25.00, sell: 12.50 }
-    PLAINS_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    PLAINS_VILLAGE_MAP: { buy: 150.00, sell: 0.50 }
     RECOVERY_COMPASS: { buy: 1.00, sell: 0.50 }
-    SAVANNA_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    SAVANNA_VILLAGE_MAP: { buy: 150.00, sell: 0.50 }
     SCAFFOLDING: { buy: 0.12, sell: 0.04 }
     SCRAPE_POTTERY_SHERD: { buy: 3.20, sell: 1.60 }
     SKELETON_SKULL: { buy: 25.00, sell: 12.50 }
     SKULL_BANNER_PATTERN: { buy: 5.00, sell: 2.50 }
-    SNOWY_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
+    SNOWY_VILLAGE_MAP: { buy: 150.00, sell: 0.50 }
     STRAW_BED: { buy: 1.00, sell: 0.50 }
-    SWAMP_HUT_MAP: { buy: 150.00, sell: 0.00 }
-    TAIGA_VILLAGE_MAP: { buy: 150.00, sell: 0.00 }
-    WARM_OCEAN_RUINS_MAP: { buy: 150.00, sell: 0.00 }
+    SWAMP_HUT_MAP: { buy: 150.00, sell: 0.50 }
+    TAIGA_VILLAGE_MAP: { buy: 150.00, sell: 0.50 }
+    WARM_OCEAN_RUINS_MAP: { buy: 150.00, sell: 0.50 }
     WARPED_WART_BLOCK: { buy: 1.00, sell: 0.50 }
     WAXED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
     WAXED_EXPOSED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
@@ -1732,7 +1736,7 @@ misc:
     WAXED_WEATHERED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
     WEATHERED_COPPER_LANTERN: { buy: 0.33, sell: 0.13 }
     WITHER_SKELETON_SKULL: { buy: 25.00, sell: 12.50 }
-    WOODLAND_MANSION_MAP: { buy: 150.00, sell: 0.00 }
-    WRITTEN_BOOK: { buy: 10.00, sell: 0.00 }
+    WOODLAND_MANSION_MAP: { buy: 150.00, sell: 0.50 }
+    WRITTEN_BOOK: { buy: 10.00, sell: 0.50 }
     ZOMBIE_HEAD: { buy: 25.00, sell: 12.50 }
 

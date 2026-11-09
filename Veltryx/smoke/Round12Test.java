@@ -9,6 +9,13 @@ import dev.superseller.veltryx.home.HomeService;
 import dev.superseller.veltryx.home.HomesGui;
 import dev.superseller.veltryx.model.HomeLocation;
 import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.AhListing;
+import dev.superseller.veltryx.market.AhCommand;
+import dev.superseller.veltryx.market.AhGui;
+import dev.superseller.veltryx.market.AhService;
+import dev.superseller.veltryx.market.MarketPricePrompt;
+import dev.superseller.veltryx.util.Money;
+import java.math.BigInteger;
 import dev.superseller.veltryx.market.OrderGui;
 import dev.superseller.veltryx.market.OrderService;
 import dev.superseller.veltryx.market.OrderCommand;
@@ -66,6 +73,7 @@ public final class Round12Test {
         recipes = Files.readString(RES.resolve("shop-recipes.txt"));
         table = PriceTable.parse(shopText, recipes, name -> true);
         testCatalogAndSafety();
+        testAdvancedCatalog();
         testMigrationAndMessages();
         Path dir = Files.createTempDirectory("veltryx-round12-");
         try {
@@ -91,8 +99,7 @@ public final class Round12Test {
                 entries++;
                 check("catalog has no duplicate " + e.material(), actual.add(e.material()));
                 check("catalog entry is allowed " + e.material(), SurvivalItems.allowed(e.material()));
-                check("buy positive / sell below buy " + e.material(), e.buyCents() > 0 && e.sellCents() >= 0 && e.sellCents() < e.buyCents());
-                if (SurvivalItems.noFlatSell(e.material())) eq("metadata-dependent sell disabled " + e.material(), e.sellCents(), 0L);
+                check("buy and sell positive; sell below buy " + e.material(), e.buyCents() > 0 && e.sellCents() > 0 && e.sellCents() < e.buyCents());
                 if (e.material().endsWith("_MAP") && !e.material().equals("FILLED_MAP")) {
                     namedMaps++;
                     check("explorer destination exists " + e.material(), ExplorerMaps.target(e.material()) != null);
@@ -169,6 +176,63 @@ public final class Round12Test {
         check("creative luck rejected", new Purchase("POTION", "LUCK", 0).unitPrice(table) < 0);
     }
 
+    private static void testAdvancedCatalog() {
+        List<PriceTable.Entry> all = ShopSearch.find(table, "*");
+        eq("advanced search browses all catalog entries", all.size(), 1530);
+        check("advanced search excludes Elytra and dragon egg", all.stream().noneMatch(e -> e.material().equals("ELYTRA") || e.material().equals("DRAGON_EGG")));
+        eq("namespaced ID searches exact item", ShopSearch.find(table, "minecraft:diamond_sword").get(0).material(), "DIAMOND_SWORD");
+        eq("search words can be reversed", ShopSearch.find(table, "sword diamond").get(0).material(), "DIAMOND_SWORD");
+        check("search combines category and words", ShopSearch.find(table, "cat:tools sword diamond").stream().anyMatch(e -> e.material().equals("DIAMOND_SWORD")));
+        check("category excludes unrelated items", ShopSearch.find(table, "category:wood sword").isEmpty());
+        check("buy price filter uses cents", ShopSearch.find(table, "* buy<=0.50").stream().allMatch(e -> e.buyCents() <= 50));
+        check("sell price filter uses cents", ShopSearch.find(table, "* sell>=1").stream().allMatch(e -> e.sellCents() >= 100));
+        check("invalid price filter is not broadened", ShopSearch.find(table, "* buy<=oops").isEmpty());
+        check("blank search is not broadened", ShopSearch.find(table, "   ").isEmpty());
+        for (String ingredient : List.of("GLASS_BOTTLE", "NETHER_WART", "SUGAR", "RABBIT_FOOT", "FERMENTED_SPIDER_EYE",
+                "SPIDER_EYE", "GLISTERING_MELON_SLICE", "REDSTONE", "GLOWSTONE_DUST", "GUNPOWDER", "DRAGON_BREATH", "ARROW"))
+            check("brewing ingredient has modeled cost " + ingredient, Double.isFinite(table.modeledCost(ingredient)) && table.modeledCost(ingredient) > 0);
+        for (String material : List.of("POTION", "SPLASH_POTION", "LINGERING_POTION", "TIPPED_ARROW")) {
+            for (ChoiceCatalog.PotionOption option : ChoiceCatalog.potions()) {
+                String key = option.key();
+                double cost = VariantPricing.potionCost(table, material, key);
+                long buy = new Purchase(material, key, 0).unitPrice(table);
+                long sell = VariantPricing.sellCents(table, material, key);
+                check("modeled brewing cost " + material + " " + key, Double.isFinite(cost) && cost > 0);
+                check("all potion forms have buy price " + material + " " + key, buy > 0 && buy + 1.0e-6 >= cost);
+                check("all potion forms have positive conservative sale " + material + " " + key,
+                        sell > 0 && sell < buy && sell * 2.0 <= cost + 1.0e-6);
+                check("effect details are available " + material + " " + key,
+                        PotionDisplay.effects(material, key).stream().noneMatch(line -> line.contains("unavailable")));
+                double arrowCost = VariantPricing.potionCost(table, "TIPPED_ARROW", key);
+                double lingeringCost = VariantPricing.potionCost(table, "LINGERING_POTION", key);
+                check("eight arrows include a lingering potion and eight arrows " + key,
+                        Math.abs(8 * arrowCost - lingeringCost - 8 * table.modeledCost("ARROW")) < 1.0e-6);
+            }
+        }
+        check("unknown potion form fails closed", Double.isNaN(VariantPricing.potionCost(table, "STONE", "WATER")));
+        check("mundane cost includes cheap stone start-mix", VariantPricing.potionCost(table, "POTION", "MUNDANE")
+                <= table.modeledCost("GLASS_BOTTLE") + table.modeledCost("STONE") / 3.0 + 1.0e-8);
+        check("redstone variant costs more than base", new Purchase("POTION", "LONG_SWIFTNESS", 0).unitPrice(table)
+                > new Purchase("POTION", "SWIFTNESS", 0).unitPrice(table));
+        check("ordinary potion shows actual strength and duration", PotionDisplay.effects("POTION", "SWIFTNESS").stream().anyMatch(s -> s.contains("Speed 1: §f3:00")));
+        check("extended potion shows actual duration", PotionDisplay.effects("POTION", "LONG_SWIFTNESS").stream().anyMatch(s -> s.contains("8:00")));
+        check("strong potion shows strength and duration", PotionDisplay.effects("POTION", "STRONG_SWIFTNESS").stream().anyMatch(s -> s.contains("Speed 2: §f1:30")));
+        check("lingering duration is a quarter", PotionDisplay.effects("LINGERING_POTION", "STRONG_SWIFTNESS").stream().anyMatch(s -> s.contains("0:22.5")));
+        check("tipped arrow duration is an eighth to the tick", PotionDisplay.effects("TIPPED_ARROW", "STRONG_SWIFTNESS").stream().anyMatch(s -> s.contains("0:11.25")));
+        check("splash duration notes direct-hit limitation", PotionDisplay.effects("SPLASH_POTION", "SWIFTNESS").stream().anyMatch(s -> s.contains("direct hit")));
+        check("instant potion is described as instant", PotionDisplay.effects("POTION", "STRONG_HEALING").stream().anyMatch(s -> s.contains("instant")));
+        check("multi-effect potion shows both effects", PotionDisplay.effects("POTION", "TURTLE_MASTER").stream().anyMatch(s -> s.contains("Slowness 4"))
+                && PotionDisplay.effects("POTION", "TURTLE_MASTER").stream().anyMatch(s -> s.contains("Resistance 3")));
+        check("water potion has no effect", PotionDisplay.effects("POTION", "WATER").stream().anyMatch(s -> s.contains("No status effect")));
+        PriceTable disabled = PriceTable.parse(shopText.replace("    POTION: { buy: 35.00, sell: 0.04 }",
+                "    POTION: { buy: 34.99, sell: 0.00 }"), recipes, n -> true);
+        eq("custom disabled potion sell remains disabled", VariantPricing.sellCents(disabled, "POTION", "SWIFTNESS"), 0L);
+        PriceTable lowered = PriceTable.parse(shopText.replace("    POTION: { buy: 35.00, sell: 0.04 }",
+                "    POTION: { buy: 35.00, sell: 0.02 }"), recipes, n -> true);
+        check("lower configured potion sale lowers variant payout", VariantPricing.sellCents(lowered, "POTION", "SWIFTNESS")
+                < VariantPricing.sellCents(table, "POTION", "SWIFTNESS"));
+    }
+
     private static void testMigrationAndMessages() throws Exception {
         String old = "ores:\n  display: \"My Resources\"\n  icon: DIAMOND\n  items:\n"
                 + "    DIAMOND: { buy: 999.00, sell: 3.00 }\n"
@@ -183,6 +247,15 @@ public final class Round12Test {
         check("legacy forbidden elytra filtered", upgraded.get("ELYTRA") == null);
         eq("legacy display preserved", upgraded.categories().get(0).display(), "My Resources");
         eq("shop merge idempotent", YamlTextMerge.merge(shopText, merged), merged);
+        String previousShop = shopText.replace("POTION: { buy: 35.00, sell: 0.04 }", "POTION: { buy: 35.00, sell: 0.00 }")
+                .replace("ENCHANTED_BOOK: { buy: 250.00, sell: 0.38 }", "ENCHANTED_BOOK: { buy: 250.00, sell: 0.00 }")
+                .replace("FILLED_MAP: { buy: 150.00, sell: 0.50 }", "FILLED_MAP: { buy: 150.00, sell: 0.00 }");
+        PriceTable previous = PriceTable.parse(previousShop, recipes, name -> true);
+        check("old buy-only potion default migrates to a sell price", previous.sellCents("POTION") > 0);
+        check("old buy-only book default migrates to a sell price", previous.sellCents("ENCHANTED_BOOK") > 0);
+        check("old buy-only map default migrates to a sell price", previous.sellCents("FILLED_MAP") > 0);
+        String customized = previousShop.replace("POTION: { buy: 35.00, sell: 0.00 }", "POTION: { buy: 99.00, sell: 0.00 }");
+        eq("custom disabled variant price remains disabled", PriceTable.parse(customized, recipes, n -> true).sellCents("POTION"), 0L);
         String defaults = Files.readString(RES.resolve("messages.yml"));
         String custom = "general:\n  no-permission: \"Custom permission message\"\nshop.buy-done: \"Custom purchase\"\n";
         String messagesMerged = YamlTextMerge.merge(defaults, custom);
@@ -201,6 +274,24 @@ public final class Round12Test {
         eq("exact old default receives colors", palette.get("old"), "new colors");
         eq("custom message kept", palette.get("edited"), "server custom");
         eq("empty custom message kept", palette.get("empty"), "");
+        YamlConfiguration oldDefaults=YamlConfiguration.loadConfiguration(new java.io.StringReader(Files.readString(RES.resolve("legacy-message-colors.yml"))));
+        YamlConfiguration currentDefaults=YamlConfiguration.loadConfiguration(new java.io.StringReader(defaults));
+        for (String key : List.of("ah.usage-sell","ah.bad-price","order.usage","order.bad-price","order.created")) {
+            String oldValue=oldDefaults.getString(key), newValue=currentDefaults.getString(key);
+            check("old marketplace default is recorded " + key,oldValue!=null && (oldValue.contains("per item") || oldValue.contains("each") || oldValue.contains("price-per-item")));
+            eq("old marketplace message upgrades " + key,
+                    Messages.mergeTemplates(Map.of(key,newValue),Map.of(key,oldValue),Map.of(key,oldValue)).get(key),newValue);
+            eq("custom marketplace message remains " + key,
+                    Messages.mergeTemplates(Map.of(key,newValue),Map.of(key,"server custom"),Map.of(key,oldValue)).get(key),"server custom");
+        }
+        for (String key : List.of("shop.nothing", "spawner.market-disabled")) {
+            String oldValue = oldDefaults.getString(key), newValue = currentDefaults.getString(key);
+            check("old changed default recorded " + key, oldValue != null && newValue != null && !oldValue.equals(newValue));
+            eq("old changed message upgrades " + key,
+                    Messages.mergeTemplates(Map.of(key,newValue),Map.of(key,oldValue),Map.of(key,oldValue)).get(key), newValue);
+            eq("custom changed message remains " + key,
+                    Messages.mergeTemplates(Map.of(key,newValue),Map.of(key,"server custom"),Map.of(key,oldValue)).get(key), "server custom");
+        }
     }
 
     private static void testPersistence(Path dir) throws Exception {
@@ -401,13 +492,18 @@ public final class Round12Test {
         eq("quick saved amount", state.open.getItem(2).getAmount(), 17);
         QuickShopStore saved = new QuickShopStore(quickPath, LOG); saved.load();
         eq("configured quick survives reload", saved.get(state.id, 2).amount(), 17);
-        // A stored slot must charge the current configured price, not a cached old one.
+        // A stale displayed price must not charge more than the player saw.
         String reprice = shopText.replaceFirst("NETHERITE_INGOT: \\{ buy: [0-9]+\\.[0-9]{2}, sell: [0-9]+\\.[0-9]{2} }",
                 "NETHERITE_INGOT: { buy: 200.00, sell: 1.00 }");
         Files.writeString(shopPath, reprice); shop.reload();
         before = economy.getBalance(state.id);
+        int quickItemsBefore = state.inventory.count(Material.NETHERITE_INGOT);
         click(extras, state, scheduler, 2, false, false);
-        eq("quick purchase uses current price", before - economy.getBalance(state.id), 17 * 20_000L);
+        eq("stale quick quote charges nothing", economy.getBalance(state.id), before);
+        eq("stale quick quote delivers nothing", state.inventory.count(Material.NETHERITE_INGOT), quickItemsBefore);
+        check("quick quote refresh shows exact new total", loreContains(state.open.getItem(2), Money.formatNumber(17 * 20_000L)));
+        click(extras, state, scheduler, 2, false, false);
+        eq("refreshed quick purchase uses current price", before - economy.getBalance(state.id), 17 * 20_000L);
         Files.writeString(shopPath, reprice.replaceFirst("(?m)^    NETHERITE_INGOT:.*\\R", ""));
         shop.reload(); extras.openQuickshop(player); scheduler.drain();
         click(extras, state, scheduler, 2, true, true);
@@ -436,6 +532,21 @@ public final class Round12Test {
         check("home prompt cancels pending sign search", !staleSign.cancelled);
         Chat cancelRename = new Chat(player, "cancel");
         homes.onChat(cancelRename); check("home prompt consumes its own response", cancelRename.cancelled);
+        MarketPricePrompt sharedPrompt=new MarketPricePrompt(messages);
+        sharedPrompt.attachPromptCancellation(p -> { homes.cancelPendingRename(p); extras.cancelPendingSearch(p); });
+        extras.attachPromptCancellation(p -> { homes.cancelPendingRename(p); sharedPrompt.cancelPending(p); });
+        homes.attachPromptCancellation(p -> { extras.cancelPendingSearch(p); sharedPrompt.cancelPending(p); });
+        sharedPrompt.ask(player, input -> {throw new AssertionError("cancelled price prompt ran");}, () -> {}); scheduler.drain();
+        homes.openDetail(player, "base"); scheduler.drain();
+        homes.onClick(new Click(state.open, state.open, player, 12, false, false)); scheduler.drain();
+        Chat renamedInstead=new Chat(player,"cancel");sharedPrompt.onChat(renamedInstead);
+        check("home prompt cancels pending market price",!renamedInstead.cancelled);
+        homes.onChat(renamedInstead);check("home consumes response after market cancelled",renamedInstead.cancelled);
+        sharedPrompt.ask(player, input -> {throw new AssertionError("superseded market prompt ran");}, () -> {}); scheduler.drain();
+        extras.openSearchPrompt(player);scheduler.drain();
+        Chat notMarket=new Chat(player,"ordinary chat");sharedPrompt.onChat(notMarket);
+        check("sign prompt cancels pending market price",!notMarket.cancelled);
+        extras.cancelPendingSearch(player);
 
         // Exercise both GUI pickers, metadata delivery, invalid variants and refund paths.
         extras.openChoice(player, "POTION", -1, null, 0); scheduler.drain();
@@ -488,7 +599,12 @@ public final class Round12Test {
         eq("no destination refunded", economy.getBalance(state.id), before);
         world.findStructure = true;
 
+        testAdvancedShop(dir, world, scheduler, messages);
         testOrders(world, scheduler, messages);
+        testOrderAnyMaterial(world, scheduler, messages);
+        testAuction(world, scheduler, messages);
+        testAuctionYaml(dir, world, scheduler, messages);
+        testOrderTotals(world, scheduler, messages);
         Bukkit.testOnlinePlayers = List.of(player);
         PreferencesStore prefs = new PreferencesStore(dir.resolve("gui-settings.properties"), LOG);
         SettingsListener listener = new SettingsListener(prefs, plugin);
@@ -518,6 +634,306 @@ public final class Round12Test {
         check("GUI phantom setting survives restart", prefsRestart.get(state.id).phantomsDisabled());
     }
 
+    private static ItemStack potionItem(Material material, PotionType type) {
+        ItemStack item = new ItemStack(material, 1);
+        PotionMeta meta = (PotionMeta) item.getItemMeta(); meta.setBasePotionType(type); item.setItemMeta(meta);
+        return item;
+    }
+    private static ItemStack bookItem(String key, int level) {
+        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK, 1);
+        var enchant = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(key.toLowerCase(Locale.ROOT)));
+        var meta = (EnchantmentStorageMeta) item.getItemMeta(); meta.addStoredEnchant(enchant, level, false); item.setItemMeta(meta);
+        return item;
+    }
+    private static boolean loreContains(ItemStack stack, String value) {
+        return stack != null && stack.getItemMeta() != null && stack.getItemMeta().lore() != null
+                && stack.getItemMeta().lore().stream().anyMatch(line -> text(line).contains(value));
+    }
+
+    private static void testAdvancedShop(Path dir, TestWorld world, FakeScheduler scheduler, Messages messages) throws Exception {
+        PlayerState state = new PlayerState(world.proxy, "ShopTester"); Player player = state.proxy;
+        Bukkit.testOnlinePlayers = List.of(player);
+        BalanceData data = new BalanceData();
+        EconomyService economy = new EconomyService(data.proxy, new VeltryxConfig(new YamlConfiguration()));
+        economy.setBalance(state.id, state.name, 10_000_000L);
+        Path path = dir.resolve("advanced-shop.yml"); Files.writeString(path, shopText);
+        ShopService shop = new ShopService(economy, path);
+        ShopGui gui = new ShopGui(shop, messages);
+        Path quickPath = dir.resolve("advanced-quick.properties");
+        ShopExtrasGui extras = new ShopExtrasGui(shop, messages, quickPath, LOG);
+        SellGui tray = new SellGui(shop, messages);
+        gui.attachExtras(extras); extras.attachShopGui(gui); gui.attachSellOpener(tray::open);
+
+        // Exercise command search, back-navigation, and a variant QuickShop slot end to end.
+        PlayerState navigator = new PlayerState(world.proxy, "ShopNavigator");
+        economy.setBalance(navigator.id, navigator.name, 1_000_000L);
+        ShopCommand shopCommand = new ShopCommand(gui, shop, messages); shopCommand.attachExtras(extras);
+        org.bukkit.command.Command command = new org.bukkit.command.Command() { };
+        check("shop search is tab-completable", shopCommand.onTabComplete(navigator.proxy, command, "shop", new String[]{"se"}).contains("search"));
+        shopCommand.onCommand(navigator.proxy, command, "shop", new String[]{"search", "minecraft:enchanted_book"}); scheduler.drain();
+        eq("shop command searches namespaced book", navigator.open.getItem(0).getType(), Material.ENCHANTED_BOOK);
+        click(extras, navigator, scheduler, 0, false, false);
+        int bookIndex = -1;
+        for (int i = 0; i < ChoiceCatalog.books().size(); i++) if (ChoiceCatalog.books().get(i).key().equals("SHARPNESS")) bookIndex = i;
+        check("sharpness is present in the picker", bookIndex >= 0);
+        click(extras, navigator, scheduler, bookIndex, false, false);
+        eq("book choice opens levels", navigator.open.getSize(), 27);
+        click(extras, navigator, scheduler, 22, false, false);
+        eq("book level back restores enchantment picker", navigator.open.getItem(bookIndex).getType(), Material.ENCHANTED_BOOK);
+        click(extras, navigator, scheduler, 49, false, false);
+        eq("enchantment back restores the search", navigator.open.getItem(0).getType(), Material.ENCHANTED_BOOK);
+
+        check("stone search has multiple pages", ShopSearch.find(shop.prices(), "stone").size() > 45);
+        extras.openSearch(navigator.proxy, "stone", 1); scheduler.drain();
+        Material pageItem = navigator.open.getItem(0).getType();
+        click(extras, navigator, scheduler, 0, false, false);
+        click(gui, navigator, scheduler, 44, false, false);
+        eq("buy back restores the same search page", navigator.open.getItem(0).getType(), pageItem);
+        eq("restored search page has previous control", navigator.open.getItem(45).getType(), Material.BLUE_STAINED_GLASS_PANE);
+
+        world.fakeBlock = true;
+        extras.openQuickshop(navigator.proxy); scheduler.drain();
+        click(extras, navigator, scheduler, 3, false, false);
+        SignInput quickQuery = new SignInput(navigator.proxy, 100, 64, 200, "minecraft:potion");
+        extras.onSign(quickQuery); scheduler.drain();
+        check("quick variant search is private", quickQuery.cancelled);
+        eq("quick variant search finds potion", navigator.open.getItem(0).getType(), Material.POTION);
+        click(extras, navigator, scheduler, 0, false, false);
+        click(extras, navigator, scheduler, 48, false, false);
+        eq("quick variant picker can switch form", navigator.open.getItem(0).getType(), Material.TIPPED_ARROW);
+        int effectIndex = -1;
+        for (int i = 0; i < ChoiceCatalog.potions().size(); i++) if (ChoiceCatalog.potions().get(i).key().equals("LONG_SWIFTNESS")) effectIndex = i;
+        check("extended swiftness is present in the picker", effectIndex >= 0);
+        click(extras, navigator, scheduler, effectIndex, false, false);
+        click(extras, navigator, scheduler, 16, false, false);
+        click(extras, navigator, scheduler, 22, false, false);
+        Purchase quickPurchase = new Purchase("TIPPED_ARROW", "LONG_SWIFTNESS", 0);
+        QuickShopStore quick = new QuickShopStore(quickPath, LOG); quick.load();
+        eq("quick variant and amount persist", quick.get(navigator.id, 3), new QuickShopStore.QuickSlot(quickPurchase, 17));
+        long quickBefore = economy.getBalance(navigator.id);
+        long quickCost = quickPurchase.unitPrice(shop.prices()) * 17;
+        check("quick variant shows exact total", loreContains(navigator.open.getItem(3), Money.formatNumber(quickCost)));
+        Field liveSlotsField = ShopExtrasGui.class.getDeclaredField("slots"); liveSlotsField.setAccessible(true);
+        QuickShopStore liveSlots = (QuickShopStore) liveSlotsField.get(extras);
+        liveSlots.set(navigator.id, 3, new QuickShopStore.QuickSlot(Purchase.of("DIAMOND"), 2));
+        click(extras, navigator, scheduler, 3, false, false);
+        eq("changed quick slot charges nothing", economy.getBalance(navigator.id), quickBefore);
+        eq("changed quick slot is refreshed instead of bought", navigator.open.getItem(3).getType(), Material.DIAMOND);
+        eq("changed quick slot delivers no unexpected item", navigator.inventory.count(Material.DIAMOND), 0);
+        liveSlots.set(navigator.id, 3, new QuickShopStore.QuickSlot(quickPurchase, 17));
+        extras.openQuickshop(navigator.proxy); scheduler.drain();
+        Click doubleQuick = new Click(navigator.open, navigator.open, navigator.proxy, 3, false, false);
+        extras.onClick(doubleQuick); extras.onClick(doubleQuick); scheduler.drain();
+        eq("quick double click charges once", quickBefore - economy.getBalance(navigator.id), quickCost);
+        ItemStack quickItem = navigator.inventory.last(Material.TIPPED_ARROW);
+        eq("quick variant delivers chosen amount", quickItem.getAmount(), 17);
+        eq("quick variant delivers chosen effect", ((PotionMeta) quickItem.getItemMeta()).getBasePotionType(), PotionType.LONG_SWIFTNESS);
+        click(extras, navigator, scheduler, 3, true, false);
+        SignInput cancelEdit = new SignInput(navigator.proxy, 100, 64, 200, "cancel");
+        extras.onSign(cancelEdit); scheduler.drain();
+        eq("cancelled quick edit returns without losing slot", navigator.open.getItem(3).getType(), Material.TIPPED_ARROW);
+        click(extras, navigator, scheduler, 3, true, true);
+        quick.load(); check("quick variant clear persists", quick.get(navigator.id, 3) == null);
+        long beforePlaceholder = economy.getBalance(navigator.id);
+        liveSlots.set(navigator.id, 4, new QuickShopStore.QuickSlot(Purchase.of("DIAMOND"), 2));
+        click(extras, navigator, scheduler, 4, false, false);
+        eq("an empty-looking quick slot cannot buy an unseen item", economy.getBalance(navigator.id), beforePlaceholder);
+        check("empty-looking quick slot opens configuration instead", navigator.open == null);
+        SignInput cancelPlaceholder = new SignInput(navigator.proxy, 100, 64, 200, "cancel");
+        extras.onSign(cancelPlaceholder); scheduler.drain();
+        click(extras, navigator, scheduler, 4, true, true);
+
+        ItemStack sword = new ItemStack(Material.DIAMOND_SWORD, 1);
+        sword.setData(DataComponentTypes.MAX_DAMAGE, 100);
+        Damageable damaged = (Damageable) sword.getItemMeta(); damaged.setDamage(50); sword.setItemMeta(damaged);
+        long wornValue = shop.sellUnitCents(sword);
+        ItemStack fullSword = sword.clone(); Damageable fullMeta = (Damageable) fullSword.getItemMeta(); fullMeta.setDamage(0); fullSword.setItemMeta(fullMeta);
+        check("sale valuation decreases with actual wear", wornValue > 0 && wornValue < shop.sellUnitCents(fullSword));
+        ItemStack enchanted = fullSword.clone(); ItemMeta enchantedMeta = enchanted.getItemMeta(); enchantedMeta.addEnchant(Enchantment.SHARPNESS, 2, true); enchanted.setItemMeta(enchantedMeta);
+        check("sale valuation considers enchantments", shop.sellUnitCents(enchanted) > shop.sellUnitCents(fullSword));
+        state.inventory.setItem(0, sword.clone()); state.inventory.setItemInOffHand(fullSword.clone());
+        extras.openSearch(player, "sword diamond", 0); scheduler.drain();
+        eq("advanced GUI returns exact sword", state.open.getItem(0).getType(), Material.DIAMOND_SWORD);
+        check("search result explains left buy and right sell", loreContains(state.open.getItem(0), "Left-click") && loreContains(state.open.getItem(0), "Right-click"));
+        Inventory searchScreen = state.open; state.allowSell = false;
+        click(extras, state, scheduler, 0, true, false);
+        check("search right-sell requires permission", state.open == searchScreen);
+        state.allowSell = true;
+        click(extras, state, scheduler, 0, true, false);
+        check("search right-click opens sale confirmation", text(state.open.getItem(13).getItemMeta().displayName()).contains("Confirm sale"));
+        check("sale preview shows exact worn payout", loreContains(state.open.getItem(13), Money.formatNumber(wornValue)));
+        check("sale preview displays the actual worn item", state.open.getItem(9).isSimilar(sword));
+        long before = economy.getBalance(state.id);
+        click(gui, state, scheduler, 13, false, false);
+        eq("right-click sale credits previewed value", economy.getBalance(state.id) - before, wornValue);
+        check("right-click sale only consumes matching storage", state.inventory.getItem(0) == null && state.inventory.getItemInOffHand().isSimilar(fullSword));
+        click(gui, state, scheduler, 44, false, false);
+        eq("back from sale restores search results", state.open.getItem(0).getType(), Material.DIAMOND_SWORD);
+        click(extras, state, scheduler, 0, false, false);
+        check("search left-click opens buying", text(state.open.getItem(13).getItemMeta().displayName()).contains("purchase"));
+        click(gui, state, scheduler, 31, false, false);
+        eq("stack button selects quantity rather than trading immediately", state.open.getItem(22).getAmount(), 64);
+
+        state.inventory.setItem(0, new ItemStack(Material.STONE, 10));
+        gui.openSelling(player, Purchase.of("STONE"), null, 0, 1); scheduler.drain();
+        ItemStack renamed = new ItemStack(Material.STONE, 10); ItemMeta renamedMeta = renamed.getItemMeta();
+        renamedMeta.displayName(new StubComponent("Different stone")); renamed.setItemMeta(renamedMeta);
+        state.inventory.setItem(0, renamed);
+        before = economy.getBalance(state.id);
+        click(gui, state, scheduler, 13, false, false);
+        eq("same-value item swap is rejected by quote", state.inventory.getItem(0).getAmount(), 10);
+        eq("same-value stale quote pays nothing", economy.getBalance(state.id), before);
+        click(gui, state, scheduler, 13, false, false);
+        eq("refreshed quote may then be confirmed", state.inventory.getItem(0).getAmount(), 9);
+        eq("refreshed quote pays once", economy.getBalance(state.id) - before, shop.prices().sellCents("STONE"));
+        gui.openSelling(player, Purchase.of("STONE"), null, 0, 1); scheduler.drain();
+        before = economy.getBalance(state.id);
+        Click duplicate = new Click(state.open, state.open, player, 13, false, false);
+        gui.onClick(duplicate); gui.onClick(duplicate); scheduler.drain();
+        eq("double-confirm sells only once", state.inventory.getItem(0).getAmount(), 8);
+        eq("double-confirm pays only once", economy.getBalance(state.id) - before, shop.prices().sellCents("STONE"));
+
+        gui.openBuying(player, Purchase.of("STONE"), null, 0, 1); scheduler.drain();
+        long oldUnit = shop.prices().buyCents("STONE");
+        String reprice = shopText.replaceFirst("(?m)^    STONE: \\{ buy: [0-9]+\\.[0-9]{2}, sell: [0-9]+\\.[0-9]{2} }", "    STONE: { buy: 42.00, sell: 0.01 }");
+        Files.writeString(path, reprice); shop.reload();
+        check("stone price actually changed", shop.prices().buyCents("STONE") != oldUnit);
+        int stonesBefore = state.inventory.count(Material.STONE); before = economy.getBalance(state.id);
+        click(gui, state, scheduler, 13, false, false);
+        eq("stale buy quote delivers nothing", state.inventory.count(Material.STONE), stonesBefore);
+        eq("stale buy quote charges nothing", economy.getBalance(state.id), before);
+        click(gui, state, scheduler, 13, false, false);
+        eq("refreshed buy quote charges current price", before - economy.getBalance(state.id), shop.prices().buyCents("STONE"));
+        Files.writeString(path, shopText); shop.reload();
+
+        java.util.logging.Logger shopLog = java.util.logging.Logger.getLogger(ShopService.class.getName());
+        java.util.logging.Level oldLog = shopLog.getLevel(); shopLog.setLevel(java.util.logging.Level.OFF);
+        try {
+            state.inventory.setItem(0, new ItemStack(Material.STONE, 5));
+            data.failNextBalance = true;
+            ShopService.SellResult failed = shop.sell(player, Purchase.of("STONE"), 1);
+            eq("failed sale reports transaction error", failed.failKey(), "shop.transaction-error");
+            eq("failed sale restores inventory", state.inventory.getItem(0).getAmount(), 5);
+            ItemStack deposited = new ItemStack(Material.DIAMOND, 2); data.failNextBalance = true;
+            failed = shop.sellDeposited(player, List.of(deposited));
+            eq("failed tray credit reports transaction error", failed.failKey(), "shop.transaction-error");
+            eq("failed tray credit keeps deposited stack", deposited.getAmount(), 2);
+            before = economy.getBalance(state.id); int count = state.inventory.count(Material.POTION);
+            ItemStack.testRejectItemMeta = true;
+            ShopService.BuyResult rejected = shop.buy(player, new Purchase("POTION", "SWIFTNESS", 0), 1);
+            check("rejected potion metadata is not sold", !rejected.ok());
+            eq("failed metadata delivery refunds money", economy.getBalance(state.id), before);
+            eq("failed metadata delivery adds no item", state.inventory.count(Material.POTION), count);
+            ItemStack.testRejectItemMeta = false;
+            state.inventory.failAddAfterInsert = true; before = economy.getBalance(state.id);
+            stonesBefore = state.inventory.count(Material.STONE);
+            rejected = shop.buy(player, Purchase.of("STONE"), 2);
+            eq("inventory delivery exception is reported", rejected.failKey(), "shop.transaction-error");
+            eq("partially inserted purchase rolled back", state.inventory.count(Material.STONE), stonesBefore);
+            eq("delivery exception is refunded", economy.getBalance(state.id), before);
+        } finally { ItemStack.testRejectItemMeta = false; shopLog.setLevel(oldLog); }
+
+        for (int i = 0; i < state.inventory.getSize(); i++) state.inventory.setItem(i, null);
+        ItemStack normal = potionItem(Material.POTION, PotionType.SWIFTNESS);
+        ItemStack extended = potionItem(Material.POTION, PotionType.LONG_SWIFTNESS);
+        ItemStack strong = potionItem(Material.POTION, PotionType.STRONG_SWIFTNESS);
+        ItemStack extraEffect = extended.clone(); PotionMeta effectMeta = (PotionMeta) extraEffect.getItemMeta();
+        effectMeta.addCustomEffect(new PotionEffect(PotionEffectType.SPEED, 40, 2), true); extraEffect.setItemMeta(effectMeta);
+        ItemStack changedScale = extended.clone(); changedScale.setData(DataComponentTypes.POTION_DURATION_SCALE, 2.0f);
+        ItemStack splash = potionItem(Material.SPLASH_POTION, PotionType.LONG_SWIFTNESS);
+        ItemStack tipped = potionItem(Material.TIPPED_ARROW, PotionType.LONG_SWIFTNESS);
+        state.inventory.setItem(0, extended); state.inventory.setItem(1, normal); state.inventory.setItem(2, strong);
+        state.inventory.setItem(3, extraEffect); state.inventory.setItem(4, changedScale); state.inventory.setItem(5, splash);
+        state.inventory.setItem(6, tipped); state.inventory.setItemInOffHand(extended.clone());
+        Purchase chosen = new Purchase("POTION", "LONG_SWIFTNESS", 0);
+        check("chosen potion matches only exact base and duration", chosen.matches(extended) && !chosen.matches(normal)
+                && !chosen.matches(strong) && !chosen.matches(extraEffect) && !chosen.matches(changedScale) && !chosen.matches(splash));
+        check("tipped arrow matches its standard duration scale", new Purchase("TIPPED_ARROW", "LONG_SWIFTNESS", 0).matches(tipped));
+        ShopService.SellResult preview = shop.previewSell(player, chosen, 64);
+        eq("potion quote includes only the selected variant", preview.sold(), 1);
+        eq("potion quote values its actual type", preview.earnedCents(), shop.sellUnitCents(extended));
+        check("selected potion sale succeeds", shop.sell(player, chosen, 64).ok());
+        check("other potion variants and custom effects remain", state.inventory.getItem(1).isSimilar(normal) && state.inventory.getItem(2).isSimilar(strong)
+                && state.inventory.getItem(3).isSimilar(extraEffect) && state.inventory.getItem(4).isSimilar(changedScale) && state.inventory.getItem(5).isSimilar(splash));
+        check("selected potion sale does not touch offhand", state.inventory.getItemInOffHand().isSimilar(extended));
+        extras.openSearch(player, "minecraft:potion", 0); scheduler.drain();
+        click(extras, state, scheduler, 0, true, false);
+        check("potion picker explains duration", loreContains(state.open.getItem(0), "3:00"));
+        eq("potion picker shows splash selector", state.open.getItem(46).getType(), Material.SPLASH_POTION);
+        eq("potion picker shows lingering selector", state.open.getItem(47).getType(), Material.LINGERING_POTION);
+        eq("potion picker shows tipped-arrow selector", state.open.getItem(48).getType(), Material.TIPPED_ARROW);
+        click(extras, state, scheduler, 46, false, false);
+        eq("form selector changes the effect picker", state.open.getItem(0).getType(), Material.SPLASH_POTION);
+        int longIndex = -1;
+        for (int i = 0; i < ChoiceCatalog.potions().size(); i++) if (ChoiceCatalog.potions().get(i).key().equals("LONG_SWIFTNESS")) longIndex = i;
+        check("extended effect exists in picker", longIndex >= 0);
+        check("extended splash picker shows actual duration", loreContains(state.open.getItem(longIndex), "8:00"));
+        click(extras, state, scheduler, longIndex, false, false);
+        eq("selected splash variant reaches sale quantity", state.open.getItem(22).getType(), Material.SPLASH_POTION);
+        click(gui, state, scheduler, 13, false, false);
+        check("splash selection sells its matching form", state.inventory.getItem(5) == null && state.inventory.getItem(6).isSimilar(tipped));
+
+        ItemStack sharp3 = bookItem("SHARPNESS", 3), sharp4 = bookItem("SHARPNESS", 4), multiple = bookItem("SHARPNESS", 3);
+        var multiMeta = (EnchantmentStorageMeta) multiple.getItemMeta();
+        multiMeta.addStoredEnchant(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft("mending")), 1, false);
+        multiple.setItemMeta(multiMeta);
+        state.inventory.setItem(10, sharp3); state.inventory.setItem(11, sharp4); state.inventory.setItem(12, multiple);
+        Purchase sharpChoice = new Purchase("ENCHANTED_BOOK", "SHARPNESS", 3);
+        check("book choice matches exact enchantment and level only", sharpChoice.matches(sharp3) && !sharpChoice.matches(sharp4) && !sharpChoice.matches(multiple));
+        check("stored enchantments affect book valuation", shop.sellUnitCents(sharp3) > shop.prices().sellCents("ENCHANTED_BOOK"));
+        extras.openSearch(player, "minecraft:enchanted_book", 0); scheduler.drain(); click(extras, state, scheduler, 0, true, false);
+        int sharpIndex = -1;
+        for (int i = 0; i < ChoiceCatalog.books().size(); i++) if (ChoiceCatalog.books().get(i).key().equals("SHARPNESS")) sharpIndex = i;
+        click(extras, state, scheduler, sharpIndex, false, false); click(extras, state, scheduler, 12, false, false);
+        eq("chosen enchantment and level reach sale quantity", state.open.getItem(22).getType(), Material.ENCHANTED_BOOK);
+        click(gui, state, scheduler, 13, false, false);
+        check("selected book sold without consuming other levels or multi-enchants", state.inventory.getItem(10) == null
+                && state.inventory.getItem(11).isSimilar(sharp4) && state.inventory.getItem(12).isSimilar(multiple));
+
+        state.inventory.setItem(20, new ItemStack(Material.DIAMOND, 4));
+        tray.open(player); scheduler.drain(); before = economy.getBalance(state.id);
+        tray.onClick(new Click(state.open, state.open, player, 49, false, false));
+        eq("empty sell tray never scans player inventory", state.inventory.getItem(20).getAmount(), 4);
+        eq("empty sell tray never pays", economy.getBalance(state.id), before);
+        tray.onClick(new Click(state.open, state.inventory, player, 20, false, true));
+        eq("only explicitly placed stack leaves inventory", state.inventory.getItem(20), null);
+        tray.onClick(new Click(state.open, state.open, player, 49, false, false));
+        eq("tray pays exactly for deposited diamonds", economy.getBalance(state.id) - before, shop.prices().sellCents("DIAMOND") * 4);
+        check("tray does not touch unrelated book", state.inventory.getItem(11).isSimilar(sharp4));
+        tray.onClose(new Close(state.open, player));
+
+        // Exercise actual item creation, matching, and resale for every offered variant.
+        PlayerState matrix = new PlayerState(world.proxy, "VariantMatrix");
+        economy.setBalance(matrix.id, matrix.name, 100_000_000L);
+        for (String form : List.of("POTION", "SPLASH_POTION", "LINGERING_POTION", "TIPPED_ARROW")) {
+            for (ChoiceCatalog.PotionOption option : ChoiceCatalog.potions()) {
+                for (int i = 0; i < matrix.inventory.getSize(); i++) matrix.inventory.setItem(i, null);
+                Purchase purchase = new Purchase(form, option.key(), 0);
+                long balance = economy.getBalance(matrix.id);
+                ShopService.BuyResult result = shop.buy(matrix.proxy, purchase, 1);
+                check("matrix buys potion " + form + " " + option.key(), result.ok());
+                ItemStack bought = matrix.inventory.last(Material.valueOf(form));
+                check("matrix delivers selected potion " + form + " " + option.key(), bought != null && purchase.matches(bought));
+                ShopService.SellResult sale = shop.sell(matrix.proxy, purchase, 1);
+                check("matrix sells selected potion " + form + " " + option.key(), sale.ok() && sale.sold() == 1);
+                check("matrix buy-sell cycle does not mint money " + form + " " + option.key(), economy.getBalance(matrix.id) < balance);
+            }
+        }
+        for (ChoiceCatalog.BookOption option : ChoiceCatalog.books()) {
+            for (int level = 1; level <= option.maxLevel(); level++) {
+                for (int i = 0; i < matrix.inventory.getSize(); i++) matrix.inventory.setItem(i, null);
+                Purchase purchase = new Purchase("ENCHANTED_BOOK", option.key(), level);
+                long balance = economy.getBalance(matrix.id);
+                ShopService.BuyResult result = shop.buy(matrix.proxy, purchase, 1);
+                ItemStack bought = matrix.inventory.last(Material.ENCHANTED_BOOK);
+                check("matrix buys book " + option.key() + " " + level, result.ok() && bought != null && purchase.matches(bought));
+                ShopService.SellResult sale = shop.sell(matrix.proxy, purchase, 1);
+                check("matrix sells book " + option.key() + " " + level, sale.ok() && sale.sold() == 1);
+                check("book buy-sell cycle does not mint money " + option.key() + " " + level, economy.getBalance(matrix.id) < balance);
+            }
+        }
+    }
+
     private static void testOrders(TestWorld world, FakeScheduler scheduler, Messages messages) {
         PlayerState buyer=new PlayerState(world.proxy,"Buyer"), seller=new PlayerState(world.proxy,"Seller");
         Bukkit.testOnlinePlayers=List.of(buyer.proxy,seller.proxy);
@@ -531,7 +947,8 @@ public final class Round12Test {
         org.bukkit.command.Command order=new org.bukkit.command.Command(){@Override public String getName(){return "order";}};
         org.bukkit.command.Command orders=new org.bukkit.command.Command(){@Override public String getName(){return "orders";}};
         command.onCommand(buyer.proxy,order,"order",new String[0]); scheduler.drain();
-        check("/order opens creation GUI",buyer.open!=null && buyer.open.getSize()==54);
+        check("/order opens order browser",buyer.open!=null && buyer.open.getSize()==54 && buyer.open.getItem(51).getType()==Material.WRITABLE_BOOK);
+        click(gui,buyer,scheduler,51,false,false);
         eq("default item is unselected",buyer.open.getItem(4).getType(),Material.PAPER);
         click(gui,buyer,scheduler,4,false,false);
         check("item picker opens",buyer.open.getItem(0)!=null && buyer.open.getItem(49).getType()==Material.BARRIER);
@@ -542,19 +959,22 @@ public final class Round12Test {
         eq("order GUI selects clicked material",buyer.open.getItem(4).getType(),Material.DIAMOND);
         eq("selection does not consume original",buyer.inventory.count(Material.DIAMOND),1);
         click(gui,buyer,scheduler,15,false,false); // amount 2
-        click(gui,buyer,scheduler,24,false,false); // $2 each
+        click(gui,buyer,scheduler,24,false,false); // $2 total
+        click(gui,buyer,scheduler,22,false,false);
+        Chat standalonePrice=new Chat(buyer.proxy,"2.00");gui.onPriceChat(standalonePrice);scheduler.drain();
+        check("standalone order GUI consumes typed price",standalonePrice.cancelled);
         long before=economy.getBalance(buyer.id);
         Click confirm=new Click(buyer.open,buyer.open,buyer.proxy,49,false,false);
         gui.onClick(confirm);gui.onClick(confirm);scheduler.drain();
         eq("one order despite double click",data.orders.size(),1);
-        eq("GUI escrows confirmed amount and price",before-economy.getBalance(buyer.id),400L);
+        eq("GUI escrows exactly the total price",before-economy.getBalance(buyer.id),200L);
         BuyOrder placed=data.orders.values().iterator().next();
-        eq("GUI amount",placed.amount(),2);eq("GUI price",placed.priceEachCents(),200L);
+        eq("GUI amount",placed.amount(),2);eq("GUI total price",placed.totalCents(),java.math.BigInteger.valueOf(200));
         Drag drag=new Drag(buyer.open,buyer.inventory);gui.onDrag(drag);check("order GUI blocks drags",drag.cancelled);
         seller.inventory.setItem(0,new ItemStack(Material.DIAMOND,2));
         command.onCommand(seller.proxy,orders,"orders",new String[0]);scheduler.drain();
         click(gui,seller,scheduler,0,false,false);
-        eq("seller gets escrow payout",economy.getBalance(seller.id),400L);
+        eq("seller gets escrow payout",economy.getBalance(seller.id),200L);
         eq("seller supplied items removed",seller.inventory.count(Material.DIAMOND),0);
         BuyOrder fulfilled=data.orders.get(placed.id());
         check("filled order is closed and claimable",fulfilled.closed() && fulfilled.claimable()==2);
@@ -568,7 +988,7 @@ public final class Round12Test {
         eq("repeated claim does not duplicate items",buyer.inventory.count(Material.DIAMOND),3);
         check("fully claimed closed order no longer visible",service.ordersOf(buyer.id).isEmpty());
 
-        OrderService.Result created=service.create(buyer.proxy,"IRON_INGOT",5,100);
+        OrderService.Result created=service.create(buyer.proxy,"IRON_INGOT",5,500);
         check("direct order syntax remains functional",created.ok());
         String id=created.values().get("id");
         seller.inventory.setItem(0,new ItemStack(Material.IRON_INGOT,3));
@@ -637,8 +1057,429 @@ public final class Round12Test {
         finally {pool.shutdownNow();}
     }
 
+    private static void testOrderAnyMaterial(TestWorld world, FakeScheduler scheduler, Messages messages) {
+        PlayerState buyer = new PlayerState(world.proxy, "OrderPickerBuyer"), seller = new PlayerState(world.proxy, "OrderPickerSeller");
+        Bukkit.testOnlinePlayers = List.of(buyer.proxy, seller.proxy);
+        BalanceData data = new BalanceData();
+        VeltryxConfig config = new VeltryxConfig(new YamlConfiguration());
+        EconomyService economy = new EconomyService(data.proxy, config);
+        economy.setBalance(buyer.id, buyer.name, 10_000);
+        OrderService service = new OrderService(data.proxy, economy, messages, config);
+        OrderGui gui = new OrderGui(service, economy, messages);
+        OrderCommand command = new OrderCommand(gui, service, messages);
+        org.bukkit.command.Command orders = new org.bukkit.command.Command(){@Override public String getName(){return "orders";}};
+        command.onCommand(buyer.proxy, orders, "orders", new String[0]); scheduler.drain();
+        click(gui, buyer, scheduler, 51, false, false); click(gui, buyer, scheduler, 4, false, false);
+        List<Material> choices = Arrays.stream(Material.values()).filter(m -> !m.isLegacy() && m.isItem() && m != Material.AIR)
+                .sorted(Comparator.comparing(Material::name)).toList();
+        int index = choices.indexOf(Material.SPAWNER);
+        check("order picker includes spawner among all item materials", index >= 0);
+        for (int i = 0; i < index / 45; i++) click(gui, buyer, scheduler, 53, false, false);
+        eq("order picker displays selected late-page material", buyer.open.getItem(index % 45).getType(), Material.SPAWNER);
+        click(gui, buyer, scheduler, index % 45, false, false);
+        eq("order creation selects the chosen material", buyer.open.getItem(4).getType(), Material.SPAWNER);
+        click(gui, buyer, scheduler, 49, false, false);
+        BuyOrder order = data.orders.values().iterator().next();
+        eq("plain spawner order can be created", order.material(), "SPAWNER");
+        var factory = new dev.superseller.veltryx.spawner.SpawnerItems(new FakePlugin(Path.of(".")));
+        var identity = new dev.superseller.veltryx.spawner.SpawnerItems.Identity(UUID.randomUUID(), dev.superseller.veltryx.spawner.SpawnerType.COW);
+        ItemStack custom = factory.create(identity);
+        seller.inventory.setItem(0, custom);
+        eq("custom spawner is not counted for a plain material order", OrderService.heldCount(seller.proxy, "SPAWNER"), 0);
+        eq("custom spawner cannot be stripped by an order", service.fill(seller.proxy, order.id(), 1).templateKey(), "order.no-metadata");
+        eq("rejected custom spawner keeps identity", factory.identity(seller.inventory.getItem(0)), identity);
+        seller.inventory.setItem(1, new ItemStack(Material.SPAWNER, 1));
+        eq("eligible plain spawner is counted", OrderService.heldCount(seller.proxy, "SPAWNER"), 1);
+        check("plain spawner fills while custom spawner remains", service.fill(seller.proxy, order.id(), 1).ok());
+        eq("plain fill does not consume custom identity", factory.identity(seller.inventory.getItem(0)), identity);
+        check("plain spawner is claimable", service.claim(buyer.proxy, order.id()).ok());
+        check("plain claim does not create custom identity", factory.identity(buyer.inventory.last(Material.SPAWNER)) == null);
+        scheduler.drain();
+    }
+
+    private static void testOrderTotals(TestWorld world, FakeScheduler scheduler, Messages messages) {
+        PlayerState buyer=new PlayerState(world.proxy,"TotalBuyer"), seller=new PlayerState(world.proxy,"TotalSeller");
+        Bukkit.testOnlinePlayers=List.of(buyer.proxy,seller.proxy);
+        BalanceData data=new BalanceData(); VeltryxConfig config=new VeltryxConfig(new YamlConfiguration());
+        EconomyService economy=new EconomyService(data.proxy,config);
+        OrderService service=new OrderService(data.proxy,economy,messages,config);
+        MarketPricePrompt prompt=new MarketPricePrompt(messages);
+        OrderGui gui=new OrderGui(service,economy,messages,prompt);
+        OrderCommand command=new OrderCommand(gui,service,messages);
+        org.bukkit.command.Command order=new org.bukkit.command.Command(){@Override public String getName(){return "order";}};
+        buyer.inventory.setItemInMainHand(new ItemStack(Material.IRON_INGOT,1));
+        String raw="123456789012345678901234567890.03"; BigInteger total=Money.parseExact(raw);
+        economy.setBalanceExact(buyer.id,buyer.name,total.multiply(BigInteger.TWO));
+        command.onCommand(buyer.proxy,order,"order",new String[0]);scheduler.drain();
+        check("/order starts in browse view",buyer.open.getItem(51).getType()==Material.WRITABLE_BOOK);
+        buyer.allowOrder=false;
+        Click deniedOrder=new Click(buyer.open,buyer.open,buyer.proxy,51,false,false);gui.onClick(deniedOrder);scheduler.drain();
+        check("revoked order permission blocks GUI actions",deniedOrder.cancelled && buyer.open.getItem(51).getType()==Material.WRITABLE_BOOK);
+        buyer.allowOrder=true;
+        click(gui,buyer,scheduler,51,false,false);
+        eq("held material is selected without consuming it",buyer.open.getItem(4).getType(),Material.IRON_INGOT);
+        click(gui,buyer,scheduler,15,false,false);click(gui,buyer,scheduler,15,false,false); // three items
+        click(gui,buyer,scheduler,22,false,false);
+        check("price entry closes creation GUI",buyer.open==null);
+        Chat typed=new Chat(buyer.proxy,raw);prompt.onChat(typed);scheduler.drain();
+        check("order GUI price input is not public",typed.cancelled);
+        check("typed total shown exactly",text(buyer.open.getItem(22).getItemMeta().displayName()).contains(Money.formatNumber(total)));
+        BigInteger before=economy.getBalanceExact(buyer.id);
+        click(gui,buyer,scheduler,49,false,false);
+        eq("order escrows precisely the typed total",before.subtract(economy.getBalanceExact(buyer.id)),total);
+        BuyOrder placed=data.orders.values().iterator().next();
+        eq("total order quantity",placed.amount(),3);eq("total order persisted exact",placed.totalCents(),total);
+        eq("legacy per-item order view clamps",placed.priceEachCents(),Long.MAX_VALUE);
+        eq("creation does not consume buyer's held item",buyer.inventory.getItemInMainHand().getAmount(),1);
+        seller.inventory.setItemInMainHand(new ItemStack(Material.IRON_INGOT,1));
+        BigInteger first=placed.payoutFor(1);
+        check("partial large order fill succeeds",service.fill(seller.proxy,placed.id(),1).ok());
+        eq("first seller payout is exact",economy.getBalanceExact(seller.id),first);
+        eq("remaining escrow exact after first fill",data.orders.get(placed.id()).refundCents(),total.subtract(first));
+        seller.inventory.setItemInMainHand(new ItemStack(Material.IRON_INGOT,2));
+        check("remaining order fill succeeds",service.fill(seller.proxy,placed.id(),2).ok());
+        eq("all partial payouts add to exact total",economy.getBalanceExact(seller.id),total);
+        eq("all requested items become claimable",data.orders.get(placed.id()).claimable(),3);
+        check("buyer collects supplied items",service.claim(buyer.proxy,placed.id()).ok());
+        eq("buyer collects total quantity",buyer.inventory.count(Material.IRON_INGOT),4);
+
+        BigInteger sellerStart=economy.getBalanceExact(seller.id);
+        var remainder=service.create(buyer.proxy,"DIAMOND",3,BigInteger.valueOf(101));
+        String id=remainder.values().get("id"); seller.inventory.setItemInMainHand(new ItemStack(Material.DIAMOND,1));
+        BigInteger buyerAfterEscrow=economy.getBalanceExact(buyer.id);
+        gui.open(seller.proxy,false,0);scheduler.drain();
+        var staleInventoryView=seller.open;
+        seller.inventory.setItem(7,new ItemStack(Material.DIAMOND,1));
+        gui.onClick(new Click(staleInventoryView,staleInventoryView,seller.proxy,0,false,false));scheduler.drain();
+        eq("changed inventory does not sell an unexpected amount",seller.inventory.count(Material.DIAMOND),2);
+        eq("changed inventory does not change the order",data.orders.get(id).filled(),0);
+        check("changed inventory refreshes the payout preview",seller.open!=staleInventoryView);
+        seller.inventory.setItem(7,null);gui.open(seller.proxy,false,0);scheduler.drain();
+        var staleView=seller.open;
+        check("first non-divisible fill succeeds",service.fill(seller.proxy,id,1).ok());
+        eq("first of three receives extra cent",economy.getBalanceExact(seller.id).subtract(sellerStart),BigInteger.valueOf(34));
+        seller.inventory.setItemInMainHand(new ItemStack(Material.DIAMOND,1));
+        gui.onClick(new Click(staleView,staleView,seller.proxy,0,false,false));scheduler.drain();
+        eq("stale order GUI does not consume the seller's item",seller.inventory.count(Material.DIAMOND),1);
+        eq("stale order GUI does not change filled quantity",data.orders.get(id).filled(),1);
+        eq("stale order GUI does not pay changed amount",economy.getBalanceExact(seller.id).subtract(sellerStart),BigInteger.valueOf(34));
+        check("stale order GUI refreshes",seller.open!=staleView);
+        check("partially filled order can be cancelled",service.cancel(buyer.proxy,id).ok());
+        eq("unfilled cancellation refund has exact remainder",economy.getBalanceExact(buyer.id).subtract(buyerAfterEscrow),BigInteger.valueOf(67));
+        eq("partial payout plus refund equals total",BigInteger.valueOf(34).add(BigInteger.valueOf(67)),BigInteger.valueOf(101));
+        eq("cancelled order retains supplied claim",data.orders.get(id).claimable(),1);
+
+        var oneCent=service.create(buyer.proxy,"DIAMOND",3,BigInteger.ONE); id=oneCent.values().get("id");
+        sellerStart=economy.getBalanceExact(seller.id);
+        for(int i=0;i<3;i++) {
+            seller.inventory.setItemInMainHand(new ItemStack(Material.DIAMOND,1));
+            check("tiny total fill " + i,service.fill(seller.proxy,id,1).ok());
+        }
+        eq("one-cent total cannot mint money",economy.getBalanceExact(seller.id).subtract(sellerStart),BigInteger.ONE);
+        eq("one-cent order completes",data.orders.get(id).claimable(),3);
+        var expiring=service.create(buyer.proxy,"STONE",3,BigInteger.valueOf(101));
+        String expireId=expiring.values().get("id");seller.inventory.setItemInMainHand(new ItemStack(Material.STONE,1));
+        check("expiring order accepts first fill",service.fill(seller.proxy,expireId,1).ok());
+        BuyOrder active=data.orders.get(expireId);
+        data.orders.put(expireId,new BuyOrder(active.id(),active.buyer(),active.buyerName(),active.material(),active.amount(),active.filled(),
+                active.totalCents(),active.created(),System.currentTimeMillis()-1,false,active.collected()));
+        BigInteger beforeExpiry=economy.getBalanceExact(buyer.id);service.sweepExpired(System.currentTimeMillis());
+        eq("expired order refunds exact unfilled total",economy.getBalanceExact(buyer.id).subtract(beforeExpiry),BigInteger.valueOf(67));
+        check("expired order retains unclaimed supplied item",data.orders.get(expireId).closed() && data.orders.get(expireId).claimable()==1);
+
+        int existing=data.orders.size();
+        economy.setBalanceExact(buyer.id,buyer.name,Money.parseExact("9999999999999999999999999999999"));
+        command.onCommand(buyer.proxy,order,"order",new String[]{"DIAMOND","7","900000000000000000000000000000.99"});
+        eq("direct command accepts large total",data.orders.size(),existing+1);
+        BuyOrder direct=data.orders.values().stream().filter(o -> o.amount()==7).findFirst().orElseThrow();
+        eq("direct command uses typed total, not per-item",direct.totalCents(),Money.parseExact("900000000000000000000000000000.99"));
+        command.onCommand(buyer.proxy,order,"order",new String[0]);scheduler.drain();
+        check("/order displays existing orders",buyer.open.getItem(0)!=null && buyer.open.getItem(0).getType()!=Material.LIME_DYE);
+        check("zero total rejected",!service.create(buyer.proxy,"STONE",1,BigInteger.ZERO).ok());
+        check("negative total rejected",!service.create(buyer.proxy,"STONE",1,BigInteger.valueOf(-1)).ok());
+
+        // Every grouping of partial fills/refunds must allocate each cent once.
+        for(int amount=1;amount<=20;amount++) for(int cents=1;cents<=51;cents++) {
+            BuyOrder model=new BuyOrder("property",buyer.id,buyer.name,"DIAMOND",amount,0,BigInteger.valueOf(cents),1,9_999_999_999_999L,false,0);
+            BigInteger sum=BigInteger.ZERO;
+            for(int filled=0;filled<amount;filled++) {
+                BuyOrder at=new BuyOrder(model.id(),model.buyer(),model.buyerName(),model.material(),amount,filled,model.totalCents(),1,model.expires(),false,0);
+                BigInteger step=at.payoutFor(1); sum=sum.add(step);
+                check("partial payout is nonnegative",step.signum()>=0);
+                eq("partial payout plus refund conserves escrow",sum.add(model.totalCents().subtract(at.allocated(filled+1))),model.totalCents());
+            }
+            eq("all fill groupings conserve total",sum,model.totalCents());
+        }
+        scheduler.drain();
+    }
+
+    private static void testAuctionYaml(Path dir, TestWorld world, FakeScheduler scheduler, Messages messages) {
+        Path folder=dir.resolve("auction-yaml-integration");
+        Logger quiet=Logger.getLogger("auction-yaml-integration");quiet.setLevel(java.util.logging.Level.OFF);
+        var store=new dev.superseller.veltryx.storage.YamlDataStore(folder.toFile(),quiet);store.load();
+        VeltryxConfig config=new VeltryxConfig(new YamlConfiguration());
+        var economy=new EconomyService(store,config);
+        var seller=new PlayerState(world.proxy,"DurableSeller"); var buyer=new PlayerState(world.proxy,"DurableBuyer");
+        Bukkit.testOnlinePlayers=List.of(seller.proxy,buyer.proxy);
+        BigInteger total=Money.parseExact("9999999999999999999999999999.41");
+        economy.setBalanceExact(buyer.id,buyer.name,total.multiply(BigInteger.TWO));
+        ItemStack original=new ItemStack(Material.EMERALD,9); ItemMeta meta=original.getItemMeta();
+        meta.displayName(new StubComponent("Persistent emerald"));meta.addEnchant(Enchantment.MENDING,1,true);
+        NamespacedKey key=NamespacedKey.minecraft("auction_test");meta.getPersistentDataContainer().set(key,PersistentDataType.STRING,"durable");
+        original.setItemMeta(meta); seller.inventory.setItemInMainHand(original.clone());
+        var service=new AhService(store,economy,messages,config);
+        var listed=service.listHeldItem(seller.proxy,total);check("YAML integration creates held listing",listed.ok());
+        String id=listed.values().get("id");store.close();
+        var restarted=new dev.superseller.veltryx.storage.YamlDataStore(folder.toFile(),quiet);restarted.load();
+        var afterEconomy=new EconomyService(restarted,config);var afterService=new AhService(restarted,afterEconomy,messages,config);
+        check("YAML listing remains live after restart",afterService.liveListings(System.currentTimeMillis()).stream().anyMatch(a->a.id().equals(id)));
+        check("YAML restarted auction purchase succeeds",afterService.buy(buyer.proxy,id).ok());scheduler.drain();
+        ItemStack received=buyer.inventory.last(Material.EMERALD);
+        check("YAML restart delivers original custom item",received!=null && received.getAmount()==9 && received.isSimilar(original));
+        eq("YAML restart delivers persistent metadata",received.getItemMeta().getPersistentDataContainer().get(key,PersistentDataType.STRING),"durable");
+        eq("YAML restarted purchase debits exact total",afterEconomy.getBalanceExact(buyer.id),total);
+        eq("YAML restarted purchase credits exact total",afterEconomy.getBalanceExact(seller.id),total);
+        var orders=new OrderService(restarted,afterEconomy,messages,config);
+        var created=orders.create(buyer.proxy,"STONE",3,BigInteger.valueOf(101));
+        check("YAML creates exact-total order",created.ok());String orderId=created.values().get("id");
+        seller.inventory.setItemInMainHand(new ItemStack(Material.STONE,1));
+        check("YAML partial order fill succeeds",orders.fill(seller.proxy,orderId,1).ok());scheduler.drain();
+        restarted.close();
+        var again=new dev.superseller.veltryx.storage.YamlDataStore(folder.toFile(),quiet);again.load();
+        check("sold auction remains closed on second restart",again.allAhListings().stream().anyMatch(a->a.id().equals(id)&&a.closed()));
+        eq("seller payouts survive YAML restart",again.getBalanceExact(seller.id),total.add(BigInteger.valueOf(34)));
+        var finalEconomy=new EconomyService(again,config);var resumedOrders=new OrderService(again,finalEconomy,messages,config);
+        check("YAML partial order can be cancelled after restart",resumedOrders.cancel(buyer.proxy,orderId).ok());
+        eq("YAML restart refunds exact remainder",finalEconomy.getBalanceExact(buyer.id),total.subtract(BigInteger.valueOf(34)));
+        check("YAML partial claim survives restart and cancellation",resumedOrders.claim(buyer.proxy,orderId).ok());
+        eq("YAML order buyer receives item",buyer.inventory.count(Material.STONE),1);
+        var factory = new dev.superseller.veltryx.spawner.SpawnerItems(new FakePlugin(dir));
+        var identity = new dev.superseller.veltryx.spawner.SpawnerItems.Identity(UUID.randomUUID(), dev.superseller.veltryx.spawner.SpawnerType.PIG);
+        Path spawnerPath = dir.resolve("auction-spawner-data");
+        var spawners = new dev.superseller.veltryx.spawner.SpawnerStore(spawnerPath, quiet);
+        var firstPosition = new dev.superseller.veltryx.spawner.SpawnerStore.Position(UUID.randomUUID(), 1, 64, 1);
+        check("auction spawner has persistent storage", spawners.create(identity) && spawners.bind(identity, firstPosition));
+        spawners.toggle(identity, firstPosition);
+        eq("auction spawner stores loot", spawners.deposit(identity, firstPosition, List.of(new ItemStack(Material.DIAMOND, 7))),
+                dev.superseller.veltryx.spawner.SpawnerStore.Deposit.STORED);
+        check("auction spawner is picked up before listing", spawners.unbind(identity, firstPosition));
+        seller.inventory.setItemInMainHand(factory.create(identity));
+        var finalMarket = new AhService(again, finalEconomy, messages, config);
+        var spawnerListing = finalMarket.listHeldItem(seller.proxy, BigInteger.valueOf(100));
+        check("YAML accepts an identity-bearing spawner", spawnerListing.ok());
+        String spawnerId = spawnerListing.values().get("id"); again.close();
+        var third = new dev.superseller.veltryx.storage.YamlDataStore(folder.toFile(), quiet); third.load();
+        var thirdMarket = new AhService(third, new EconomyService(third, config), messages, config);
+        check("YAML restart can reclaim identity-bearing spawner", thirdMarket.reclaim(seller.proxy, spawnerId).ok());
+        eq("YAML restart preserves spawner identity", factory.identity(seller.inventory.last(Material.SPAWNER)), identity);
+        var restartedSpawners = new dev.superseller.veltryx.spawner.SpawnerStore(spawnerPath, quiet);
+        var newPosition = new dev.superseller.veltryx.spawner.SpawnerStore.Position(firstPosition.world(), 10, 64, 10);
+        check("reclaimed spawner can be placed at a new position", restartedSpawners.bind(identity, newPosition));
+        ItemStack retained = restartedSpawners.page(identity, newPosition, 0).items()[0];
+        check("reclaimed spawner retains separately stored loot", retained != null && retained.getType() == Material.DIAMOND && retained.getAmount() == 7);
+        third.close();
+    }
+
+    private static void testAuction(TestWorld world, FakeScheduler scheduler, Messages messages) {
+        PlayerState seller=new PlayerState(world.proxy,"AuctionSeller"), buyer=new PlayerState(world.proxy,"AuctionBuyer");
+        Bukkit.testOnlinePlayers=List.of(seller.proxy,buyer.proxy);
+        BalanceData data=new BalanceData(); VeltryxConfig config=new VeltryxConfig(new YamlConfiguration());
+        EconomyService economy=new EconomyService(data.proxy,config);
+        AhService service=new AhService(data.proxy,economy,messages,config);
+        MarketPricePrompt prompt=new MarketPricePrompt(messages);
+        AhGui gui=new AhGui(service,economy,messages,prompt);
+        AhCommand command=new AhCommand(gui,service,messages);
+        org.bukkit.command.Command ah=new org.bukkit.command.Command(){@Override public String getName(){return "ah";}};
+        Logger log=Logger.getLogger(AhService.class.getName()); var previous=log.getLevel(); log.setLevel(java.util.logging.Level.OFF);
+        try {
+            command.onCommand(buyer.proxy,ah,"ah",new String[0]);scheduler.drain();
+            check("/ah opens the listings browser",buyer.open!=null && buyer.open.getItem(51).getType()==Material.CHEST);
+            Drag drag=new Drag(buyer.open,buyer.inventory);gui.onDrag(drag);check("auction browser prevents dragging items",drag.cancelled);
+            seller.inventory.setItemInMainHand(new ItemStack(Material.WATER,1));
+            eq("non-item material cannot enter auction escrow",service.listHeldItem(seller.proxy,BigInteger.ONE).templateKey(),"ah.unknown-item");
+            eq("rejected non-item remains in hand",seller.inventory.getItemInMainHand().getType(),Material.WATER);
+            eq("rejected non-item creates no listing",data.listings.size(),0);
+
+            ItemStack held=new ItemStack(Material.DIAMOND,17);
+            ItemMeta meta=held.getItemMeta(); meta.displayName(new StubComponent("One of a kind"));
+            meta.lore(List.of(new StubComponent("A custom lore line")));
+            meta.addEnchant(Enchantment.SHARPNESS,4,true);
+            NamespacedKey key=NamespacedKey.minecraft("quality"); meta.getPersistentDataContainer().set(key,PersistentDataType.STRING,"rare");
+            held.setItemMeta(meta); ItemStack original=held.clone();
+            seller.inventory.setItemInMainHand(held);
+            ItemStack other=held.clone();other.setAmount(23);seller.inventory.setItem(6,other);
+            ItemStack offhand=held.clone();offhand.setAmount(4);seller.inventory.setItemInOffHand(offhand);
+            String raw="123456789012345678901234567890.37"; BigInteger total=Money.parseExact(raw);
+            economy.setBalanceExact(buyer.id,buyer.name,total.multiply(BigInteger.TWO));
+            command.onCommand(seller.proxy,ah,"ah",new String[]{"sell",raw});
+            eq("command creates one listing",data.listings.size(),1);
+            AhListing listing=data.listings.values().iterator().next();
+            eq("auction price is the whole stack total",listing.priceExactCents(),total);
+            eq("legacy auction price view clamps",listing.priceCents(),Long.MAX_VALUE);
+            eq("only main-hand stack removed",seller.inventory.getItemInMainHand(),null);
+            check("other matching named stack stays untouched",seller.inventory.getItem(6).getAmount()==23 && seller.inventory.getItem(6).isSimilar(other));
+            check("offhand stays untouched",seller.inventory.getItemInOffHand().getAmount()==4 && seller.inventory.getItemInOffHand().isSimilar(offhand));
+            ItemStack stored=service.listingItem(listing);
+            check("auction serializes the actual hand stack",stored!=null && stored.getAmount()==17 && stored.isSimilar(original));
+            eq("auction retains custom PDC",stored.getItemMeta().getPersistentDataContainer().get(key,PersistentDataType.STRING),"rare");
+            eq("auction retains enchantments",stored.getEnchantmentLevel(Enchantment.SHARPNESS),4);
+            eq("auction retains original lore",text(stored.getItemMeta().lore().get(0)),"A custom lore line");
+            command.onCommand(buyer.proxy,ah,"ah",new String[0]);scheduler.drain();
+            ItemStack preview=buyer.open.getItem(0);
+            eq("auction browser previews actual custom name",text(preview.getItemMeta().displayName()),"One of a kind");
+            check("auction browser shows exact total",preview.getItemMeta().lore().stream().anyMatch(c -> text(c).contains(Money.formatNumber(total))));
+            buyer.allowAh=false;
+            Click deniedAuction=new Click(buyer.open,buyer.open,buyer.proxy,0,false,false);gui.onClick(deniedAuction);scheduler.drain();
+            check("revoked auction permission blocks GUI purchase",deniedAuction.cancelled && !data.listings.get(listing.id()).closed());
+            buyer.allowAh=true;
+            click(gui,buyer,scheduler,0,false,false);
+            eq("buyer charged exact total once",economy.getBalanceExact(buyer.id),total);
+            eq("seller paid exact total once",economy.getBalanceExact(seller.id),total);
+            ItemStack received=buyer.inventory.last(Material.DIAMOND);
+            check("buyer receives original custom stack",received!=null && received.getAmount()==17 && received.isSimilar(original));
+            eq("sold listing cannot be purchased again",service.buy(buyer.proxy,listing.id()).templateKey(),"ah.gone");
+
+            seller.inventory.setItemInMainHand(new ItemStack(Material.STONE,10));
+            check("zero auction total rejected",!service.listHeldItem(seller.proxy,BigInteger.ZERO).ok());
+            eq("rejected zero total leaves hand alone",seller.inventory.getItemInMainHand().getAmount(),10);
+            AhService.Result made=service.listHeldItem(seller.proxy,BigInteger.valueOf(12345));
+            check("second listing created",made.ok()); String id=made.values().get("id");
+            BigInteger beforeBuyer=economy.getBalanceExact(buyer.id), beforeSeller=economy.getBalanceExact(seller.id);
+            buyer.inventory.capacity=3;
+            eq("partial inventory insertion is refused",service.buy(buyer.proxy,id).templateKey(),"shop.no-space");
+            eq("partial auction delivery is rolled back",buyer.inventory.count(Material.STONE),0);
+            eq("no-space buyer not charged",economy.getBalanceExact(buyer.id),beforeBuyer);
+            eq("no-space seller not paid",economy.getBalanceExact(seller.id),beforeSeller);
+            check("no-space listing remains live",!data.listings.get(id).closed());
+            buyer.inventory.capacity=Integer.MAX_VALUE;
+            data.failAhWrites=true;
+            eq("failed auction close reports storage error",service.buy(buyer.proxy,id).templateKey(),"ah.storage-error");
+            eq("failed auction close rolls back items",buyer.inventory.count(Material.STONE),0);
+            eq("failed auction close charges nothing",economy.getBalanceExact(buyer.id),beforeBuyer);
+            data.failAhWrites=false; data.failNextTransfer=true;
+            eq("failed payment reports storage error",service.buy(buyer.proxy,id).templateKey(),"ah.storage-error");
+            check("failed payment reopens listing",!data.listings.get(id).closed());
+            eq("failed payment rolls back item",buyer.inventory.count(Material.STONE),0);
+            eq("failed payment leaves buyer funds intact",economy.getBalanceExact(buyer.id),beforeBuyer);
+            eq("failed payment leaves seller funds intact",economy.getBalanceExact(seller.id),beforeSeller);
+            check("auction can succeed after rollback",service.buy(buyer.proxy,id).ok());
+            eq("arbitrary stack price is not multiplied",beforeBuyer.subtract(economy.getBalanceExact(buyer.id)),BigInteger.valueOf(12345));
+
+            ItemStack namedTool=new ItemStack(Material.TRIDENT,1); ItemMeta toolMeta=namedTool.getItemMeta();
+            toolMeta.displayName(new StubComponent("Damaged enchanted trident")); toolMeta.addEnchant(Enchantment.RIPTIDE,3,true);
+            ((Damageable)toolMeta).setDamage(42); namedTool.setItemMeta(toolMeta); ItemStack toolCopy=namedTool.clone();
+            seller.inventory.setItemInMainHand(namedTool); data.failAhWrites=true;
+            eq("failed listing persistence is reported",service.listHeldItem(seller.proxy,BigInteger.TEN).templateKey(),"ah.storage-error");
+            check("failed listing returns exact held item",seller.inventory.getItemInMainHand().isSimilar(toolCopy));
+            data.failAhWrites=false; made=service.listHeldItem(seller.proxy,BigInteger.TEN); id=made.values().get("id");
+            seller.inventory.capacity=0;
+            eq("reclaim with no space fails",service.reclaim(seller.proxy,id).templateKey(),"shop.no-space");
+            check("failed reclaim remains available",!data.listings.get(id).closed());
+            seller.inventory.capacity=Integer.MAX_VALUE;
+            check("reclaim succeeds",service.reclaim(seller.proxy,id).ok());
+            check("reclaim returns the damaged enchanted item",seller.inventory.last(Material.TRIDENT).isSimilar(toolCopy));
+            eq("reclaim cannot duplicate",service.reclaim(seller.proxy,id).templateKey(),"ah.gone");
+            seller.inventory.setItemInMainHand(new ItemStack(Material.EMERALD,4));
+            String expiredId=service.listHeldItem(seller.proxy,BigInteger.valueOf(999)).values().get("id");
+            AhListing live=data.listings.get(expiredId);
+            data.listings.put(expiredId,new AhListing(live.id(),live.seller(),live.sellerName(),live.material(),live.amount(),
+                    live.priceExactCents(),live.listed(),System.currentTimeMillis()-1,false,live.itemData()));
+            eq("expired auction is no longer purchasable",service.buy(buyer.proxy,expiredId).templateKey(),"ah.gone");
+            check("expired auction remains in seller view",service.listingsOf(seller.id).stream().anyMatch(a -> a.id().equals(expiredId)));
+            check("expired auction can be reclaimed",service.reclaim(seller.proxy,expiredId).ok());
+
+            ItemStack potion=new ItemStack(Material.POTION,1);PotionMeta potionMeta=(PotionMeta)potion.getItemMeta();
+            potionMeta.setBasePotionType(PotionType.STRONG_SWIFTNESS);potion.setItemMeta(potionMeta);
+            seller.inventory.setItemInMainHand(potion);var potionListing=service.listHeldItem(seller.proxy,BigInteger.ONE);
+            check("potion variant can be listed",potionListing.ok());
+            ItemStack decodedPotion=service.listingItem(data.listings.get(potionListing.values().get("id")));
+            eq("potion variant survives auction serialization",((PotionMeta)decodedPotion.getItemMeta()).getBasePotionType(),PotionType.STRONG_SWIFTNESS);
+            check("potion variant can be reclaimed",service.reclaim(seller.proxy,potionListing.values().get("id")).ok());
+            ItemStack book=new ItemStack(Material.ENCHANTED_BOOK,1);
+            var bookMeta=(EnchantmentStorageMeta)book.getItemMeta();bookMeta.addStoredEnchant(Enchantment.MENDING,1,true);book.setItemMeta(bookMeta);
+            seller.inventory.setItemInMainHand(book);var bookListing=service.listHeldItem(seller.proxy,BigInteger.ONE);
+            check("enchanted book can be listed",bookListing.ok());
+            ItemStack decodedBook=service.listingItem(data.listings.get(bookListing.values().get("id")));
+            eq("stored book enchant survives auction serialization",((StubEnchantmentStorageMeta)decodedBook.getItemMeta()).stored.get(Enchantment.MENDING),1);
+            check("enchanted book can be reclaimed",service.reclaim(seller.proxy,bookListing.values().get("id")).ok());
+
+            var spawnerFactory = new dev.superseller.veltryx.spawner.SpawnerItems(new FakePlugin(Path.of(".")));
+            var identity = new dev.superseller.veltryx.spawner.SpawnerItems.Identity(UUID.randomUUID(), dev.superseller.veltryx.spawner.SpawnerType.COW);
+            ItemStack customSpawner = spawnerFactory.create(identity, 4);
+            seller.inventory.setItemInMainHand(customSpawner.clone());
+            var spawnerListing = service.listHeldItem(seller.proxy, BigInteger.valueOf(100));
+            check("identity-bearing held spawner can be listed safely", spawnerListing.ok());
+            ItemStack escrowedSpawner = service.listingItem(data.listings.get(spawnerListing.values().get("id")));
+            eq("spawner identity survives auction serialization", spawnerFactory.identity(escrowedSpawner), identity);
+            check("identity-bearing auction spawner can be bought", service.buy(buyer.proxy, spawnerListing.values().get("id")).ok());
+            eq("buyer receives the same spawner identity", spawnerFactory.identity(buyer.inventory.last(Material.SPAWNER)), identity);
+            AhListing oldSpawner = new AhListing("old-spawner", seller.id, seller.name, "SPAWNER", 1, 100, 1, System.currentTimeMillis()+100000, false);
+            check("old spawner listing without metadata fails closed", service.listingItem(oldSpawner) == null);
+
+            AhListing legacy=new AhListing("legacy",seller.id,seller.name,"IRON_INGOT",2,500,1,System.currentTimeMillis()+100000,false);
+            data.listings.put(legacy.id(),legacy);
+            check("legacy material-only listing remains purchasable",service.buy(buyer.proxy,"legacy").ok());
+            AhListing broken=new AhListing("broken",seller.id,seller.name,"DIAMOND",1,BigInteger.TEN,1,System.currentTimeMillis()+100000,false,"not-base64!");
+            data.listings.put(broken.id(),broken); beforeBuyer=economy.getBalanceExact(buyer.id);
+            eq("corrupt serialized item cannot be purchased",service.buy(buyer.proxy,"broken").templateKey(),"ah.item-error");
+            eq("corrupt listing charges nothing",economy.getBalanceExact(buyer.id),beforeBuyer);
+            check("corrupt listing is not closed",!data.listings.get("broken").closed());
+
+            seller.inventory.setItemInMainHand(new ItemStack(Material.EMERALD,5));
+            command.onCommand(seller.proxy,ah,"ah",new String[0]);scheduler.drain();
+            click(gui,seller,scheduler,51,false,false); check("auction price prompt closes menu",seller.open==null);
+            seller.inventory.setItemInMainHand(new ItemStack(Material.IRON_INGOT,1));
+            int beforeListings=data.listings.size();
+            Chat changed=new Chat(seller.proxy,"15m");prompt.onChat(changed);scheduler.drain();
+            check("auction price chat is private",changed.cancelled);
+            eq("changed hand cancels pending listing",data.listings.size(),beforeListings);
+            eq("changed hand item remains",seller.inventory.getItemInMainHand().getType(),Material.IRON_INGOT);
+            seller.inventory.setItemInMainHand(new ItemStack(Material.EMERALD,5));
+            command.onCommand(seller.proxy,ah,"ah",new String[0]);scheduler.drain(); click(gui,seller,scheduler,51,false,false);
+            Chat stale=new Chat(seller.proxy,"1000");prompt.onChat(stale);
+            command.onCommand(seller.proxy,ah,"ah",new String[0]);scheduler.drain();
+            eq("new command cancels a captured but unprocessed price",data.listings.size(),beforeListings);
+            check("cancelled queued input leaves hand intact",seller.inventory.getItemInMainHand().getAmount()==5);
+            click(gui,seller,scheduler,51,false,false);
+            Chat cancelled=new Chat(seller.proxy,"cancel");prompt.onChat(cancelled);scheduler.drain();
+            check("cancel is private and reopens auction browser",cancelled.cancelled && seller.open!=null);
+            eq("cancelling price entry leaves hand and listings alone",data.listings.size(),beforeListings);
+            click(gui,seller,scheduler,51,false,false);
+            Chat typed=new Chat(seller.proxy,"123456789012345678901234567890g");prompt.onChat(typed);
+            Chat duplicate=new Chat(seller.proxy,"999");prompt.onChat(duplicate);scheduler.drain();
+            check("typed GUI price is private",typed.cancelled);
+            check("racing price inputs are also private",duplicate.cancelled);
+            eq("GUI creates exactly one listing",data.listings.size(),beforeListings+1);
+            AhListing fromGui=data.listings.values().stream().filter(a->a.material().equals("EMERALD") && !a.closed()).findFirst().orElseThrow();
+            eq("GUI accepts very large exact totals",fromGui.priceExactCents(),Money.parseExact(typed.value));
+            check("GUI removes held stack",seller.inventory.getItemInMainHand()==null);
+            seller.inventory.setItemInMainHand(new ItemStack(Material.DIAMOND,2));
+            String gigantic="9".repeat(160); int beforeGigantic=data.listings.size();
+            command.onCommand(seller.proxy,ah,"ah",new String[]{"sell",gigantic});
+            eq("160-digit auction price has no monetary cap",data.listings.size(),beforeGigantic+1);
+            check("160-digit price persists exactly",data.listings.values().stream().anyMatch(a -> a.priceExactCents().equals(Money.parseExact(gigantic))));
+
+            seller.inventory.setItemInMainHand(new ItemStack(Material.IRON_INGOT,1));
+            String race=service.listHeldItem(seller.proxy,BigInteger.valueOf(10)).values().get("id");
+            PlayerState otherBuyer=new PlayerState(world.proxy,"OtherBuyer");
+            economy.setBalanceExact(otherBuyer.id,otherBuyer.name,BigInteger.valueOf(1000));
+            Bukkit.testOnlinePlayers=List.of();
+            var pool=java.util.concurrent.Executors.newFixedThreadPool(2);
+            try {
+                var one=pool.submit(() -> service.buy(buyer.proxy,race));
+                var two=pool.submit(() -> service.buy(otherBuyer.proxy,race));
+                eq("competing buyers purchase once",(one.get().ok()?1:0)+(two.get().ok()?1:0),1);
+            } catch(Exception ex) {throw new RuntimeException(ex);} finally {pool.shutdownNow();}
+        } finally {log.setLevel(previous);scheduler.drain();}
+    }
+
     private static void testShardItemsAndLunge(Path dir, PlayerState state, TestWorld world, Messages messages) {
         ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
+        ItemStack axe = items.create(catalog.byId("shard_axe"), 0);
+        eq("new shard axe has Silk Touch", axe.getEnchantmentLevel(Enchantment.SILK_TOUCH), 1);
+        eq("new shard axe has no Fortune", axe.getEnchantmentLevel(Enchantment.FORTUNE), 0);
+        eq("alternate choice cannot add Fortune to shard axe", items.create(catalog.byId("shard_axe"), 1).getEnchantmentLevel(Enchantment.FORTUNE), 0);
+        check("shard axe shop lore states Silk Touch", catalog.byId("shard_axe").lore().stream().anyMatch(line -> line.contains("Silk Touch")));
         ItemStack spear = items.create(catalog.byId("shard_spear"), 0);
         eq("native spear material", spear.getType(), Material.NETHERITE_SPEAR);
         eq("native Lunge III on spear", spear.getEnchantmentLevel(Enchantment.LUNGE), 3);
@@ -1130,7 +1971,7 @@ public final class Round12Test {
 
     private static void click(Object listener, PlayerState state, FakeScheduler scheduler, int slot, boolean right, boolean shift) {
         Click e = new Click(state.open, state.open, state.proxy, slot, right, shift);
-        if (listener instanceof ShopGui g) g.onClick(e); else if (listener instanceof ShopExtrasGui g) g.onClick(e); else if (listener instanceof OrderGui g) g.onClick(e);
+        if (listener instanceof ShopGui g) g.onClick(e); else if (listener instanceof ShopExtrasGui g) g.onClick(e); else if (listener instanceof OrderGui g) g.onClick(e); else if (listener instanceof AhGui g) g.onClick(e);
         check("GUI click cancelled", e.cancelled); scheduler.drain();
     }
     private static String text(Component c) { return ((StubComponent)c).content; }
@@ -1160,7 +2001,7 @@ public final class Round12Test {
         void drain() { int n=0; while (!tasks.isEmpty()) { if (++n > 10000) throw new IllegalStateException("scheduler loop"); tasks.removeFirst().run(); } }
     }
     private static final class TestInventory implements PlayerInventory {
-        final InventoryHolder holder; final ItemStack[] items; ItemStack offhand; int capacity = Integer.MAX_VALUE;
+        final InventoryHolder holder; final ItemStack[] items; ItemStack offhand; int capacity = Integer.MAX_VALUE; boolean failAddAfterInsert;
         TestInventory(InventoryHolder holder, int size) { this.holder=holder; this.items=new ItemStack[size]; }
         public void setItem(int index, ItemStack item) { items[index]=item; }
         public ItemStack getItem(int index) { return items[index]; }
@@ -1178,7 +2019,8 @@ public final class Round12Test {
                 ItemStack stack=additions[j]; int amount=stack.getAmount(); int accept=Math.min(amount,capacity);
                 int slot=-1; for(int i=0;i<items.length;i++) if(items[i]==null || items[i].getAmount()<=0 || items[i].getType()==Material.AIR) { slot=i; break; }
                 if(slot<0) accept=0;
-                if(accept>0) { stack.setAmount(accept); items[slot]=stack; if(capacity!=Integer.MAX_VALUE) capacity-=accept; }
+                if(accept>0) { stack.setAmount(accept); items[slot]=stack; if(capacity!=Integer.MAX_VALUE) capacity-=accept;
+                    if(failAddAfterInsert) {failAddAfterInsert=false; throw new IllegalStateException("simulated partial delivery failure");} }
                 if(accept<amount) left.put(j,new ItemStack(stack.getType(),amount-accept));
             }
             return left;
@@ -1197,7 +2039,7 @@ public final class Round12Test {
     private static final class PlayerState implements InvocationHandler {
         final UUID id=UUID.randomUUID(); final TestInventory inventory=new TestInventory(null, 36); final TestPdc pdc=new TestPdc();
         final Map<PotionEffectType,PotionEffect> effects=new HashMap<>(); final World world; final Player proxy; final String name;
-        Inventory open; ItemStack cursor; Scoreboard board; Player killer; boolean allowSell=true, allowShard=true, signOpened, inWater, inRain, teleportSuccess=true, online=true;
+        Inventory open; ItemStack cursor; Scoreboard board; Player killer; boolean allowSell=true, allowShard=true, allowAh=true, allowOrder=true, signOpened, inWater, inRain, teleportSuccess=true, online=true;
         boolean active, sneaking, vehicle, onGround, externalCooldown, dead;
         EquipmentSlot activeHand, damagedHand; ItemStack activeItem; GameMode gameMode=GameMode.SURVIVAL;
         org.bukkit.util.Vector velocity=new org.bukkit.util.Vector(0,0,0);
@@ -1211,7 +2053,7 @@ public final class Round12Test {
         public Object invoke(Object o, Method m, Object[] a) {
             return switch(m.getName()) {
                 case "getUniqueId" -> id; case "getName" -> name; case "isOnline" -> online;
-                case "hasPermission" -> switch ((String)a[0]) { case "veltryx.sell" -> allowSell; case "veltryx.shards" -> allowShard; default -> true; };
+                case "hasPermission" -> switch ((String)a[0]) { case "veltryx.sell" -> allowSell; case "veltryx.shards" -> allowShard; case "veltryx.ah" -> allowAh; case "veltryx.order" -> allowOrder; default -> true; };
                 case "getKiller" -> killer; case "setScoreboard" -> { board=(Scoreboard)a[0]; yield null; }
                 case "getScoreboard" -> board; case "getGameMode" -> gameMode;
                 case "playSound" -> { sounds++; lastSound=(String)a[1]; yield null; }
@@ -1249,7 +2091,8 @@ public final class Round12Test {
         final Map<UUID,Long> shards=new HashMap<>(), kills=new HashMap<>(), deaths=new HashMap<>();
         final Map<UUID,List<HomeLocation>> homes = new HashMap<>();
         final Map<String,BuyOrder> orders = new HashMap<>();
-        boolean failOrderWrites, failNextBalance;
+        final Map<String,AhListing> listings = new HashMap<>();
+        boolean failOrderWrites, failNextBalance, failAhWrites, failNextTransfer;
         final DataStore proxy=(DataStore)Proxy.newProxyInstance(DataStore.class.getClassLoader(),new Class<?>[]{DataStore.class},this);
         public Object invoke(Object o, Method m, Object[] a) {
             return switch (m.getName()) {
@@ -1257,9 +2100,11 @@ public final class Round12Test {
                 case "getBalanceExact" -> balances.getOrDefault((UUID)a[0],java.math.BigInteger.ZERO);
                 case "setBalance" -> { balances.put((UUID)a[0],java.math.BigInteger.valueOf((Long)a[2])); yield null; }
                 case "setBalanceExact" -> { if(failNextBalance){failNextBalance=false;throw new IllegalStateException("simulated balance failure");} balances.put((UUID)a[0],(java.math.BigInteger)a[2]); yield null; }
+                case "allAhListings" -> List.copyOf(listings.values());
+                case "saveAhListing" -> {if(failAhWrites)throw new IllegalStateException("simulated auction failure"); AhListing listing=(AhListing)a[0];listings.put(listing.id(),listing);yield null;}
                 case "allBuyOrders" -> List.copyOf(orders.values());
                 case "saveBuyOrder" -> {if(failOrderWrites)throw new IllegalStateException("simulated order failure"); BuyOrder order=(BuyOrder)a[0];orders.put(order.id(),order);yield null;}
-                case "setBalancesExact" -> { for (dev.superseller.veltryx.model.Account account : (List<dev.superseller.veltryx.model.Account>) a[0]) balances.put(account.uuid(),account.balanceExact()); yield null; }
+                case "setBalancesExact" -> { if(failNextTransfer){failNextTransfer=false;throw new IllegalStateException("simulated transfer failure");} for (dev.superseller.veltryx.model.Account account : (List<dev.superseller.veltryx.model.Account>) a[0]) balances.put(account.uuid(),account.balanceExact()); yield null; }
                 case "shards" -> shards.getOrDefault((UUID)a[0],0L);
                 case "setShards" -> { shards.put((UUID)a[0],(Long)a[1]); yield null; }
                 case "kills" -> kills.getOrDefault((UUID)a[0],0L);

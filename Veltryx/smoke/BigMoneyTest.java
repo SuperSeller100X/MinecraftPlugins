@@ -4,6 +4,7 @@ import dev.superseller.veltryx.config.VeltryxConfig;
 import dev.superseller.veltryx.economy.EconomyService;
 import dev.superseller.veltryx.model.Account;
 import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.AhListing;
 import dev.superseller.veltryx.storage.YamlDataStore;
 import dev.superseller.veltryx.util.Money;
 import java.math.BigInteger;
@@ -35,6 +36,7 @@ public final class BigMoneyTest {
         eq("round half cent",Money.parseExact("0.005"),BigInteger.ONE);
         eq("round below half cent",Money.parseExact("0.004"),BigInteger.ZERO);
         check("reject negative", Money.parseExact("-1l")==null);
+        check("accept maximum-length exact price", Money.parseExact("9".repeat(160))!=null);
         check("reject absurdly long command", Money.parseExact("9".repeat(161))==null);
         check("reject NaN and exponent bomb", Money.parseExact("NaN")==null && Money.parseExact("1e99999999")==null);
         eq("q compact", Money.formatCompact(Money.parseExact("1.25q")), "1.3q");
@@ -74,17 +76,32 @@ public final class BigMoneyTest {
         check("YAML stores balance as a quoted decimal string",Files.readString(dir.resolve("economy.yml")).contains("'"+economy.getBalanceExact(a)+"'"));
         BuyOrder order=new BuyOrder("test-order",a,"Alice","IRON_INGOT",5,3,100,1,9_999_999_999_999L,false,1);
         store.saveBuyOrder(order);
+        BigInteger marketTotal=new BigInteger("123456789012345678901234567890123456789");
+        String itemData=java.util.Base64.getEncoder().encodeToString(new org.bukkit.inventory.ItemStack(org.bukkit.Material.DIAMOND, 3).serializeAsBytes());
+        AhListing auction=new AhListing("expensive-auction",a,"Alice","DIAMOND",3,marketTotal,1,9_999_999_999_999L,false,itemData);
+        BuyOrder expensive=new BuyOrder("expensive-order",a,"Alice","IRON_INGOT",3,1,marketTotal,1,9_999_999_999_999L,false,0);
+        store.saveAhListing(auction);store.saveBuyOrder(expensive);
         YamlDataStore reopened=new YamlDataStore(dir.toFile(),Logger.getLogger("big-money-test")); reopened.load();
-        eq("YAML preserves collected count",reopened.allBuyOrders().get(0).collected(),1);
-        eq("YAML preserves remaining claim",reopened.allBuyOrders().get(0).claimable(),2);
+        eq("YAML preserves collected count",order(reopened,"test-order").collected(),1);
+        eq("YAML preserves remaining claim",order(reopened,"test-order").claimable(),2);
+        eq("YAML auction total survives restart",listing(reopened,"expensive-auction").priceExactCents(),marketTotal);
+        eq("YAML auction item data survives restart",listing(reopened,"expensive-auction").itemData(),itemData);
+        eq("YAML total order survives restart",order(reopened,"expensive-order").totalCents(),marketTotal);
+        eq("YAML partial order allocation survives restart",order(reopened,"expensive-order").refundCents(),expensive.refundCents());
         Files.createDirectory(dir.resolve("market.yml.tmp"));
         boolean orderWriteFailed=false;
         try {store.saveBuyOrder(new BuyOrder(order.id(),a,"Alice","IRON_INGOT",5,3,100,1,9_999_999_999_999L,false,2));}
         catch(IllegalStateException expected) {orderWriteFailed=true;}
         check("YAML order save failure reported",orderWriteFailed);
-        eq("failed order save restores cache",store.allBuyOrders().get(0).collected(),1);
+        eq("failed order save restores cache",order(store,"test-order").collected(),1);
         YamlDataStore afterOrderFailure=new YamlDataStore(dir.toFile(),Logger.getLogger("big-money-test"));afterOrderFailure.load();
-        eq("failed order save preserves disk state",afterOrderFailure.allBuyOrders().get(0).collected(),1);
+        eq("failed order save preserves disk state",order(afterOrderFailure,"test-order").collected(),1);
+        boolean listingWriteFailed=false;
+        try {store.saveAhListing(auction.withClosed(true));} catch(IllegalStateException expected) {listingWriteFailed=true;}
+        check("YAML listing save failure reported",listingWriteFailed);
+        check("failed YAML listing save restores cache",!listing(store,"expensive-auction").closed());
+        YamlDataStore afterListingFailure=new YamlDataStore(dir.toFile(),Logger.getLogger("big-money-test"));afterListingFailure.load();
+        check("failed YAML listing save preserves disk",!listing(afterListingFailure,"expensive-auction").closed());
         Files.delete(dir.resolve("market.yml.tmp"));
         eq("high balance survives restart",reopened.getBalanceExact(a),economy.getBalanceExact(a));
         eq("other balance survives restart",reopened.getBalanceExact(b),economy.getBalanceExact(b));
@@ -110,9 +127,14 @@ public final class BigMoneyTest {
         eq("concurrent deposits don't lose cents",economy.getBalanceExact(a),beforeA.add(BigInteger.valueOf(80)));
         Path legacyMarket=dir.resolve("legacy-market"); Files.createDirectories(legacyMarket);
         Files.writeString(legacyMarket.resolve("market.yml"), "orders:\n  historical:\n    buyer: '"+a+"'\n    buyer-name: 'Alice'\n    material: 'IRON_INGOT'\n    amount: 5\n    filled: 3\n    price-each: 100\n    created: 1\n    expires: 9999999999999\n    closed: false\n");
+        Files.writeString(legacyMarket.resolve("market.yml"), "ah:\n  historical-ah:\n    seller: '"+a+"'\n    seller-name: 'Alice'\n    material: 'DIAMOND'\n    amount: 3\n    price: 12345\n    listed: 1\n    expires: 9999999999999\n    closed: false\n",java.nio.file.StandardOpenOption.APPEND);
         Logger quiet=Logger.getLogger("legacy-market-test");quiet.setLevel(java.util.logging.Level.OFF);
         YamlDataStore legacyStore=new YamlDataStore(legacyMarket.toFile(),quiet);legacyStore.load();
         eq("old YAML fills are not minted without reconciliation",legacyStore.allBuyOrders().get(0).claimable(),0);
+        eq("old per-item order migrates to same total",legacyStore.allBuyOrders().get(0).totalCents(),BigInteger.valueOf(500));
+        eq("old order keeps remaining escrow",legacyStore.allBuyOrders().get(0).refundCents(),BigInteger.valueOf(200));
+        eq("old YAML auction price is already a total",listing(legacyStore,"historical-ah").priceExactCents(),BigInteger.valueOf(12345));
+        eq("old YAML auction has no item payload",listing(legacyStore,"historical-ah").itemData(),null);
         legacyStore.save();
         YamlDataStore legacyRestart=new YamlDataStore(legacyMarket.toFile(),quiet);legacyRestart.load();
         eq("legacy reconciliation marker survives restart",legacyRestart.allBuyOrders().get(0).collected(),3);
@@ -124,6 +146,31 @@ public final class BigMoneyTest {
         finally {brokenMarket.close();}
         check("corrupt YAML order fails closed",refusedMarket);
         eq("failed market startup cannot overwrite data",Files.readString(badMarket.resolve("market.yml")),invalidMarket);
+        Path badAh=dir.resolve("bad-auction");Files.createDirectories(badAh);
+        String invalidAh="ah:\n  broken:\n    seller: 'not-a-uuid'\n    material: 'DIAMOND'\n    amount: 2\n    price-total: '100'\n";
+        Files.writeString(badAh.resolve("market.yml"),invalidAh);
+        YamlDataStore brokenAh=new YamlDataStore(badAh.toFile(),quiet);boolean refusedAh=false;
+        try {brokenAh.load();} catch(IllegalStateException expected) {refusedAh=true;} finally {brokenAh.close();}
+        check("invalid YAML auction owner fails closed",refusedAh);
+        eq("invalid auction is never overwritten",Files.readString(badAh.resolve("market.yml")),invalidAh);
+        Path badTotal=dir.resolve("bad-total");Files.createDirectories(badTotal);
+        String invalidTotal="orders:\n  broken:\n    buyer: '"+a+"'\n    material: 'IRON_INGOT'\n    amount: 5\n    filled: 0\n    collected: 0\n    price-total: 'bad'\n";
+        Files.writeString(badTotal.resolve("market.yml"),invalidTotal);
+        YamlDataStore brokenTotal=new YamlDataStore(badTotal.toFile(),quiet);boolean refusedTotal=false;
+        try {brokenTotal.load();} catch(IllegalArgumentException expected) {refusedTotal=true;} finally {brokenTotal.close();}
+        check("invalid YAML order total fails closed",refusedTotal);
+        eq("invalid order total is never overwritten",Files.readString(badTotal.resolve("market.yml")),invalidTotal);
+        String[] badSections={"ah: broken\n", "orders: broken\n", "orders:\n  lost-order: broken\n"};
+        for (int i=0;i<badSections.length;i++) {
+            Path badSection=dir.resolve("bad-section-"+i); Files.createDirectories(badSection);
+            Path file=badSection.resolve("market.yml"); Files.writeString(file,badSections[i]);
+            YamlDataStore invalidSection=new YamlDataStore(badSection.toFile(),quiet);
+            boolean refusedSection=false;
+            try {invalidSection.load();} catch(IllegalStateException expected) {refusedSection=true;}
+            finally {invalidSection.close();}
+            check("malformed YAML market section "+i+" fails closed",refusedSection);
+            eq("malformed YAML market section "+i+" is never overwritten",Files.readString(file),badSections[i]);
+        }
         Path corrupt=dir.resolve("corrupt"); Files.createDirectories(corrupt);
         String invalid=a+":\n  name: Alice\n  balance: broken\n";
         Files.writeString(corrupt.resolve("economy.yml"),invalid);
@@ -133,6 +180,8 @@ public final class BigMoneyTest {
         check("invalid account aborts loading",refused);
         eq("failed startup and disable never overwrite bad source",Files.readString(corrupt.resolve("economy.yml")),invalid);
     }
+    private static BuyOrder order(YamlDataStore store,String id) {return store.allBuyOrders().stream().filter(o->o.id().equals(id)).findFirst().orElseThrow();}
+    private static AhListing listing(YamlDataStore store,String id) {return store.allAhListings().stream().filter(a->a.id().equals(id)).findFirst().orElseThrow();}
     private static void check(String name, boolean ok){if(ok)passed++;else{failed++;System.out.println("FAIL "+name);}}
     private static void eq(String name,Object actual,Object expected){check(name+" expected="+expected+" actual="+actual,java.util.Objects.equals(actual,expected));}
 }

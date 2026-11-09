@@ -14,9 +14,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 /**
- * {@code /order <item> <amount> <price-per-item>} creates a buy order (the
- * price is escrowed); {@code /orders} opens the browser where sellers fill
- * orders instantly.
+ * {@code /order} and {@code /orders} browse buy orders. The direct command
+ * {@code /order <item> <amount> <total-price>} escrows the total.
  */
 public final class OrderCommand implements CommandExecutor, TabCompleter {
 
@@ -40,16 +39,16 @@ public final class OrderCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(messages.render("shop.no-permission"));
             return true;
         }
-        if (command.getName().equals("orders")) {
-            gui.open(player, args.length > 0 && args[0].equalsIgnoreCase("mine"), 0);
+        gui.cancelPendingPrice(player);
+        if (args.length == 0 || args[0].equalsIgnoreCase("mine")) {
+            gui.open(player, args.length > 0, 0);
             return true;
         }
-        // /order opens the creation screen; the traditional direct command remains available.
-        if (args.length == 0) {
+        if (args.length == 1 && args[0].equalsIgnoreCase("create")) {
             gui.openCreate(player);
             return true;
         }
-        if (args.length < 3) {
+        if (command.getName().equals("orders") || args.length < 3) {
             sender.sendMessage(messages.render("order.usage"));
             return true;
         }
@@ -65,12 +64,12 @@ public final class OrderCommand implements CommandExecutor, TabCompleter {
             messages.send(player, "general.invalid-amount", Map.of("input", args[1]));
             return true;
         }
-        long priceEach = Money.parse(args[2]);
-        if (priceEach == Money.INVALID) {
+        java.math.BigInteger priceTotal = Money.parseExact(args[2]);
+        if (priceTotal == null) {
             messages.send(player, "general.invalid-amount", Map.of("input", args[2]));
             return true;
         }
-        OrderService.Result result = service.create(player, material.name(), amount, priceEach);
+        OrderService.Result result = service.create(player, material.name(), amount, priceTotal);
         messages.send(player, result.templateKey(), result.values());
         return true;
     }
@@ -80,13 +79,11 @@ public final class OrderCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission("veltryx.order")) {
             return List.of();
         }
-        if (command.getName().equals("orders") && args.length == 1) {
-            String prefix = args[0].toLowerCase(Locale.ROOT);
-            return "mine".startsWith(prefix) ? List.of("mine") : List.of();
-        }
         if (args.length == 1) {
             String prefix = args[0].toLowerCase(Locale.ROOT);
             List<String> out = new ArrayList<>();
+            for (String option : List.of("mine", "create")) if (option.startsWith(prefix)) out.add(option);
+            if (command.getName().equals("orders")) return out;
             for (Material material : Material.values()) {
                 if (out.size() >= 20) {
                     break;

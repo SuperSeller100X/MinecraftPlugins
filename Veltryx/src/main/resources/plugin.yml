@@ -94,15 +94,15 @@ commands:
     aliases: [vx]
   ah:
     description: Player auction house — buy and sell items from other players.
-    usage: /<command> [sell <price-per-item>|mine]
+    usage: /<command> [sell <total-price>|mine]
     aliases: [auction, auctions]
   order:
-    description: Create a buy order (money escrowed until players fill it).
-    usage: /<command> [<item> <amount> <price-per-item>]
+    description: Browse buy orders or create one with a total escrowed price.
+    usage: /<command> [create|mine|<item> <amount> <total-price>]
     aliases: [buyorder]
   orders:
     description: Browse buy orders and sell into them instantly, or manage your own.
-    usage: /<command> [mine]
+    usage: /<command> [create|mine]
   home:
     description: Teleport to one of your homes (the first ones are free).
     usage: /<command> [name]

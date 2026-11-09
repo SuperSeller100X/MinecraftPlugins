@@ -94,11 +94,12 @@ public final class ShardCatalog {
                 Behavior.TREE_AXE,
                 List.of(new EnchantSpec(Enchantment.EFFICIENCY, 5, "Efficiency V"),
                         new EnchantSpec(Enchantment.UNBREAKING, 3, "Unbreaking III"),
-                        new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
-                List.of(new EnchantSpec(Enchantment.FORTUNE, 3, "Fortune III"),
+                        new EnchantSpec(Enchantment.MENDING, 1, "Mending"),
                         new EnchantSpec(Enchantment.SILK_TOUCH, 1, "Silk Touch")),
+                List.of(),
                 List.of("§7Fells §bwhole trees §7at once.",
-                        "§7Mines a §b3x3 §7area on other blocks.")));
+                        "§7Mines a §b3x3 §7area on other blocks.",
+                        "§7Includes §bSilk Touch§7.")));
         entries.put("shard_pickaxe", new Entry("shard_pickaxe", "NETHERITE_PICKAXE",
                 "Shard Pickaxe", 500, 24L * 60 * 60 * 1000,
                 Behavior.AREA_MINE,

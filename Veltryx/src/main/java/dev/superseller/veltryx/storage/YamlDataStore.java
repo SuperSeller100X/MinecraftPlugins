@@ -135,29 +135,29 @@ public final class YamlDataStore implements DataStore {
         buyOrders.clear();
         YamlConfiguration market = readMarket();
         ConfigurationSection ahSection = market.getConfigurationSection("ah");
+        if (ahSection == null && market.getKeys(false).contains("ah"))
+            throw new IllegalStateException("Invalid auction section in market.yml");
         if (ahSection != null) {
             for (String key : ahSection.getKeys(false)) {
                 ConfigurationSection s = ahSection.getConfigurationSection(key);
-                if (s == null) {
-                    continue;
-                }
+                if (s == null) throw new IllegalStateException("Invalid auction listing " + key);
                 UUID seller = parseUuid(s.getString("seller", ""));
-                if (seller == null) {
-                    continue;
-                }
+                if (seller == null) throw new IllegalStateException("Invalid seller in auction " + key);
+                BigInteger price = s.getKeys(false).contains("price-total")
+                        ? new BigInteger(s.getString("price-total", "")) : BigInteger.valueOf(s.getLong("price", 0L));
                 ahListings.put(key, new AhListing(key, seller, s.getString("seller-name", "?"),
-                        s.getString("material", "PAPER"), s.getInt("amount", 1),
-                        s.getLong("price", 0L), s.getLong("listed", 0L),
-                        s.getLong("expires", 0L), s.getBoolean("closed", false)));
+                        s.getString("material", ""), s.getInt("amount", -1), price,
+                        s.getLong("listed", 0L), s.getLong("expires", 0L),
+                        s.getBoolean("closed", false), s.getString("item-data", null)));
             }
         }
         ConfigurationSection orderSection = market.getConfigurationSection("orders");
+        if (orderSection == null && market.getKeys(false).contains("orders"))
+            throw new IllegalStateException("Invalid orders section in market.yml");
         if (orderSection != null) {
             for (String key : orderSection.getKeys(false)) {
                 ConfigurationSection s = orderSection.getConfigurationSection(key);
-                if (s == null) {
-                    continue;
-                }
+                if (s == null) throw new IllegalStateException("Invalid buy order " + key);
                 UUID buyer = parseUuid(s.getString("buyer", ""));
                 if (buyer == null) throw new IllegalStateException("Invalid buyer in order " + key);
                 int filled = s.getInt("filled", -1);
@@ -166,9 +166,12 @@ public final class YamlDataStore implements DataStore {
                 // items: an operator must reconcile any historical fills from a backup.
                 if (legacy && filled > 0) logger.warning("Legacy order " + key + " has " + filled
                         + " filled items with unknown delivery; reconcile manually before compensating.");
+                int amount = s.getInt("amount", -1);
+                BigInteger total = s.getKeys(false).contains("price-total")
+                        ? new BigInteger(s.getString("price-total", ""))
+                        : BigInteger.valueOf(s.getLong("price-each", -1L)).multiply(BigInteger.valueOf(amount));
                 buyOrders.put(key, new BuyOrder(key, buyer, s.getString("buyer-name", "?"),
-                        s.getString("material", ""), s.getInt("amount", -1),
-                        filled, s.getLong("price-each", -1L),
+                        s.getString("material", ""), amount, filled, total,
                         s.getLong("created", 0L), s.getLong("expires", 0L),
                         s.getBoolean("closed", false), legacy ? filled : s.getInt("collected", -1)));
             }
@@ -446,7 +449,9 @@ public final class YamlDataStore implements DataStore {
             market.set(path + ".seller-name", a.sellerName());
             market.set(path + ".material", a.material());
             market.set(path + ".amount", a.amount());
-            market.set(path + ".price", a.priceCents());
+            market.set(path + ".price", dev.superseller.veltryx.util.Money.legacyLong(a.priceExactCents()));
+            market.set(path + ".price-total", a.priceExactCents().toString());
+            if (a.itemData() != null) market.set(path + ".item-data", a.itemData());
             market.set(path + ".listed", a.listed());
             market.set(path + ".expires", a.expires());
             market.set(path + ".closed", a.closed());
@@ -459,7 +464,8 @@ public final class YamlDataStore implements DataStore {
             market.set(path + ".amount", o.amount());
             market.set(path + ".filled", o.filled());
             market.set(path + ".collected", o.collected());
-            market.set(path + ".price-each", o.priceEachCents());
+            market.set(path + ".price-each", o.priceEachCents()); // legacy, approximate view only
+            market.set(path + ".price-total", o.totalCents().toString());
             market.set(path + ".created", o.created());
             market.set(path + ".expires", o.expires());
             market.set(path + ".closed", o.closed());
@@ -488,7 +494,7 @@ public final class YamlDataStore implements DataStore {
             try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException ex) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
         } catch (IOException | RuntimeException ex) {
-            throw new IllegalStateException("Could not persist buy orders", ex);
+            throw new IllegalStateException("Could not persist market data", ex);
         }
     }
 
@@ -792,8 +798,15 @@ public final class YamlDataStore implements DataStore {
 
     @Override
     public void saveAhListing(AhListing entry) {
-        ahListings.put(entry.id(), entry);
-        save();
+        synchronized (marketLock) {
+            if (!loaded) throw new IllegalStateException("Market data has not been loaded");
+            AhListing previous = ahListings.put(entry.id(), entry);
+            try { saveMarket(); }
+            catch (RuntimeException ex) {
+                if (previous == null) ahListings.remove(entry.id()); else ahListings.put(entry.id(), previous);
+                throw ex;
+            }
+        }
     }
 
     @Override

@@ -648,7 +648,11 @@ public final class SmokeTest {
         t("catalog pickaxe behavior", cat.byId("shard_pickaxe").behavior(), dev.superseller.veltryx.shards.Behavior.AREA_MINE);
         t("catalog totem behavior", cat.byId("void_totem").behavior(), dev.superseller.veltryx.shards.Behavior.VOID_TOTEM);
         t("catalog tools have choice", cat.byId("shard_pickaxe").hasChoice(), true);
-        t("catalog axe has choice", cat.byId("shard_axe").hasChoice(), true);
+        t("catalog axe has fixed enchantments", cat.byId("shard_axe").hasChoice(), false);
+        t("catalog axe always has Silk Touch", cat.byId("shard_axe").enchants().stream().anyMatch(
+                e -> e.enchantment().equals(org.bukkit.enchantments.Enchantment.SILK_TOUCH) && e.level() == 1), true);
+        t("catalog axe does not have Fortune", cat.byId("shard_axe").enchants().stream().noneMatch(
+                e -> e.enchantment().equals(org.bukkit.enchantments.Enchantment.FORTUNE)), true);
         t("catalog weapons no choice", cat.byId("shard_spear").hasChoice(), false);
         t("catalog trident riptide", Integer.valueOf(cat.byId("shard_trident").enchants().get(0).level()), Integer.valueOf(3));
         t("income per minute", Long.valueOf(dev.superseller.veltryx.shards.ShardService.SHARDS_PER_MINUTE), Long.valueOf(1L));
@@ -712,11 +716,11 @@ public final class SmokeTest {
         }
         t("sharpness found", Boolean.valueOf(sharpness != null), Boolean.valueOf(true));
         t("mending found", Boolean.valueOf(mending != null), Boolean.valueOf(true));
-        t("sharpness V price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 5)), Long.valueOf(125000L));
-        t("sharpness I price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 1)), Long.valueOf(25000L));
-        t("book level clamps high", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 99)), Long.valueOf(125000L));
-        t("book level clamps low", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 0)), Long.valueOf(25000L));
-        t("mending rare price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(mending, 1)), Long.valueOf(80000L));
+        t("sharpness V price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 5)), Long.valueOf(5000L));
+        t("sharpness I price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 1)), Long.valueOf(1000L));
+        t("book level clamps high", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 99)), Long.valueOf(5000L));
+        t("book level clamps low", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(sharpness, 0)), Long.valueOf(1000L));
+        t("mending rare price", Long.valueOf(dev.superseller.veltryx.shop.ChoiceCatalog.bookPriceCents(mending, 1)), Long.valueOf(4000L));
 
         // Search matching + quickshop defaults
         t("search by display", dev.superseller.veltryx.shop.ChoiceCatalog.matches("diamond", "Diamond Sword", "DIAMOND_SWORD"), true);

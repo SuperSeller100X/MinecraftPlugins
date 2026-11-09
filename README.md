@@ -302,12 +302,12 @@ balances, and YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
 - **`/shop` (`/store`) + `/sell`** — 1,530 curated 26.3 survival items,
-  excluding elytra, the dragon egg and unobtainable/operator items. Potion,
-  tipped-arrow, book and explorer-map purchases retain their variants or
-  destinations. Search uses a sign editor; `/sell` accepts deposited items
-  and confirms with a green pane. Sell prices are capped against bundled modeled recipes and
-  selected transformations; this does not cover every trade, farm or plugin.
-  Prices are in `shop.yml` and existing values are preserved on upgrade.
+  excluding elytra, the dragon egg and unobtainable/operator items. Search by
+  name, category or base price; left-click to buy and right-click to sell with
+  a quantity and exact preview. Choose potion/arrow effects and forms or book
+  enchantments and levels. `/sell` sells only items placed in its deposit tray.
+  Pricing uses `shop.yml` and modeled recipe caps; no model covers every trade,
+  farm or plugin. See the module README for variant pricing and upgrades.
 - **`/settings`** — per-player, persistent natural-mob and phantom spawning
   preferences and night vision. Other players and spawners can still spawn
   mobs nearby when a player opts out of natural spawning.
@@ -339,9 +339,9 @@ balances, and YAML **or** SQLite storage.
   they cannot cause false bans.
 - `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
   levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
-- `/ah` auction house (list/buy/reclaim, 48h, capped) · `/order` creation GUI
-  and `/orders` marketplace with escrow and buyer collection (see the module
-  README before upgrading historical orders) · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
+- `/ah` browses auction listings and lists the exact main-hand stack for a
+  typed **total** price · `/order` browses buy orders, with GUI creation, total
+  escrow and buyer collection (see the module README before upgrading) · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
   max 45) with **per-home rename and any-item icons** · `/tpa`/`/tpahere`/`/tp`
   with per-counterpart cooldowns
 - **`/sell` values enchants and wear**: enchantments raise the price
@@ -352,7 +352,7 @@ balances, and YAML **or** SQLite storage.
   the **Shard Spear** (native Lunge III, 90% less Lunge exhaustion),
   **Shard Trident** (hold and release Riptide III even when dry, with a 5s
   dry-only cooldown; wet use remains vanilla), **Shard Axe**
-  (whole-tree felling, configurable log cap), **Shard Pickaxe** (3×3 with amethyst
+  (whole-tree felling, configurable log cap, always Silk Touch), **Shard Pickaxe** (3×3 with amethyst
   particles) at 500 shards each — self-destructing **24h after purchase**
   like the ShardTools plugin — plus the **Void Totem** (150) that rescues
   you from the void. No way to buy shards with money: earned, paid or given.
@@ -364,10 +364,11 @@ balances, and YAML **or** SQLite storage.
   stacks can cause severe lag, and normal non-light spawn rules still apply.
   Inventory mode uses
   the no-player-killer loot table; rolls that do not fit are discarded, and
-  normal non-light spawn requirements still apply. Back up `spawners/` with world and
-  player data. Spawners are blocked from Veltryx's material-only auctions and
-  buy orders. Protection plugins need to guard interactions and the
-  `SpawnerSpawnEvent`; integrations that only check `CreatureSpawnEvent`
+  normal non-light spawn requirements still apply. Back up `spawners/` with world,
+  player and market data. Actual spawner items can be listed in `/ah` with their
+  identity intact; material-only orders do not consume custom spawners.
+  Protection plugins need to guard interactions and the `SpawnerSpawnEvent`;
+  integrations that only check `CreatureSpawnEvent`
   cannot stop virtual loot. See the module README for details.
 - **`/rtp` random teleport** — world picker (Overworld / Nether / End),
   **10 million block radius**, async **safe-block search** (never lava,

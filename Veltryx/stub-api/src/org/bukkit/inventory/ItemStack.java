@@ -26,6 +26,8 @@ public class ItemStack implements Cloneable {
         else if (name.equals("FILLED_MAP") || name.endsWith("_MAP")) meta = new org.bukkit.inventory.meta.StubMapMeta();
         else if (name.equals("WRITTEN_BOOK")) meta = new org.bukkit.inventory.meta.StubBookMeta();
         else meta = new StubItemMeta();
+        if (type == Material.LINGERING_POTION) data.put(io.papermc.paper.datacomponent.DataComponentTypes.POTION_DURATION_SCALE, 0.25f);
+        if (type == Material.TIPPED_ARROW) data.put(io.papermc.paper.datacomponent.DataComponentTypes.POTION_DURATION_SCALE, 0.125f);
         if (type == Material.TRIDENT) {
             data.put(io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE, 250);
             data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, 0);
@@ -40,7 +42,10 @@ public class ItemStack implements Cloneable {
     public Map<org.bukkit.enchantments.Enchantment, Integer> getEnchantments() { return meta == null ? Map.of() : meta.getEnchants(); }
     public <T> void setData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type, T value) {
         data.put(type, value);
-        if (type == io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE && meta instanceof org.bukkit.inventory.meta.Damageable damage) damage.setDamage((Integer)value);
+        if (meta instanceof org.bukkit.inventory.meta.Damageable damage) {
+            if (type == io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE) damage.setDamage((Integer)value);
+            if (type == io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE) damage.setMaxDamage((Integer)value);
+        }
     }
     public void setData(io.papermc.paper.datacomponent.DataComponentType.NonValued type) { data.put(type, Boolean.TRUE); }
     public void unsetData(io.papermc.paper.datacomponent.DataComponentType type) { data.remove(type); }
@@ -50,8 +55,11 @@ public class ItemStack implements Cloneable {
     public boolean setItemMeta(ItemMeta meta) {
         if (testRejectItemMeta) return false;
         this.meta = meta;
-        if (meta instanceof org.bukkit.inventory.meta.Damageable damage && data.containsKey(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE))
-            data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, damage.getDamage());
+        if (meta instanceof org.bukkit.inventory.meta.Damageable damage) {
+            if (data.containsKey(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE))
+                data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, damage.getDamage());
+            if (damage.hasMaxDamage()) data.put(io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE, damage.getMaxDamage());
+        }
         return true;
     }
     @Override public ItemStack clone() {
@@ -84,8 +92,39 @@ public class ItemStack implements Cloneable {
             }
             out.writeBoolean(m.hasItemModel());
             if (m.hasItemModel()) out.writeUTF(m.getItemModel().toString());
+            out.writeInt(m.getDamage());
+            writeEnchants(out, m.getEnchants());
+            if (m instanceof org.bukkit.inventory.meta.StubEnchantmentStorageMeta book) writeEnchants(out, book.stored);
+            else out.writeInt(0);
+            var lore=m.lore(); out.writeInt(lore == null ? 0 : lore.size());
+            if (lore != null) for (var line : lore) {
+                StubComponent c=(StubComponent)line; out.writeUTF(c.content); out.writeBoolean(c.italicDisabled);
+            }
+            out.writeBoolean(m.testCustomModelData()!=null);
+            if (m.testCustomModelData()!=null) out.writeInt(m.testCustomModelData());
+            out.writeBoolean(hasData(io.papermc.paper.datacomponent.DataComponentTypes.UNBREAKABLE));
+            if (m instanceof org.bukkit.inventory.meta.StubPotionMeta potion && potion.getBasePotionType()!=null) {
+                out.writeBoolean(true);out.writeUTF(potion.getBasePotionType().name());
+            } else out.writeBoolean(false);
+            out.writeBoolean(m.hasMaxDamage());
+            if (m.hasMaxDamage()) out.writeInt(m.getMaxDamage());
             out.flush(); return bytes.toByteArray();
         } catch(IOException e){throw new IllegalStateException(e);}
+    }
+    private static void writeEnchants(DataOutputStream out, Map<org.bukkit.enchantments.Enchantment,Integer> values) throws IOException {
+        out.writeInt(values.size());
+        for (var entry : values.entrySet()) {
+            String found=null;
+            for (var field : org.bukkit.enchantments.Enchantment.class.getFields()) try {
+                if (field.get(null)==entry.getKey()) { found=field.getName(); break; }
+            } catch (ReflectiveOperationException ignored) { }
+            if(found==null)throw new IOException("unknown test enchantment");
+            out.writeUTF(found);out.writeInt(entry.getValue());
+        }
+    }
+    private static org.bukkit.enchantments.Enchantment enchant(String name) throws IOException {
+        try { return (org.bukkit.enchantments.Enchantment)org.bukkit.enchantments.Enchantment.class.getField(name).get(null); }
+        catch (ReflectiveOperationException e) { throw new IOException(e); }
     }
     public static ItemStack deserializeBytes(byte[] bytes) {
         try {
@@ -100,6 +139,26 @@ public class ItemStack implements Cloneable {
                 values.put(key,value);
             }
             if (in.available() > 0 && in.readBoolean()) m.setItemModel(NamespacedKey.fromString(in.readUTF()));
+            if (in.available() > 0) {
+                m.setDamage(in.readInt());
+                if (stack.data.containsKey(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE))
+                    stack.data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, m.getDamage());
+                int enchants=in.readInt(); for(int i=0;i<enchants;i++) m.addEnchant(enchant(in.readUTF()),in.readInt(),true);
+                int stored=in.readInt(); for(int i=0;i<stored;i++) {
+                    var e=enchant(in.readUTF()); int level=in.readInt();
+                    if (m instanceof org.bukkit.inventory.meta.StubEnchantmentStorageMeta book) book.addStoredEnchant(e,level,true);
+                }
+                int lines=in.readInt(); java.util.List<net.kyori.adventure.text.Component> lore=new java.util.ArrayList<>();
+                for(int i=0;i<lines;i++){StubComponent c=new StubComponent(in.readUTF());c.italicDisabled=in.readBoolean();lore.add(c);} m.lore(lore);
+                if(in.readBoolean())m.setCustomModelData(in.readInt());
+                if(in.readBoolean())stack.setData(io.papermc.paper.datacomponent.DataComponentTypes.UNBREAKABLE);
+                if(in.available()>0 && in.readBoolean()) {
+                    org.bukkit.potion.PotionType type=org.bukkit.potion.PotionType.valueOf(in.readUTF());
+                    if(m instanceof org.bukkit.inventory.meta.StubPotionMeta potion)potion.setBasePotionType(type);
+                }
+                if(in.available()>0 && in.readBoolean())
+                    stack.setData(io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE, in.readInt());
+            }
             return stack;
         } catch(IOException e){throw new IllegalArgumentException(e);}
     }

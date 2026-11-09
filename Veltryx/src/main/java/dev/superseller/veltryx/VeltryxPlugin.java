@@ -90,6 +90,7 @@ public final class VeltryxPlugin extends JavaPlugin {
     private TpaService tpaService;
     private AhService ahService;
     private AhGui ahGui;
+    private dev.superseller.veltryx.market.MarketPricePrompt marketPricePrompt;
     private OrderService orderService;
     private OrderGui orderGui;
     private ShopGui shopGui;
@@ -151,10 +152,11 @@ public final class VeltryxPlugin extends JavaPlugin {
             homeService = new HomeService(store, economy, messages, config);
             homesGui = new HomesGui(homeService, economy, messages, config);
             tpaService = new TpaService();
+            marketPricePrompt = new dev.superseller.veltryx.market.MarketPricePrompt(messages);
             ahService = new AhService(store, economy, messages, config);
-            ahGui = new AhGui(ahService, economy, messages);
+            ahGui = new AhGui(ahService, economy, messages, marketPricePrompt);
             orderService = new OrderService(store, economy, messages, config);
-            orderGui = new OrderGui(orderService, economy, messages);
+            orderGui = new OrderGui(orderService, economy, messages, marketPricePrompt);
             shardCatalog = new dev.superseller.veltryx.shards.ShardCatalog();
             shardItems = new dev.superseller.veltryx.shards.ShardItems(this);
             shardService = new dev.superseller.veltryx.shards.ShardService(store);
@@ -175,8 +177,15 @@ public final class VeltryxPlugin extends JavaPlugin {
                     getDataFolder().toPath().resolve("quickshop-slots.properties"), getLogger());
             shopExtrasGui.attachShopGui(shopGui);
             shopGui.attachExtras(shopExtrasGui);
-            shopExtrasGui.attachPromptCancellation(homesGui::cancelPendingRename);
-            homesGui.attachPromptCancellation(shopExtrasGui::cancelPendingSearch);
+            shopExtrasGui.attachPromptCancellation(player -> {
+                homesGui.cancelPendingRename(player); marketPricePrompt.cancelPending(player);
+            });
+            homesGui.attachPromptCancellation(player -> {
+                shopExtrasGui.cancelPendingSearch(player); marketPricePrompt.cancelPending(player);
+            });
+            marketPricePrompt.attachPromptCancellation(player -> {
+                homesGui.cancelPendingRename(player); shopExtrasGui.cancelPendingSearch(player);
+            });
             rtpService = new dev.superseller.veltryx.rtp.RtpService(config, messages);
             rtpGui = new dev.superseller.veltryx.rtp.RtpGui(rtpService);
             preferences = new dev.superseller.veltryx.settings.PreferencesStore(
@@ -390,6 +399,7 @@ public final class VeltryxPlugin extends JavaPlugin {
         register(new AntiCheatListener(anticheat, config, obfuscator));
         register(bans);
         register(shopExtrasGui);
+        register(marketPricePrompt); // private price input runs before chat moderation
         register(chatListener);
         register(vanish);
         register(freeze);

@@ -12,8 +12,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 /**
- * {@code /ah} — opens the auction house GUI; {@code /ah sell <price-per-item>}
- * lists the item held in the main hand.
+ * {@code /ah} browses the auction house; {@code /ah sell <total-price>}
+ * lists the stack held in the main hand.
  */
 public final class AhCommand implements CommandExecutor, TabCompleter {
 
@@ -37,6 +37,7 @@ public final class AhCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(messages.render("shop.no-permission"));
             return true;
         }
+        gui.cancelPendingPrice(player);
         if (args.length == 0) {
             gui.open(player, false, 0);
             return true;
@@ -46,12 +47,12 @@ public final class AhCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(messages.render("ah.usage-sell"));
                 return true;
             }
-            long priceEach = Money.parse(args[1]);
-            if (priceEach == Money.INVALID) {
+            java.math.BigInteger priceTotal = Money.parseExact(args[1]);
+            if (priceTotal == null) {
                 messages.send(player, "general.invalid-amount", Map.of("input", args[1]));
                 return true;
             }
-            AhService.Result result = service.listHeldItem(player, priceEach);
+            AhService.Result result = service.listHeldItem(player, priceTotal);
             messages.send(player, result.templateKey(), result.values());
             return true;
         }

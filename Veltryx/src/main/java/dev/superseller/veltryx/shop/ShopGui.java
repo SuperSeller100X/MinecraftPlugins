@@ -25,6 +25,9 @@ public final class ShopGui implements Listener {
         final String screen, category;
         final int page, amount;
         final Purchase purchase;
+        ShopService.SaleQuote sellQuote;
+        long buyUnit;
+        boolean transitioning;
         final Map<Integer, PriceTable.Entry> entries = new LinkedHashMap<>();
         final Map<Integer, String> categories = new LinkedHashMap<>();
         Inventory inventory;
@@ -72,7 +75,10 @@ public final class ShopGui implements Listener {
                 inv.setItem(slot, ShopItems.icon(icon, "§b" + display,
                         List.of("§7" + category.items().size() + " items", "§eClick to browse")));
             }
-            inv.setItem(26, ShopItems.icon("COMPASS", "§bSearch", List.of("§7Search every shop item.")));
+            inv.setItem(26, ShopItems.icon("COMPASS", "§bAdvanced Search", List.of(
+                    "§7Search names or IDs; words can be in any order.",
+                    "§7Try §fdiamond sword§7, §fcat:tools§7, or §f*§7.",
+                    "§7Price filters: §fbuy<=50 §7and §fsell>=1§7.")));
             inv.setItem(40, ShopItems.icon("ENDER_CHEST", "§bQuickShop", List.of("§7Your 45 quick-buy slots.")));
             inv.setItem(45, ShopItems.icon("YELLOW_SHULKER_BOX", "§bSellGUI", List.of("§7Open the sell screen.")));
             inv.setItem(53, ShopItems.icon("ARROW", "§bClose", List.of()));
@@ -97,10 +103,11 @@ public final class ShopGui implements Listener {
                 PriceTable.Entry entry = items.get(index);
                 int slot = ITEM_SLOTS[i]; h.entries.put(slot, entry);
                 int badge = categoryId.equals("ores") && current == 0 && i >= 7 && i <= 13 ? 9 : 1;
+                boolean choice = SurvivalItems.needsChoice(entry.material());
                 inv.setItem(slot, ShopItems.icon(entry.material(), badge, "§b" + PriceTable.displayName(entry.material()),
-                        List.of("§7Buy: §a$§f" + Money.formatCompact(entry.buyCents()) + " §7each",
-                                entry.sellCents() > 0 ? "§7Sell: §a$§f" + Money.formatCompact(entry.sellCents()) : "§7Not sold to the shop",
-                                "§eClick to choose")));
+                        List.of(choice ? "§7Prices depend on the variant" : "§7Buy: §a$§f" + Money.formatNumber(entry.buyCents()) + " §7each",
+                                entry.sellCents() > 0 ? "§7Sell base: §a$§f" + Money.formatNumber(entry.sellCents()) : "§7Not sold to the shop",
+                                "§eLeft-click to buy", "§6Right-click to sell")));
             }
             if (current > 0) inv.setItem(38, ShopItems.icon("BLUE_STAINED_GLASS_PANE", "§bPrevious Page", List.of()));
             inv.setItem(40, ShopItems.icon("NETHER_STAR", "§bBack to Server Shop", List.of()));
@@ -113,20 +120,58 @@ public final class ShopGui implements Listener {
     /** Open the same 5-row buying layout for ordinary items and chosen variants. */
     public void openBuying(Player player, Purchase purchase, String categoryId, int page, int requested) {
         PlatformScheduler.runForPlayer(player, () -> {
+            if (!player.hasPermission("veltryx.shop")) { messages.send(player, "shop.no-permission"); return; }
             long unit = purchase.unitPrice(shop.prices());
-            if (unit <= 0) { player.sendMessage(messages.render("shop.no-price", Map.of())); openMain(player); return; }
+            if (unit <= 0) { player.sendMessage(messages.render("shop.no-price", Map.of())); returnTo(player, categoryId, page); return; }
             int amount = Math.max(1, Math.min(64, requested));
             Holder h = new Holder("buy", categoryId, page, purchase, amount);
+            h.buyUnit = unit;
             Inventory inv = Bukkit.createInventory(h, 45, Txt.legacy("§8Buying §a› §b" + purchase.label())); h.inventory = inv;
             ShopItems.fill(inv);
             inv.setItem(13, ShopItems.icon("PAPER", "§aClick to purchase",
-                    List.of("§b" + shop.format(Money.multiplySaturated(unit, amount)), "§7Amount: " + amount)));
+                    List.of("§b" + shop.format(java.math.BigInteger.valueOf(unit).multiply(java.math.BigInteger.valueOf(amount))),
+                            "§7Amount: " + amount)));
             inv.setItem(22, ShopItems.icon(purchase.material(), amount, "§b" + purchase.label(),
                     List.of("§7Selected: " + amount, "§7Each: §a$§f" + Money.formatCompact(unit))));
             inv.setItem(23, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 1, "§b+1", List.of("§7Right-click to subtract")));
             inv.setItem(24, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 16, "§b+16", List.of("§7Right-click to subtract")));
             inv.setItem(25, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 32, "§b+32", List.of("§7Right-click to subtract")));
-            inv.setItem(31, ShopItems.icon("CHEST", "§cClick to buy stacks", List.of("§7Buy up to 64.")));
+            inv.setItem(31, ShopItems.icon("CHEST", "§bSelect 64", List.of("§7Review the total, then confirm.")));
+            inv.setItem(36, ShopItems.icon("YELLOW_SHULKER_BOX", "§bSellGUI", List.of()));
+            inv.setItem(44, ShopItems.icon("ARROW", "§bBack", List.of()));
+            player.openInventory(inv);
+        });
+    }
+
+    /** Preview a sale of the selected material/variant before removing anything. */
+    public void openSelling(Player player, Purchase purchase, String categoryId, int page, int requested) {
+        PlatformScheduler.runForPlayer(player, () -> {
+            if (!player.hasPermission("veltryx.shop")) { messages.send(player, "shop.no-permission"); return; }
+            if (!player.hasPermission("veltryx.sell")) { messages.send(player, "general.no-permission"); return; }
+            if (purchase.unitPrice(shop.prices()) <= 0 || shop.prices().sellCents(purchase.material()) <= 0) {
+                messages.send(player, "shop.no-sell"); returnTo(player, categoryId, page); return;
+            }
+            int amount = Math.max(1, Math.min(64, requested));
+            Holder h = new Holder("sell", categoryId, page, purchase, amount);
+            h.sellQuote = shop.quoteSell(player, purchase, amount);
+            Inventory inv = Bukkit.createInventory(h, 45, Txt.legacy("§8Selling §a› §b" + purchase.label())); h.inventory = inv;
+            ShopItems.fill(inv);
+            List<org.bukkit.inventory.ItemStack> preview = h.sellQuote.previewItems();
+            int[] previewSlots = {9, 10, 11, 12, 14, 15, 16, 17};
+            for (int i = 0; i < Math.min(preview.size(), previewSlots.length); i++) inv.setItem(previewSlots[i], preview.get(i));
+            List<String> quoteLore = new ArrayList<>();
+            quoteLore.add("§7Matching items: §f" + h.sellQuote.result().sold());
+            quoteLore.add("§7Payout: §a$§f" + Money.formatNumber(h.sellQuote.result().earnedCents()));
+            quoteLore.add("§7Hover the shown stacks to inspect them.");
+            if (preview.size() > previewSlots.length) quoteLore.add("§7And " + (preview.size() - previewSlots.length) + " more stacks.");
+            quoteLore.add("§7Enchantments, variants and wear affect value.");
+            inv.setItem(13, ShopItems.icon("PAPER", "§aConfirm sale", quoteLore));
+            inv.setItem(22, ShopItems.icon(purchase.material(), amount, "§b" + purchase.label(),
+                    List.of("§7Sell up to: §f" + amount, "§7Only matching inventory items are used.")));
+            inv.setItem(23, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 1, "§b+1", List.of("§7Right-click to subtract")));
+            inv.setItem(24, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 16, "§b+16", List.of("§7Right-click to subtract")));
+            inv.setItem(25, ShopItems.icon("LIGHT_BLUE_STAINED_GLASS_PANE", 32, "§b+32", List.of("§7Right-click to subtract")));
+            inv.setItem(31, ShopItems.icon("CHEST", "§bSelect up to 64", List.of("§7Review the payout, then confirm.")));
             inv.setItem(36, ShopItems.icon("YELLOW_SHULKER_BOX", "§bSellGUI", List.of()));
             inv.setItem(44, ShopItems.icon("ARROW", "§bBack", List.of()));
             player.openInventory(inv);
@@ -137,48 +182,94 @@ public final class ShopGui implements Listener {
         if (!(event.getInventory().getHolder() instanceof Holder h)) return;
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player) || event.getClickedInventory() == null
-                || event.getClickedInventory().getHolder() != h) return;
+                || event.getClickedInventory().getHolder() != h || h.transitioning) return;
+        if (!player.hasPermission("veltryx.shop")) { messages.send(player, "shop.no-permission"); return; }
+        org.bukkit.event.inventory.ClickType click = event.getClick();
+        if (click != org.bukkit.event.inventory.ClickType.LEFT && click != org.bukkit.event.inventory.ClickType.RIGHT
+                && click != org.bukkit.event.inventory.ClickType.SHIFT_LEFT && click != org.bukkit.event.inventory.ClickType.SHIFT_RIGHT) return;
         int slot = event.getSlot();
         if (h.screen.equals("main")) {
-            if (slot == 26 && extras != null) extras.openSearchPrompt(player);
-            else if (slot == 40 && extras != null) extras.openQuickshop(player);
-            else if (slot == 45 && sellOpener != null) openSell(player);
-            else if (slot == 53) PlatformScheduler.runForPlayer(player, player::closeInventory);
-            else if (h.categories.containsKey(slot)) openCategory(player, h.categories.get(slot), 0);
+            if (slot == 26 && extras != null) { h.transitioning = true; extras.openSearchPrompt(player); }
+            else if (slot == 40 && extras != null) { h.transitioning = true; extras.openQuickshop(player); }
+            else if (slot == 45 && sellOpener != null) {
+                if (!player.hasPermission("veltryx.sell")) { messages.send(player, "general.no-permission"); return; }
+                h.transitioning = true; openSell(player);
+            } else if (slot == 53) { h.transitioning = true; PlatformScheduler.runForPlayer(player, player::closeInventory); }
+            else if (h.categories.containsKey(slot)) { h.transitioning = true; openCategory(player, h.categories.get(slot), 0); }
         } else if (h.screen.equals("category")) {
             PriceTable.Entry entry = h.entries.get(slot);
             if (entry != null) {
-                if (SurvivalItems.needsChoice(entry.material()) && extras != null) {
-                    extras.openChoice(player, entry.material(), -1, h.category, h.page);
+                boolean selling = event.isRightClick();
+                if (selling && !player.hasPermission("veltryx.sell")) { messages.send(player, "general.no-permission"); return; }
+                if (SurvivalItems.needsChoice(entry.material())) {
+                    if (extras == null) return;
+                    h.transitioning = true; extras.openChoice(player, entry.material(), -1, h.category, h.page, selling);
                 } else {
+                    h.transitioning = true;
                     int start = h.category.equals("ores") && h.page == 0 && slot >= 19 && slot <= 25 ? 9 : 1;
-                    openBuying(player, Purchase.of(entry.material()), h.category, h.page, start);
+                    if (selling) openSelling(player, Purchase.of(entry.material()), h.category, h.page, start);
+                    else openBuying(player, Purchase.of(entry.material()), h.category, h.page, start);
                 }
-            } else if (slot == 38 && h.page > 0) openCategory(player, h.category, h.page - 1);
-            else if (slot == 40 || slot == 44) openMain(player);
-            else if (slot == 41) openCategory(player, h.category, h.page + 1);
-        } else {
-            if (slot == 13) buy(player, h.purchase, h.amount);
-            else if (slot == 31) buy(player, h.purchase, 64);
-            else if (slot >= 23 && slot <= 25) {
+            } else if (slot == 38 && h.page > 0) { h.transitioning = true; openCategory(player, h.category, h.page - 1); }
+            else if (slot == 40 || slot == 44) { h.transitioning = true; openMain(player); }
+            else if (slot == 41) { h.transitioning = true; openCategory(player, h.category, h.page + 1); }
+        } else if (h.screen.equals("buy") || h.screen.equals("sell")) {
+            boolean selling = h.screen.equals("sell");
+            if (selling && !player.hasPermission("veltryx.sell")) { messages.send(player, "general.no-permission"); return; }
+            if (slot == 13) {
+                h.transitioning = true;
+                if (selling) sell(player, h);
+                else {
+                    buy(player, h.purchase, h.amount, h.buyUnit);
+                    openBuying(player, h.purchase, h.category, h.page, h.amount);
+                }
+            } else if (slot == 31) {
+                h.transitioning = true;
+                if (selling) openSelling(player, h.purchase, h.category, h.page, 64);
+                else openBuying(player, h.purchase, h.category, h.page, 64);
+            } else if (slot >= 23 && slot <= 25) {
+                h.transitioning = true;
                 int step = slot == 23 ? 1 : slot == 24 ? 16 : 32;
-                openBuying(player, h.purchase, h.category, h.page, h.amount + (event.isRightClick() ? -step : step));
-            } else if (slot == 36 && sellOpener != null) openSell(player);
-            else if (slot == 44) {
-                if (h.category == null) openMain(player); else openCategory(player, h.category, h.page);
-            }
+                int amount = h.amount + (event.isRightClick() ? -step : step);
+                if (selling) openSelling(player, h.purchase, h.category, h.page, amount);
+                else openBuying(player, h.purchase, h.category, h.page, amount);
+            } else if (slot == 36 && sellOpener != null) {
+                if (!player.hasPermission("veltryx.sell")) { messages.send(player, "general.no-permission"); return; }
+                h.transitioning = true; openSell(player);
+            } else if (slot == 44) { h.transitioning = true; returnTo(player, h.category, h.page); }
         }
     }
     @EventHandler public void onDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof Holder) event.setCancelled(true);
     }
-    void buy(Player player, Purchase purchase, int amount) {
-        ShopService.BuyResult result = shop.buy(player, purchase, amount);
+    void buy(Player player, Purchase purchase, int amount, long expectedUnit) {
+        if (!player.hasPermission("veltryx.shop")) { messages.send(player, "shop.no-permission"); return; }
+        ShopService.BuyResult result = shop.buy(player, purchase, amount, expectedUnit);
         if (result.ok()) player.sendMessage(messages.render("shop.buy-done", Map.of(
                 "amount", String.valueOf(result.given()), "item", purchase.label(),
                 "price", Money.formatCompact(result.spentCents()), "balance", Money.formatCompact(shop.balance(player)))));
+        else if ("shop.price-changed".equals(result.failKey())) messages.send(player, "shop.price-changed");
         else player.sendMessage(messages.render(result.failKey(), result.failValues()));
     }
+    private void sell(Player player, Holder holder) {
+        ShopService.SellResult result = shop.sell(player, holder.purchase, holder.amount, holder.sellQuote);
+        if (result.ok()) {
+            dev.superseller.veltryx.util.SellNotices.show(player, messages, "shop.sold", Map.of(
+                    "count", String.valueOf(result.sold()), "item", holder.purchase.label(),
+                    "balance", Money.formatCompact(shop.balance(player))), result.earnedCents());
+        } else messages.send(player, result.failKey());
+        openSelling(player, holder.purchase, holder.category, holder.page, holder.amount);
+    }
+
+    private static final String SEARCH_ORIGIN = "@search:";
+    static String searchOrigin(String query) { return SEARCH_ORIGIN + query; }
+    void returnTo(Player player, String category, int page) {
+        if (category != null && category.startsWith(SEARCH_ORIGIN) && extras != null)
+            extras.openSearch(player, category.substring(SEARCH_ORIGIN.length()), page);
+        else if (category != null) openCategory(player, category, page);
+        else openMain(player);
+    }
+
     private void openSell(Player player) {
         if (player.hasPermission("veltryx.sell")) sellOpener.accept(player);
         else messages.send(player, "general.no-permission", Map.of());

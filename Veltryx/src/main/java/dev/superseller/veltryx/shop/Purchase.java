@@ -16,6 +16,30 @@ public record Purchase(String material, String choice, int level) {
         return (potion == null ? PriceTable.displayName(choice) : potion.displayName())
                 + " " + PriceTable.displayName(material);
     }
+    /** True only for the selected material and, when relevant, its selected variant. */
+    public boolean matches(org.bukkit.inventory.ItemStack stack) {
+        if (stack == null || !stack.getType().name().equals(material) || stack.getAmount() <= 0) return false;
+        if (material.equals("ENCHANTED_BOOK")) {
+            if (ChoiceCatalog.book(choice) == null || !(stack.getItemMeta() instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta book)) return false;
+            try {
+                var stored = book.getStoredEnchants();
+                if (stored.size() != 1) return false;
+                var entry = stored.entrySet().iterator().next();
+                var expected = org.bukkit.NamespacedKey.minecraft(choice.toLowerCase(java.util.Locale.ROOT));
+                return expected.equals(entry.getKey().getKey()) && entry.getValue() == level;
+            } catch (RuntimeException ex) { return false; }
+        }
+        if (SurvivalItems.needsChoice(material)) {
+            org.bukkit.potion.PotionType type = ShopExtrasGui.resolvePotion(choice);
+            if (type == null || !(stack.getItemMeta() instanceof org.bukkit.inventory.meta.PotionMeta potion)
+                    || type != potion.getBasePotionType() || potion.hasCustomEffects()) return false;
+            Float scale = stack.getData(io.papermc.paper.datacomponent.DataComponentTypes.POTION_DURATION_SCALE);
+            float effectiveScale = scale == null ? 1.0f : scale;
+            return Float.compare(effectiveScale, (float) PotionDisplay.durationScale(material)) == 0;
+        }
+        return choice.isEmpty();
+    }
+
     /** Current unit price, or -1 for a stale/invalid choice. */
     public long unitPrice(PriceTable table) {
         PriceTable.Entry entry = table.get(material);
@@ -25,12 +49,8 @@ public record Purchase(String material, String choice, int level) {
             return option == null || level < 1 || level > option.maxLevel() ? -1 : ChoiceCatalog.bookPriceCents(option, level);
         }
         if (SurvivalItems.needsChoice(material)) {
-            ChoiceCatalog.PotionOption option = ChoiceCatalog.potion(choice);
-            if (option == null) return -1;
-            if (material.equals("TIPPED_ARROW")) return (ChoiceCatalog.arrowPackCents(option) + 7) / 8;
-            if (material.equals("SPLASH_POTION")) return option.priceCents() * 11 / 10;
-            if (material.equals("LINGERING_POTION")) return option.priceCents() * 13 / 10;
-            return option.priceCents();
+            if (ChoiceCatalog.potion(choice) == null) return -1;
+            return VariantPricing.buyCents(table, material, choice);
         }
         return choice.isEmpty() ? entry.buyCents() : -1;
     }

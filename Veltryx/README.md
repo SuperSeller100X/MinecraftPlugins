@@ -34,49 +34,74 @@ restarts and shared by every future Veltryx module through the public
   multipliers are respectively **10³/10⁶/10⁹/10¹²/10¹⁵/10¹⁸/10²¹/10²⁴**.
   Balances and transfers use exact arbitrary-precision cents; untrusted amount
   inputs are limited to 160 characters and sub-cent results round half up.
-  Shop item prices and auction/order per-item prices retain their existing
-  bounds (the latter are capped at $100,000 per item).
+  Auction listings and buy orders also use exact, uncapped total prices; shop
+  catalogue prices retain their own bounds.
 
-### 🛛️ Shop, selling & QuickShop (`/shop`, `/sell`, `/quickshop`)
+### 🛒 Shop, selling & QuickShop (`/shop`, `/sell`, `/quickshop`)
 
 - The 26.3 catalogue has **1,530 survival-obtainable item types** in 11
-  categories. Elytra, the dragon egg, operator-only and other unobtainable
-  items are excluded. Items unknown to the running server are filtered out.
-- `/shop` shows the category menu; the compass opens a private sign editor to
-  search names and material IDs (`*` browses all, blank or `cancel` exits).
-  Choose an item to open its purchase screen. The `+1`, `+16`, and `+32` controls change the amount (right-click to subtract); the paper buys the
-  selected amount and the chest buys 64. The yellow shulker opens SellGUI.
-- `/sell` opens a 45-slot deposit tray. Click a gray placeholder or shift-click
-  an item from your inventory to add it, then click the green pane to sell the
-  deposited items. Unsellable items stay in the tray; closing it returns all
-  remaining items to your inventory (overflow drops are owner-locked and do
-  not despawn). Sale payouts appear in chat and the action bar. Enchantments
-  add up to 12% per level before the safety caps; damage
-  reduces value. Close the tray before a plugin reload or server stop; tray
-  contents are not persisted through a crash. Metadata-dependent potions, arrows, books and maps are
-  **buy-only**, because a flat sell price cannot value their variants safely.
-- Potion types, tipped-arrow effects, and enchanted-book enchantments and
-  levels are selected before purchase. Their per-choice prices are fixed in
-  `ChoiceCatalog`, not controlled by the generic `shop.yml` base price.
-  Written books are supplied with a title, author, and page. Ordinary filled
-  maps cover the buyer's world. Named explorer maps look for the indicated
-  structure and carry a persistent destination marker; if a matching structure
-  cannot be found in the buyer's world, the purchase is refunded. Camp maps
-  try the available camp variants; structure lookup may take time.
-- Each player has **45 initially empty QuickShop slots**. Click a slot, type a
-  search in the sign editor (`*` browses all, `cancel` exits), choose the item
-  and any variant, set an amount from 1 to 64, then save. Left-click the saved
-  slot to buy that amount, right-click to edit, or shift-right-click to clear.
-  Saved slots use the **current** shop price, not a cached price. The old
-  `quickshop.items` list is retained for upgrades but is no longer used.
-- Prices are editable in `shop.yml` and existing values are preserved on
-  update. At runtime, base sell prices are capped to half the cheapest cost
-  computed from the configured buys and the bundled recipe/transformation
-  model; enchantment bonuses are capped too. The model covers 1,900+ expanded
-  recipes and selected conversions, maximum Fortune drops and container
-  returns. **It does not cover every trade, farm, datapack, plugin or game
-  mechanic**, so server owners should audit their economy and trading rules.
-  Very cheap outputs may have an effective sell price of zero.
+  categories, with positive default buy and sell prices. Elytra, the dragon
+  egg, operator-only and other unobtainable items are excluded; materials
+  unknown to the running server are filtered out.
+- `/shop` opens the category menu. The compass opens a private sign editor;
+  `/shop search <query>` also works. Search accepts names or material IDs,
+  words in any order, `*` for all items, category filters such as `cat:tools`,
+  and base-price filters such as `buy<=50` and `sell>=1`. For example,
+  `/shop search cat:tools sword diamond`. Variant prices can differ from the
+  base prices used by the filters. Blank text or `cancel` closes the prompt.
+- In categories and search results, **left-click to buy** or **right-click to
+  sell**. Choose a quantity from 1 to 64, review the total, and click the
+  paper to confirm. `+1`, `+16` and `+32` adjust it (right-click to subtract);
+  the chest selects 64. Shop sales use matching **storage** items, not armor
+  or offhand. The preview displays the exact payout and up to eight selected
+  stack portions; changed items or prices invalidate the quote. Purchases also
+  reject a stale displayed price. The yellow shulker opens the separate tray.
+- `/sell` opens a **45-slot deposit tray**. Click a gray placeholder or
+  shift-click an item from inventory to add it, then click the green pane to
+  sell **only the deposited items**. An empty tray never scans your inventory.
+  Unsellable items stay in the tray; closing it returns them to inventory
+  (overflow drops are owner-locked and do not despawn). Payouts appear in chat
+  and the action bar. Close the tray before a plugin reload or stop; its
+  contents are not persisted through a crash.
+- Potion, splash, lingering and tipped-arrow forms share an effect picker;
+  choose ordinary, extended/redstone or upgraded/glowstone effects as
+  applicable. It shows the server's effect strength and duration, including
+  the normal lingering and arrow duration scales; splash duration is a direct
+  hit maximum and decreases with distance. Enchanted books require an
+  enchantment and level. Targeted `/shop` sales match the selected form and
+  variant: potions with additional custom effects or altered duration scales,
+  and books with multiple stored enchantments, are not selected by that
+  picker. They can still be placed deliberately in `/sell`, valued from their
+  base potion type or total enchantment levels.
+- Sale valuation uses the same catalogue, including stored book enchantments:
+  each enchantment level adds up to 12% of base value before safety caps, and
+  lost durability reduces it. Written books are supplied with a title, author
+  and page; ordinary filled maps cover the buyer's world. Named explorer maps
+  locate and mark the indicated structure or refund the purchase if none is
+  found. Structure lookup can take time.
+- Each player has **45 initially empty QuickShop slots**. Click a slot, search
+  (`*` browses all), select an item and any variant, choose an amount, then
+  save. Left-click the saved slot to buy that amount, right-click to edit, or
+  shift-right-click to clear. Saved slots use the **current** price, not a
+  cached price; if it changes while the menu is open, the purchase is refused
+  and the refreshed total must be reviewed. The old `quickshop.items` list is
+  retained for upgrades but is no longer used.
+- Ordinary prices are editable in `shop.yml`. Potion and tipped-arrow buy
+  prices instead use modeled brewing ingredients (three bottles per brew and
+  eight arrows per lingering potion); book buys use the enchantment and level
+  tiers in `ChoiceCatalog`. Their generic `buy` entry enables the material but
+  does not set each variant price. Potion/arrow sell prices use the modeled
+  ingredients and are scaled down when their effective configured base sell
+  is below the default. A zero sell disables trading except that the exact
+  **old buy-only defaults** are migrated in memory to the new positive sells.
+  An intentional zero indistinguishable from an old default will also migrate;
+  change that old default buy value as well if you need to keep it disabled.
+- Base sales and enchantment bonuses are capped against the cheapest modeled
+  acquisition/recipe or blank-copy cost. The model covers 1,900+ expanded
+  recipes and selected conversions, Fortune and container returns, but **not
+  every trade, farm, datapack, plugin or game mechanic**. Server owners should
+  audit their economy. Custom very low prices may reduce effective sells to
+  zero. On-disk values remain unchanged by these runtime caps.
 
 ### ⚙️ Personal settings (`/settings`)
 
@@ -103,30 +128,55 @@ each viewer; test compatibility with other scoreboard/team plugins.
 
 ### 🏷️ Auction house & orders (`/ah`, `/order`, `/orders`)
 
-- **`/ah`** — hold an item, run `/ah sell <price-per-item>` (up to 20 active
-  listings, 48h) and anyone can buy it from the `/ah` GUI with one click.
-  Money goes straight from buyer to seller. "My listings" shows expired ones —
-  one click reclaims your items.
-- **`/order`** opens a creation GUI: choose an item from the paginated picker
-  or click one in your inventory, adjust amount and price with the controls,
-  then confirm the displayed total. **`/order <item> <amount> <price-per-item>`**
-  still works directly. The full price is escrowed on confirmation.
-- **`/orders`** browses offers, and **`/orders mine`** manages your own.
-  Sellers click to fill an order and are paid immediately; in your orders,
-  **left-click to collect supplied items** and **right-click to cancel** and
-  refund the unfilled remainder. Collected items can remain pending across
-  logout, restart, cancellation or expiry; full inventories collect partially.
-  Orders track only the material, not variants or metadata: custom/enchanted/
-  damaged items cannot fill them, and spawners are prohibited. The price cap is
-  $100,000 per item and the maximum quantity is 23,040.
-- Earlier beta versions recorded fills but did not deliver the purchased items.
-  Historical fills have **unknown delivery/compensation status** and are not
-  automatically made claimable, to avoid duplicating manual compensation. Back
-  up `market.yml`/the database and reconcile historical fills manually before
-  upgrading; the log reports legacy fills (YAML order IDs or a SQLite count).
-  Player inventories and market
-  storage cannot be committed as one crash-proof transaction, so an abrupt
-  server crash or disk failure during a trade may require administrator review.
+- **`/ah`** opens the auction listing browser. Click **List the item in your
+  hand**, type the **total price for the whole main-hand stack** in chat, or
+  use **`/ah sell <total-price>`**. Only that held stack is removed; other
+  inventory and offhand stacks are untouched. Enchantments, names, lore,
+  damage and other item data are saved with the listing and delivered to the
+  buyer or returned on reclaim. **`/ah mine`** shows your listings, including
+  expired items to reclaim. Defaults are 20 active listings and 48 hours.
+- **`/order`** (and `/orders`) opens the buy-order browser. Click **Create an
+  order**, then the item icon to browse all item materials recognized by the
+  server, or choose a material from your inventory. Set the quantity and click
+  **Total price** to type the total in chat. Confirm to escrow that total.
+  The direct syntax is **`/order <item> <amount> <total-price>`**; `/order mine`
+  manages yours. Price prompts are cancelled by typing `cancel`, opening a new
+  market menu, disconnecting or starting another Veltryx input prompt.
+- Both commands interpret the entered price as the **whole listing/order**,
+  not a per-item price. There is no fixed maximum monetary price; exact cents
+  and `k/m/b/t/q/d/g/l` suffixes are supported (inputs have a 160-character
+  safety limit). The minimum is $0.01. The order quantity limit remains 23,040.
+  Partial fills divide the total in exact cents; the first remainder items get
+  one extra cent, and the unfilled value is refunded on cancellation. Expired
+  orders are closed and refunded lazily when an order browser is opened.
+  For totals smaller than the item quantity in cents, later fills can pay $0;
+  the order browser shows both normal and shift-click payouts before selling.
+- Sellers can fill orders from their inventory. In your orders, **left-click
+  to collect supplied items** and **right-click to cancel** and refund the
+  unfilled remainder. Claims persist across logout, restart, cancellation and
+  expiry; full inventories collect partially. Orders track **only a material**
+  and accept **plain items only**: custom, enchanted, damaged or other
+  metadata-bearing variants cannot fill them. This includes custom spawners
+  and ordinary potions with effect data; use `/ah` for those items. Eligible
+  plain stacks are used without consuming other variants.
+- `/ah` can list an actual identity-bearing spawner because the held stack is
+  serialized intact. Its contents remain in the separate spawner storage;
+  back up that storage together with the market. Old material-only spawner
+  auction records still fail closed and require administrator review rather
+  than recreating an identity-less item.
+- **Upgrade carefully:** existing auction records already store a total and
+  remain material-only; existing per-item buy orders are migrated to the same
+  original total and remaining escrow. New commands now interpret the typed
+  price as a total, so update any player guidance or customized message
+  templates that say “each”. **Do not downgrade** after creating new
+  listings/orders: older versions cannot read their full prices or item data.
+  Earlier beta versions also recorded fills without delivering purchased
+  items. Historical fills have **unknown delivery/compensation status** and
+  are not automatically made claimable; back up and reconcile them manually.
+  Player inventories, economy and market storage are not one crash-atomic
+  transaction. An abrupt crash or disk failure during a trade can require
+  administrator review. Ordinary save/payment errors trigger best-effort
+  rollback; a rollback failure is logged for administrator reconciliation.
 
 ### 🏠 Homes & teleporting (`/home`, `/tpa`, …)
 
@@ -278,7 +328,7 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 |---|---|---|---|
 | Shard Spear | 500 ✦ | Native spear with **Lunge III**; its Lunge exhaustion is reduced by 90% | **24 h real time** |
 | Shard Trident | 500 ✦ | **Riptide III**, hold and release even when dry; 5-second dry-only cooldown (water/rain use stays vanilla) | **24 h real time** |
-| Shard Axe | 500 ✦ | **Fells whole trees at once** (default 256-log cap), 3×3 on the allowed list — pick **Fortune III or Silk Touch** | **24 h real time** |
+| Shard Axe | 500 ✦ | **Fells whole trees at once** (default 256-log cap), 3×3 on the allowed list — includes **Silk Touch** | **24 h real time** |
 | Shard Pickaxe | 500 ✦ | **3×3 mining** with **amethyst-like particles on every block mined** — pick **Fortune III or Silk Touch** | **24 h real time** |
 | Void Totem | 150 ✦ | **Rescues you from a lethal void hit** — consumed, teleports you to safety, full heal + Resistance & Slow Falling | permanent |
 
@@ -350,10 +400,11 @@ between players (`/shard pay`) or given by staff (`/shard give`).
   these spawners. If placement cannot be completed after the block-place
   event, the original item is returned at that location as a non-expiring,
   owner-only drop.
-- Veltryx's auction house and buy orders store only material names, so **all
-  spawner materials are blocked there** to prevent loss of custom data. Trade
-  directly using an inventory/container that preserves item metadata. Existing
-  spawner buy orders can be cancelled for their unfilled refund.
+- Identity-bearing spawner items can be listed from the hand in `/ah`, which
+  retains their metadata. Their loot remains in `spawners/`, so back it up
+  together with market and player data. Material-only buy orders accept only
+  plain spawners and never consume custom identity-bearing ones. Old
+  material-only spawner auction records require administrator review.
 - There is no built-in owner lock on a placed spawner. Protect access with a
   claim/protection plugin that cancels `PlayerInteractEvent` as well as block
   placement/breaking. Inventory conversion respects earlier cancelled
@@ -469,9 +520,10 @@ inject formatting).
 Economy account updates write through: YAML uses an atomic file replacement
 where supported; SQLite uses transactions. Existing long-cent YAML/SQLite
 balances are migrated automatically to exact decimal strings. **Back up data
-before upgrading and do not downgrade after creating balances beyond the old
-64-bit limit**, because old versions cannot read the new exact SQLite column
-and may truncate other balances. Other YAML subsystems also autosave.
+before upgrading and do not downgrade after using the new market format or
+creating balances beyond the old 64-bit limit**: old versions cannot read full
+market prices/item payloads or exact SQLite balances. Other YAML subsystems also
+autosave.
 
 ## 🔌 Developer API
 

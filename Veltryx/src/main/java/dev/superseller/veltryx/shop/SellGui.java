@@ -49,7 +49,8 @@ public final class SellGui implements Listener {
             for (int i = 0; i < INPUTS; i++) renderSlot(h, i);
             for (int i = INPUTS; i < 54; i++) inv.setItem(i, ShopItems.icon("GRAY_STAINED_GLASS_PANE", "§8 ", List.of()));
             inv.setItem(CONFIRM, ShopItems.icon("LIME_STAINED_GLASS_PANE", "§aSell deposited items",
-                    List.of("§7Put items in the gray slots above.", "§7Unsellable items will stay here.", "§eClick to sell")));
+                    List.of("§7Put items in the gray slots above.", "§7Shop prices, enchants and wear determine value.",
+                            "§7Unsellable items will stay here.", "§eClick to sell")));
             player.openInventory(inv);
             open.put(player.getUniqueId(), h);
         });
@@ -154,6 +155,7 @@ public final class SellGui implements Listener {
         } else if (result.ok()) SellNotices.show(player, messages, "shop.sold-all",
                 Map.of("balance", SellNotices.compact(shop.balance(player))), result.earnedCents());
         else if (deposited.isEmpty()) messages.send(player, "shop.nothing");
+        else if ("shop.transaction-error".equals(result.failKey())) messages.send(player, "shop.transaction-error");
         else messages.send(player, "shop.no-sell");
         for (int i = 0; i < INPUTS; i++) renderSlot(h, i);
     }

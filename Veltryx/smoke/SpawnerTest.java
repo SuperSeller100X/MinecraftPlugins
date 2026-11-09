@@ -226,7 +226,7 @@ public final class SpawnerTest {
         check("refunded spawner can be placed again", store.bind(sheep, SpawnerStore.Position.of(removedBlock)));
         check("test refund binding can be released", store.unbind(sheep, SpawnerStore.Position.of(removedBlock)));
 
-        testMarketGuards(data, player, messages);
+        testMarketGuards(data, player, messages, items);
         state.inventory.setItem(0, new ItemStack(Material.STONE));
         Break noSilk = new Break(player, block); listener.onBreak(noSilk); listener.onBreakFinished(noSilk);
         check("non-Silk break is cancelled", noSilk.cancelled);
@@ -543,17 +543,21 @@ public final class SpawnerTest {
         }
     }
 
-    private static void testMarketGuards(BalanceData data, Player player, Messages messages) {
+    private static void testMarketGuards(BalanceData data, Player player, Messages messages, SpawnerItems items) {
         VeltryxConfig config = new VeltryxConfig(new org.bukkit.configuration.file.YamlConfiguration());
         EconomyService economy = new EconomyService(data.proxy, config);
         AhService ah = new AhService(data.proxy, economy, messages, config);
         OrderService orders = new OrderService(data.proxy, economy, messages, config);
-        eq("auction cannot strip spawner identity", ah.list(player, "SPAWNER", 1, 100).templateKey(), "spawner.market-disabled");
-        eq("spawner buy orders cannot be created", orders.create(player, "SPAWNER", 1, 100).templateKey(), "spawner.market-disabled");
+        eq("legacy material-only auction cannot strip spawner identity", ah.list(player, "SPAWNER", 1, 100).templateKey(), "spawner.market-disabled");
+        ItemStack previous = player.getInventory().getItem(35);
+        ItemStack custom = items.create(new SpawnerItems.Identity(UUID.randomUUID(), SpawnerType.COW));
+        player.getInventory().setItem(35, custom);
         long now = System.currentTimeMillis();
         data.orders.add(new BuyOrder("old-spawner-order", UUID.randomUUID(), "OldBuyer", "SPAWNER",
                 1, 0, 100, now, now + 60_000, false));
-        eq("existing orders cannot strip spawner identity", orders.fill(player, "old-spawner-order", 1).templateKey(), "spawner.market-disabled");
+        eq("material-only orders cannot strip custom spawner identity", orders.fill(player, "old-spawner-order", 1).templateKey(), "order.no-metadata");
+        check("rejected spawner retains its identity", items.identity(player.getInventory().getItem(35)) != null);
+        player.getInventory().setItem(35, previous);
     }
 
     private static void testFullAndConcurrent(Path dir, FakePlugin plugin, World world, SpawnerStore store, SpawnerItems items) throws Exception {

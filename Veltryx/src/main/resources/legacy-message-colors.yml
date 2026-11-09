@@ -1,4 +1,4 @@
-# Exact pre-palette defaults. Used only to recognize unchanged old templates;
+# Exact previous defaults. Used only to recognize unchanged old templates;
 # customized translations and intentionally empty messages always win.
 economy.balance-self: "<gray>Balance:</gray> <green>{amount}</green>"
 economy.balance-other: "<gray>{player}'s balance:</gray> <green>{amount}</green>"
@@ -27,3 +27,14 @@ shards.totem-saved: "<green>Your Void Totem saved you from the void!</green>"
 spawner.picked-up: "<green>Your {type} spawner and its stored loot were added to your inventory.</green>"
 spawner.mode: "<green>Spawner mode is now <white>{mode}</white>.</green>"
 settings.updated: "<gray>{setting} is now <white>{state}</white>.</gray>"
+
+# Exact defaults from before the deposit tray and metadata-safe spawner listings.
+shop.nothing: "<red>Nothing in your inventory can be sold.</red>"
+spawner.market-disabled: "<red>Spawners cannot be traded through the auction house or buy orders; trade them directly to preserve their storage.</red>"
+
+# Exact defaults from before marketplace prices became totals.
+ah.usage-sell: "<gray>Hold the item to sell and run <white>/ah sell <price-per-item></white> — e.g. <white>/ah sell 2.5k</white> per item.</gray>"
+ah.bad-price: "<red>Price must be between <green>$</green><white>0.01</white> and <green>$</green><white>{max}</white> per item.</red>"
+order.usage: "<gray>Usage: <white>/order <item> <amount> <price-per-item></white> — e.g. <white>/order iron_ingot 128 1.10</white>. The full price is escrowed until sellers fill the order.</gray>"
+order.bad-price: "<red>Price must be between <green>$</green><white>0.01</white> and <green>$</green><white>{max}</white> per item.</red>"
+order.created: "<green>Order <white>{id}</white>: buying <white>{count}x {item}</white> for <green>$</green><white>{money}</white> each — <green>$</green><white>{total}</white> escrowed.</green>"

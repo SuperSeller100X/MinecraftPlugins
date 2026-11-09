@@ -20,8 +20,8 @@ import dev.superseller.veltryx.util.PlatformScheduler;
 import dev.superseller.veltryx.util.Txt;
 
 /**
- * The shard shop: buy the five shard items with shards. Tools open a small
- * enchant picker first (Fortune III or Silk Touch). Shards are earned by
+ * The shard shop: buy the five shard items with shards. The pickaxe opens an
+ * enchant picker (Fortune III or Silk Touch); the axe always has Silk Touch. Shards are earned by
  * playing (1/minute), paid between players or given by staff - there is
  * deliberately no way to buy shards with money.
  */

@@ -6,6 +6,7 @@ import dev.superseller.veltryx.model.BuyOrder;
 import dev.superseller.veltryx.util.Money;
 import dev.superseller.veltryx.util.PlatformScheduler;
 import dev.superseller.veltryx.util.Txt;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +33,8 @@ public final class OrderGui implements Listener {
     /** Marks the orders inventory and remembers what each slot fills. */
     public static final class Holder implements InventoryHolder {
         private List<BuyOrder> view = List.of();
-        private boolean mine;
+        private final java.util.Map<String, Integer> heldAtRender = new java.util.HashMap<>();
+        private boolean mine, transitioning;
         private int page;
         private Inventory inventory;
 
@@ -43,7 +45,7 @@ public final class OrderGui implements Listener {
     }
 
     /** Immutable draft state is only changed by clicking controls; no funds are held until confirm. */
-    private record Draft(Material material, int amount, long price) { }
+    private record Draft(Material material, int amount, BigInteger price) { }
     private static final class CreateHolder implements InventoryHolder {
         final UUID owner;
         final Draft draft;
@@ -66,16 +68,16 @@ public final class OrderGui implements Listener {
     }
 
     private static boolean orderable(Material material) {
-        return material != null && !material.isLegacy() && material.isItem()
-                && material != Material.AIR && material != Material.SPAWNER;
+        return material != null && !material.isLegacy() && material.isItem() && material != Material.AIR;
     }
 
-    /** Opens the GUI used by /order with no arguments. */
+    /** Opens the creation screen from the order browser. */
     public void openCreate(Player player) {
         PlatformScheduler.runForPlayer(player, () -> {
+            prompt.cancelPending(player);
             ItemStack held = player.getInventory().getItemInMainHand();
             Material initial = held != null && orderable(held.getType()) ? held.getType() : null;
-            renderCreate(player, new Draft(initial, 1, 100));
+            renderCreate(player, new Draft(initial, 1, BigInteger.valueOf(100)));
         });
     }
 
@@ -87,7 +89,8 @@ public final class OrderGui implements Listener {
                 Txt.legacy(draft.material() == null ? "§eChoose an item" : "§b" + AhService.displayName(draft.material().name())),
                 List.of(Txt.legacy("§7Click to browse all item types."),
                         Txt.legacy("§7Or click an item in your inventory."),
-                        Txt.legacy("§8Only the material is tracked, not item metadata."))));
+                        Txt.legacy("§8Only the material is tracked;"),
+                        Txt.legacy("§8only plain items can fill orders."))));
         int[] amountSlots = {9,10,11,15,16,17,27,35};
         int[] amountChanges = {-1024,-64,-1,1,64,1024,-10000,10000};
         for (int i=0; i<amountSlots.length; i++) {
@@ -102,14 +105,16 @@ public final class OrderGui implements Listener {
         for (int i=0; i<priceSlots.length; i++) {
             long change = priceChanges[i];
             inv.setItem(priceSlots[i], item(change < 0 ? Material.RED_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE,
-                    1, Txt.legacy((change < 0 ? "§c-$" : "§a+$") + Money.formatNumber(Math.abs(change)) + " each"), List.of()));
+                    1, Txt.legacy((change < 0 ? "§c-$" : "§a+$") + Money.formatNumber(Math.abs(change)) + " total"), List.of()));
         }
-        inv.setItem(22, item(Material.GOLD_INGOT, 1, Txt.legacy("§ePrice each: §a$§f" + Money.formatNumber(draft.price())),
-                List.of(Txt.legacy("§7Between $0.01 and $100,000.00."))));
+        inv.setItem(22, item(Material.GOLD_INGOT, 1, Txt.legacy("§eTotal price: §a$§f" + Money.formatNumber(draft.price())),
+                List.of(Txt.legacy("§7Click to type a total price in chat."),
+                        Txt.legacy("§7This is for all requested items."))));
         inv.setItem(31, item(Material.EMERALD, 1,
-                Txt.legacy("§eTotal escrow: §a$§f" + Money.formatNumber(draft.price() * draft.amount())),
+                Txt.legacy("§eTotal escrow: §a$§f" + Money.formatNumber(draft.price())),
                 List.of(Txt.legacy("§7Your balance: §a$§f" + Money.formatCompact(economy.getBalanceExact(player.getUniqueId()))),
-                        Txt.legacy("§7Paid only when you confirm."))));
+                        Txt.legacy("§7Paid only when you confirm."),
+                        Txt.legacy("§7Extra cents go to the first items filled."))));
         inv.setItem(45, item(Material.ARROW, 1, Txt.legacy("§eBrowse orders"), List.of()));
         inv.setItem(49, item(Material.LIME_STAINED_GLASS_PANE, 1, Txt.legacy("§aCreate order"),
                 List.of(Txt.legacy("§7Confirm the item, amount and price."))));
@@ -167,10 +172,20 @@ public final class OrderGui implements Listener {
             case 23 -> 1L; case 24 -> 100L; case 25 -> 10_000L; case 26 -> 1_000_000L; default -> 0L;
         };
         if (priceDelta != 0) {
-            long price = Math.max(1L, Math.min(AhService.MAX_PRICE_EACH, draft.price() + priceDelta));
+            BigInteger price = draft.price().add(BigInteger.valueOf(priceDelta)).max(BigInteger.ONE);
             nextCreate(player, holder, new Draft(draft.material(), draft.amount(), price)); return;
         }
-        if (slot == 4) { holder.transitioning = true; openPicker(player, draft, 0); }
+        if (slot == 22) {
+            holder.transitioning = true;
+            prompt.ask(player, input -> {
+                BigInteger price = Money.parseExact(input);
+                if (price == null || price.signum() <= 0) {
+                    messages.send(player, "order.bad-price");
+                    renderCreate(player, draft);
+                } else renderCreate(player, new Draft(draft.material(), draft.amount(), price));
+            }, () -> renderCreate(player, draft));
+        }
+        else if (slot == 4) { holder.transitioning = true; openPicker(player, draft, 0); }
         else if (slot == 45) { holder.transitioning = true; open(player, false, 0); }
         else if (slot == 49) {
             if (!player.hasPermission("veltryx.order")) { messages.send(player, "shop.no-permission"); return; }
@@ -214,16 +229,35 @@ public final class OrderGui implements Listener {
     private final OrderService service;
     private final EconomyService economy;
     private final Messages messages;
+    private final MarketPricePrompt prompt;
+    private final boolean ownsPrompt;
 
+    public OrderGui(OrderService service, EconomyService economy, Messages messages, MarketPricePrompt prompt) {
+        this(service, economy, messages, prompt, false);
+    }
+    private OrderGui(OrderService service, EconomyService economy, Messages messages,
+                  MarketPricePrompt prompt, boolean ownsPrompt) {
+        this.service = service; this.economy = economy; this.messages = messages;
+        this.prompt = prompt; this.ownsPrompt = ownsPrompt;
+    }
+    /** Standalone compatibility constructor; the GUI also handles its own prompt events. */
     public OrderGui(OrderService service, EconomyService economy, Messages messages) {
-        this.service = service;
-        this.economy = economy;
-        this.messages = messages;
+        this(service, economy, messages, new MarketPricePrompt(messages), true);
+    }
+    public void cancelPendingPrice(Player player) { prompt.cancelPending(player); }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    public void onPriceChat(org.bukkit.event.player.AsyncPlayerChatEvent event) {
+        if (ownsPrompt) prompt.onChat(event);
+    }
+    @EventHandler public void onPriceQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        if (ownsPrompt) prompt.onQuit(event);
     }
 
     /** Opens (or refreshes) the orders browser (Folia-safe). */
     public void open(Player player, boolean mine, int page) {
         PlatformScheduler.runForPlayer(player, () -> {
+            prompt.cancelPending(player);
             Holder holder = new Holder();
             holder.mine = mine;
             holder.page = Math.max(0, page);
@@ -246,14 +280,21 @@ public final class OrderGui implements Listener {
                 }
                 BuyOrder order = view.get(index);
                 int held = OrderService.heldCount(player, order.material());
+                holder.heldAtRender.put(order.id(), held);
                 List<Component> lore = new ArrayList<>();
                 lore.add(Txt.legacy("§7Buyer: §f" + order.buyerName()));
                 lore.add(Txt.legacy("§7Wants: §f" + order.remaining() + " §7of §f" + order.amount()
                         + " §8(§7" + order.filled() + " done§8)"));
-                lore.add(Txt.legacy("§7Pays: §a$§f" + Money.formatCompact(order.priceEachCents())
-                        + " §7each §8(§a$§f" + Money.formatCompact(
-                                order.priceEachCents() * order.remaining()) + " §7left§8)"));
-                lore.add(Txt.legacy("§7You hold: §f" + held));
+                lore.add(Txt.legacy("§7Total price: §a$§f" + Money.formatNumber(order.totalCents())));
+                lore.add(Txt.legacy("§7Unfilled value: §a$§f" + Money.formatNumber(order.refundCents())));
+                lore.add(Txt.legacy("§7Eligible plain items: §f" + held));
+                lore.add(Txt.legacy("§8Named, enchanted and custom items stay with you."));
+                if (!order.buyer().equals(player.getUniqueId()) && held > 0) {
+                    int next = Math.min(order.remaining(), Math.min(64, held));
+                    int all = Math.min(order.remaining(), held);
+                    lore.add(Txt.legacy("§7Click payout for " + next + ": §a$§f" + Money.formatNumber(order.payoutFor(next))));
+                    lore.add(Txt.legacy("§7Shift-click payout for " + all + ": §a$§f" + Money.formatNumber(order.payoutFor(all))));
+                }
                 lore.add(Component.empty());
                 if (order.buyer().equals(player.getUniqueId())) {
                     lore.add(Txt.legacy("§7Ready to collect: §f" + order.claimable()));
@@ -296,26 +337,30 @@ public final class OrderGui implements Listener {
         if (!(current instanceof Holder) && !(current instanceof CreateHolder) && !(current instanceof PickerHolder)) return;
         event.setCancelled(true);
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!player.hasPermission("veltryx.order")) { messages.send(player, "shop.no-permission"); return; }
         if (current instanceof CreateHolder create) { createClick(event, player, create); return; }
         if (current instanceof PickerHolder picker) { pickerClick(event, player, picker); return; }
         Holder holder = (Holder) current;
-        if (event.getClickedInventory() == null || event.getClickedInventory().getHolder() != holder) {
+        if (holder.transitioning || event.getClickedInventory() == null || event.getClickedInventory().getHolder() != holder) {
             return;
         }
         int slot = event.getSlot();
         if (slot == 45) {
+            holder.transitioning = true;
             open(player, holder.mine, holder.page - 1);
             return;
         }
         if (slot == 53) {
+            holder.transitioning = true;
             open(player, holder.mine, holder.page + 1);
             return;
         }
         if (slot == 47) {
+            holder.transitioning = true;
             open(player, !holder.mine, 0);
             return;
         }
-        if (slot == 51) { openCreate(player); return; }
+        if (slot == 51) { holder.transitioning = true; openCreate(player); return; }
         if (slot < 0 || slot >= 45) {
             return;
         }
@@ -324,6 +369,7 @@ public final class OrderGui implements Listener {
             return;
         }
         BuyOrder order = holder.view.get(index);
+        holder.transitioning = true;
         if (order.buyer().equals(player.getUniqueId())) {
             OrderService.Result result = event.isRightClick()
                     ? service.cancel(player, order.id()) : service.claim(player, order.id());
@@ -331,11 +377,13 @@ public final class OrderGui implements Listener {
         } else {
             int held = OrderService.heldCount(player, order.material());
             int want = event.isShiftClick() ? held : Math.min(64, held);
-            if (want <= 0) {
+            if (!java.util.Objects.equals(holder.heldAtRender.get(order.id()), held)) {
+                messages.send(player, "order.changed");
+            } else if (want <= 0) {
                 messages.send(player, "ah.not-enough", java.util.Map.of(
                         "item", AhService.displayName(order.material()), "count", "0"));
             } else {
-                OrderService.Result result = service.fill(player, order.id(), want);
+                OrderService.Result result = service.fill(player, order.id(), want, order.filled());
                 if (!result.ok()) {
                     messages.send(player, result.templateKey(), result.values());
                 }

@@ -1,20 +1,31 @@
 package dev.superseller.veltryx.model;
 
+import dev.superseller.veltryx.util.Money;
+import java.math.BigInteger;
 import java.util.UUID;
 
-/**
- * One auction house listing: a stack of items offered for a fixed total price.
- *
- * @param id         short human-readable listing id
- * @param priceCents total price for the whole stack
- * @param expires    epoch millis when the listing stops being buyable
- * @param closed     true once sold, cancelled or reclaimed
- */
+/** A fixed-total-price auction. New listings retain the held item as Base64 Paper NBT. */
 public record AhListing(String id, UUID seller, String sellerName, String material,
-                        int amount, long priceCents, long listed, long expires, boolean closed) {
+                        int amount, BigInteger priceExactCents, long listed, long expires,
+                        boolean closed, String itemData) {
+    public AhListing {
+        if (id == null || id.isBlank() || seller == null || material == null || material.isBlank()
+                || amount < 1 || amount > 23040 || priceExactCents == null || priceExactCents.signum() <= 0)
+            throw new IllegalArgumentException("Invalid auction listing " + id);
+    }
 
-    /** Whether the listing can still be bought at the given time. */
-    public boolean isLiveAt(long nowMillis) {
-        return !closed && expires > nowMillis;
+    /** Legacy material-only records had a long total price and no serialized item. */
+    public AhListing(String id, UUID seller, String sellerName, String material, int amount,
+                     long priceCents, long listed, long expires, boolean closed) {
+        this(id, seller, sellerName, material, amount, BigInteger.valueOf(priceCents), listed, expires, closed, null);
+    }
+
+    /** Legacy long view, clamped when the exact total exceeds its range. */
+    public long priceCents() { return Money.legacyLong(priceExactCents); }
+
+    public boolean isLiveAt(long nowMillis) { return !closed && expires > nowMillis; }
+
+    public AhListing withClosed(boolean value) {
+        return new AhListing(id, seller, sellerName, material, amount, priceExactCents, listed, expires, value, itemData);
     }
 }

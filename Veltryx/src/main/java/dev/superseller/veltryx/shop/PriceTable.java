@@ -45,6 +45,7 @@ public final class PriceTable {
             "^    ([A-Z][A-Z0-9_]*): \\{ buy: ([0-9]+\\.[0-9]{2}), sell: ([0-9]+\\.[0-9]{2}) }$");
 
     private final Map<String, Entry> byMaterial = new LinkedHashMap<>();
+    private final Map<String, Double> modeledCosts = new LinkedHashMap<>();
     private final List<Category> categories = new ArrayList<>();
 
     private PriceTable() {
@@ -93,14 +94,16 @@ public final class PriceTable {
                     continue;
                 }
                 long buy = Money.parse(entry.group(2));
-                long sell = SurvivalItems.noFlatSell(material) ? 0 : Money.parse(entry.group(3));
+                long sell = Money.parse(entry.group(3));
                 if (buy <= 0 || sell < 0) continue;
+                sell = SurvivalItems.migrateOldSellDefault(material, buy, sell);
                 Entry item = new Entry(currentId, material, buy, sell);
                 table.byMaterial.put(material, item);
                 currentItems.add(item);
             }
         }
         table.flushCategory(currentId, currentDisplay, currentIcon, currentItems);
+        table.byMaterial.forEach((name, item) -> table.modeledCosts.put(name, (double) item.buyCents()));
         if (recipes != null && !recipes.isBlank()) table.applyRecipeSafety(recipes);
         return table;
     }
@@ -149,10 +152,17 @@ public final class PriceTable {
             }
             if (!changed) break;
         }
+        modeledCosts.clear();
+        modeledCosts.putAll(costs);
         Map<String, Entry> safe = new LinkedHashMap<>();
         byMaterial.forEach((name, entry) -> {
-            long ceiling = (long) Math.floor(Math.min((double) entry.buyCents(), costs.get(name)) * 0.5 + 1.0e-8);
-            long sell = SurvivalItems.noFlatSell(name) ? 0 : Math.max(0L, Math.min(entry.sellCents(), ceiling));
+            // Potions can be made from a bottle; books and filled maps can be
+            // made or copied from a cheaper blank. Treat that blank as a safe
+            // upper bound rather than paying their much higher variant buy price.
+            String base = SurvivalItems.saleCostBase(name);
+            double cost = Math.min(costs.get(name), costs.getOrDefault(base, Double.POSITIVE_INFINITY));
+            long ceiling = (long) Math.floor(Math.min((double) entry.buyCents(), cost) * 0.5 + 1.0e-8);
+            long sell = Math.max(0L, Math.min(entry.sellCents(), ceiling));
             safe.put(name, new Entry(entry.category(), name, entry.buyCents(), sell));
         });
         byMaterial.clear();
@@ -177,6 +187,11 @@ public final class PriceTable {
     /** Entry for a material name, or {@code null} when the shop does not trade it. */
     public Entry get(String material) {
         return byMaterial.get(material);
+    }
+
+    /** Cheapest modeled purchase/crafting cost in cents; infinity means unknown. */
+    public double modeledCost(String material) {
+        return modeledCosts.getOrDefault(material, Double.POSITIVE_INFINITY);
     }
 
     /** Buy price in cents, or -1 when unknown. */

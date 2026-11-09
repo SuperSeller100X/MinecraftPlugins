@@ -76,6 +76,7 @@ public final class ShopCommand implements CommandExecutor, TabCompleter {
         }
         List<String> out = new ArrayList<>();
         String prefix = args[0].toLowerCase(Locale.ROOT);
+        if ("search".startsWith(prefix)) out.add("search");
         for (PriceTable.Category category : shop.prices().categories()) {
             if (category.id().startsWith(prefix)) {
                 out.add(category.id());

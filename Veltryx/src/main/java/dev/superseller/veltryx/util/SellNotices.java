@@ -32,6 +32,15 @@ public final class SellNotices {
         player.sendMessage(messages.render(chatKey, values));
     }
 
+    /** Exact marketplace payout in chat; the action bar remains compact. */
+    public static void show(Player player, Messages messages, String chatKey,
+                            Map<String, String> extra, java.math.BigInteger earnedCents) {
+        Map<String, String> values = new HashMap<>(extra);
+        values.put("money", Money.formatNumber(earnedCents));
+        player.sendActionBar(messages.render("sell.actionbar", Map.of("money", Money.formatCompact(earnedCents))));
+        player.sendMessage(messages.render(chatKey, values));
+    }
+
     /** Compact balance string for templates ({@code 2.3k}). */
     public static String compact(java.math.BigInteger cents) { return Money.formatCompact(cents); }
 

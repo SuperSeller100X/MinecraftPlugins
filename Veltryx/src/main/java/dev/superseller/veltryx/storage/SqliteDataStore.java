@@ -111,6 +111,19 @@ public final class SqliteDataStore implements DataStore {
                         while (columns.next()) if ("balance_exact".equals(columns.getString("name"))) exactBalanceColumn = true;
                     }
                     if (!exactBalanceColumn) statement.execute("ALTER TABLE vel_accounts ADD COLUMN balance_exact TEXT");
+                    boolean ahExactColumn = false, ahItemColumn = false, orderTotalColumn = false;
+                    try (ResultSet columns = statement.executeQuery("PRAGMA table_info(vel_ah)")) {
+                        while (columns.next()) {
+                            if ("price_exact".equals(columns.getString("name"))) ahExactColumn = true;
+                            if ("item_data".equals(columns.getString("name"))) ahItemColumn = true;
+                        }
+                    }
+                    if (!ahExactColumn) statement.execute("ALTER TABLE vel_ah ADD COLUMN price_exact TEXT");
+                    if (!ahItemColumn) statement.execute("ALTER TABLE vel_ah ADD COLUMN item_data TEXT");
+                    try (ResultSet columns = statement.executeQuery("PRAGMA table_info(vel_orders)")) {
+                        while (columns.next()) if ("total_exact".equals(columns.getString("name"))) orderTotalColumn = true;
+                    }
+                    if (!orderTotalColumn) statement.execute("ALTER TABLE vel_orders ADD COLUMN total_exact TEXT");
                     boolean collectedColumn = false;
                     try (ResultSet columns = statement.executeQuery("PRAGMA table_info(vel_orders)")) {
                         while (columns.next()) if ("collected".equals(columns.getString("name"))) collectedColumn = true;
@@ -220,25 +233,30 @@ public final class SqliteDataStore implements DataStore {
                 }
             }
             rs = statement.executeQuery("SELECT id, seller, seller_name, material, amount, price,"
-                    + " listed, expires, closed FROM vel_ah");
+                    + " listed, expires, closed, price_exact, item_data FROM vel_ah");
             while (rs.next()) {
                 UUID seller = parseUuid(rs.getString(2));
-                if (seller != null) {
-                    ahListings.put(rs.getString(1), new AhListing(rs.getString(1), seller,
-                            rs.getString(3), rs.getString(4), rs.getInt(5), rs.getLong(6),
-                            rs.getLong(7), rs.getLong(8), rs.getInt(9) != 0));
-                }
+                if (seller == null) throw new SQLException("Invalid auction seller " + rs.getString(1));
+                String exact = rs.getString(10);
+                BigInteger price = exact == null ? BigInteger.valueOf(rs.getLong(6)) : new BigInteger(exact);
+                ahListings.put(rs.getString(1), new AhListing(rs.getString(1), seller,
+                        rs.getString(3), rs.getString(4), rs.getInt(5), price,
+                        rs.getLong(7), rs.getLong(8), rs.getInt(9) != 0, rs.getString(11)));
             }
             rs = statement.executeQuery("SELECT id, buyer, buyer_name, material, amount, filled,"
-                    + " price_each, created, expires, closed, collected FROM vel_orders");
+                    + " price_each, created, expires, closed, collected, total_exact FROM vel_orders");
             while (rs.next()) {
                 UUID buyer = parseUuid(rs.getString(2));
                 if (buyer == null || rs.getString(5) == null || rs.getString(6) == null
                         || rs.getString(7) == null || rs.getString(11) == null)
                     throw new SQLException("Invalid persisted buy order " + rs.getString(1));
+                String totalExact = rs.getString(12);
+                BigInteger total = totalExact == null
+                        ? BigInteger.valueOf(rs.getLong(7)).multiply(BigInteger.valueOf(rs.getInt(5)))
+                        : new BigInteger(totalExact);
                 buyOrders.put(rs.getString(1), new BuyOrder(rs.getString(1), buyer,
-                        rs.getString(3), rs.getString(4), rs.getInt(5), rs.getInt(6),
-                        rs.getLong(7), rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0, rs.getInt(11)));
+                        rs.getString(3), rs.getString(4), rs.getInt(5), rs.getInt(6), total,
+                        rs.getLong(8), rs.getLong(9), rs.getInt(10) != 0, rs.getInt(11)));
             }
             rs = statement.executeQuery("SELECT owner, name, world, x, y, z, yaw, pitch, icon FROM vel_homes");
             while (rs.next()) {
@@ -556,16 +574,23 @@ public final class SqliteDataStore implements DataStore {
 
     @Override
     public void saveAhListing(AhListing entry) {
-        ahListings.put(entry.id(), entry);
-        execute("INSERT INTO vel_ah (id, seller, seller_name, material, amount, price, listed,"
-                        + " expires, closed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                        + " ON CONFLICT(id) DO UPDATE SET seller = excluded.seller,"
-                        + " seller_name = excluded.seller_name, material = excluded.material,"
-                        + " amount = excluded.amount, price = excluded.price, listed = excluded.listed,"
-                        + " expires = excluded.expires, closed = excluded.closed",
-                entry.id(), entry.seller().toString(), entry.sellerName(), entry.material(),
-                entry.amount(), entry.priceCents(), entry.listed(), entry.expires(),
-                entry.closed() ? 1 : 0);
+        synchronized (lock) {
+            if (connection == null) throw new IllegalStateException("SQLite market is unavailable");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO vel_ah (id, seller, seller_name, material, amount, price, listed,"
+                    + " expires, closed, price_exact, item_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    + " ON CONFLICT(id) DO UPDATE SET seller=excluded.seller, seller_name=excluded.seller_name,"
+                    + " material=excluded.material, amount=excluded.amount, price=excluded.price, listed=excluded.listed,"
+                    + " expires=excluded.expires, closed=excluded.closed, price_exact=excluded.price_exact, item_data=excluded.item_data")) {
+                ps.setString(1, entry.id()); ps.setString(2, entry.seller().toString());
+                ps.setString(3, entry.sellerName()); ps.setString(4, entry.material());
+                ps.setInt(5, entry.amount()); ps.setLong(6, dev.superseller.veltryx.util.Money.legacyLong(entry.priceExactCents()));
+                ps.setLong(7, entry.listed()); ps.setLong(8, entry.expires()); ps.setInt(9, entry.closed() ? 1 : 0);
+                ps.setString(10, entry.priceExactCents().toString()); ps.setString(11, entry.itemData());
+                ps.executeUpdate();
+            } catch (SQLException ex) { throw new IllegalStateException("Could not persist auction listing", ex); }
+            ahListings.put(entry.id(), entry);
+        }
     }
 
     @Override
@@ -579,16 +604,17 @@ public final class SqliteDataStore implements DataStore {
             if (connection == null) throw new IllegalStateException("SQLite market is unavailable");
             try (PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO vel_orders (id, buyer, buyer_name, material, amount, filled,"
-                    + " price_each, created, expires, closed, collected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    + " price_each, created, expires, closed, collected, total_exact) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     + " ON CONFLICT(id) DO UPDATE SET buyer=excluded.buyer, buyer_name=excluded.buyer_name,"
                     + " material=excluded.material, amount=excluded.amount, filled=excluded.filled,"
                     + " price_each=excluded.price_each, created=excluded.created, expires=excluded.expires,"
-                    + " closed=excluded.closed, collected=excluded.collected")) {
+                    + " closed=excluded.closed, collected=excluded.collected, total_exact=excluded.total_exact")) {
                 ps.setString(1, entry.id()); ps.setString(2, entry.buyer().toString());
                 ps.setString(3, entry.buyerName()); ps.setString(4, entry.material());
                 ps.setInt(5, entry.amount()); ps.setInt(6, entry.filled()); ps.setLong(7, entry.priceEachCents());
                 ps.setLong(8, entry.created()); ps.setLong(9, entry.expires());
                 ps.setInt(10, entry.closed() ? 1 : 0); ps.setInt(11, entry.collected());
+                ps.setString(12, entry.totalCents().toString());
                 ps.executeUpdate();
             } catch (SQLException ex) { throw new IllegalStateException("Could not persist buy order", ex); }
             buyOrders.put(entry.id(), entry);

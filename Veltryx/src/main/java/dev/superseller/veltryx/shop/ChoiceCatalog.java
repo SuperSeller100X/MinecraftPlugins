@@ -7,8 +7,8 @@ import java.util.Locale;
 /**
  * Selectable shop extras: potions (choose the type), tipped arrows
  * (choose the effect) and enchanted books (choose the enchantment and its
- * level). Per-choice prices are fixed in these tables; the
- * items they describe are never /sell-able, so no buy-sell loop can exist.
+ * level). Potion and arrow prices are derived from ingredient costs; book
+ * prices depend on enchantment and level.
  */
 public final class ChoiceCatalog {
 
@@ -52,10 +52,10 @@ public final class ChoiceCatalog {
         return out;
     }
 
-    /** Eight-arrow reference price is 1.25x the matching potion; GUI amounts are selectable. */
+    /** Eight-arrow pack size. */
     public static final int TIPPED_ARROW_PACK = 8;
 
-    /** Price of one tipped-arrow pack for a potion option. */
+    /** Legacy reference price; live prices use the current ingredient table. */
     public static long arrowPackCents(PotionOption potion) {
         return Math.max(1L, Math.round(potion.priceCents() * 1.25 / 5.0) * 5);
     }
@@ -63,52 +63,52 @@ public final class ChoiceCatalog {
     /** Enchantment book choices, in picker order. */
     public static List<BookOption> books() {
         List<BookOption> out = new ArrayList<>();
-        // common: 250 per level
-        out.add(new BookOption("PROTECTION", "Protection", 4, 250_00, "common"));
-        out.add(new BookOption("FIRE_PROTECTION", "Fire Protection", 4, 250_00, "common"));
-        out.add(new BookOption("BLAST_PROTECTION", "Blast Protection", 4, 250_00, "common"));
-        out.add(new BookOption("PROJECTILE_PROTECTION", "Projectile Protection", 4, 250_00, "common"));
-        out.add(new BookOption("FEATHER_FALLING", "Feather Falling", 4, 250_00, "common"));
-        out.add(new BookOption("EFFICIENCY", "Efficiency", 5, 250_00, "common"));
-        out.add(new BookOption("SHARPNESS", "Sharpness", 5, 250_00, "common"));
-        out.add(new BookOption("SMITE", "Smite", 5, 250_00, "common"));
-        out.add(new BookOption("BANE_OF_ARTHROPODS", "Bane of Arthropods", 5, 250_00, "common"));
-        out.add(new BookOption("POWER", "Power", 5, 250_00, "common"));
-        out.add(new BookOption("UNBREAKING", "Unbreaking", 3, 250_00, "common"));
-        // uncommon: 450 per level
-        out.add(new BookOption("THORNS", "Thorns", 3, 450_00, "uncommon"));
-        out.add(new BookOption("RESPIRATION", "Respiration", 3, 450_00, "uncommon"));
-        out.add(new BookOption("AQUA_AFFINITY", "Aqua Affinity", 1, 450_00, "uncommon"));
-        out.add(new BookOption("DEPTH_STRIDER", "Depth Strider", 3, 450_00, "uncommon"));
-        out.add(new BookOption("FORTUNE", "Fortune", 3, 450_00, "uncommon"));
-        out.add(new BookOption("LOOTING", "Looting", 3, 450_00, "uncommon"));
-        out.add(new BookOption("KNOCKBACK", "Knockback", 2, 450_00, "uncommon"));
-        out.add(new BookOption("FIRE_ASPECT", "Fire Aspect", 2, 450_00, "uncommon"));
-        out.add(new BookOption("PUNCH", "Punch", 2, 450_00, "uncommon"));
-        out.add(new BookOption("FLAME", "Flame", 1, 450_00, "uncommon"));
-        out.add(new BookOption("LURE", "Lure", 3, 450_00, "uncommon"));
-        out.add(new BookOption("LUCK_OF_THE_SEA", "Luck of the Sea", 3, 450_00, "uncommon"));
-        out.add(new BookOption("LOYALTY", "Loyalty", 3, 450_00, "uncommon"));
-        out.add(new BookOption("IMPALING", "Impaling", 5, 450_00, "uncommon"));
-        out.add(new BookOption("RIPTIDE", "Riptide", 3, 450_00, "uncommon"));
-        out.add(new BookOption("CHANNELING", "Channeling", 1, 450_00, "uncommon"));
-        // rare: 800 per level
-        out.add(new BookOption("MENDING", "Mending", 1, 800_00, "rare"));
-        out.add(new BookOption("SILK_TOUCH", "Silk Touch", 1, 800_00, "rare"));
-        out.add(new BookOption("INFINITY", "Infinity", 1, 800_00, "rare"));
-        out.add(new BookOption("BINDING_CURSE", "Curse of Binding", 1, 800_00, "rare"));
-        out.add(new BookOption("VANISHING_CURSE", "Curse of Vanishing", 1, 800_00, "rare"));
-        out.add(new BookOption("BREACH", "Breach", 4, 450_00, "uncommon"));
-        out.add(new BookOption("DENSITY", "Density", 5, 450_00, "uncommon"));
-        out.add(new BookOption("FROST_WALKER", "Frost Walker", 2, 450_00, "uncommon"));
-        out.add(new BookOption("LUNGE", "Lunge", 3, 450_00, "uncommon"));
-        out.add(new BookOption("MULTISHOT", "Multishot", 1, 450_00, "uncommon"));
-        out.add(new BookOption("PIERCING", "Piercing", 4, 450_00, "uncommon"));
-        out.add(new BookOption("QUICK_CHARGE", "Quick Charge", 3, 450_00, "uncommon"));
-        out.add(new BookOption("SOUL_SPEED", "Soul Speed", 3, 800_00, "rare"));
-        out.add(new BookOption("SWEEPING_EDGE", "Sweeping Edge", 3, 450_00, "uncommon"));
-        out.add(new BookOption("SWIFT_SNEAK", "Swift Sneak", 3, 800_00, "rare"));
-        out.add(new BookOption("WIND_BURST", "Wind Burst", 3, 800_00, "rare"));
+        // common: $10 per level
+        out.add(new BookOption("PROTECTION", "Protection", 4, 10_00, "common"));
+        out.add(new BookOption("FIRE_PROTECTION", "Fire Protection", 4, 10_00, "common"));
+        out.add(new BookOption("BLAST_PROTECTION", "Blast Protection", 4, 10_00, "common"));
+        out.add(new BookOption("PROJECTILE_PROTECTION", "Projectile Protection", 4, 10_00, "common"));
+        out.add(new BookOption("FEATHER_FALLING", "Feather Falling", 4, 10_00, "common"));
+        out.add(new BookOption("EFFICIENCY", "Efficiency", 5, 10_00, "common"));
+        out.add(new BookOption("SHARPNESS", "Sharpness", 5, 10_00, "common"));
+        out.add(new BookOption("SMITE", "Smite", 5, 10_00, "common"));
+        out.add(new BookOption("BANE_OF_ARTHROPODS", "Bane of Arthropods", 5, 10_00, "common"));
+        out.add(new BookOption("POWER", "Power", 5, 10_00, "common"));
+        out.add(new BookOption("UNBREAKING", "Unbreaking", 3, 10_00, "common"));
+        // uncommon: $20 per level
+        out.add(new BookOption("THORNS", "Thorns", 3, 20_00, "uncommon"));
+        out.add(new BookOption("RESPIRATION", "Respiration", 3, 20_00, "uncommon"));
+        out.add(new BookOption("AQUA_AFFINITY", "Aqua Affinity", 1, 20_00, "uncommon"));
+        out.add(new BookOption("DEPTH_STRIDER", "Depth Strider", 3, 20_00, "uncommon"));
+        out.add(new BookOption("FORTUNE", "Fortune", 3, 20_00, "uncommon"));
+        out.add(new BookOption("LOOTING", "Looting", 3, 20_00, "uncommon"));
+        out.add(new BookOption("KNOCKBACK", "Knockback", 2, 20_00, "uncommon"));
+        out.add(new BookOption("FIRE_ASPECT", "Fire Aspect", 2, 20_00, "uncommon"));
+        out.add(new BookOption("PUNCH", "Punch", 2, 20_00, "uncommon"));
+        out.add(new BookOption("FLAME", "Flame", 1, 20_00, "uncommon"));
+        out.add(new BookOption("LURE", "Lure", 3, 20_00, "uncommon"));
+        out.add(new BookOption("LUCK_OF_THE_SEA", "Luck of the Sea", 3, 20_00, "uncommon"));
+        out.add(new BookOption("LOYALTY", "Loyalty", 3, 20_00, "uncommon"));
+        out.add(new BookOption("IMPALING", "Impaling", 5, 20_00, "uncommon"));
+        out.add(new BookOption("RIPTIDE", "Riptide", 3, 20_00, "uncommon"));
+        out.add(new BookOption("CHANNELING", "Channeling", 1, 20_00, "uncommon"));
+        // rare: $40 per level
+        out.add(new BookOption("MENDING", "Mending", 1, 40_00, "rare"));
+        out.add(new BookOption("SILK_TOUCH", "Silk Touch", 1, 40_00, "rare"));
+        out.add(new BookOption("INFINITY", "Infinity", 1, 40_00, "rare"));
+        out.add(new BookOption("BINDING_CURSE", "Curse of Binding", 1, 40_00, "rare"));
+        out.add(new BookOption("VANISHING_CURSE", "Curse of Vanishing", 1, 40_00, "rare"));
+        out.add(new BookOption("BREACH", "Breach", 4, 20_00, "uncommon"));
+        out.add(new BookOption("DENSITY", "Density", 5, 20_00, "uncommon"));
+        out.add(new BookOption("FROST_WALKER", "Frost Walker", 2, 20_00, "uncommon"));
+        out.add(new BookOption("LUNGE", "Lunge", 3, 20_00, "uncommon"));
+        out.add(new BookOption("MULTISHOT", "Multishot", 1, 20_00, "uncommon"));
+        out.add(new BookOption("PIERCING", "Piercing", 4, 20_00, "uncommon"));
+        out.add(new BookOption("QUICK_CHARGE", "Quick Charge", 3, 20_00, "uncommon"));
+        out.add(new BookOption("SOUL_SPEED", "Soul Speed", 3, 40_00, "rare"));
+        out.add(new BookOption("SWEEPING_EDGE", "Sweeping Edge", 3, 20_00, "uncommon"));
+        out.add(new BookOption("SWIFT_SNEAK", "Swift Sneak", 3, 40_00, "rare"));
+        out.add(new BookOption("WIND_BURST", "Wind Burst", 3, 40_00, "rare"));
         return out;
     }
 

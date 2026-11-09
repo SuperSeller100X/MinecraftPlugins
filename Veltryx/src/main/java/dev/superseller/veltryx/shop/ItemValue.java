@@ -59,11 +59,12 @@ public final class ItemValue {
         if (stack == null) {
             return 0;
         }
-        int levels = 0;
-        for (int level : stack.getEnchantments().values()) {
-            levels += level;
+        long levels = 0;
+        for (int level : stack.getEnchantments().values()) levels += Math.max(0, level);
+        if (stack.getItemMeta() instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta book) {
+            for (int level : book.getStoredEnchants().values()) levels += Math.max(0, level);
         }
-        return levels;
+        return (int) Math.min(Integer.MAX_VALUE, levels);
     }
 
     /**
@@ -76,14 +77,13 @@ public final class ItemValue {
         }
         Material material = stack.getType();
         int max = material == null ? 0 : material.getMaxDurability();
-        if (max <= 0) {
-            return 1.0;
-        }
         int damage = 0;
         if (stack.getItemMeta() instanceof Damageable damageable) {
+            if (damageable.hasMaxDamage()) max = damageable.getMaxDamage();
             damage = damageable.getDamage();
         }
-        double remaining = (double) (max - damage) / (double) max;
+        if (max <= 0) return 1.0;
+        double remaining = ((double) max - damage) / max;
         return Math.max(0.0, Math.min(1.0, remaining));
     }
 
