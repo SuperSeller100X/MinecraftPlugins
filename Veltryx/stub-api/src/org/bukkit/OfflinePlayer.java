@@ -7,4 +7,5 @@ public interface OfflinePlayer {
     String getName();
     boolean isOnline();
     boolean hasPlayedBefore();
+    default void incrementStatistic(Statistic statistic, Material material) {}
 }

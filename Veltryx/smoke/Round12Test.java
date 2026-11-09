@@ -371,7 +371,7 @@ public final class Round12Test {
         eq("overflow is owner-locked", world.dropOwner, state.id);
         check("overflow has unlimited lifetime", world.unlimitedDrop);
         state.inventory.capacity = Integer.MAX_VALUE;
-        testShardItemsAndLunge(dir, state, messages);
+        testShardItemsAndLunge(dir, state, world, messages);
         testShardTools(dir, state, world);
         testShardVoid(dir, state, world, scheduler, messages);
 
@@ -637,7 +637,7 @@ public final class Round12Test {
         finally {pool.shutdownNow();}
     }
 
-    private static void testShardItemsAndLunge(Path dir, PlayerState state, Messages messages) {
+    private static void testShardItemsAndLunge(Path dir, PlayerState state, TestWorld world, Messages messages) {
         ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
         ItemStack spear = items.create(catalog.byId("shard_spear"), 0);
         eq("native spear material", spear.getType(), Material.NETHERITE_SPEAR);
@@ -687,22 +687,290 @@ public final class Round12Test {
         Exhaust different = new Exhaust(state.proxy, Exhaust.ExhaustionReason.ENCHANTMENT_EFFECT, 2f);
         listener.onExhaustion(different);
         eq("other exhaustion amount unchanged", different.value, 2f);
+        testShardTrident(state, world, messages, items, catalog, listener);
+    }
+
+    private static void testShardTrident(PlayerState state, TestWorld world, Messages messages,
+                                         ShardItems items, ShardCatalog catalog, ShardWeaponListener listener) {
+        final NamespacedKey readyKey = NamespacedKey.fromString("veltryx:dry_riptide_ready");
         ItemStack trident = items.create(catalog.byId("shard_trident"), 0);
         eq("native Riptide III on trident", trident.getEnchantmentLevel(Enchantment.RIPTIDE), 3);
+        check("trident lore explains charge and release", trident.getItemMeta().lore().stream()
+                .map(c -> ((StubComponent)c).content).anyMatch(line -> line.contains("Hold to charge; release")));
         state.inventory.setItemInMainHand(trident);
-        listener.onInteract(new Interact(state.proxy)); listener.onInteract(new Interact(state.proxy));
-        eq("dry trident activates only once during cooldown", state.riptides, 1);
-        eq("dry trident uses server durability handling", state.durabilityUses, 1);
-        try {
-            Field f = ShardWeaponListener.class.getDeclaredField("nextRiptide"); f.setAccessible(true);
-            @SuppressWarnings("unchecked") Map<UUID,Long> cooldowns = (Map<UUID,Long>)f.get(listener);
-            long remaining = cooldowns.get(state.id) - System.currentTimeMillis();
-            check("dry cooldown is five seconds", remaining > 4_000L && remaining <= 5_000L);
-        } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
-        state.inWater = true; listener.onInteract(new Interact(state.proxy)); listener.onInteract(new Interact(state.proxy));
-        eq("wet use is passed through to vanilla without plugin cooldown", state.riptides, 1);
-        state.inWater = false;
+        state.velocity = new org.bukkit.util.Vector(0,0,0);
+        int sounds = world.riptideSounds;
+        Interact air = new Interact(state.proxy);
+        check("air block result is denied by default", air.isCancelled());
+        listener.onInteract(air);
+        check("dry right-click starts charging despite air block cancellation", state.active);
+        eq("dry charge uses main hand", state.activeHand, EquipmentSlot.HAND);
+        eq("dry click alone does not launch", state.riptides, 0);
+        eq("dry click alone does not damage", state.durabilityUses, 0);
+        eq("dry click alone does not start cooldown", state.pdc.map.get(readyKey), null);
+        listener.onInteract(air);
+        eq("repeat interaction does not reset an active charge", state.chargeStarts, 1);
+        state.inventory.setItemInOffHand(new ItemStack(Material.ENDER_PEARL));
+        Interact offhandClick = new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null);
+        listener.onOffhandWhileCharging(offhandClick);
+        eq("incidental offhand use is denied while charging dry", offhandClick.itemUse, org.bukkit.event.Event.Result.DENY);
+        Interact offhandBlock = new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.OFF_HAND, world.block);
+        listener.onOffhandWhileCharging(offhandBlock);
+        eq("incidental offhand block use is denied while charging dry", offhandBlock.blockUse, org.bukkit.event.Event.Result.DENY);
+        state.inWater = true;
+        Interact wetOffhand = new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null);
+        listener.onOffhandWhileCharging(wetOffhand);
+        eq("wet offhand interaction is not altered", wetOffhand.itemUse, org.bukkit.event.Event.Result.DEFAULT);
+        state.inWater = false; state.inventory.setItemInOffHand(null);
+        release(listener, state, 9);
+        eq("nine-tick release does not launch", state.riptides, 0);
+        eq("short release does not damage", state.durabilityUses, 0);
+        eq("short release does not start cooldown", state.pdc.map.get(readyKey), null);
+
+        listener.onInteract(new Interact(state.proxy));
+        List<org.bukkit.event.player.PlayerRiptideEvent> observed = new ArrayList<>();
+        org.bukkit.event.Event.testEventHook = event -> {
+            if (event instanceof org.bukkit.event.player.PlayerRiptideEvent riptide) observed.add(riptide);
+        };
+        release(listener, state, 10);
+        org.bukkit.event.Event.testEventHook = null;
+        eq("ten-tick dry release launches", state.riptides, 1);
+        eq("dry release applies velocity once", state.velocityChanges, 1);
+        check("Riptide III has vanilla impulse", Math.abs(state.velocity.getZ() - 3.0) < .00001);
+        eq("dry launch enters the native spin for 20 ticks", state.spinTicks, 20);
+        eq("dry spin uses native damage", state.spinDamage, 8.0f);
+        eq("dry release uses server durability handling", state.durabilityUses, 1);
+        eq("dry release damages the correct hand", state.damagedHand, EquipmentSlot.HAND);
+        eq("dry launch awards use statistic", state.itemUses, 1);
+        eq("dry launch fires Riptide event", observed.size(), 1);
+        check("Riptide event contains vanilla impulse", Math.abs(observed.get(0).getVelocity().getZ() - 3.0) < .00001);
+        eq("dry launch broadcasts a sound", world.riptideSounds, sounds + 1);
+        eq("dry launch uses Riptide III sound", world.lastRiptideSound, "item.trident.riptide_3");
+        eq("dry launch uses players sound category", world.lastRiptideCategory, SoundCategory.PLAYERS);
+        long ready = (Long)state.pdc.map.get(readyKey);
+        long remaining = ready - System.currentTimeMillis();
+        check("dry cooldown is five seconds", remaining > 4_000L && remaining <= 5_000L);
+
+        listener.onInteract(new Interact(state.proxy));
+        check("cooldown does not prevent charging", state.active);
+        release(listener, state, 12);
+        eq("second dry release blocked by cooldown", state.riptides, 1);
+        eq("blocked release does not damage", state.durabilityUses, 1);
+        eq("blocked release does not extend cooldown", state.pdc.map.get(readyKey), ready);
+        eq("blocked release does not broadcast sound", world.riptideSounds, sounds + 1);
+
+        int starts = state.chargeStarts;
+        state.inWater = true;
+        listener.onInteract(new Interact(state.proxy));
+        check("wet right-click is not started by plugin", !state.active);
+        eq("wet click ignores dry cooldown", state.chargeStarts, starts);
+        state.nativeStart(EquipmentSlot.HAND);
+        release(listener, state, 12);
+        eq("wet release is passed through to native Riptide", state.riptides, 1);
+        eq("wet release does not change dry cooldown", state.pdc.map.get(readyKey), ready);
+        state.inWater = false; state.inRain = true;
+        listener.onInteract(new Interact(state.proxy));
+        check("rain right-click is not intercepted", !state.active);
+        state.nativeStart(EquipmentSlot.HAND); release(listener, state, 12);
+        eq("rain release is passed through to native Riptide", state.riptides, 1);
+        eq("rain release does not change dry cooldown", state.pdc.map.get(readyKey), ready);
+        state.inRain = false;
+
+        listener.onInteract(new Interact(state.proxy));
+        check("dry charge can start while cooling down", state.active);
+        state.inWater = true; release(listener, state, 12); state.inWater = false;
+        eq("dry-to-wet release is left to vanilla even on cooldown", state.riptides, 1);
+        eq("dry-to-wet release leaves dry deadline unchanged", state.pdc.map.get(readyKey), ready);
+        state.inWater = true; state.nativeStart(EquipmentSlot.HAND); state.inWater = false;
+        release(listener, state, 12);
+        eq("wet-to-dry release respects dry cooldown", state.riptides, 1);
+        listener.onQuit(new Quit(state.proxy));
+        check("relogging cannot remove dry cooldown", Objects.equals(state.pdc.map.get(readyKey), ready));
+        ShardWeaponListener afterReconnect = new ShardWeaponListener(items, catalog, messages);
+        afterReconnect.onInteract(new Interact(state.proxy)); release(afterReconnect, state, 12);
+        eq("cooldown remains effective after reconnect", state.riptides, 1);
+
+        state.pdc.map.put(readyKey, System.currentTimeMillis() - 1);
+        state.inWater = true; state.nativeStart(EquipmentSlot.HAND); state.inWater = false;
+        release(listener, state, 12);
+        eq("wet-to-dry release launches when cooldown expired", state.riptides, 2);
+        check("successful wet-to-dry launch sets a new dry cooldown", (Long)state.pdc.map.get(readyKey) > System.currentTimeMillis());
+        state.pdc.map.put(readyKey, System.currentTimeMillis() - 1);
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        eq("expired dry cooldown permits another launch", state.riptides, 3);
+
+        // Protection plugins can deny item use independently of the block result.
+        state.pdc.map.remove(readyKey);
+        starts = state.chargeStarts;
+        Interact deniedAir = new Interact(state.proxy); deniedAir.itemUse = org.bukkit.event.Event.Result.DENY;
+        listener.onInteract(deniedAir);
+        eq("denied item use does not charge in air", state.chargeStarts, starts);
+        world.blockType = Material.STONE;
+        Interact deniedBlock = new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND, world.block);
+        deniedBlock.itemUse = org.bukkit.event.Event.Result.DENY;
+        listener.onInteract(deniedBlock);
+        eq("denied item use does not charge on a block", state.chargeStarts, starts);
+        Interact protectedBlock = new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND, world.block);
+        protectedBlock.blockUse = org.bukkit.event.Event.Result.DENY;
+        listener.onInteract(protectedBlock);
+        eq("denied block with default item result does not charge", state.chargeStarts, starts);
+        protectedBlock.itemUse = org.bukkit.event.Event.Result.ALLOW;
+        listener.onInteract(protectedBlock);
+        check("explicitly allowed item can charge on a denied block", state.active);
+        state.interrupt();
+        world.blockType = Material.CHEST;
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND, world.block));
+        check("ordinary chest interaction is not hijacked", !state.active);
+        state.sneaking = true;
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND, world.block));
+        check("sneaking permits charging against a chest", state.active);
+        state.interrupt(); state.sneaking = false; world.blockType = Material.STONE;
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, EquipmentSlot.HAND, world.block));
+        check("ordinary solid block permits charging", state.active);
+        state.interrupt();
+        state.externalCooldown = true;
+        listener.onInteract(new Interact(state.proxy));
+        check("external native item cooldown is respected", !state.active);
+        state.externalCooldown = false;
+        state.gameMode = GameMode.SPECTATOR;
+        listener.onInteract(new Interact(state.proxy));
+        check("spectators cannot start a dry charge", !state.active);
+        state.gameMode = GameMode.SURVIVAL;
+        state.allowShard = false;
+        listener.onInteract(new Interact(state.proxy));
+        check("dry charge requires shard permission", !state.active);
+        state.allowShard = true;
+
+        int launches = state.riptides, uses = state.durabilityUses;
+        listener.onInteract(new Interact(state.proxy));
+        state.interrupt();
+        listener.onStopUsing(new io.papermc.paper.event.player.PlayerStopUsingItemEvent(state.proxy, trident, 20));
+        eq("interrupted active item cannot launch", state.riptides, launches);
+        listener.onInteract(new Interact(state.proxy));
+        state.inventory.setItemInMainHand(new ItemStack(Material.TRIDENT));
+        release(listener, state, 20);
+        eq("a normal trident swapped into the hand cannot use the shard ability", state.riptides, launches);
+        state.inventory.setItemInMainHand(trident);
+        listener.onInteract(new Interact(state.proxy));
+        items.toggleAbility(trident); release(listener, state, 20); items.toggleAbility(trident);
+        eq("ability disabled mid-charge cannot launch", state.riptides, launches);
+        listener.onInteract(new Interact(state.proxy)); state.vehicle = true;
+        release(listener, state, 20); state.vehicle = false;
+        eq("mounted release does not launch", state.riptides, launches);
+        listener.onInteract(new Interact(state.proxy)); state.allowShard = false;
+        release(listener, state, 20); state.allowShard = true;
+        eq("permission revoked mid-charge cannot launch", state.riptides, launches);
+        eq("interrupted releases do not damage", state.durabilityUses, uses);
+        eq("interrupted releases do not start cooldown", state.pdc.map.get(readyKey), null);
+
+        ItemStack worn = trident.clone();
+        worn.setData(DataComponentTypes.MAX_DAMAGE, 50);
+        worn.setData(DataComponentTypes.DAMAGE, 49);
+        state.inventory.setItemInMainHand(worn);
+        listener.onInteract(new Interact(state.proxy));
+        check("custom max-damage trident at last durability cannot charge", !state.active);
+        worn.setData(DataComponentTypes.UNBREAKABLE);
+        listener.onInteract(new Interact(state.proxy));
+        check("unbreakable trident can charge at last durability", state.active);
+        state.interrupt();
+        worn.unsetData(DataComponentTypes.UNBREAKABLE); worn.setData(DataComponentTypes.DAMAGE, 48);
+        listener.onInteract(new Interact(state.proxy));
+        check("custom-damage trident above the last use can charge", state.active);
+        worn.setData(DataComponentTypes.DAMAGE, 49); release(listener, state, 12);
+        eq("trident becoming unusable mid-charge cannot launch", state.riptides, launches);
+        state.inventory.setItemInMainHand(trident);
+
+        org.bukkit.event.Event.testEventHook = event -> {
+            if (event instanceof org.bukkit.event.player.PlayerRiptideEvent riptide) riptide.setCancelled(true);
+        };
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        org.bukkit.event.Event.testEventHook = null;
+        eq("cancelled Riptide event prevents launch", state.riptides, launches);
+        eq("cancelled Riptide event consumes no durability", state.durabilityUses, uses);
+        eq("cancelled Riptide event starts no cooldown", state.pdc.map.get(readyKey), null);
+        org.bukkit.event.Event.testEventHook = event -> {
+            if (event instanceof org.bukkit.event.player.PlayerRiptideEvent) state.inWater = true;
+        };
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        org.bukkit.event.Event.testEventHook = null; state.inWater = false;
+        eq("becoming wet during Riptide event defers to vanilla", state.riptides, launches);
+        eq("becoming wet during Riptide event consumes no dry durability", state.durabilityUses, uses);
+        eq("becoming wet during Riptide event starts no dry cooldown", state.pdc.map.get(readyKey), null);
+
+        org.bukkit.event.Event.testEventHook = event -> {
+            if (event instanceof org.bukkit.event.player.PlayerRiptideEvent) state.inventory.setItemInMainHand(new ItemStack(Material.TRIDENT));
+        };
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        org.bukkit.event.Event.testEventHook = null;
+        eq("item removed during Riptide event prevents launch", state.riptides, launches);
+        eq("item removed during Riptide event starts no cooldown", state.pdc.map.get(readyKey), null);
+        state.inventory.setItemInMainHand(trident);
+        state.damageHook = () -> state.inventory.setItemInMainHand(new ItemStack(Material.TRIDENT));
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        state.damageHook = null;
+        eq("item removed during damage callback prevents launch", state.riptides, launches);
+        eq("item removed during damage callback starts no cooldown", state.pdc.map.get(readyKey), null);
+        state.inventory.setItemInMainHand(trident); uses = state.durabilityUses;
+        int[] callbacks = {0};
+        org.bukkit.event.Event.testEventHook = event -> {
+            if (event instanceof org.bukkit.event.player.PlayerRiptideEvent) {
+                callbacks[0]++;
+                listener.onStopUsing(new io.papermc.paper.event.player.PlayerStopUsingItemEvent(state.proxy, trident, 12));
+            }
+        };
+        listener.onInteract(new Interact(state.proxy)); release(listener, state, 12);
+        org.bukkit.event.Event.testEventHook = null;
+        eq("reentrant stop cannot cause duplicate Riptide event", callbacks[0], 1);
+        eq("reentrant stop cannot launch twice", state.riptides, launches + 1);
+        eq("reentrant stop cannot damage twice", state.durabilityUses, uses + 1);
+
+        state.pdc.map.remove(readyKey);
         state.inventory.setItemInMainHand(null);
+        state.inventory.setItemInOffHand(trident);
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null));
+        check("offhand Shard Trident charges", state.active);
+        release(listener, state, 10);
+        eq("offhand release launches", state.riptides, launches + 2);
+        eq("offhand release damages offhand", state.damagedHand, EquipmentSlot.OFF_HAND);
+        state.pdc.map.remove(readyKey);
+        state.gameMode = GameMode.CREATIVE; uses = state.durabilityUses;
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null));
+        release(listener, state, 10); state.gameMode = GameMode.SURVIVAL;
+        eq("creative dry launch does not force durability damage", state.durabilityUses, uses);
+
+        state.pdc.map.remove(readyKey);
+        ItemStack lowerLevel = trident.clone();
+        ItemMeta lowerMeta = lowerLevel.getItemMeta(); lowerMeta.addEnchant(Enchantment.RIPTIDE, 1, true); lowerLevel.setItemMeta(lowerMeta);
+        state.inventory.setItemInOffHand(lowerLevel);
+        state.velocity = new org.bukkit.util.Vector(0,0,0);
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null));
+        release(listener, state, 10);
+        check("Riptide I uses vanilla level-one impulse", Math.abs(state.velocity.getZ() - 1.5) < .00001);
+        eq("Riptide I uses level-one sound", world.lastRiptideSound, "item.trident.riptide_1");
+        state.pdc.map.remove(readyKey); state.velocity = new org.bukkit.util.Vector(0,0,0); state.onGround = true;
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null));
+        release(listener, state, 10); state.onGround = false;
+        check("grounded dry launch receives a small upward lift", Math.abs(state.velocity.getY() - 0.2) < .00001);
+        state.pdc.map.remove(readyKey);
+        int beforeDamageLaunch = state.riptides;
+        state.damageHook = () -> {
+            ItemStack current = state.inventory.getItemInOffHand();
+            current.setData(DataComponentTypes.DAMAGE, current.getData(DataComponentTypes.DAMAGE) + 1);
+        };
+        listener.onInteract(new Interact(state.proxy, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, EquipmentSlot.OFF_HAND, null));
+        release(listener, state, 10); state.damageHook = null;
+        eq("normal durability change does not interrupt launch", state.riptides, beforeDamageLaunch + 1);
+        PlayerState other = new PlayerState(world.proxy, "Bob");
+        other.inventory.setItemInMainHand(trident.clone());
+        listener.onInteract(new Interact(other.proxy)); release(listener, other, 10);
+        eq("dry cooldown is per player", other.riptides, 1);
+        state.inventory.setItemInOffHand(null); state.pdc.map.remove(readyKey);
+    }
+
+    private static void release(ShardWeaponListener listener, PlayerState state, int ticks) {
+        ItemStack released = state.activeItem;
+        listener.onStopUsing(new io.papermc.paper.event.player.PlayerStopUsingItemEvent(state.proxy, released, ticks));
+        state.interrupt(); // Paper clears the active item after its stop event.
     }
     private static void testShardTools(Path dir, PlayerState state, TestWorld world) {
         ShardCatalog catalog = new ShardCatalog(); ShardItems items = new ShardItems(new FakePlugin(dir));
@@ -892,7 +1160,7 @@ public final class Round12Test {
         void drain() { int n=0; while (!tasks.isEmpty()) { if (++n > 10000) throw new IllegalStateException("scheduler loop"); tasks.removeFirst().run(); } }
     }
     private static final class TestInventory implements PlayerInventory {
-        final InventoryHolder holder; final ItemStack[] items; int capacity = Integer.MAX_VALUE;
+        final InventoryHolder holder; final ItemStack[] items; ItemStack offhand; int capacity = Integer.MAX_VALUE;
         TestInventory(InventoryHolder holder, int size) { this.holder=holder; this.items=new ItemStack[size]; }
         public void setItem(int index, ItemStack item) { items[index]=item; }
         public ItemStack getItem(int index) { return items[index]; }
@@ -902,6 +1170,8 @@ public final class Round12Test {
         public ItemStack getChestplate() { return null; }
         public ItemStack getItemInMainHand() { return items[0]; }
         public void setItemInMainHand(ItemStack item) { items[0]=item; }
+        public ItemStack getItemInOffHand() { return offhand; }
+        public void setItemInOffHand(ItemStack item) { offhand=item; }
         public HashMap<Integer,ItemStack> addItem(ItemStack... additions) {
             HashMap<Integer,ItemStack> left = new HashMap<>();
             for (int j=0;j<additions.length;j++) {
@@ -927,27 +1197,40 @@ public final class Round12Test {
     private static final class PlayerState implements InvocationHandler {
         final UUID id=UUID.randomUUID(); final TestInventory inventory=new TestInventory(null, 36); final TestPdc pdc=new TestPdc();
         final Map<PotionEffectType,PotionEffect> effects=new HashMap<>(); final World world; final Player proxy; final String name;
-        Inventory open; ItemStack cursor; Scoreboard board; Player killer; boolean allowSell=true, signOpened, inWater, inRain, teleportSuccess=true, online=true;
-        int blockChanges, riptides, durabilityUses, sounds; String lastSound; double health=20, absorption; Location teleportDestination;
-        java.util.concurrent.CompletableFuture<Boolean> teleportFuture;
+        Inventory open; ItemStack cursor; Scoreboard board; Player killer; boolean allowSell=true, allowShard=true, signOpened, inWater, inRain, teleportSuccess=true, online=true;
+        boolean active, sneaking, vehicle, onGround, externalCooldown, dead;
+        EquipmentSlot activeHand, damagedHand; ItemStack activeItem; GameMode gameMode=GameMode.SURVIVAL;
+        org.bukkit.util.Vector velocity=new org.bukkit.util.Vector(0,0,0);
+        int blockChanges, riptides, durabilityUses, sounds, chargeStarts, velocityChanges, itemUses, spinTicks;
+        float spinDamage; String lastSound; double health=20, absorption; Location teleportDestination;
+        java.util.concurrent.CompletableFuture<Boolean> teleportFuture; Runnable damageHook;
         PlayerState(World world) { this(world, "Alice"); }
         PlayerState(World world, String name) { this.world=world; this.name=name; proxy=(Player)Proxy.newProxyInstance(Player.class.getClassLoader(),new Class<?>[]{Player.class},this); }
+        void nativeStart(EquipmentSlot hand) { active=true; activeHand=hand; activeItem=hand==EquipmentSlot.HAND?inventory.getItemInMainHand():inventory.getItemInOffHand(); }
+        void interrupt() { active=false; activeItem=null; }
         public Object invoke(Object o, Method m, Object[] a) {
             return switch(m.getName()) {
                 case "getUniqueId" -> id; case "getName" -> name; case "isOnline" -> online;
-                case "hasPermission" -> !"veltryx.sell".equals(a[0]) || allowSell;
+                case "hasPermission" -> switch ((String)a[0]) { case "veltryx.sell" -> allowSell; case "veltryx.shards" -> allowShard; default -> true; };
                 case "getKiller" -> killer; case "setScoreboard" -> { board=(Scoreboard)a[0]; yield null; }
-                case "getScoreboard" -> board; case "getGameMode" -> GameMode.SURVIVAL;
+                case "getScoreboard" -> board; case "getGameMode" -> gameMode;
                 case "playSound" -> { sounds++; lastSound=(String)a[1]; yield null; }
                 case "setItemOnCursor" -> { cursor=(ItemStack)a[0]; yield null; }
                 case "openVirtualSign" -> { signOpened=true; yield null; }
                 case "sendBlockChange" -> { blockChanges++; yield null; }
                 case "getInventory" -> inventory; case "getWorld" -> world;
                 case "getLocation" -> new Location(world,100,64,200) { @Override public org.bukkit.util.Vector getDirection(){return new org.bukkit.util.Vector(0,0,1);} };
-                case "getVelocity" -> new org.bukkit.util.Vector(0,0,0);
+                case "getVelocity" -> velocity.clone();
+                case "setVelocity" -> { velocity=((org.bukkit.util.Vector)a[0]).clone(); velocityChanges++; yield null; }
                 case "isInWater" -> inWater; case "isInRain" -> inRain;
-                case "damageItemStack" -> { durabilityUses++; yield null; }
-                case "startRiptideAttack" -> { riptides++; yield null; }
+                case "isSneaking" -> sneaking; case "isInsideVehicle" -> vehicle; case "isOnGround" -> onGround; case "isDead" -> dead;
+                case "hasCooldown" -> externalCooldown;
+                case "startUsingItem" -> { if(!active) {nativeStart((EquipmentSlot)a[0]); chargeStarts++;} yield null; }
+                case "hasActiveItem" -> active; case "getActiveItemHand" -> activeHand; case "getActiveItem" -> activeItem;
+                case "clearActiveItem" -> { interrupt(); yield null; }
+                case "damageItemStack" -> { durabilityUses++; damagedHand=(EquipmentSlot)a[0]; if(damageHook!=null) damageHook.run(); yield null; }
+                case "incrementStatistic" -> { itemUses++; yield null; }
+                case "startRiptideAttack" -> { riptides++; spinTicks=(Integer)a[0]; spinDamage=(Float)a[1]; yield null; }
                 case "getHealth" -> health; case "setHealth" -> {health=(Double)a[0]; yield null;}
                 case "getAbsorptionAmount" -> absorption; case "setAbsorptionAmount" -> {absorption=(Double)a[0]; yield null;}
                 case "teleportAsync" -> {teleportDestination=(Location)a[0]; yield teleportFuture != null ? teleportFuture : java.util.concurrent.CompletableFuture.completedFuture(teleportSuccess);}
@@ -1041,9 +1324,25 @@ public final class Round12Test {
         @Override public Player getPlayer(){return player;} @Override public org.bukkit.block.Block getBlock(){return block;}
     }
     private static final class Interact extends org.bukkit.event.player.PlayerInteractEvent {
-        final Player player; Interact(Player p){player=p;} @Override public Player getPlayer(){return player;}
-        @Override public org.bukkit.event.block.Action getAction(){return org.bukkit.event.block.Action.RIGHT_CLICK_AIR;}
-        @Override public EquipmentSlot getHand(){return EquipmentSlot.HAND;}
+        final Player player; final org.bukkit.event.block.Action action; final EquipmentSlot hand; final org.bukkit.block.Block block;
+        final ItemStack item; org.bukkit.event.Event.Result itemUse=org.bukkit.event.Event.Result.DEFAULT, blockUse;
+        Interact(Player p) { this(p,org.bukkit.event.block.Action.RIGHT_CLICK_AIR,EquipmentSlot.HAND,null); }
+        Interact(Player p,org.bukkit.event.block.Action action,EquipmentSlot hand,org.bukkit.block.Block block) {
+            this.player=p; this.action=action; this.hand=hand; this.block=block;
+            this.item=hand==EquipmentSlot.HAND?p.getInventory().getItemInMainHand():p.getInventory().getItemInOffHand();
+            this.blockUse=block==null?org.bukkit.event.Event.Result.DENY:org.bukkit.event.Event.Result.ALLOW;
+        }
+        @Override public Player getPlayer(){return player;} @Override public org.bukkit.event.block.Action getAction(){return action;}
+        @Override public EquipmentSlot getHand(){return hand;} @Override public org.bukkit.block.Block getClickedBlock(){return block;}
+        @Override public ItemStack getItem(){return item;} @Override public org.bukkit.event.Event.Result useItemInHand(){return itemUse;}
+        @Override public org.bukkit.event.Event.Result useInteractedBlock(){return blockUse;}
+        @Override public void setCancelled(boolean value){
+            if(value) {itemUse=org.bukkit.event.Event.Result.DENY; blockUse=org.bukkit.event.Event.Result.DENY;}
+            else {itemUse=org.bukkit.event.Event.Result.DEFAULT; blockUse=block==null?org.bukkit.event.Event.Result.DENY:org.bukkit.event.Event.Result.ALLOW;}
+        }
+    }
+    private static final class Quit extends org.bukkit.event.player.PlayerQuitEvent {
+        final Player player; Quit(Player player){this.player=player;} @Override public Player getPlayer(){return player;}
     }
     private static final class VoidDamage extends org.bukkit.event.entity.EntityDamageEvent {
         final Player player; final double damage; boolean cancelled; VoidDamage(Player p,double d){player=p;damage=d;}
@@ -1093,7 +1392,8 @@ public final class Round12Test {
     private static final class TestMap implements MapView { int x,z; Scale scale; public void setScale(Scale s){scale=s;} public void setCenterX(int x){this.x=x;} public void setCenterZ(int z){this.z=z;} }
     private static final class TestWorld implements InvocationHandler {
         final World proxy=(World)Proxy.newProxyInstance(World.class.getClassLoader(),new Class<?>[]{World.class},this);
-        boolean findStructure=true, findUnexplored, fakeBlock, unlimitedDrop; int breaks; Material blockType=Material.STONE; UUID dropOwner; ItemStack dropped;
+        boolean findStructure=true, findUnexplored, fakeBlock, unlimitedDrop; int breaks, riptideSounds; Material blockType=Material.STONE; UUID dropOwner; ItemStack dropped;
+        String lastRiptideSound; SoundCategory lastRiptideCategory;
         final List<String> searched=new ArrayList<>(); TestMap lastMap;
         final org.bukkit.block.data.BlockData blockData = new org.bukkit.block.data.BlockData() { public org.bukkit.block.data.BlockData clone(){return this;} };
         final org.bukkit.block.Block block = (org.bukkit.block.Block)Proxy.newProxyInstance(org.bukkit.block.Block.class.getClassLoader(),new Class<?>[]{org.bukkit.block.Block.class},
@@ -1122,6 +1422,7 @@ public final class Round12Test {
                 if(!findStructure)return null;
                 return (StructureSearchResult)() -> new Location(proxy,1234,64,-567);
             }
+            if(m.getName().equals("playSound")) { riptideSounds++; lastRiptideSound=(String)a[1]; lastRiptideCategory=(SoundCategory)a[2]; return null; }
             if(m.getName().equals("getEnvironment"))return World.Environment.NORMAL;
             return defaultValue(m.getReturnType());
         }

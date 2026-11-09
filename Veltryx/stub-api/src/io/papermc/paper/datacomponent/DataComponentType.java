@@ -1,2 +1,5 @@
 package io.papermc.paper.datacomponent;
-public interface DataComponentType { interface Valued<T> extends DataComponentType { } }
+public interface DataComponentType {
+    interface Valued<T> extends DataComponentType { }
+    interface NonValued extends DataComponentType { }
+}

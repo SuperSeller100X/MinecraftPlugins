@@ -350,8 +350,8 @@ balances, and YAML **or** SQLite storage.
 - **Shards (`/shard`)** — a second currency earned **1 shard per minute** of
   play (*"you earned 1 shard for playing the server"*). The shard shop sells
   the **Shard Spear** (native Lunge III, 90% less Lunge exhaustion),
-  **Shard Trident** (Riptide III, immediate dry launch with 5s dry cooldown;
-  wet use remains vanilla), **Shard Axe**
+  **Shard Trident** (hold and release Riptide III even when dry, with a 5s
+  dry-only cooldown; wet use remains vanilla), **Shard Axe**
   (whole-tree felling, configurable log cap), **Shard Pickaxe** (3×3 with amethyst
   particles) at 500 shards each — self-destructing **24h after purchase**
   like the ShardTools plugin — plus the **Void Totem** (150) that rescues

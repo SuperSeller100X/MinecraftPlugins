@@ -87,6 +87,7 @@ public final class ShardCatalog {
                         new EnchantSpec(Enchantment.MENDING, 1, "Mending")),
                 List.of(),
                 List.of("§7Riptide works §bwithout water§7.",
+                        "§7Hold to charge; release to launch.",
                         "§7Dry cooldown: §e5 seconds§7.")));
         entries.put("shard_axe", new Entry("shard_axe", "NETHERITE_AXE",
                 "Shard Axe", 500, 24L * 60 * 60 * 1000,

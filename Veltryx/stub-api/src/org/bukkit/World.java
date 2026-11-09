@@ -11,6 +11,7 @@ public interface World {
         spawnParticle(particle, x, y, z, count);
     }
     org.bukkit.entity.Item dropItemNaturally(Location location, org.bukkit.inventory.ItemStack stack);
+    default void playSound(Location location, String sound, SoundCategory category, float volume, float pitch) {}
     boolean hasStorm();
     boolean isChunkLoaded(int x, int z);
     default Location getSpawnLocation() { return null; }

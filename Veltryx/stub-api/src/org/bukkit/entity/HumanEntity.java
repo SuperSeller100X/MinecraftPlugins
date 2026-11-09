@@ -7,6 +7,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.PlayerInventory;
 public interface HumanEntity extends LivingEntity, CommandSender {
+    default boolean hasCooldown(org.bukkit.inventory.ItemStack item) { return false; }
     default void setItemOnCursor(org.bukkit.inventory.ItemStack item) {}
     PlayerInventory getInventory();
     GameMode getGameMode();

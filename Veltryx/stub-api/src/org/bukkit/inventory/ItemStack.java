@@ -26,6 +26,10 @@ public class ItemStack implements Cloneable {
         else if (name.equals("FILLED_MAP") || name.endsWith("_MAP")) meta = new org.bukkit.inventory.meta.StubMapMeta();
         else if (name.equals("WRITTEN_BOOK")) meta = new org.bukkit.inventory.meta.StubBookMeta();
         else meta = new StubItemMeta();
+        if (type == Material.TRIDENT) {
+            data.put(io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE, 250);
+            data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, 0);
+        }
     }
     public Material getType() { return type; }
     public int getAmount() { return amount; }
@@ -34,10 +38,22 @@ public class ItemStack implements Cloneable {
     public void setType(Material type) { this.type = type; }
     public int getEnchantmentLevel(org.bukkit.enchantments.Enchantment enchantment) { return meta == null ? 0 : meta.getEnchants().getOrDefault(enchantment,0); }
     public Map<org.bukkit.enchantments.Enchantment, Integer> getEnchantments() { return meta == null ? Map.of() : meta.getEnchants(); }
-    public <T> void setData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type, T value) { data.put(type, value); }
+    public <T> void setData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type, T value) {
+        data.put(type, value);
+        if (type == io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE && meta instanceof org.bukkit.inventory.meta.Damageable damage) damage.setDamage((Integer)value);
+    }
+    public void setData(io.papermc.paper.datacomponent.DataComponentType.NonValued type) { data.put(type, Boolean.TRUE); }
+    public void unsetData(io.papermc.paper.datacomponent.DataComponentType type) { data.remove(type); }
+    public boolean hasData(io.papermc.paper.datacomponent.DataComponentType type) { return data.containsKey(type); }
     @SuppressWarnings("unchecked") public <T> T getData(io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) { return (T)data.get(type); }
     public ItemMeta getItemMeta() { return meta; }
-    public boolean setItemMeta(ItemMeta meta) { if (testRejectItemMeta) return false; this.meta = meta; return true; }
+    public boolean setItemMeta(ItemMeta meta) {
+        if (testRejectItemMeta) return false;
+        this.meta = meta;
+        if (meta instanceof org.bukkit.inventory.meta.Damageable damage && data.containsKey(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE))
+            data.put(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, damage.getDamage());
+        return true;
+    }
     @Override public ItemStack clone() {
         ItemStack result = new ItemStack(type,amount);
         if (meta instanceof StubItemMeta m) result.meta=m.copy(); else result.meta=meta;

@@ -5,5 +5,7 @@ public interface PlayerInventory extends Inventory {
     ItemStack getChestplate();
     java.util.HashMap<Integer, ItemStack> addItem(ItemStack... items);
     ItemStack getItemInMainHand();
+    default ItemStack getItemInOffHand() { return null; }
+    default void setItemInOffHand(ItemStack stack) {}
     void setItemInMainHand(ItemStack stack);
 }

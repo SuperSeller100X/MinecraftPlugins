@@ -277,7 +277,7 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 | Item | Price | What it does | Lifetime |
 |---|---|---|---|
 | Shard Spear | 500 ✦ | Native spear with **Lunge III**; its Lunge exhaustion is reduced by 90% | **24 h real time** |
-| Shard Trident | 500 ✦ | **Riptide III**, plus a dry launch with a 5-second dry-only cooldown (water/rain use stays vanilla) | **24 h real time** |
+| Shard Trident | 500 ✦ | **Riptide III**, hold and release even when dry; 5-second dry-only cooldown (water/rain use stays vanilla) | **24 h real time** |
 | Shard Axe | 500 ✦ | **Fells whole trees at once** (default 256-log cap), 3×3 on the allowed list — pick **Fortune III or Silk Touch** | **24 h real time** |
 | Shard Pickaxe | 500 ✦ | **3×3 mining** with **amethyst-like particles on every block mined** — pick **Fortune III or Silk Touch** | **24 h real time** |
 | Void Totem | 150 ✦ | **Rescues you from a lethal void hit** — consumed, teleports you to safety, full heal + Resistance & Slow Falling | permanent |
@@ -285,9 +285,18 @@ between players (`/shard pay`) or given by staff (`/shard give`).
 - Paper does not attribute its exhaustion event to a specific enchantment or
   hand. The Lunge reduction correlates a matching recent event while the shard
   spear is in the main hand; other plugins or custom enchantments can interfere.
-- Dry Riptide is a server-side immediate launch with Riptide spin, sound and
-  durability handling. It is **not** native charge-and-release: unmodified
-  clients refuse to charge a Riptide trident while dry. Wet use is vanilla.
+- Hold the Shard Trident to charge and release to launch, even when dry. A
+  dry release needs at least 10 server ticks of charge; only a successful dry
+  launch starts the 5-second cooldown. Water/rain releases remain vanilla and
+  do not use or reset that cooldown. The dry cooldown survives reconnects.
+- Dry charging uses Paper's active-item synchronization to emulate vanilla
+  charge/release. Paper does not guarantee player-client behavior for this API,
+  and it has **not been tested with a real 26.3 client/server**. An unmodified
+  client can predict an offhand action or animation while the server is
+  starting a dry main-hand charge; the server suppresses the duplicate action.
+  Block-use handling is conservative around interactable blocks; the grounded
+  lift is a small velocity approximation of vanilla's collision-aware movement.
+  Test it with your clients and protection plugins before production.
 - A void rescue returns you to the last remembered grounded location in the
   current world, or that world's spawn if none is known; ensure the spawn is
   safe. A failed teleport refunds the totem in memory (not across a crash).

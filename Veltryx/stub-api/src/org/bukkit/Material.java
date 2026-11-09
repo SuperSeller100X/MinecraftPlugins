@@ -205,6 +205,7 @@ public enum Material {
     public boolean isItem() { return this != AIR && this != WATER && this != LAVA; }
     public int getMaxStackSize() { return 64; }
     public short getMaxDurability() { return 0; }
+    public boolean isInteractable() { return this == CHEST || this == ENDER_CHEST || this == CRAFTING_TABLE; }
     public BlockData createBlockData() { return null; }
 
     public static Material matchMaterial(String name) {
