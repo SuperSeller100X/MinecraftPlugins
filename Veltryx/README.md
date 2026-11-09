@@ -8,7 +8,7 @@ DonutSMP-style one-hit ban), the **`/sus` investigation GUI** and a full
 **staff toolbox**, survival shop, player settings, homes, shard tools, and
 custom spawners.
 
-- Version: **vx-0.0.6-beta** · targets Paper API 26.3 and Java 25 ·
+- Version: **vx-0.0.7-beta** · targets Paper API 26.3 and Java 25 ·
   `folia-supported: true`. The descriptor declares `api-version: 26.2`, but
   compatibility with older servers has not been verified; 26.3 items are
   filtered out when the server does not recognize them.
@@ -548,7 +548,7 @@ Canonical build (needs network for the Paper API):
 
 ```bash
 cd Veltryx
-mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.6-beta.jar
+mvn -B clean verify        # JDK 25 required — output: target/vx-0.0.7-beta.jar
 ```
 
 Offline development fallback: the bundled Eclipse compiler and compile-only
@@ -558,7 +558,7 @@ driver. Use the Maven jar for deployment:
 
 ```bash
 cd Veltryx
-JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.6-beta.jar
+JAVA_BIN=/path/to/java25 ./build.sh   # output: target/vx-0.0.7-beta.jar
 ```
 
 To run the additional real SQLite integration tests during the offline build,
@@ -589,12 +589,12 @@ A red name means the plugin did **not** enable. Check the console — the fix de
 | Console output | Cause | Fix |
 |---|---|---|
 | `Veltryx failed to enable during stage '...'` + stack | A bug during a specific startup stage | Send the whole error — the stage name pinpoints it |
-| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.6-beta.jar` (NOT `original-...jar`, not `target/classes`) |
+| `Could not load 'plugins/Veltryx...jar' ... plugin.yml` | Not a real built jar was dropped in | Build with `mvn -B clean package` and use `target/vx-0.0.7-beta.jar` (NOT `original-...jar`, not `target/classes`) |
 | `UnsupportedClassVersionError` | Server runs an old Java | Minecraft 26.x needs **Java 25** — update the server's Java |
 | `api-version` / "made for a newer version" | Server is older than the plugin expects | Veltryx declares `api-version: '26.2'` and targets 26.3; send the exact server version and error |
 | `config.yml is missing from the plugin jar!` | Incomplete/repacked jar | Rebuild with Maven; don't unzip/rezip the jar |
 
-After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.6-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
+After a successful enable the console shows `[Veltryx] Veltryx vx-0.0.7-beta enabled on ...` and `plugins/Veltryx/` is created with `config.yml` and `messages.yml`.
 
 ## 🗺️ Roadmap (next versions)
 

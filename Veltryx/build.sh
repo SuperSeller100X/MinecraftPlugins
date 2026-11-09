@@ -52,7 +52,7 @@ if [[ -n "${SQLITE_JDBC_JAR:-}" ]]; then
   "$JAVA_BIN" --enable-native-access=ALL-UNNAMED -cp "$OUT:$SMOKE_OUT:src/main/resources:$SQLITE_JDBC_JAR" dev.superseller.veltryx.smoke.SqliteIntegrationTest
 fi
 
-VERSION="vx-0.0.6-beta"
+VERSION="vx-0.0.7-beta"
 echo "==> assembling target/${VERSION}.jar"
 rm -rf target/jar
 mkdir -p target/jar

@@ -46,5 +46,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Veltryx
-          path: Veltryx/target/vx-0.0.6-beta.jar
+          path: Veltryx/target/vx-0.0.7-beta.jar
           if-no-files-found: error

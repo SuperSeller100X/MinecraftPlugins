@@ -297,7 +297,7 @@ plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
 custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
 the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
-**vx-0.0.6-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
+**vx-0.0.7-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
 balances, and YAML **or** SQLite storage.
 
 - `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
