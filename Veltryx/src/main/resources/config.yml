@@ -1,0 +1,248 @@
+# =====================================================================
+#  Veltryx — Minecraft 26.3 (Paper / Purpur / Folia), Java 25
+#  All-in-one server core: economy, anti-cheat, custom bans, staff tools.
+#  Reload with /veltryx reload  (permission: veltryx.admin.reload)
+# =====================================================================
+
+storage:
+  # Where data is stored: "yaml" (flat files) or "sqlite" (single database,
+  # recommended for large servers). Both work on Linux, Windows and macOS.
+  type: yaml
+  # Periodic safety-net flush for the YAML backend (seconds, min 30).
+  autosave-seconds: 300
+
+economy:
+  # Currency display. Balances are stored as exact cents.
+  currency-symbol: "$"
+  currency-name: dollar
+  # Granted once to brand-new players (parses 1k / 2.5m style amounts).
+  starting-balance: 100
+  # Smallest allowed /eco pay amount.
+  min-transfer: 0.01
+  # Entries on /eco top.
+  baltop-size: 10
+
+# The stats display: a scoreboard on the right side of the screen with
+# cash, shards, deaths, kills and playtime. Other players see only cash
+# below a player's name; no stats are added to the tab list.
+scoreboard:
+  enabled: true
+  nametag: true
+  update-seconds: 1
+
+# Auction house (/ah) and player buy orders (/order, /orders).
+market:
+  auction-hours: 48      # listings expire after this long (item can be reclaimed)
+  order-hours: 48        # buy orders auto-close and refund after this long
+  max-listings: 20       # active listings per player
+  max-orders: 20         # open buy orders per player
+
+# Homes (/sethome, /home, /homes). The first homes are free, every extra
+# home costs price-step more than the previous one (2500 -> $2,500, then
+# $5,000, $7,500, ... up to home #45).
+home:
+  max: 45
+  free: 3
+  price-step: "2500"
+
+# Teleport requests (/tpa, /tpahere). The cooldown is per counterpart: you
+# may ask several different players at once, but the same player only every
+# cooldown-seconds. /tp accepts a request; /tp <player> and /tphere <player>
+# are staff teleports.
+tpa:
+  cooldown-seconds: 10
+  request-timeout-seconds: 60
+
+# Shards (/shard): a second currency earned by playing — 1 shard per minute
+# of playtime. Shards buy the shard weapons and tools (spear, trident, axe,
+# pickaxe) and the void totem in the shard shop. Weapons and tools
+# self-destruct 24 real-time hours after purchase, like the ShardTools
+# plugin. There is deliberately no way to buy shards with money — they are
+# earned by playing, paid between players or given by staff.
+shards:
+  per-minute: 1
+  income-message: true
+  # Mining plane radius of the shard pickaxe and axe (1 = 3x3).
+  area-radius: 1
+  # The shard axe fells whole trees; this caps the log chain length.
+  tree:
+    max-blocks: 256
+    break-leaves: true
+    replant: false
+  # Haste II duration of the shard potion of haste, in minutes.
+  haste-minutes: 60
+
+# Random teleport (/rtp): picks a random spot, searches for a safe block
+# column (never lava, cactus, fire, the void or the nether roof), counts
+# down 3 seconds and teleports. The nether radius is divided by 8 to match
+# the coordinate scale.
+rtp:
+  radius: 10000000
+  min-distance: 500
+  nether-divisor: 8
+  cooldown-seconds: 60
+  countdown-seconds: 3
+  max-attempts: 25
+
+# Legacy QuickShop list retained for older configurations; it is no longer
+# used. Each player now configures 45 slots in /quickshop, persisted separately
+# in quickshop-slots.properties. New slots begin empty.
+quickshop:
+  items:
+    - STONE
+    - COBBLESTONE
+    - DEEPSLATE
+    - COBBLED_DEEPSLATE
+    - DIRT
+    - GRASS_BLOCK
+    - SAND
+    - GRAVEL
+    - GLASS
+    - BRICKS
+    - OAK_LOG
+    - OAK_PLANKS
+    - SPRUCE_PLANKS
+    - COBBLESTONE_WALL
+    - LADDER
+    - TORCH
+    - CHEST
+    - BARREL
+    - IRON_INGOT
+    - GOLD_INGOT
+    - COPPER_INGOT
+    - REDSTONE
+    - LAPIS_LAZULI
+    - DIAMOND
+    - EMERALD
+    - COAL
+    - IRON_BLOCK
+    - GOLD_BLOCK
+    - DIAMOND_BLOCK
+    - OBSIDIAN
+    - IRON_PICKAXE
+    - DIAMOND_PICKAXE
+    - IRON_SWORD
+    - DIAMOND_SWORD
+    - BOW
+    - ARROW
+    - SHIELD
+    - IRON_HELMET
+    - IRON_CHESTPLATE
+    - DIAMOND_HELMET
+    - DIAMOND_CHESTPLATE
+    - COOKED_BEEF
+    - BREAD
+    - GOLDEN_APPLE
+    - ENDER_PEARL
+
+anticheat:
+  enabled: true
+
+  # Lag awareness — detections are SKIPPED when the connection or the server
+  # is too far gone to judge fairly (prevents false flags and false bans).
+  max-ping: 350        # ms — no checks above this ping
+  min-tps: 18.0        # no checks below this TPS
+  # Punishments (kick/ban) need an even healthier environment:
+  punish-max-ping: 250 # ms
+  punish-min-tps: 19.0
+
+  # Tolerance scaling and decay.
+  join-grace-seconds: 10   # no checks right after join (client sync)
+  decay-per-second: 0.5    # violation level decay (VL/s)
+
+  # Check limits. Tolerances scale automatically with ping and TPS.
+  max-move-speed: 6.5          # blocks/s baseline (walk ~4.3, flat sprint ~5.6); jump
+                               # chains, potions, ice, soul speed and lag widen it automatically
+  # Allow the movement anti-cheat to clamp sustained hard-cap speed excess and
+  # apply a downward velocity after a fly detection. False positives remain
+  # possible: test with your players and movement plugins. Turning this off
+  # stops these corrections, but flags and configured kicks/bans still apply.
+  server-authority: true
+  # Sustained speeds above limit × this may be clamped when authority is on.
+  speed-hard-cap: 1.75
+  max-cps: 19.0                # attacks per second
+  max-reach: 3.4               # blocks from eyes to hitbox
+  max-interact-reach: 5.6      # blocks from eyes to block
+  max-breaks-per-second: 25
+  max-places-per-second: 20
+  min-aim-angle: 100.0         # degrees away from the target on a landed hit
+
+  # Escalation per check: alert staff -> kick -> automatic ban.
+  # ban-duration uses s/m/h/d/w or "perm". A check inherits defaults when
+  # its section is omitted.
+  # Auto-bans follow the fixed rule (also used by the ban escalation below):
+  # xray/esp = 30 days, every hacking check (fly, speed, jesus, ...) = permanent.
+  # A player kicked twice for the same check within 24h is banned instead.
+  checks:
+    movement:
+      fly:      { enabled: true, alert-vl: 6, kick-vl: 18, ban-vl: 40, ban-duration: perm, ban-reason: "Hacking (Fly)" }
+      speed:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Speed)" }
+      jesus:    { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Jesus)" }
+      phase:    { enabled: true, alert-vl: 5, kick-vl: 14, ban-vl: 30, ban-duration: perm, ban-reason: "Hacking (Phase)" }
+      timer:    { enabled: true, alert-vl: 8, kick-vl: 25, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (Timer)" }
+    combat:
+      autoclicker: { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (AutoClicker)" }
+      reach:       { enabled: true, alert-vl: 6, kick-vl: 20, ban-vl: 45, ban-duration: perm, ban-reason: "Hacking (Reach)" }
+      multiaura:   { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (MultiAura)" }
+      aim:         { enabled: true, alert-vl: 8, kick-vl: 30, ban-vl: 60, ban-duration: perm, ban-reason: "Hacking (Aim)" }
+    interact:
+      fastplace:      { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (FastPlace)" }
+      fastuse:        { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (FastUse)" }
+      interact-reach: { enabled: true, alert-vl: 6, kick-vl: 22, ban-vl: 50, ban-duration: perm, ban-reason: "Hacking (InteractReach)" }
+    xray:
+      xray: { enabled: true, alert-vl: 4, kick-vl: 12, ban-vl: 25, ban-duration: 30d, ban-reason: "X-Ray" }
+
+  # Anti-xray: hidden ores are sent to clients as stone (client-side only).
+  xray:
+    obfuscation: true
+    # Client-side block faking: every ore is sent as stone the moment the
+    # client receives the chunk (no visible flash), and revealed again when a
+    # player is close enough to legitimately see it.
+    reveal-radius: 5           # blocks — ore this close to a player is shown real
+    sweep-radius: 12           # blocks — safety re-fake around players
+    update-interval-ms: 500    # near-area sweep cadence
+    hide-exposed: true         # hide ALL ores (strong); false = only fully buried ones
+    scan-y-min: -64
+    scan-y-max: 80
+    # X-Ray detection statistics (ore hiddenness per mining window).
+    window: 20                 # ores per evaluation window
+    min-hidden-ratio: 0.55     # average hiddenness that raises suspicion
+    min-samples: 6             # ores needed before judging
+
+punishments:
+  # Where banned players are told to appeal (shown on the ban screen).
+  appeal-url: "discord.gg/yourserver"
+  # /offend reasons. "xray"/"esp" = 30 day ban, "hacking" (fly, speed,
+  # killaura, …) = permanent. Every reason has a category for the ban screen.
+  offend-reasons:
+    xray:
+      display: "X-Ray / ESP"
+      category: xray-esp
+      duration: 30d
+      aliases: [esp, "xray/esp", xray-esp, xrayesp, x-raying]
+    hacking:
+      display: "Hacking"
+      category: hacking
+      duration: perm
+      aliases: [fly, flying, speed, killaura, aura, autoclicker, reach,
+                jesus, bhop, scaffold, timer, phase, cheating, cheats, hacks]
+
+moderation:
+  # Warnings expire after this long (parses 30d style values).
+  warn-expiry: 30d
+  # Active warnings that trigger the escalation below.
+  warn-threshold: 3
+  # What happens at the threshold: kick | mute | ban
+  warn-action: kick
+  # Default /mute duration when staff don't pass one.
+  mute-default-duration: 1h
+  # Anti-cheat flags older than this are pruned from /sus evidence.
+  flag-retention: 30d
+
+staff:
+  # /broadcast header (MiniMessage).
+  broadcast-prefix: "<gradient:#f59e0b:#ef4444><bold>ANNOUNCE</bold></gradient> <dark_gray>»</dark_gray> "
+  # Default /slowchat suggestion interval (seconds).
+  slowchat-default-seconds: 5
+  # Keep vanish state when a staff member relogs.
+  vanish-persists: true

@@ -1,0 +1,50 @@
+name: Veltryx CI
+
+on:
+  push:
+    paths:
+      - 'Veltryx/**'
+      - '.github/workflows/veltryx.yml'
+  pull_request:
+    paths:
+      - 'Veltryx/**'
+      - '.github/workflows/veltryx.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Veltryx
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Consistency checks
+        run: python3 tools/check_consistency.py
+      - name: Offline regression tests
+        run: |
+          JAVA_BIN="$(command -v java)" ./build.sh
+          mkdir -p "$RUNNER_TEMP/veltryx-offline"
+          cp -R target/offline-classes target/smoke-classes "$RUNNER_TEMP/veltryx-offline/"
+      - name: Test and package with the real Paper API
+        run: mvn -B -ntp clean verify
+      - name: SQLite integration with the packaged driver
+        run: |
+          JDBC="$HOME/.m2/repository/org/xerial/sqlite-jdbc/3.51.1.0/sqlite-jdbc-3.51.1.0.jar"
+          java --enable-native-access=ALL-UNNAMED -cp "$RUNNER_TEMP/veltryx-offline/offline-classes:$RUNNER_TEMP/veltryx-offline/smoke-classes:src/main/resources:$JDBC" dev.superseller.veltryx.smoke.SqliteIntegrationTest
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veltryx
+          path: Veltryx/target/vx-0.0.7-beta.jar
+          if-no-files-found: error

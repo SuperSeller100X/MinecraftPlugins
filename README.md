@@ -291,3 +291,109 @@ See [HourGlass/README.md](HourGlass/README.md). Build with `mvn -B clean verify`
 plus the unit tests and `mvn clean verify` on Temurin 25 is provided at
 `HourGlass/.github/workflows/build.yml`; copy `HourGlass/ci/root-workflow.yml` to
 `.github/workflows/hourglass-build.yml` to activate it.
+
+## Veltryx ⚡
+
+The **all-in-one server core** for Minecraft **26.3** (Paper / Purpur / Folia), Java 25 —
+custom economy, anti-cheat with anti-xray, custom category bans (`/offend`, DonutSMP-style),
+the `/sus` investigation GUI and a full admin toolbox, all in one plugin. Version
+**vx-0.0.7-beta**. Includes the public `VeltryxEconomy` API, exact cent-based
+balances, and YAML **or** SQLite storage.
+
+- `/eco` (`/bal`, `/balance`, `/money`) — `balance` · `pay <player> <amount>` · `top` · admin `give|take|set|reset`
+- **`/shop` (`/store`) + `/sell`** — 1,530 curated 26.3 survival items,
+  excluding elytra, the dragon egg and unobtainable/operator items. Search by
+  name, category or base price; left-click to buy and right-click to sell with
+  a quantity and exact preview. Choose potion/arrow effects and forms or book
+  enchantments and levels. `/sell` sells only items placed in its deposit tray.
+  Pricing uses `shop.yml` and modeled recipe caps; no model covers every trade,
+  farm or plugin. See the module README for variant pricing and upgrades.
+- **`/settings`** — per-player, persistent natural-mob and phantom spawning
+  preferences and night vision. Other players and spawners can still spawn
+  mobs nearby when a player opts out of natural spawning.
+- `/ban <player> [duration] <reason>` — general custom bans (permanent when no duration;
+  shadows vanilla `/ban`, never touches Minecraft's ban list) · `/offend <player> <reason>` —
+  `xray/esp` = 30-day ban, `hacking` (fly, speed, killaura, …) = permanent,
+  custom ban screen (reason, category, ban ID, expiry, staff, appeal URL) with the player's
+  recent anti-cheat flags attached as evidence · `/bans` · `/unban`
+- **Anti-cheat** — movement (fly — caught with *and* without sprinting, speed —
+  sprint-jump chains and lag never false-flag, jesus, phase, timer — elytra and
+  falling never false-flag), **server authority**: impossible movement is rolled
+  back instantly, so speed/flight hacks physically cannot move.
+  Combat (autoclicker, reach,
+  multi-aura, aim), interact (fastplace, fastuse, reach) and X-Ray statistics with
+  **block obfuscation** (hidden ores sent as stone). Ping/TPS aware at every step:
+  tolerances scale with lag, checks skip on bad connections and auto kicks/bans only fire
+  while ping and TPS are healthy — designed not to false ban. Creative, spectator
+  and bypassed players are never checked. Flag → alert → kick → auto-ban
+  escalation, fully configurable per check — and a second kick for the same
+  check within 24h becomes a **ban** (permanent for hacking, 30 days for
+  xray/esp), so repeat offenders don't just get kicked forever. Fly detection
+  catches slow "no-fall" descents and bobbing too (~0.8s), speed only reports
+  grounded movement (airborne = Fly), and Jesus is surface-only — divers and
+  sea-floor walkers never flag. Anti-xray is client-side and flash-free (ores
+  ride behind the chunk packet). **Server authority without lag feel**:
+  impossible movement is clamped smoothly (no rubber-band, players never bug
+  out), isolated lag corrections are ignored entirely, and confirmed flight
+  gets a gentle gravity pull — corrections never feed violation levels, so
+  they cannot cause false bans.
+- `/sus [player]` — suspicion GUI: players sorted by suspicion score, per-check violation
+  levels, stored flag evidence, one-click teleport / freeze / kick / offend-xray / offend-hacking
+- `/ah` browses auction listings and lists the exact main-hand stack for a
+  typed **total** price · `/order` browses buy orders, with GUI creation, total
+  escrow and buyer collection (see the module README before upgrading) · `/home`/`/sethome`/`/homes` (3 free then +$2.5k each,
+  max 45) with **per-home rename and any-item icons** · `/tpa`/`/tpahere`/`/tp`
+  with per-counterpart cooldowns
+- **`/sell` values enchants and wear**: enchantments raise the price
+  (+12% per enchant level), lost durability lowers it (scales with remaining
+  durability) — always strictly below the shop buy price
+- **Shards (`/shard`)** — a second currency earned **1 shard per minute** of
+  play (*"you earned 1 shard for playing the server"*). The shard shop sells
+  the **Shard Spear** (native Lunge III, 90% less Lunge exhaustion),
+  **Shard Trident** (hold and release Riptide III even when dry, with a 5s
+  dry-only cooldown; wet use remains vanilla), **Shard Axe**
+  (whole-tree felling, configurable log cap, always Silk Touch), **Shard Pickaxe** (3×3 with amethyst
+  particles) at 500 shards each — self-destructing **24h after purchase**
+  like the ShardTools plugin — plus the **Void Totem** (150) that rescues
+  you from the void. No way to buy shards with money: earned, paid or given.
+- **`/shard spawners`** (also linked from the shard shop) sells permanent pig,
+  sheep, cow, iron golem, skeleton, zombie and creeper spawners for **1,000
+  shards each**. Right-click with a matching spawner to stack up to **1,024**;
+  output scales in mob or inventory mode. Silk Touch returns the whole stack
+  with its contents. Each component retains **20 pages × 45 slots**. Large
+  stacks can cause severe lag, and normal non-light spawn rules still apply.
+  Inventory mode uses
+  the no-player-killer loot table; rolls that do not fit are discarded, and
+  normal non-light spawn requirements still apply. Back up `spawners/` with world,
+  player and market data. Actual spawner items can be listed in `/ah` with their
+  identity intact; material-only orders do not consume custom spawners.
+  Protection plugins need to guard interactions and the `SpawnerSpawnEvent`;
+  integrations that only check `CreatureSpawnEvent`
+  cannot stop virtual loot. See the module README for details.
+- **`/rtp` random teleport** — world picker (Overworld / Nether / End),
+  **10 million block radius**, async **safe-block search** (never lava,
+  fire, the void or the nether roof) and a **3 second countdown**
+- **QuickShop & search** — `/quickshop` (`/qs`) has 45 independently
+  configurable per-player item/amount slots; search with a private sign editor,
+  select a variant, then save. Prices are looked up again at purchase time.
+- **Stats display** — cash, shards, deaths, kills and playtime with hidden
+  ordering numbers, prompt balance/stat updates and a configurable refresh
+  interval. Other players optionally see only money below names; no stats are
+  added to the tab list.
+- **Money suffixes** — `k/m/b/t/q/d/g/l` represent consecutive thousand-fold
+  steps from 10³ through 10²⁴; `/eco` balances and transfers retain exact cents.
+  Back up economy data before upgrading and do not downgrade large balances.
+- Admin toolbox: `/lookup`, `/freeze`, `/vanish`, `/staffchat`, `/mute`/`/unmute`,
+  `/warn`/`/warns` (auto-escalation), `/notes`, `/report`/`/reports`, `/broadcast`,
+  `/clearchat`, `/slowchat`, `/ping`, `/tps`, `/veltryx reload`
+- Full `veltryx.*` permission tree, TabCompleter everywhere, MiniMessage `messages.yml`,
+  Folia-safe scheduling, `VeltryxEconomy` developer API. Config and messages
+  **auto-update** with new default keys after plugin updates while keeping your values.
+
+See [Veltryx/README.md](Veltryx/README.md) for full commands, permissions, configuration,
+storage and API details. Build with `mvn -B clean verify` in `Veltryx/` (JDK 25 required);
+an offline stub build + regression tests run via `./build.sh` (not a real Paper
+validation and no shaded SQLite driver). Offline consistency checks:
+`cd Veltryx && python3 tools/check_consistency.py`. A CI workflow template is
+included at `Veltryx/.github/workflows/build.yml`; copy it to the repo root
+`.github/workflows/` to activate it (requires GitHub workflow permission).

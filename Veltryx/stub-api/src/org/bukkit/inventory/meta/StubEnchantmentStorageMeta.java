@@ -1,0 +1,6 @@
+package org.bukkit.inventory.meta;
+public class StubEnchantmentStorageMeta extends StubItemMeta implements EnchantmentStorageMeta {
+    public final java.util.Map<org.bukkit.enchantments.Enchantment,Integer> stored = new java.util.HashMap<>();
+    public boolean addStoredEnchant(org.bukkit.enchantments.Enchantment ench, int level, boolean ignored) { stored.put(ench, level); return true; }
+    public java.util.Map<org.bukkit.enchantments.Enchantment,Integer> getStoredEnchants() { return java.util.Map.copyOf(stored); }
+}

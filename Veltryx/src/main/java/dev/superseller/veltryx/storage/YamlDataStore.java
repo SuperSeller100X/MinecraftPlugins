@@ -1,0 +1,887 @@
+package dev.superseller.veltryx.storage;
+
+import dev.superseller.veltryx.model.Account;
+import dev.superseller.veltryx.model.AhListing;
+import dev.superseller.veltryx.model.BuyOrder;
+import dev.superseller.veltryx.model.HomeLocation;
+import dev.superseller.veltryx.model.BanEntry;
+import dev.superseller.veltryx.model.FlagEntry;
+import dev.superseller.veltryx.model.MuteEntry;
+import dev.superseller.veltryx.model.NoteEntry;
+import dev.superseller.veltryx.model.Profile;
+import dev.superseller.veltryx.model.ReportEntry;
+import dev.superseller.veltryx.model.WarnEntry;
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+/**
+ * YAML-backed {@link DataStore}: four flat files under the plugin data folder
+ * ({@code economy.yml}, {@code profiles.yml}, {@code moderation.yml},
+ * {@code flags.yml}). Simple and portable; ideal for small and mid-size servers.
+ */
+public final class YamlDataStore implements DataStore {
+
+    private final File folder;
+    private final Logger logger;
+    private final Object economyLock = new Object();
+    private final Object marketLock = new Object();
+    private volatile boolean loaded;
+
+    private final ConcurrentMap<UUID, Account> accounts = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Profile> profiles = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, BanEntry> bans = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MuteEntry> mutes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, WarnEntry> warns = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, NoteEntry> notes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ReportEntry> reports = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, FlagEntry> flags = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AhListing> ahListings = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, BuyOrder> buyOrders = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, HomeLocation> homes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> homeIcons = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Long> shards = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, long[]> stats = new ConcurrentHashMap<>();   // [kills, deaths]
+
+    public YamlDataStore(File folder, Logger logger) {
+        this.folder = folder;
+        this.logger = logger;
+    }
+
+    @Override
+    public void load() {
+        loaded = false;
+        folder.mkdirs();
+        accounts.clear();
+        YamlConfiguration economy = readEconomy();
+        for (String key : economy.getKeys(false)) {
+            ConfigurationSection section = economy.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(key);
+            if (uuid == null) {
+                continue;
+            }
+            accounts.put(uuid, new Account(uuid,
+                    section.getString("name", "?"),
+                    parseBalance(section.getString("balance", "0"))));
+        }
+
+        profiles.clear();
+        YamlConfiguration prof = read("profiles.yml");
+        for (String key : prof.getKeys(false)) {
+            ConfigurationSection section = prof.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(key);
+            if (uuid == null) {
+                continue;
+            }
+            profiles.put(uuid, new Profile(uuid,
+                    section.getString("name", "?"),
+                    section.getLong("first-seen", 0L),
+                    section.getLong("last-seen", 0L),
+                    section.getLong("playtime", 0L),
+                    section.getInt("joins", 0)));
+        }
+
+        bans.clear();
+        mutes.clear();
+        warns.clear();
+        notes.clear();
+        reports.clear();
+        YamlConfiguration moderation = read("moderation.yml");
+        loadPunishments(moderation.getConfigurationSection("bans"));
+        loadMutes(moderation.getConfigurationSection("mutes"));
+        loadWarns(moderation.getConfigurationSection("warns"));
+        loadNotes(moderation.getConfigurationSection("notes"));
+        loadReports(moderation.getConfigurationSection("reports"));
+
+        flags.clear();
+        YamlConfiguration flagFile = read("flags.yml");
+        ConfigurationSection flagSection = flagFile.getConfigurationSection("flags");
+        if (flagSection != null) {
+            for (String key : flagSection.getKeys(false)) {
+                ConfigurationSection s = flagSection.getConfigurationSection(key);
+                if (s == null) {
+                    continue;
+                }
+                UUID uuid = parseUuid(s.getString("uuid", ""));
+                if (uuid == null) {
+                    continue;
+                }
+                flags.put(key, new FlagEntry(key, uuid, s.getString("name", "?"),
+                        s.getString("check", "?"), s.getDouble("vl", 0.0),
+                        s.getString("detail", ""), s.getLong("issued", 0L)));
+            }
+        }
+
+        ahListings.clear();
+        buyOrders.clear();
+        YamlConfiguration market = readMarket();
+        ConfigurationSection ahSection = market.getConfigurationSection("ah");
+        if (ahSection == null && market.getKeys(false).contains("ah"))
+            throw new IllegalStateException("Invalid auction section in market.yml");
+        if (ahSection != null) {
+            for (String key : ahSection.getKeys(false)) {
+                ConfigurationSection s = ahSection.getConfigurationSection(key);
+                if (s == null) throw new IllegalStateException("Invalid auction listing " + key);
+                UUID seller = parseUuid(s.getString("seller", ""));
+                if (seller == null) throw new IllegalStateException("Invalid seller in auction " + key);
+                BigInteger price = s.getKeys(false).contains("price-total")
+                        ? new BigInteger(s.getString("price-total", "")) : BigInteger.valueOf(s.getLong("price", 0L));
+                ahListings.put(key, new AhListing(key, seller, s.getString("seller-name", "?"),
+                        s.getString("material", ""), s.getInt("amount", -1), price,
+                        s.getLong("listed", 0L), s.getLong("expires", 0L),
+                        s.getBoolean("closed", false), s.getString("item-data", null)));
+            }
+        }
+        ConfigurationSection orderSection = market.getConfigurationSection("orders");
+        if (orderSection == null && market.getKeys(false).contains("orders"))
+            throw new IllegalStateException("Invalid orders section in market.yml");
+        if (orderSection != null) {
+            for (String key : orderSection.getKeys(false)) {
+                ConfigurationSection s = orderSection.getConfigurationSection(key);
+                if (s == null) throw new IllegalStateException("Invalid buy order " + key);
+                UUID buyer = parseUuid(s.getString("buyer", ""));
+                if (buyer == null) throw new IllegalStateException("Invalid buyer in order " + key);
+                int filled = s.getInt("filled", -1);
+                boolean legacy = !s.getKeys(false).contains("collected");
+                // Old versions did not track delivery. Do not mint potentially duplicated
+                // items: an operator must reconcile any historical fills from a backup.
+                if (legacy && filled > 0) logger.warning("Legacy order " + key + " has " + filled
+                        + " filled items with unknown delivery; reconcile manually before compensating.");
+                int amount = s.getInt("amount", -1);
+                BigInteger total = s.getKeys(false).contains("price-total")
+                        ? new BigInteger(s.getString("price-total", ""))
+                        : BigInteger.valueOf(s.getLong("price-each", -1L)).multiply(BigInteger.valueOf(amount));
+                buyOrders.put(key, new BuyOrder(key, buyer, s.getString("buyer-name", "?"),
+                        s.getString("material", ""), amount, filled, total,
+                        s.getLong("created", 0L), s.getLong("expires", 0L),
+                        s.getBoolean("closed", false), legacy ? filled : s.getInt("collected", -1)));
+            }
+        }
+
+        homes.clear();
+        homeIcons.clear();
+        YamlConfiguration homeFile = read("homes.yml");
+        for (String ownerKey : homeFile.getKeys(false)) {
+            ConfigurationSection ownerSection = homeFile.getConfigurationSection(ownerKey);
+            UUID owner = parseUuid(ownerKey);
+            if (ownerSection == null || owner == null) {
+                continue;
+            }
+            for (String name : ownerSection.getKeys(false)) {
+                ConfigurationSection s = ownerSection.getConfigurationSection(name);
+                if (s == null) {
+                    continue;
+                }
+                homes.put(ownerKey + ":" + name, new HomeLocation(owner, name,
+                        s.getString("world", "world"), s.getDouble("x", 0.0), s.getDouble("y", 0.0),
+                        s.getDouble("z", 0.0), (float) s.getDouble("yaw", 0.0),
+                        (float) s.getDouble("pitch", 0.0)));
+                String icon = s.getString("icon", null);
+                if (icon != null && !icon.isEmpty()) {
+                    homeIcons.put(ownerKey + ":" + name, icon);
+                }
+            }
+        }
+
+        shards.clear();
+        YamlConfiguration shardFile = read("shards.yml");
+        for (String uuidKey : shardFile.getKeys(false)) {
+            UUID uuid = parseUuid(uuidKey);
+            if (uuid != null) {
+                shards.put(uuid, shardFile.getLong(uuidKey, 0L));
+            }
+        }
+
+        stats.clear();
+        YamlConfiguration statsFile = read("stats.yml");
+        for (String uuidKey : statsFile.getKeys(false)) {
+            ConfigurationSection s = statsFile.getConfigurationSection(uuidKey);
+            UUID uuid = parseUuid(uuidKey);
+            if (s != null && uuid != null) {
+                stats.put(uuid, new long[]{s.getLong("kills", 0L), s.getLong("deaths", 0L)});
+            }
+        }
+        loaded = true;
+    }
+
+    private void loadPunishments(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(key);
+            if (s == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(s.getString("uuid", ""));
+            if (uuid == null) {
+                continue;
+            }
+            bans.put(key, new BanEntry(key, uuid, s.getString("name", "?"),
+                    s.getString("category", "custom"), s.getString("reason", ""),
+                    s.getString("details", ""), s.getString("staff", "?"),
+                    s.getLong("issued", 0L), s.getLong("expires", -1L),
+                    s.getBoolean("active", true), s.getBoolean("auto", false)));
+        }
+    }
+
+    private void loadMutes(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(key);
+            if (s == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(s.getString("uuid", ""));
+            if (uuid == null) {
+                continue;
+            }
+            mutes.put(key, new MuteEntry(key, uuid, s.getString("name", "?"),
+                    s.getString("reason", ""), s.getString("staff", "?"),
+                    s.getLong("issued", 0L), s.getLong("expires", -1L),
+                    s.getBoolean("active", true)));
+        }
+    }
+
+    private void loadWarns(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(key);
+            if (s == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(s.getString("uuid", ""));
+            if (uuid == null) {
+                continue;
+            }
+            warns.put(key, new WarnEntry(key, uuid, s.getString("name", "?"),
+                    s.getString("reason", ""), s.getString("staff", "?"),
+                    s.getLong("issued", 0L), s.getBoolean("active", true)));
+        }
+    }
+
+    private void loadNotes(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(key);
+            if (s == null) {
+                continue;
+            }
+            UUID uuid = parseUuid(s.getString("uuid", ""));
+            if (uuid == null) {
+                continue;
+            }
+            notes.put(key, new NoteEntry(key, uuid, s.getString("name", "?"),
+                    s.getString("note", ""), s.getString("staff", "?"),
+                    s.getLong("issued", 0L)));
+        }
+    }
+
+    private void loadReports(ConfigurationSection section) {
+        if (section == null) {
+            return;
+        }
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection s = section.getConfigurationSection(key);
+            if (s == null) {
+                continue;
+            }
+            UUID target = parseUuid(s.getString("target", ""));
+            UUID reporter = parseUuid(s.getString("reporter", ""));
+            if (target == null || reporter == null) {
+                continue;
+            }
+            reports.put(key, new ReportEntry(key, target, s.getString("target-name", "?"),
+                    reporter, s.getString("reporter-name", "?"),
+                    s.getString("reason", ""), s.getLong("issued", 0L),
+                    s.getBoolean("resolved", false)));
+        }
+    }
+
+    @Override
+    public void save() {
+        // A failed/partial startup must never overwrite the original files on disable.
+        if (!loaded) return;
+        synchronized (economyLock) { saveAccounts(); }
+
+        YamlConfiguration prof = new YamlConfiguration();
+        for (Profile profile : profiles.values()) {
+            String path = profile.uuid().toString();
+            prof.set(path + ".name", profile.name());
+            prof.set(path + ".first-seen", profile.firstSeen());
+            prof.set(path + ".last-seen", profile.lastSeen());
+            prof.set(path + ".playtime", profile.playtimeMs());
+            prof.set(path + ".joins", profile.joins());
+        }
+        write("profiles.yml", prof);
+
+        YamlConfiguration moderation = new YamlConfiguration();
+        for (BanEntry b : bans.values()) {
+            String path = "bans." + b.id();
+            moderation.set(path + ".uuid", b.uuid().toString());
+            moderation.set(path + ".name", b.name());
+            moderation.set(path + ".category", b.category());
+            moderation.set(path + ".reason", b.reason());
+            moderation.set(path + ".details", b.details());
+            moderation.set(path + ".staff", b.staff());
+            moderation.set(path + ".issued", b.issued());
+            moderation.set(path + ".expires", b.expires());
+            moderation.set(path + ".active", b.active());
+            moderation.set(path + ".auto", b.auto());
+        }
+        for (MuteEntry m : mutes.values()) {
+            String path = "mutes." + m.id();
+            moderation.set(path + ".uuid", m.uuid().toString());
+            moderation.set(path + ".name", m.name());
+            moderation.set(path + ".reason", m.reason());
+            moderation.set(path + ".staff", m.staff());
+            moderation.set(path + ".issued", m.issued());
+            moderation.set(path + ".expires", m.expires());
+            moderation.set(path + ".active", m.active());
+        }
+        for (WarnEntry w : warns.values()) {
+            String path = "warns." + w.id();
+            moderation.set(path + ".uuid", w.uuid().toString());
+            moderation.set(path + ".name", w.name());
+            moderation.set(path + ".reason", w.reason());
+            moderation.set(path + ".staff", w.staff());
+            moderation.set(path + ".issued", w.issued());
+            moderation.set(path + ".active", w.active());
+        }
+        for (NoteEntry n : notes.values()) {
+            String path = "notes." + n.id();
+            moderation.set(path + ".uuid", n.uuid().toString());
+            moderation.set(path + ".name", n.name());
+            moderation.set(path + ".note", n.note());
+            moderation.set(path + ".staff", n.staff());
+            moderation.set(path + ".issued", n.issued());
+        }
+        for (ReportEntry r : reports.values()) {
+            String path = "reports." + r.id();
+            moderation.set(path + ".target", r.target().toString());
+            moderation.set(path + ".target-name", r.targetName());
+            moderation.set(path + ".reporter", r.reporter().toString());
+            moderation.set(path + ".reporter-name", r.reporterName());
+            moderation.set(path + ".reason", r.reason());
+            moderation.set(path + ".issued", r.issued());
+            moderation.set(path + ".resolved", r.resolved());
+        }
+        write("moderation.yml", moderation);
+
+        YamlConfiguration flagFile = new YamlConfiguration();
+        for (FlagEntry f : flags.values()) {
+            String path = "flags." + f.id();
+            flagFile.set(path + ".uuid", f.uuid().toString());
+            flagFile.set(path + ".name", f.name());
+            flagFile.set(path + ".check", f.check());
+            flagFile.set(path + ".vl", f.vl());
+            flagFile.set(path + ".detail", f.detail());
+            flagFile.set(path + ".issued", f.issued());
+        }
+        write("flags.yml", flagFile);
+
+        synchronized (marketLock) {
+            try { saveMarket(); }
+            catch (RuntimeException ex) { logger.log(Level.SEVERE, "Could not save market data", ex); }
+        }
+
+        YamlConfiguration shardFile = new YamlConfiguration();
+        for (java.util.Map.Entry<UUID, Long> e : shards.entrySet()) {
+            shardFile.set(e.getKey().toString(), e.getValue());
+        }
+        write("shards.yml", shardFile);
+
+        YamlConfiguration statsFile = new YamlConfiguration();
+        for (java.util.Map.Entry<UUID, long[]> e : stats.entrySet()) {
+            statsFile.set(e.getKey().toString() + ".kills", e.getValue()[0]);
+            statsFile.set(e.getKey().toString() + ".deaths", e.getValue()[1]);
+        }
+        write("stats.yml", statsFile);
+
+        YamlConfiguration homeFile = new YamlConfiguration();
+        for (HomeLocation h : homes.values()) {
+            String path = h.owner().toString() + "." + h.name();
+            homeFile.set(path + ".world", h.world());
+            homeFile.set(path + ".x", h.x());
+            homeFile.set(path + ".y", h.y());
+            homeFile.set(path + ".z", h.z());
+            homeFile.set(path + ".yaw", h.yaw());
+            homeFile.set(path + ".pitch", h.pitch());
+            String icon = homeIcons.get(h.owner().toString() + ":" + h.name());
+            if (icon != null) {
+                homeFile.set(path + ".icon", icon);
+            }
+        }
+        write("homes.yml", homeFile);
+    }
+
+    // The market state is written as one file so order claim counts cannot be torn.
+    private void saveMarket() {
+        YamlConfiguration market = new YamlConfiguration();
+        for (AhListing a : ahListings.values()) {
+            String path = "ah." + a.id();
+            market.set(path + ".seller", a.seller().toString());
+            market.set(path + ".seller-name", a.sellerName());
+            market.set(path + ".material", a.material());
+            market.set(path + ".amount", a.amount());
+            market.set(path + ".price", dev.superseller.veltryx.util.Money.legacyLong(a.priceExactCents()));
+            market.set(path + ".price-total", a.priceExactCents().toString());
+            if (a.itemData() != null) market.set(path + ".item-data", a.itemData());
+            market.set(path + ".listed", a.listed());
+            market.set(path + ".expires", a.expires());
+            market.set(path + ".closed", a.closed());
+        }
+        for (BuyOrder o : buyOrders.values()) {
+            String path = "orders." + o.id();
+            market.set(path + ".buyer", o.buyer().toString());
+            market.set(path + ".buyer-name", o.buyerName());
+            market.set(path + ".material", o.material());
+            market.set(path + ".amount", o.amount());
+            market.set(path + ".filled", o.filled());
+            market.set(path + ".collected", o.collected());
+            market.set(path + ".price-each", o.priceEachCents()); // legacy, approximate view only
+            market.set(path + ".price-total", o.totalCents().toString());
+            market.set(path + ".created", o.created());
+            market.set(path + ".expires", o.expires());
+            market.set(path + ".closed", o.closed());
+        }
+        saveMarketAtomically(market);
+
+    }
+
+    private YamlConfiguration readMarket() {
+        File file = new File(folder, "market.yml");
+        YamlConfiguration market = new YamlConfiguration();
+        if (!file.exists()) return market;
+        try { market.load(file); }
+        catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            throw new IllegalStateException("Could not load market.yml safely", ex);
+        }
+        return market;
+    }
+
+    private void saveMarketAtomically(YamlConfiguration market) {
+        try {
+            Files.createDirectories(folder.toPath());
+            java.nio.file.Path temp = folder.toPath().resolve("market.yml.tmp");
+            java.nio.file.Path target = folder.toPath().resolve("market.yml");
+            market.save(temp.toFile());
+            try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException ex) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
+        } catch (IOException | RuntimeException ex) {
+            throw new IllegalStateException("Could not persist market data", ex);
+        }
+    }
+
+    @Override
+    public String homeIcon(UUID owner, String name) {
+        return homeIcons.get(owner.toString() + ":" + name);
+    }
+
+    @Override
+    public void setHomeIcon(UUID owner, String name, String material) {
+        String key = owner.toString() + ":" + name;
+        if (material == null || material.isEmpty()) {
+            homeIcons.remove(key);
+        } else {
+            homeIcons.put(key, material);
+        }
+    }
+
+    @Override
+    public long shards(UUID uuid) {
+        return shards.getOrDefault(uuid, 0L);
+    }
+
+    @Override
+    public void setShards(UUID uuid, long amount) {
+        shards.put(uuid, amount);
+    }
+
+    @Override
+    public java.util.Map<UUID, Long> shardBalances() {
+        return new java.util.HashMap<>(shards);
+    }
+
+    @Override
+    public long kills(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[0];
+    }
+
+    @Override
+    public long deaths(UUID uuid) {
+        long[] v = stats.get(uuid);
+        return v == null ? 0L : v[1];
+    }
+
+    @Override
+    public void setKills(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[0] = amount;
+    }
+
+    @Override
+    public void setDeaths(UUID uuid, long amount) {
+        long[] v = stats.computeIfAbsent(uuid, k -> new long[2]);
+        v[1] = amount;
+    }
+
+    @Override
+    public void close() {
+        save();
+    }
+
+    // ------------------------------------------------------------- economy
+
+    @Override public long getBalance(UUID uuid) {
+        return dev.superseller.veltryx.util.Money.legacyLong(getBalanceExact(uuid));
+    }
+    @Override public BigInteger getBalanceExact(UUID uuid) {
+        Account account = accounts.get(uuid);
+        return account == null ? BigInteger.ZERO : account.balanceExact();
+    }
+    @Override public void setBalance(UUID uuid, String name, long cents) {
+        setBalanceExact(uuid, name, BigInteger.valueOf(Math.max(0L, cents)));
+    }
+    @Override public void setBalanceExact(UUID uuid, String name, BigInteger cents) {
+        setBalancesExact(List.of(new Account(uuid, name, cents)));
+    }
+    @Override public void setBalancesExact(List<Account> updates) {
+        if (!loaded) throw new IllegalStateException("YAML storage has not loaded successfully");
+        synchronized (economyLock) {
+            java.util.Map<UUID, Account> before = new java.util.HashMap<>();
+            for (Account account : updates) {
+                before.putIfAbsent(account.uuid(), accounts.get(account.uuid()));
+                accounts.put(account.uuid(), account);
+            }
+            try { saveAccounts(); }
+            catch (RuntimeException ex) {
+                for (var entry : before.entrySet()) {
+                    if (entry.getValue() == null) accounts.remove(entry.getKey());
+                    else accounts.put(entry.getKey(), entry.getValue());
+                }
+                throw ex;
+            }
+        }
+    }
+    @Override public List<Account> top(int limit) {
+        List<Account> sorted = new ArrayList<>(accounts.values());
+        sorted.sort(Comparator.comparing(Account::balanceExact).reversed());
+        return sorted.subList(0, Math.min(Math.max(0, limit), sorted.size()));
+    }
+
+    private static BigInteger parseBalance(String raw) {
+        try {
+            BigInteger result = new BigInteger(raw);
+            if (result.signum() < 0) throw new NumberFormatException("negative balance");
+            return result;
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("Invalid stored economy balance; restore the account from backup", ex);
+        }
+    }
+
+    /** One atomic replacement for all accounts, including both sides of a transfer. */
+    private void saveAccounts() {
+        YamlConfiguration economy = new YamlConfiguration();
+        for (Account account : accounts.values()) {
+            String path = account.uuid().toString();
+            economy.set(path + ".name", account.name());
+            // A quoted decimal string remains exact even beyond YAML's integer range.
+            economy.set(path + ".balance", account.balanceExact().toString());
+        }
+        try {
+            Files.createDirectories(folder.toPath());
+            java.nio.file.Path temp = folder.toPath().resolve("economy.yml.tmp");
+            java.nio.file.Path target = folder.toPath().resolve("economy.yml");
+            economy.save(temp.toFile());
+            try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException ex) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
+        } catch (IOException | RuntimeException ex) {
+            throw new IllegalStateException("Could not persist economy accounts", ex);
+        }
+    }
+
+    // ------------------------------------------------------------- profile
+
+    @Override
+    public Profile getProfile(UUID uuid) {
+        return profiles.get(uuid);
+    }
+
+    @Override
+    public void upsertProfile(UUID uuid, String name, long now, long sessionMillis, boolean joined) {
+        Profile existing = profiles.get(uuid);
+        if (existing == null) {
+            profiles.put(uuid, new Profile(uuid, name, now, now, Math.max(0L, sessionMillis), joined ? 1 : 0));
+        } else {
+            profiles.put(uuid, new Profile(uuid, name,
+                    existing.firstSeen() == 0L ? now : existing.firstSeen(),
+                    joined ? now : Math.max(existing.lastSeen(), now),
+                    existing.playtimeMs() + Math.max(0L, sessionMillis),
+                    existing.joins() + (joined ? 1 : 0)));
+        }
+        save();
+    }
+
+    // --------------------------------------------------------------- bans
+
+    @Override
+    public void saveBan(BanEntry entry) {
+        bans.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public void setBanActive(String id, boolean active) {
+        BanEntry entry = bans.get(id);
+        if (entry != null) {
+            bans.put(id, new BanEntry(entry.id(), entry.uuid(), entry.name(), entry.category(),
+                    entry.reason(), entry.details(), entry.staff(), entry.issued(),
+                    entry.expires(), active, entry.auto()));
+            save();
+        }
+    }
+
+    @Override
+    public List<BanEntry> allBans() {
+        return List.copyOf(bans.values());
+    }
+
+    // --------------------------------------------------------------- mutes
+
+    @Override
+    public void saveMute(MuteEntry entry) {
+        mutes.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public void setMuteActive(String id, boolean active) {
+        MuteEntry entry = mutes.get(id);
+        if (entry != null) {
+            mutes.put(id, new MuteEntry(entry.id(), entry.uuid(), entry.name(), entry.reason(),
+                    entry.staff(), entry.issued(), entry.expires(), active));
+            save();
+        }
+    }
+
+    @Override
+    public List<MuteEntry> allMutes() {
+        return List.copyOf(mutes.values());
+    }
+
+    // -------------------------------------------------------------- warns
+
+    @Override
+    public void saveWarn(WarnEntry entry) {
+        warns.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public void setWarnActive(String id, boolean active) {
+        WarnEntry entry = warns.get(id);
+        if (entry != null) {
+            warns.put(id, new WarnEntry(entry.id(), entry.uuid(), entry.name(), entry.reason(),
+                    entry.staff(), entry.issued(), active));
+            save();
+        }
+    }
+
+    @Override
+    public List<WarnEntry> allWarns() {
+        return List.copyOf(warns.values());
+    }
+
+    // -------------------------------------------------------------- notes
+
+    @Override
+    public void saveNote(NoteEntry entry) {
+        notes.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public void removeNote(String id) {
+        notes.remove(id);
+        save();
+    }
+
+    @Override
+    public List<NoteEntry> allNotes() {
+        return List.copyOf(notes.values());
+    }
+
+    // ------------------------------------------------------------- reports
+
+    @Override
+    public void saveReport(ReportEntry entry) {
+        reports.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public void setReportResolved(String id, boolean resolved) {
+        ReportEntry entry = reports.get(id);
+        if (entry != null) {
+            reports.put(id, new ReportEntry(entry.id(), entry.target(), entry.targetName(),
+                    entry.reporter(), entry.reporterName(), entry.reason(), entry.issued(), resolved));
+            save();
+        }
+    }
+
+    @Override
+    public List<ReportEntry> allReports() {
+        return List.copyOf(reports.values());
+    }
+
+    // --------------------------------------------------------------- flags
+
+    @Override
+    public void saveFlag(FlagEntry entry) {
+        flags.put(entry.id(), entry);
+        save();
+    }
+
+    @Override
+    public List<FlagEntry> flagsFor(UUID uuid) {
+        List<FlagEntry> matching = new ArrayList<>();
+        for (FlagEntry flag : flags.values()) {
+            if (flag.uuid().equals(uuid)) {
+                matching.add(flag);
+            }
+        }
+        matching.sort(java.util.Comparator.comparingLong(FlagEntry::issued).reversed());
+        return matching;
+    }
+
+    @Override
+    public void pruneFlags(long olderThanMillis) {
+        flags.values().removeIf(f -> f.issued() < olderThanMillis);
+        save();
+    }
+
+    // -------------------------------------------------------------- helper
+
+    // --------------------------------------------------- market & homes
+
+    @Override
+    public List<AhListing> allAhListings() {
+        return List.copyOf(ahListings.values());
+    }
+
+    @Override
+    public void saveAhListing(AhListing entry) {
+        synchronized (marketLock) {
+            if (!loaded) throw new IllegalStateException("Market data has not been loaded");
+            AhListing previous = ahListings.put(entry.id(), entry);
+            try { saveMarket(); }
+            catch (RuntimeException ex) {
+                if (previous == null) ahListings.remove(entry.id()); else ahListings.put(entry.id(), previous);
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public List<BuyOrder> allBuyOrders() {
+        return List.copyOf(buyOrders.values());
+    }
+
+    @Override
+    public void saveBuyOrder(BuyOrder entry) {
+        synchronized (marketLock) {
+            if (!loaded) throw new IllegalStateException("Market data has not been loaded");
+            BuyOrder previous = buyOrders.put(entry.id(), entry);
+            try { saveMarket(); }
+            catch (RuntimeException ex) {
+                if (previous == null) buyOrders.remove(entry.id()); else buyOrders.put(entry.id(), previous);
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public List<HomeLocation> homesFor(UUID owner) {
+        List<HomeLocation> out = new ArrayList<>();
+        for (HomeLocation home : homes.values()) {
+            if (home.owner().equals(owner)) {
+                out.add(home);
+            }
+        }
+        out.sort(Comparator.comparing(HomeLocation::name));
+        return out;
+    }
+
+    @Override
+    public void saveHome(HomeLocation home) {
+        homes.put(home.owner().toString() + ":" + home.name(), home);
+        save();
+    }
+
+    @Override
+    public void removeHome(UUID owner, String name) {
+        homes.remove(owner.toString() + ":" + name);
+        save();
+    }
+
+    private YamlConfiguration readEconomy() {
+        File file = new File(folder, "economy.yml");
+        YamlConfiguration yaml = new YamlConfiguration();
+        if (!file.exists()) return yaml;
+        try { yaml.load(file); return yaml; }
+        catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            throw new IllegalStateException("Could not read economy.yml safely; restore from backup", ex);
+        }
+    }
+
+    private YamlConfiguration read(String name) {
+        File file = new File(folder, name);
+        if (!file.exists()) {
+            return new YamlConfiguration();
+        }
+        return YamlConfiguration.loadConfiguration(file);
+    }
+
+    private void write(String name, YamlConfiguration yaml) {
+        try {
+            yaml.save(new File(folder, name));
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not save " + name + ": " + e.getMessage());
+        }
+    }
+
+    private static UUID parseUuid(String raw) {
+        try {
+            return UUID.fromString(raw);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}

@@ -19,7 +19,7 @@ If that file were missing, the client would render the **missing model**
 the definition file is the whole trick.
 
 ```
-pack.mcmeta                                  pack_format 34 (item-model selectors)
+pack.mcmeta                                  declared resource-format range 46 to 97.1
 assets/shardtools/items/void_totem.json      resolves shardtools:void_totem -> item/void_totem
 assets/minecraft/models/item/void_totem.json the Blockbench shard totem geometry
 assets/minecraft/textures/item/void_totem.png the shard totem texture
@@ -47,9 +47,13 @@ before the jar is assembled, so the pack always matches the staged assets.
 The `assets/shardtools/items/void_totem.json` definition is part of the pack
 and is kept by hand (it is not under the `minecraft/` staging folder).
 
-## pack_format
+## Pack compatibility
 
-`pack_format: 34` is the format that introduced `item_model` selectors and
-the `assets/minecraft/items/` definitions. If a future client warns that the
-pack was "made for an older version", bump the number in `pack.mcmeta` to
-what that version expects — no other file needs to change.
+The item-model definition layout was introduced in resource format 46. This
+pack declares a range from 46 through **97.1** (Minecraft 26.3); format 88 is
+used by 26.2. The legacy and modern range fields coexist so older clients can
+read the metadata. See Mojang's [pack metadata changes](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-21-9)
+and [26.3 technical notes](https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3).
+The declared range is not a substitute for testing the model with your actual
+client and any other packs you use. Earlier copies of the ZIP declared format
+34; replace the hosted ZIP and its SHA-1 if you need the updated metadata.

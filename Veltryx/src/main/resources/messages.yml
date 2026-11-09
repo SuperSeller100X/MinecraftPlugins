@@ -1,0 +1,324 @@
+# =====================================================================
+#  Veltryx messages — MiniMessage format
+#  https://docs.advntr.dev/minimessage/format.html
+#  Placeholders use {name} and are always inserted unparsed.
+#  Templates may contain \n to span multiple chat lines (ban screen).
+# =====================================================================
+
+
+# ---------------------------------------------------------------- general
+general.no-permission: "<red>You don't have permission to do that.</red>"
+general.players-only: "<red>Only players can use this command.</red>"
+general.player-not-found: "<red>Could not find a player named <white>{input}</white>.</red>"
+general.invalid-amount: "<red><white>{input}</white> is not a valid amount.</red>"
+general.unknown-subcommand: "<red>Unknown sub-command <white>{input}</white>. Try <white>{command} help</white>.</red>"
+
+# --------------------------------------------------------------- economy
+economy.starting-balance: "<green>Welcome! You received a starting balance of <white>{amount}</white>.</green>"
+economy.balance-self: "<aqua>Balance:</aqua> <green>{amount}</green>"
+economy.balance-other: "<gray><aqua>{player}</aqua>'s balance:</gray> <green>{amount}</green>"
+economy.pay-self: "<red>You cannot pay yourself.</red>"
+economy.pay-sent: "<green>Sent <gold>{amount}</gold> to <aqua>{player}</aqua>.</green>"
+economy.pay-received: "<green>Received <gold>{amount}</gold> from <aqua>{player}</aqua>.</green>"
+economy.below-minimum: "<red>The minimum transfer is <white>{amount}</white>.</red>"
+economy.not-enough: "<red>You don't have <white>{amount}</white>.</red>"
+economy.top-header: "<gray>——— <green>Money top {count}</green> ———</gray>"
+economy.top-entry: "<gray>{position}.</gray> <white>{player}</white> <dark_gray>—</dark_gray> <green>{amount}</green>"
+economy.usage-pay: "<red>Usage: <white>/eco pay <player> <amount></white></red>"
+economy.usage-admin: "<red>Usage: <white>{command} <player> <amount></white></red>"
+economy.admin-given: "<green>Gave <white>{amount}</white> to <white>{player}</white>. Balance: <white>{balance}</white>.</green>"
+economy.admin-taken: "<green>Took <white>{amount}</white> from <white>{player}</white>. Balance: <white>{balance}</white>.</green>"
+economy.admin-set: "<green>Set <white>{player}</white>'s balance to <white>{amount}</white>.</green>"
+economy.admin-reset: "<green>Reset <white>{player}</white>'s balance to zero.</green>"
+economy.help-header: "<gray>——— <green>Economy</green> ———</gray>"
+economy.help-balance: "<white>{command} balance</white> <gray>— check your money</gray>"
+economy.help-pay: "<white>{command} pay <player> <amount></white> <gray>— send money</gray>"
+economy.help-top: "<white>{command} top</white> <gray>— richest players</gray>"
+economy.help-admin: "<white>{command} give|take|set|reset <player> <amount></white> <gray>— manage money</gray>"
+
+# ------------------------------------------------------------- anticheat
+anticheat.alert: "<red><bold>AC</bold></red> <gray>»</gray> <white>{player}</white> <red>failed</red> <white>{check}</white> <gray>(VL {vl}, ping {ping})</gray> <dark_gray>»</dark_gray> <gray>{detail}</gray>"
+anticheat.kick: "<red><bold>You were kicked by the anti-cheat</bold></red>\n<gray>Check:</gray> <white>{check}</white>\n<gray>Reason:</gray> <white>{reason}</white>\n<gray>If you believe this is a mistake, appeal with proof.</gray>"
+anticheat.punished: "<red><bold>AC</bold></red> <gray>»</gray> <white>{player}</white> <red>{action}</red> <gray>—</gray> <white>{check}</white> <dark_gray>(</dark_gray><gray>{duration}</gray><dark_gray>)</dark_gray>"
+
+# --------------------------------------------------------------- bans
+ban-screen.header: "<red><bold>You are banned from this server</bold></red>"
+ban-screen.body: "<gray>Reason:</gray> <white>{reason}</white>\n<gray>Category:</gray> <white>{category}</white>\n<gray>Ban ID:</gray> <white>{id}</white>\n<gray>Expires:</gray> <white>{expires}</white>\n<gray>Staff:</gray> <white>{staff}</white>\n<gray>Appeal:</gray> <white>{appeal}</white>"
+bans.header: "<gray>——— <red>Active bans ({count})</red> ———</gray>"
+bans.entry: "<dark_gray>[{id}]</dark_gray> <white>{player}</white> <gray>—</gray> <red>{category}</red> <gray>»</gray> <white>{reason}</white> <dark_gray>|</dark_gray> <gray>expires {expires}</gray> <dark_gray>|</dark_gray> <gray>by {staff}</gray>"
+bans.none: "<green>There are no active bans.</green>"
+bans.history-header: "<gray>——— <red>Ban history of {player} ({count})</red> ———</gray>"
+bans.no-history: "<green>{player} has no ban history.</green>"
+unban.usage: "<red>Usage: <white>{command} <player|ban-id></white></red>"
+unban.done: "<green>Lifted the ban of <white>{player}</white> <dark_gray>([{id}])</dark_gray>.</green>"
+unban.not-found: "<red>No active ban found for <white>{input}</white>.</red>"
+
+# ------------------------------------------------------------------ ban
+ban.usage: "<red>Usage: <white>{command} <player> [duration] <reason></white> <gray>— duration like 30m, 12h, 7d, 2w or perm (omit for a permanent ban)</gray></red>"
+ban.done: "<green>Banned <white>{player}</white> — <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray></green>"
+ban.staff-note: "<yellow>{staff}</yellow> <gray>banned</gray> <white>{player}</white> <gray>—</gray> <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray>"
+
+# --------------------------------------------------------------- offend
+offend.usage: "<red>Usage: <white>{command} <player> <reason> [details]</white> <gray>(reasons: xray/esp, hacking) — or</gray> <white>{command} <player></white> <gray>to open the ban menu</gray></red>"
+offend.unknown-reason: "<red>Unknown reason <white>{input}</white>. Valid reasons: <white>{reasons}</white>.</red>"
+offend.done: "<green>Banned <white>{player}</white> — <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray></green>"
+offend.staff-note: "<yellow>{staff}</yellow> <gray>offended</gray> <white>{player}</white> <gray>—</gray> <red>{reason}</red> <gray>(</gray><white>{duration}</white><gray>)</gray> <dark_gray>[{id}]</dark_gray>"
+
+# ---------------------------------------------------------------- mutes
+mute.usage: "<red>Usage: <white>{command} <player> [duration] [reason]</white></red>"
+mute.done: "<green>Muted <white>{player}</white> <gray>(</gray><white>{duration}</white><gray>) —</gray> <white>{reason}</white> <dark_gray>[{id}]</dark_gray></green>"
+mute.notify: "<red>You were muted <gray>(</gray><white>{duration}</white><gray>)</gray> by <white>{staff}</white>: <white>{reason}</white></red>"
+mute.blocked: "<red>You are muted: <white>{reason}</white> <gray>(remaining: {remaining})</gray></red>"
+unmute.usage: "<red>Usage: <white>/unmute <player></white></red>"
+unmute.done: "<green>Unmuted <white>{player}</white>.</green>"
+unmute.none: "<red><white>{player}</white> is not muted.</red>"
+
+# --------------------------------------------------------------- warns
+warn.usage: "<red>Usage: <white>{command} <player> <reason></white></red>"
+warn.done: "<green>Warned <white>{player}</white>: <white>{reason}</white> <gray>(active warns: {count})</gray></green>"
+warn.notify: "<red>You were warned by <white>{staff}</white>: <white>{reason}</white> <gray>({count}/{threshold} warnings)</gray></red>"
+warn.threshold-kick: "<red><bold>You were kicked</bold></red>\n<gray>You reached {count} active warnings.</gray>"
+warn.threshold-kicked: "<red><white>{player}</white> was kicked — {count} active warnings.</red>"
+warn.threshold-muted: "<red><white>{player}</white> was muted for 1h — {count} active warnings.</red>"
+warn.threshold-banned: "<red><white>{player}</white> was banned for 24h — {count} active warnings.</red>"
+warns.usage: "<red>Usage: <white>/warns <player></white></red>"
+warns.none: "<green><white>{player}</white> has no active warnings.</green>"
+warns.header: "<gray>——— <yellow>Warnings of {player} ({count})</yellow> ———</gray>"
+warns.entry: "<dark_gray>[{id}]</dark_gray> <white>{reason}</white> <gray>by {staff} at {issued}</gray>"
+
+# ------------------------------------------------------------------ sus
+sus.kicked: "<red>You were kicked by <white>{staff}</white>.</red>"
+sus.kick-done: "<green>Kicked <white>{player}</white>.</green>"
+
+# --------------------------------------------------------------- lookup
+lookup.usage: "<red>Usage: <white>{command} <player></white></red>"
+lookup.header: "<gray>——— <aqua>Lookup: {player}</aqua> ———</gray>"
+lookup.identity: "<gray>UUID:</gray> <white>{uuid}</white> <dark_gray>|</dark_gray> <gray>Name:</gray> <white>{name}</white>"
+lookup.activity: "<gray>First seen:</gray> <white>{first}</white> <dark_gray>|</dark_gray> <gray>Last:</gray> <white>{last}</white> <dark_gray>|</dark_gray> <gray>Playtime:</gray> <white>{playtime}</white> <dark_gray>|</dark_gray> <gray>Joins:</gray> <white>{joins}</white>"
+lookup.unknown: "<gray>No profile recorded yet.</gray>"
+lookup.money: "<gray>Balance:</gray> <green>{amount}</green>"
+lookup.online: "<gray>Ping:</gray> <white>{ping}ms</white> <dark_gray>|</dark_gray> <gray>World:</gray> <white>{world}</white> <dark_gray>|</dark_gray> <gray>Mode:</gray> <white>{gamemode}</white>"
+lookup.moderation: "<gray>Active bans:</gray> <white>{bans}</white> <dark_gray>|</dark_gray> <gray>Mutes:</gray> <white>{mutes}</white> <dark_gray>|</dark_gray> <gray>Warns:</gray> <white>{warns}</white> <dark_gray>|</dark_gray> <gray>Flags:</gray> <white>{flags}</white>"
+
+# ---------------------------------------------------------------- notes
+notes.usage: "<red>Usage: <white>{command} <player> add <text> | list | clear [id]</white></red>"
+notes.added: "<green>Note <dark_gray>[{id}]</dark_gray> added to <white>{player}</white>: <gray>{note}</gray></green>"
+notes.none: "<green><white>{player}</white> has no notes.</green>"
+notes.header: "<gray>——— <aqua>Notes on {player} ({count})</aqua> ———</gray>"
+notes.entry: "<dark_gray>[{id}]</dark_gray> <gray>{issued} by {staff}:</gray> <white>{note}</white>"
+notes.cleared-one: "<green>Removed note <dark_gray>[{id}]</dark_gray>.</green>"
+notes.cleared: "<green>Removed <white>{count}</white> notes from <white>{player}</white>.</green>"
+
+# --------------------------------------------------------------- report
+report.usage: "<red>Usage: <white>{command} <player> <reason></white></red>"
+report.self: "<red>You cannot report yourself.</red>"
+report.filed: "<green>Reported <white>{player}</white>: <white>{reason}</white> <dark_gray>[{id}]</dark_gray>. Staff have been notified.</green>"
+report.filed-staff: "<yellow>Report</yellow> <dark_gray>[{id}]</dark_gray> <gray>from</gray> <white>{reporter}</white> <gray>→</gray> <white>{player}</white> <gray>»</gray> <white>{reason}</white>"
+reports.usage: "<red>Usage: <white>{command} [page|resolve <id>]</white></red>"
+reports.none: "<green>There are no open reports.</green>"
+reports.header: "<gray>——— <yellow>Open reports</yellow> <gray>(page {page}/{pages}, {count} total)</gray> ———</gray>"
+reports.entry: "<dark_gray>[{id}]</dark_gray> <white>{player}</white> <gray>reported by</gray> <white>{reporter}</white> <gray>»</gray> <white>{reason}</white> <dark_gray>|</dark_gray> <gray>{issued}</gray>"
+reports.not-found: "<red>No open report with id <white>{input}</white>.</red>"
+reports.resolved: "<green>Resolved report <dark_gray>[{id}]</dark_gray> on <white>{player}</white>.</green>"
+
+# ------------------------------------------------------------ staff tools
+ping.self: "<gray>Your ping:</gray> <white>{ping}ms</white>"
+ping.other: "<gray>{player}'s ping:</gray> <white>{ping}ms</white>"
+tps.info: "<gray>TPS:</gray> <white>{tps1}</white> <dark_gray>(5m {tps5}, 15m {tps15})</dark_gray>"
+broadcast.usage: "<red>Usage: <white>{command} <message></white></red>"
+clearchat.done: "<green>Chat cleared.</green>"
+clearchat.cleared: "<gray>Chat was cleared by <white>{staff}</white>.</gray>"
+slowchat.usage: "<red>Usage: <white>{command} <seconds|off></white></red>"
+slowchat.enabled: "<green>Slowchat enabled: <white>{seconds}s</white> between messages.</green>"
+slowchat.disabled: "<green>Slowchat disabled.</green>"
+slowchat.status-on: "<gray>Slowchat is on: <white>{seconds}s</white>. Use <white>/slowchat off</white> to disable.</gray>"
+slowchat.status-off: "<gray>Slowchat is off. Use <white>/slowchat <seconds></white> to enable.</gray>"
+slowchat.waiting: "<red>Slowchat: wait <white>{seconds}s</white>.</red>"
+staffchat.usage: "<red>Usage: <white>{command} <message></white> or <white>{command} toggle</white></red>"
+staffchat.format: "<dark_gray>[</dark_gray><red><bold>SC</bold></red><dark_gray>]</dark_gray> <white>{staff}</white><gray>:</gray> <white>{message}</white>"
+staffchat.enabled: "<green>You now receive staff chat.</green>"
+staffchat.disabled: "<green>You no longer receive staff chat.</green>"
+freeze.usage: "<red>Usage: <white>{command} <player></white></red>"
+freeze.frozen: "<green>Froze <white>{player}</white>.</green>"
+freeze.unfrozen: "<green>Unfroze <white>{player}</white>.</green>"
+freeze.notify: "<red>You were frozen by <white>{staff}</white>. Do not move.</red>"
+vanish.enabled: "<green>You are now vanished.</green>"
+vanish.disabled: "<green>You are visible again.</green>"
+
+# ------------------------------------------------------------- shop
+shop.buy-done: "<gray>Bought <aqua>{amount}x {item}</aqua> for <green>$</green><white>{price}</white>. Balance: <green>$</green><white>{balance}</white></gray>"
+shop.cannot-afford: "<red>That costs <green>$</green><white>{price}</white> — you only have <green>$</green><white>{balance}</white>.</red>"
+shop.no-space: "<red>Not enough inventory space.</red>"
+shop.no-price: "<red>This item cannot be bought here.</red>"
+shop.sold: "<gray>Sold <aqua>{count}x {item}</aqua> — <green>$</green><white>{money}</white>. Balance: <green>$</green><white>{balance}</white></gray>"
+shop.sold-all: "<gray>Sold your items — <green>$</green><white>{money}</white>. Balance: <green>$</green><white>{balance}</white></gray>"
+shop.nothing: "<red>No matching items to sell.</red>"
+shop.no-sell: "<red>This item cannot be sold here.</red>"
+shop.transaction-error: "<red>The sale could not be completed safely. Contact an administrator.</red>"
+shop.sale-changed: "<red>Your items or prices changed. Review the updated sale before confirming.</red>"
+shop.price-changed: "<red>The shop price changed. Review the updated price before confirming.</red>"
+shop.quick-changed: "<red>Your QuickShop slot changed. Review it before buying.</red>"
+shop.players-only: "<red>Only players can use this.</red>"
+shop.no-permission: "<red>You do not have permission.</red>"
+shop.unknown-category: "<red>Unknown category <white>{category}</white>.</red>"
+
+# ------------------------------------------------------------- veltryx
+veltryx.reloaded: "<green>Configuration and messages reloaded.</green>"
+veltryx.version: "<gray>Veltryx version:</gray> <white>{version}</white>"
+veltryx.info-header: "<gray>——— <green>Veltryx</green> <white>{version}</white> ———</gray>"
+veltryx.info-body: "<gray>Storage:</gray> <white>{storage}</white> <dark_gray>|</dark_gray> <gray>Platform:</gray> <white>{platform}</white> <dark_gray>|</dark_gray> <gray>Players:</gray> <white>{players}</white>"
+
+# ---------------------------------------------------------- sell notices
+# The payout shown above the hotbar (action bar) when selling; the $ is lime.
+sell.actionbar: "<green>$</green><white>{money}</white>"
+
+# ------------------------------------------------------------- auction house
+market.price-prompt: "<gray>Type the <white>total price</white> in chat (e.g. <white>2.5k</white>), or type <white>cancel</white>. Your input is not broadcast.</gray>"
+market.price-cancelled: "<gray>Price entry cancelled.</gray>"
+ah.usage-sell: "<gray>Hold the stack to sell and run <white>/ah sell <total-price></white> — e.g. <white>/ah sell 2.5k</white> for the whole stack.</gray>"
+ah.hold-item: "<red>Hold the item you want to sell in your main hand.</red>"
+ah.hand-changed: "<red>The item in your hand changed. Open /ah and start the listing again.</red>"
+ah.item-error: "<red>The auction item could not be stored or read safely. Contact an administrator.</red>"
+ah.storage-error: "<red>The auction could not be saved safely. Contact an administrator.</red>"
+ah.unknown-item: "<red>Unknown item <white>{item}</white>.</red>"
+ah.bad-amount: "<red>Amount must be between 1 and 23040.</red>"
+ah.bad-price: "<red>The total price must be at least <green>$</green><white>0.01</white>.</red>"
+ah.too-many: "<red>You already have <white>{max}</white> active listings.</red>"
+ah.not-enough: "<red>You do not have <white>{count}x {item}</white>.</red>"
+ah.listed: "<green>Listed <white>{count}x {item}</white> for <green>$</green><white>{money}</white>. <gray>(id <white>{id}</white>)</gray></green>"
+ah.gone: "<red>This listing is no longer available.</red>"
+ah.own-listing: "<red>This is your own listing — cancel it to take the items back.</red>"
+ah.bought: "<green>Bought <white>{count}x {item}</white> for <green>$</green><white>{money}</white>.</green>"
+ah.sold: "<green>Your <white>{count}x {item}</white> sold — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+ah.reclaimed: "<green>Took back <white>{count}x {item}</white>.</green>"
+
+# ------------------------------------------------------------- buy orders
+order.usage: "<gray>Browse with <white>/order</white>, or use <white>/order <item> <amount> <total-price></white>. The total is escrowed.</gray>"
+order.choose-item: "<red>Choose an item before creating your order.</red>"
+order.claimed: "<green>Collected <white>{count}x {item}</white>. <gray>{left} still waiting.</gray></green>"
+order.nothing-to-claim: "<gray>No supplied items are waiting for this order.</gray>"
+order.storage-error: "<red>The order could not be saved safely. Contact an administrator.</red>"
+order.no-metadata: "<red>Buy orders accept only plain items of that material; custom metadata would be lost.</red>"
+order.bad-amount: "<red>Amount must be between 1 and 23040.</red>"
+order.bad-price: "<red>The total price must be at least <green>$</green><white>0.01</white>.</red>"
+order.too-many: "<red>You already have <white>{max}</white> open orders.</red>"
+order.created: "<green>Order <white>{id}</white>: buying <white>{count}x {item}</white> for <green>$</green><white>{total}</white> total, escrowed.</green>"
+order.gone: "<red>This order is no longer open.</red>"
+order.changed: "<red>This order changed since you opened the menu. Review the refreshed price and try again.</red>"
+order.own: "<red>This is your own order — cancel it instead.</red>"
+order.filled-seller: "<green>Sold <white>{count}x {item}</white> into an order — <green>$</green><white>{money}</white>. <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+order.filled-buyer: "<green>{player} filled your order: <white>{count}x {item}</white> for <green>$</green><white>{money}</white>. <gray>{left} left. Collect items from <white>/orders mine</white>.</gray></green>"
+order.expired: "<green>Your order expired — <green>$</green><white>{money}</white> refunded for the unfilled <white>{count}x {item}</white>.</green>"
+order.cancelled: "<green>Order cancelled — <green>$</green><white>{money}</white> refunded (<white>{count}x {item}</white> left). <gray>Balance: <green>$</green><white>{balance}</white></gray></green>"
+
+# ------------------------------------------------------------------ homes
+home.set: "<green>Home <aqua>{name}</aqua> set. <gray>({count}/{max} homes)</gray></green>"
+home.moved: "<green>Home <white>{name}</white> moved here. <gray>({count}/{max} homes)</gray></green>"
+home.paid: "<green>Home <white>{name}</white> bought for <green>$</green><white>{price}</white>. <gray>({count}/{max} homes)</gray></green>"
+home.cannot-afford: "<red>That home slot costs <green>$</green><white>{price}</white> — you only have <green>$</green><white>{balance}</white>.</red>"
+home.full: "<red>You already have the maximum of <white>{max}</white> homes.</red>"
+home.not-found: "<red>You have no home named <white>{name}</white>.</red>"
+home.teleported: "<green>Teleported to home <aqua>{name}</aqua>.</green>"
+home.deleted: "<green>Home <white>{name}</white> deleted.</green>"
+home.invalid-name: "<red>Home names may only use a-z, 0-9, _ and - (max 16 characters).</red>"
+home.world-missing: "<red>The world of that home no longer exists.</red>"
+home.no-homes: "<red>You have no homes yet — use <white>/sethome <name></white>.</red>"
+home.usage-set: "<gray>Usage: <white>/sethome <name></white> — e.g. <white>/sethome base</white>.</gray>"
+
+# -------------------------------------------------------- teleport requests
+tpa.usage: "<gray>Usage: <white>/tpa <player></white> — asks to teleport to them.</gray>"
+tpa.usage-here: "<gray>Usage: <white>/tpahere <player></white> — asks them to teleport to you.</gray>"
+tpa.not-found: "<red>Player <white>{player}</white> is not online.</red>"
+tpa.self: "<red>You cannot send yourself a teleport request.</red>"
+tpa.cooldown: "<red>You can ask <white>{player}</white> again in <white>{seconds}s</white>. <gray>(The cooldown is per player — you can ask others right away.)</gray></red>"
+tpa.sent: "<green>Asked <aqua>{player}</aqua> to let you teleport to them.</green>"
+tpa.sent-here: "<green>Asked <aqua>{player}</aqua> to teleport to you.</green>"
+tpa.received: "<gray><aqua>{player}</aqua> wants to teleport to you — type <gold>/tp</gold> to accept. (Expires in <white>{seconds}s</white>.)</gray>"
+tpa.received-here: "<gray><aqua>{player}</aqua> wants you to teleport to them — type <gold>/tp</gold> to accept. (Expires in <white>{seconds}s</white>.)</gray>"
+tpa.none: "<red>You have no pending teleport request.</red>"
+tpa.expired: "<red>That teleport request expired.</red>"
+tpa.accepted: "<green><white>{player}</white> accepted the teleport request.</green>"
+tpa.you-teleported: "<green>Teleported to <white>{player}</white>.</green>"
+tpa.pulled: "<green>Pulled <white>{player}</white> to you.</green>"
+tpa.pulled-you: "<green><white>{player}</white> pulled you to them.</green>"
+tpa.warped: "<green>Teleported to <white>{player}</white>.</green>"
+
+# ------------------------------------------------------------- shards
+shards.income: "<gray>you earned <aqua>1 shard</aqua> for playing the server</gray>"
+shards.balance: "<aqua>Shards:</aqua> <white>{balance}</white>"
+shards.balance-other: "<gray><aqua>{player}</aqua>'s shards:</gray> <white>{balance}</white>"
+shards.pay-sent: "<green>Sent <aqua>{amount}</aqua> shards to <white>{player}</white>.</green>"
+shards.pay-received: "<green>Received <aqua>{amount}</aqua> shards from <white>{player}</white>.</green>"
+shards.pay-self: "<red>You cannot pay yourself.</red>"
+shards.pay-bad-amount: "<red>That is not a valid shard amount.</red>"
+shards.pay-unknown: "<red>Could not find a player named <white>{player}</white>.</red>"
+shards.not-enough: "<red>You don't have enough shards.</red>"
+shards.shop-cannot-afford: "<red>That costs <white>{price}</white> shards — you have <white>{balance}</white>.</red>"
+shards.top-header: "<gray>——— <aqua>Shard top</aqua> ———</gray>"
+shards.top-row: "<gray>{rank}.</gray> <white>{player}</white> <dark_gray>—</dark_gray> <aqua>{balance}</aqua>"
+shards.top-empty: "<gray>No shard balances yet.</gray>"
+shards.bought: "<green>Bought <aqua>{item}</aqua> for <gold>{price}</gold> shards.</green>"
+shards.shop-full: "<red>Your inventory is full.</red>"
+shards.toggle-on: "<green><aqua>{item}</aqua> ability enabled.</green>"
+shards.toggle-off: "<yellow><aqua>{item}</aqua> ability disabled.</yellow>"
+shards.toggle-no-tool: "<red>Hold a shard weapon or tool to toggle its ability.</red>"
+shards.expired: "<yellow>Your <white>{item}</white> self-destructed.</yellow>"
+shards.warn: "<yellow>Your <aqua>{item}</aqua> self-destructs in <gold>{minutes}</gold> minutes.</yellow>"
+shards.potion: "<green>Haste II for <white>{minutes}</white> minutes.</green>"
+shards.totem-saved: "<green>Your <light_purple>Void Totem</light_purple> saved you from the void!</green>"
+shards.gave: "<green>Gave <white>{amount}</white> shards to <white>{player}</white>.</green>"
+shards.set: "<green>Set <white>{player}</white>'s shards to <white>{amount}</white>.</green>"
+shards.usage-pay: "<red>Usage: <white>/shard pay <player> <amount></white></red>"
+shards.usage-give: "<red>Usage: <white>/shard give <player> <amount></white></red>"
+shards.riptide-cooldown: "<gray>Riptide recharging (<white>{seconds}s</white>).</gray>"
+shards.info: |-
+  <gray>——— <aqua>Shards</aqua> ———</gray>
+  <gray>You earn <white>1 shard per minute</white> just by playing.</gray>
+  <gray>Shard weapons and tools live <white>24 hours</white> and then self-destruct.</gray>
+  <gray><white>/shard shop</white> — buy shard equipment and custom spawners</gray>
+  <gray><white>/shard spawners</white> — browse the spawner shop</gray>
+  <gray><white>/shard pay <player> <amount></white> — send shards to a friend</gray>
+  <gray><white>/shard top</white> — richest shard holders</gray>
+  <gray><white>/shard toggle</white> — turn the held shard tool's ability on or off</gray>
+
+# ------------------------------------------------------- home extras
+home.renamed: "<green>Home <aqua>{old}</aqua> renamed to <aqua>{name}</aqua>.</green>"
+home.name-taken: "<red>You already have a home named <white>{name}</white>.</red>"
+home.bad-icon: "<red><white>{icon}</white> is not an item that can be an icon.</red>"
+home.icon-set: "<green>Icon of <white>{name}</white> set to <white>{icon}</white>.</green>"
+home.rename-prompt: "<gray>Type the new name for <white>{name}</white> in chat (or <white>cancel</white>).</gray>"
+home.rename-cancelled: "<gray>Renaming <white>{name}</white> cancelled.</gray>"
+
+# -------------------------------------------------- valued item guards
+order.no-valued: "<red>Enchanted or damaged items can't fill orders — <white>/sell</white> pays extra for them.</red>"
+
+# -------------------------------------------------------------- rtp
+rtp.searching: "<gray>Searching for a safe spot in the <white>{world}</white>...</gray>"
+rtp.countdown: "<gray>Teleporting in <white>{seconds}</white>...</gray>"
+rtp.teleported: "<green>Teleported to <white>{world}</white> <gray>(<white>{x}</white>, <white>{y}</white>, <white>{z}</white>)</gray>.</green>"
+rtp.cooldown: "<red>RTP is on cooldown for <white>{seconds}</white> more seconds.</red>"
+rtp.world-missing: "<red>The <white>{world}</white> is not loaded on this server.</red>"
+rtp.failed: "<red>Could not find a safe spot — try again.</red>"
+
+# --------------------------------------------------- shop search
+shop.search-prompt: "<gray>Type your search in chat (or <white>cancel</white>) — e.g. <white>diamond</white>.</gray>"
+shop.search-cancelled: "<gray>Search cancelled.</gray>"
+shop.search-unavailable: "<red>The sign search could not be opened. Please use the shop categories.</red>"
+
+shop.quick-search-prompt: "<gray>Type an item name in chat, <white>*</white> to browse everything, or <white>cancel</white>.</gray>"
+settings.updated: "<gray><aqua>{setting}</aqua> is now <gold>{state}</gold>.</gray>"
+shop.map-unavailable: "<red>No matching structure could be found in this world. You were not charged.</red>"
+shop.item-unavailable: "<red>That item or variant is unavailable right now. You were not charged.</red>"
+
+# ------------------------------------------------ custom shard spawners
+spawner.stacked: "<green>Spawner stack: <aqua>{count}</aqua> / {max}.</green>"
+spawner.stack-wrong-type: "<red>Only spawners of the same mob type can stack.</red>"
+spawner.stack-full: "<red>This spawner stack is full (maximum {max}).</red>"
+spawner.need-silk: "<red>Use a Silk Touch tool to pick up this spawner and its storage.</red>"
+spawner.inventory-full: "<red>Your inventory is full. Make room and try again.</red>"
+spawner.storage-error: "<red>The spawner could not be saved. Please contact an administrator.</red>"
+spawner.unavailable: "<red>This spawner is unavailable or its storage could not be found.</red>"
+spawner.picked-up: "<green>Your <aqua>{type} spawner</aqua> and its stored loot were added to your inventory.</green>"
+spawner.mode: "<green>Spawner mode is now <gold>{mode}</gold>.</green>"
+spawner.market-disabled: "<red>A material-only spawner listing cannot preserve its identity. Hold the actual spawner and list it with /ah.</red>"
+spawner.placement-refund: "<red>Spawner placement could not finish. Your spawner was returned as an owner-only item at that location.</red>"
