@@ -36,7 +36,9 @@ public final class PlayerTrace {
     private double lastY;
     private double lastZ;
     private long lastMoveNanos;
-    private int airTicks;
+    private double airSeconds;
+    private long lastFlySampleNanos;
+    private final Map<CheckType, Long> lastMovementFlagNanos = new java.util.EnumMap<>(CheckType.class);
     private boolean positionInitialized;
     private boolean skipNextMove;
     private long jumpChainUntilNanos;
@@ -44,7 +46,11 @@ public final class PlayerTrace {
     private int speedExcessStreak;
     private long flyPullAtMillis;
     private int jesusStreak;
-    private final ArrayDeque<Long> moveTimesMillis = new ArrayDeque<>();
+    private int phaseStreak;
+    private long timerWindowStartNanos;
+    private int timerWindowMoves;
+    private int timerWindowAllowance;
+    private int timerExcessWindows;
 
     // combat state
     private final ArrayDeque<Long> attackTimesMillis = new ArrayDeque<>();
@@ -229,20 +235,65 @@ public final class PlayerTrace {
         return Math.max(0.0, (nowNanos - lastMoveNanos) / 1_000_000_000.0);
     }
 
-    public void touchMove(long nowNanos) {
-        lastMoveNanos = nowNanos;
+    /** Elapsed time since the last sample used by the fly check. */
+    public double secondsSinceLastFlySample(long nowNanos) {
+        if (lastFlySampleNanos == 0L) {
+            return 0.0;
+        }
+        return Math.max(0.0, (nowNanos - lastFlySampleNanos) / 1_000_000_000.0);
     }
 
-    public int airTicks() {
-        return airTicks;
+    public void touchFlySample(long nowNanos) {
+        lastFlySampleNanos = nowNanos;
     }
 
-    public void setAirTicks(int airTicks) {
-        this.airTicks = Math.max(0, airTicks);
+    public double airSeconds() {
+        return airSeconds;
+    }
+
+    public void setAirSeconds(double seconds) {
+        airSeconds = Double.isFinite(seconds) ? Math.max(0.0, seconds) : 0.0;
+    }
+
+    /** Limit repeated movement flags for the same check to at most two per second. */
+    public boolean shouldFlagMovement(CheckType check, long nowNanos) {
+        Long previous = lastMovementFlagNanos.get(check);
+        if (previous != null && nowNanos - previous < 500_000_000L) {
+            return false;
+        }
+        lastMovementFlagNanos.put(check, nowNanos);
+        return true;
+    }
+
+    public int phaseStreak() {
+        return phaseStreak;
+    }
+
+    public void setPhaseStreak(int streak) {
+        phaseStreak = Math.max(0, streak);
+    }
+
+    /** Clear evidence that cannot be carried across a change in physics. */
+    public void resetPhysicsCounters() {
+        airSeconds = 0.0;
+        speedExcessStreak = 0;
+        jumpChainUntilNanos = 0L;
+    }
+
+    /** Clear all movement evidence when samples are unreliable or unavailable. */
+    public void resetMovementChecks() {
+        resetPhysicsCounters();
+        jesusStreak = 0;
+        phaseStreak = 0;
+        timerWindowStartNanos = 0L;
+        timerWindowMoves = 0;
+        timerWindowAllowance = 0;
+        timerExcessWindows = 0;
     }
 
     /** Marks the next move event as trusted (after teleports, respawns, …). */
     public void skipNextMove() {
+        resetMovementChecks();
         skipNextMove = true;
     }
 
@@ -252,15 +303,36 @@ public final class PlayerTrace {
         return skip;
     }
 
-    /** Records a move event timestamp for the timer check. */
-    public void pushMoveTime(long nowMillis) {
-        moveTimesMillis.addLast(nowMillis);
-        pruneWindow(moveTimesMillis, nowMillis, 1000L);
-    }
-
-    /** Move events in the last second. */
-    public int moveEventsLastSecond() {
-        return moveTimesMillis.size();
+    /**
+     * Record a positional update for the timer check. A single packet burst is
+     * not evidence: two consecutive completed windows must exceed their
+     * largest allowance per second. Windows are evaluated on the next move,
+     * so their thresholds are scaled by their actual duration. Returns the
+     * completed window's rounded updates per second if flagged.
+     */
+    public int recordTimerMove(long nowNanos, int allowance) {
+        if (timerWindowStartNanos == 0L) {
+            timerWindowStartNanos = nowNanos;
+        }
+        long elapsed = nowNanos - timerWindowStartNanos;
+        int flaggedRate = 0;
+        if (elapsed < 0L || elapsed >= 1_000_000_000L) {
+            if (elapsed >= 1_000_000_000L && elapsed < 2_000_000_000L
+                    && timerWindowMoves > timerWindowAllowance * (elapsed / 1_000_000_000.0)) {
+                timerExcessWindows++;
+                if (timerExcessWindows >= 2) {
+                    flaggedRate = (int) Math.round(timerWindowMoves / (elapsed / 1_000_000_000.0));
+                }
+            } else {
+                timerExcessWindows = 0;
+            }
+            timerWindowStartNanos = nowNanos;
+            timerWindowMoves = 0;
+            timerWindowAllowance = 0;
+        }
+        timerWindowMoves++;
+        timerWindowAllowance = Math.max(timerWindowAllowance, allowance);
+        return flaggedRate;
     }
 
     // ------------------------------------------------------------ combat

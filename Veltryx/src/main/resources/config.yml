@@ -153,12 +153,12 @@ anticheat:
   # Check limits. Tolerances scale automatically with ping and TPS.
   max-move-speed: 6.5          # blocks/s baseline (walk ~4.3, flat sprint ~5.6); jump
                                # chains, potions, ice, soul speed and lag widen it automatically
-  # Server authority: the server has the last word. Movement that is impossible
-  # for vanilla clients is rolled back instantly — speed and flight hacks
-  # physically cannot move. Confirmed flight pulls the player back down.
+  # Allow the movement anti-cheat to clamp sustained hard-cap speed excess and
+  # apply a downward velocity after a fly detection. False positives remain
+  # possible: test with your players and movement plugins. Turning this off
+  # stops these corrections, but flags and configured kicks/bans still apply.
   server-authority: true
-  # Faster than the speed limit × this is impossible and gets rolled back.
-  # Borderline speeds are tolerated and never rolled back.
+  # Sustained speeds above limit × this may be clamped when authority is on.
   speed-hard-cap: 1.75
   max-cps: 19.0                # attacks per second
   max-reach: 3.4               # blocks from eyes to hitbox

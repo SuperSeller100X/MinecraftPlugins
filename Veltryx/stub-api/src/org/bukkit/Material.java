@@ -8,7 +8,8 @@ public enum Material {
     SPAWNER,
     WRITABLE_BOOK,
     ENDER_PEARL,
-    AIR, STONE, DEEPSLATE, NETHERRACK, TUFF, WATER, LAVA,
+    AIR, STONE, DEEPSLATE, NETHERRACK, TUFF, WATER, LAVA, BUBBLE_COLUMN, POWDER_SNOW,
+    SWEET_BERRY_BUSH, CAVE_VINES, CAVE_VINES_PLANT, TWISTING_VINES_PLANT, WEEPING_VINES_PLANT,
     ICE, PACKED_ICE, BLUE_ICE, FROSTED_ICE, SLIME_BLOCK, HONEY_BLOCK,
     LADDER, VINE, SCAFFOLDING, TWISTING_VINES, WEEPING_VINES,
     COAL_ORE, DEEPSLATE_COAL_ORE, IRON_ORE, DEEPSLATE_IRON_ORE,
@@ -200,9 +201,20 @@ public enum Material {
     YELLOW_BANNER, YELLOW_BED, YELLOW_BUNDLE, YELLOW_CANDLE, YELLOW_CARPET, YELLOW_CONCRETE, YELLOW_CONCRETE_POWDER, YELLOW_CONCRETE_SLAB,
     YELLOW_CONCRETE_STAIRS, YELLOW_CUSHION, YELLOW_DYE, YELLOW_GLAZED_TERRACOTTA, YELLOW_HARNESS, YELLOW_POPLAR_LEAVES, YELLOW_STAINED_GLASS, YELLOW_STAINED_GLASS_PANE,
     YELLOW_TERRACOTTA, YELLOW_WOOL, YELLOW_WOOL_SLAB, YELLOW_WOOL_STAIRS;
-    public boolean isSolid() { return false; }
+    // A minimal subset needed by movement tests; this is not a complete
+    // replacement for Paper's material registry.
+    public boolean isSolid() {
+        return switch (this) {
+            case STONE, STONE_SLAB, STONE_STAIRS, OAK_FENCE, HONEY_BLOCK, SLIME_BLOCK,
+                 ICE, PACKED_ICE, BLUE_ICE, FROSTED_ICE, SOUL_SAND, SOUL_SOIL -> true;
+            default -> false;
+        };
+    }
+    public boolean isAir() { return this == AIR; }
     public boolean isLegacy() { return false; }
-    public boolean isItem() { return this != AIR && this != WATER && this != LAVA; }
+    public boolean isItem() { return this != AIR && this != WATER && this != LAVA && this != POWDER_SNOW
+            && this != BUBBLE_COLUMN && this != SWEET_BERRY_BUSH && this != CAVE_VINES
+            && this != CAVE_VINES_PLANT && this != TWISTING_VINES_PLANT && this != WEEPING_VINES_PLANT; }
     public int getMaxStackSize() { return 64; }
     public short getMaxDurability() { return 0; }
     public boolean isInteractable() { return this == CHEST || this == ENDER_CHEST || this == CRAFTING_TABLE; }

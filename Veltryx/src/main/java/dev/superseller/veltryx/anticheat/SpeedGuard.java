@@ -3,12 +3,10 @@ package dev.superseller.veltryx.anticheat;
 /**
  * Pure speed-check math (no Bukkit) — unit-tested in the smoke suite.
  *
- * <p>The anti-cheat promise is "no false flags", so the tolerance here is
- * built around the fastest legitimate vanilla movement, which is the
- * <b>sprint-jump chain</b> (~7.5–8 blocks/s on flat ground, ~11 with Speed II),
- * not flat sprinting (~5.6). Anything the maths cannot explain gets flagged;
- * anything above the hard cap is impossible for a vanilla client and is rolled
- * back by server authority.
+ * <p>The tolerance accounts for sprint-jump chains, potion effects and
+ * supporting terrain rather than just flat sprinting. These limits are
+ * heuristics: server mechanics and plugins can still produce unexpected moves,
+ * so the hard cap is not proof that a client is cheating.
  */
 public final class SpeedGuard {
 
@@ -18,7 +16,7 @@ public final class SpeedGuard {
     public static final int SUSPECT = 1;
     /** Sustained excess (streak) — flag and escalate. */
     public static final int FLAG = 2;
-    /** Impossible movement — server authority rolls it back and flags. */
+    /** Hard-cap excess — eligible for a sustained server-authority clamp. */
     public static final int ROLLBACK = 3;
 
     /** Excess below this ratio is treated as ordinary jitter. */

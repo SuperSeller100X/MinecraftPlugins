@@ -199,7 +199,8 @@ automatic ban**, all configurable per check. Anti-cheat respects **ping and
 TPS** at every step — tolerances scale up on laggy connections, checks are
 skipped entirely on terrible ping/low TPS, and kicks/bans only fire while the
 connection and server are healthy. A join-grace period and continuous
-violation-level decay keep false positives near zero.
+violation-level decay reduce, but cannot eliminate, false positives. Test the
+checks on your server before relying on automatic punishment.
 
 | Group | Checks |
 |---|---|
@@ -208,30 +209,36 @@ violation-level decay keep false positives near zero.
 | Interact | FastPlace/FastBreak, FastUse, InteractReach |
 | Mining | X-Ray statistics (hidden-ore scoring) + block obfuscation |
 
-- **Server authority (movement):** the server has the last word — movement that
-  is impossible for vanilla clients (`speed-hard-cap: 1.75` × the limit) is
-  **clamped smoothly** (the player glides at the cap in their own direction —
-  no rubber-band, no lag feel, no getting stuck), so speed hacks physically
-  cannot outrun the server. Confirmed flight gets a gentle gravity-like pull
-  down that looks like normal falling. Borderline speeds are tolerated and
-  never clamped, and clamped movement never feeds any violation level.
-- **Speed without false flags:** the limit covers the fastest legitimate
-  vanilla movement — sprint-jump chains (~7.5–8 b/s, the way everyone moves),
-  speed potions, ice, soul speed and slime launches all widen it automatically,
-  and it grows with ping/lag. Mild excess is only counted after three
-  consecutive samples; isolated impossible samples (lag corrections) are
-  ignored completely and never touch the player. Speed only reports **grounded**
-  movement — anything in the air is judged and labeled as **Fly**, so hacks are
-  always named correctly.
-- **Fly catches everything, fast:** flight is flagged after ~0.8s of
-  unexplained airtime (jump-boost and ping aware). Vertical movement is judged
-  in three tiers — real falls drain the counter, while hovering, bobbing **and
-  slow "no-fall" descents** accumulate, so fake-falling fly hacks can't hide.
-  Honey wall-slides and every legitimate air state (jumping, elytra, vehicles,
-  riptide, levitation, slow falling, water, ladders) never flag.
-- **Jesus is surface-only:** only skating across the water surface counts —
-  diving in, walking on the sea floor, swimming and depth-strider/dolphin
-  movement never flag, and it takes several consecutive skimming samples.
+- **Movement support:** the fly and speed checks inspect the player's whole
+  footprint at both ends of a move, using block collision shapes rather than
+  the client-controlled on-ground bit. Partial blocks and tall shapes such as
+  slabs, stairs and fences are considered. Contact with powder snow, cobwebs,
+  berry bushes, liquids and climbable blocks clears incompatible flight/speed
+  evidence; honey wall-slides are also accounted for.
+- **Fly and timer:** unexplained airtime uses elapsed time, not a fixed tick per
+  move event. Real falls drain the counter, and long gaps discard stale
+  evidence. Rotation-only events don't count as extra timer or speed samples.
+  The timer check requires two consecutive excessive position-update windows;
+  repeated movement flags are rate-limited. Hovering and slow-descent flight
+  can still trigger checks when sufficient movement samples are available.
+- **Phase and speed:** phase requires repeated deep overlap with actual
+  collision boxes at both endpoints. Speed allowances account for sprint-jump
+  chains, potions, supporting ice, soul terrain, slime/honey and lag. These are
+  heuristics, not proof of cheating, and cannot model every plugin or movement
+  mechanic.
+- **Server authority:** sustained hard-cap speed excess can be clamped and a
+  fly detection can apply a downward velocity. Set
+  `anticheat.server-authority: false` to stop these movement corrections; this
+  does **not** disable flags, kicks or bans. To disable a check and its
+  correction, set its `anticheat.checks.movement.<check>.enabled` to `false`.
+- **Sampling limits:** checks are skipped when the required chunks are
+  unloaded or not owned by the current Folia region, or when the hitbox is
+  too large to sample safely. This avoids loading/cross-region reads but is a
+  temporary detection blind spot. Movement regressions use offline doubles;
+  edge jumps and powder snow still need verification with actual clients on
+  Paper/Purpur/Folia, including other movement and protection plugins.
+- **Jesus:** the water-skating check uses consecutive surface-skimming samples;
+  swimming, diving and solid support are taken into account.
 - **Kicks escalate to bans:** a player kicked twice for the same check within
   24 hours is **banned instead** — permanent for hacking (fly, speed, jesus,
   …), 30 days for xray/esp. Kicking alone used to reset the violation levels,
@@ -247,9 +254,9 @@ violation-level decay keep false positives near zero.
 - **X-Ray detection:** every broken ore is scored by how hidden it was
   (0–6 exposed faces). Players who keep pulling ores out of solid rock at an
   impossible ratio get flagged and escalated like any other check.
-- **Creative and spectator players are never checked** — neither are players
-  with `veltryx.anticheat.bypass`, nor legitimate flight/height (elytra, boats,
-  horses, vehicles, riptide, levitation, slow falling, falling/jumping).
+- Creative and spectator players, and players with
+  `veltryx.anticheat.bypass`, are not checked. Vehicle/gliding/riptide states,
+  levitation and slow falling are considered by movement checks.
 - **Every flag is stored as evidence (player, check, VL, detail, time) and shown
   in `/sus` and on ban records.**
 

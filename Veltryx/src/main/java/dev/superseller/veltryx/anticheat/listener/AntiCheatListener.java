@@ -3,8 +3,8 @@ package dev.superseller.veltryx.anticheat.listener;
 import dev.superseller.veltryx.anticheat.AntiCheatService;
 import dev.superseller.veltryx.anticheat.FlyGuard;
 import dev.superseller.veltryx.anticheat.JesusGuard;
+import dev.superseller.veltryx.anticheat.MovementEnvironment;
 import dev.superseller.veltryx.anticheat.SpeedGuard;
-import org.bukkit.util.Vector;
 import dev.superseller.veltryx.anticheat.CheckType;
 import dev.superseller.veltryx.anticheat.PingGuard;
 import dev.superseller.veltryx.anticheat.PlayerTrace;
@@ -13,6 +13,8 @@ import dev.superseller.veltryx.anticheat.xray.OreObfuscator;
 import dev.superseller.veltryx.config.VeltryxConfig;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.function.LongSupplier;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -49,19 +51,22 @@ import org.bukkit.util.Vector;
  */
 public final class AntiCheatListener implements Listener {
 
-    private static final Material[] CLIMBING = {
-            Material.LADDER, Material.VINE, Material.SCAFFOLDING,
-            Material.TWISTING_VINES, Material.WEEPING_VINES
-    };
-
     private final AntiCheatService service;
     private final VeltryxConfig config;
     private final OreObfuscator obfuscator;
+    private final LongSupplier nanoClock;
 
     public AntiCheatListener(AntiCheatService service, VeltryxConfig config, OreObfuscator obfuscator) {
+        this(service, config, obfuscator, System::nanoTime);
+    }
+
+    /** Monotonic movement clock can be supplied for deterministic regression tests. */
+    public AntiCheatListener(AntiCheatService service, VeltryxConfig config, OreObfuscator obfuscator,
+                             LongSupplier nanoClock) {
         this.service = service;
         this.config = config;
         this.obfuscator = obfuscator;
+        this.nanoClock = Objects.requireNonNull(nanoClock, "nanoClock");
     }
 
     // ------------------------------------------------------------ lifecycle
@@ -111,195 +116,232 @@ public final class AntiCheatListener implements Listener {
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!checked(player)) {
+            PlayerTrace existing = service.traceIfPresent(player.getUniqueId());
+            if (existing != null) existing.resetMovementChecks();
             return;
         }
         Location from = event.getFrom();
         Location to = event.getTo();
-        if (to == null || from.getWorld() == null || !from.getWorld().equals(to.getWorld())) {
+        if (from == null || to == null || from.getWorld() == null || !from.getWorld().equals(to.getWorld())) {
+            PlayerTrace existing = service.traceIfPresent(player.getUniqueId());
+            if (existing != null) existing.resetMovementChecks();
             return;
         }
 
         PlayerTrace trace = service.trace(player);
-        long nowNanos = System.nanoTime();
+        long nowNanos = nanoClock.getAsLong();
         long nowMillis = System.currentTimeMillis();
-
-        if (!trace.positionInitialized() || trace.consumeSkipNextMove()) {
+        boolean skipNext = trace.consumeSkipNextMove();
+        if (!trace.positionInitialized() || skipNext) {
+            trace.resetMovementChecks();
             trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
-            trace.pushMoveTime(nowMillis);
+            trace.touchFlySample(nowNanos);
             obfuscator.scanAround(player);
             return;
         }
 
         int ping = player.getPing();
         double tps = AntiCheatService.currentTps();
-        if (PingGuard.shouldSkip(ping, tps, config.maxPing(), config.minTps())) {
+        if (PingGuard.shouldSkip(ping, tps, config.maxPing(), config.minTps())
+                || nowMillis - trace.joinedAtMillis() < config.joinGraceSeconds() * 1000L
+                || trace.hasSpeedGrace(nowMillis)) {
+            trace.resetMovementChecks();
             trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
+            trace.touchFlySample(nowNanos);
             return;
         }
-        if (nowMillis - trace.joinedAtMillis() < config.joinGraceSeconds() * 1000L) {
+
+        // Use the event's endpoints, not a previously proposed destination:
+        // another plugin may have changed or cancelled that earlier move.
+        double dx = to.getX() - from.getX();
+        double dy = to.getY() - from.getY();
+        double dz = to.getZ() - from.getZ();
+        boolean positionChanged = dx != 0.0 || dy != 0.0 || dz != 0.0;
+        double positionSeconds = trace.secondsSinceLastMove(nowNanos);
+        boolean skipPhysics = player.isInsideVehicle() || player.isGliding() || player.isFlying()
+                || player.isDead() || player.isRiptiding();
+        if (skipPhysics) {
+            trace.resetMovementChecks();
             trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
+            trace.touchFlySample(nowNanos);
             return;
         }
-        // After teleports and server-authority corrections the next movement
-        // samples are artifacts — they must never count toward any check.
-        if (trace.hasSpeedGrace(nowMillis)) {
+
+        // Looking around can emit extra move events. Do not count them toward
+        // timer/speed, or split a real falling sample into artificial zero-dy
+        // samples. After a sustained positionless interval they may still
+        // provide time-based evidence of an unsupported stationary hover.
+        if (!positionChanged && positionSeconds < 0.20) {
+            return;
+        }
+        double flySeconds = trace.secondsSinceLastFlySample(nowNanos);
+        trace.touchFlySample(nowNanos);
+        if (positionChanged) {
             trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
-            trace.pushMoveTime(nowMillis);
+        }
+
+        MovementEnvironment.Sample start = MovementEnvironment.sample(player, from);
+        if (!start.known()) {
+            trace.resetMovementChecks();
+            return;
+        }
+        MovementEnvironment.Sample end = positionChanged ? MovementEnvironment.sample(player, to) : start;
+        if (!end.known()) {
+            // A non-owned/unloaded chunk or an impractically large hitbox is
+            // not evidence. Never force-load a chunk for anti-cheat sampling.
+            trace.resetMovementChecks();
             return;
         }
 
         double factor = PingGuard.allowanceFactor(ping, tps);
-        double dx = to.getX() - trace.lastX();
-        double dy = to.getY() - trace.lastY();
-        double dz = to.getZ() - trace.lastZ();
-        double seconds = trace.secondsSinceLastMove(nowNanos);
-        trace.touchMove(nowNanos);
-        trace.recordPosition(to.getX(), to.getY(), to.getZ(), nowNanos);
-        trace.pushMoveTime(nowMillis);
-
-        // Sprint-jump chains are the fastest legitimate vanilla movement —
-        // remember them so the speed limit covers the whole hop chain.
-        if (dy > 0.12) {
-            trace.markJump(nowNanos);
+        if (positionChanged) {
+            // Consecutive windows, rather than each event after one burst;
+            // rotation-only events do not count as extra positional packets.
+            int allowance = (int) (28.0 * factor) + 4;
+            if (dy < -0.08) allowance *= 2;
+            int excessiveRate = trace.recordTimerMove(nowNanos, allowance);
+            if (excessiveRate > 0) {
+                service.flag(player, CheckType.TIMER, 1.0, excessiveRate + " position moves/s (sustained)");
+            }
+            if (dy > 0.12) trace.markJump(nowNanos);
         }
 
-        boolean skipPhysics = player.isInsideVehicle() || player.isGliding() || player.isFlying()
-                || player.isDead() || player.getGameMode() == GameMode.CREATIVE
-                || player.getGameMode() == GameMode.SPECTATOR || player.isRiptiding();
+        boolean climbing = start.climbing() || end.climbing();
+        // The server's fluid state also covers waterlogged blocks, whose
+        // material is not WATER even though they slow the player.
+        boolean inLiquid = start.liquid() || end.liquid() || player.isInWater() || player.isSwimming();
+        boolean constrained = start.powderSnow() || end.powderSnow() || start.slowingBlock() || end.slowingBlock();
+        boolean feetInLiquid = end.feet() == Material.WATER || end.feet() == Material.LAVA;
 
-        // Timer: far more position updates than the 20 TPS game loop produces.
-        // Fast movement (elytra, vehicles, falling) legitimately produces extra
-        // position packets, so the allowance doubles there — no false flags.
-        int timerAllowance = (int) (22.0 * factor) + 4;
-        if (skipPhysics || dy < -0.08) {
-            timerAllowance *= 2;
-        }
-        if (trace.moveEventsLastSecond() > timerAllowance) {
-            service.flag(player, CheckType.TIMER, 1.0,
-                    trace.moveEventsLastSecond() + " moves/s");
-        }
-
-        if (skipPhysics) {
-            return;
-        }
-
-        boolean climbing = isClimbing(to.getBlock().getType()) || isClimbing(from.getBlock().getType());
-        Material feet = to.getBlock().getType();
-        boolean inLiquid = feet == Material.WATER || feet == Material.LAVA;
-
-        // Jesus: skating across the water surface at walking speed. Only true
-        // surface skating counts — diving into water, walking on the sea floor,
-        // swimming and depth-strider/dolphin movement never false-flag — and it
-        // takes several consecutive skimming samples before anything is said.
-        if (inLiquid && !player.isSwimming() && !climbing && seconds > 0.02) {
-            boolean headInWater = to.clone().add(0, 1.5, 0).getBlock().getType() == Material.WATER;
-            boolean solidBelow = to.clone().subtract(0, 0.2, 0).getBlock().getType().isSolid();
-            if (JesusGuard.skimming(headInWater, solidBelow, dy, player.getFallDistance())) {
-                double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
-                trace.setJesusStreak(horizontal > 2.8 * factor ? trace.jesusStreak() + 1 : 0);
-                if (JesusGuard.shouldFlag(trace.jesusStreak())) {
-                    service.flag(player, CheckType.JESUS, 1.2,
-                            String.format(Locale.ROOT, "%.1f b/s on water", horizontal));
+        // Retain the water-surface check, but don't carry a skimming streak
+        // into another medium or through a period without reliable samples.
+        if (feetInLiquid && !player.isSwimming() && !climbing && !constrained) {
+            if (positionChanged && positionSeconds > 0.02 && positionSeconds <= FlyGuard.MAX_SAMPLE_GAP_SECONDS) {
+                if (JesusGuard.skimming(end.headInWater(), end.supported(), dy, player.getFallDistance())) {
+                    // A burst can deliver a normal tick's displacement in
+                    // much less than a tick of wall-clock time.
+                    double horizontal = Math.sqrt(dx * dx + dz * dz) / Math.max(0.05, positionSeconds);
+                    trace.setJesusStreak(horizontal > 2.8 * factor ? trace.jesusStreak() + 1 : 0);
+                    if (JesusGuard.shouldFlag(trace.jesusStreak()) && service.plan(CheckType.JESUS).enabled()
+                            && trace.shouldFlagMovement(CheckType.JESUS, nowNanos)) {
+                        service.flag(player, CheckType.JESUS, 1.2,
+                                String.format(Locale.ROOT, "%.1f b/s on water", horizontal));
+                    }
+                } else {
+                    trace.setJesusStreak(0);
                 }
-            } else {
+            } else if (positionChanged && positionSeconds > FlyGuard.MAX_SAMPLE_GAP_SECONDS) {
                 trace.setJesusStreak(0);
             }
+        } else {
+            trace.setJesusStreak(0);
         }
 
-        // Phase: moving while fully inside solid blocks. Fast descents are
-        // exempt — client prediction legitimately clips into blocks while
-        // falling and must never false-flag.
-        if (!inLiquid && !climbing && dy >= -0.08
-                && from.getBlock().getType().isSolid() && to.getBlock().getType().isSolid()) {
-            service.flag(player, CheckType.PHASE, 3.0,
-                    from.getBlock().getType() + " -> " + to.getBlock().getType());
+        // Both endpoints must be deeply inside actual collision boxes. A solid
+        // material alone does not mean the occupied part of a slab/stair is
+        // solid, and orientation-only events are not phasing.
+        if (positionChanged && positionSeconds <= FlyGuard.MAX_SAMPLE_GAP_SECONDS
+                && !inLiquid && !climbing && !constrained && dy >= -0.08
+                && start.embedded() && end.embedded()) {
+            trace.setPhaseStreak(trace.phaseStreak() + 1);
+            trace.resetPhysicsCounters();
+            // A transient deep overlap can be caused by a piston or another
+            // plugin. Require repeated evidence and rate-limit escalation.
+            if (trace.phaseStreak() >= 3 && service.plan(CheckType.PHASE).enabled()
+                    && trace.shouldFlagMovement(CheckType.PHASE, nowNanos)) {
+                service.flag(player, CheckType.PHASE, 3.0, start.feet() + " -> " + end.feet());
+            }
+            return;
+        }
+        trace.setPhaseStreak(0);
+
+        if (climbing || inLiquid || constrained) {
+            // Snow, cobwebs and berry bushes alter vertical physics even
+            // when the player's centre is outside the touched block.
+            trace.resetPhysicsCounters();
             return;
         }
 
-        if (climbing || inLiquid) {
-            return;
-        }
-
-        boolean onGround = to.clone().subtract(0, 0.1, 0).getBlock().getType().isSolid();
-
-        // Speed: horizontal distance per second above any legitimate baseline.
-        // The limit covers the fastest legitimate vanilla movement (sprint-jump
-        // chains, speed potions, ice, soul speed, slime launches) and grows with
-        // ping/lag — no false flags. Flags only fire for grounded movement, so
-        // air movement is always judged as FLY (never mislabeled "speed");
-        // impossible movement mid-air still gets clamped. Mild excess is only
-        // counted after THREE consecutive samples and isolated impossible
-        // samples (lag corrections) are ignored entirely — corrections never
-        // touch the player and never feed a violation level.
+        boolean onGround = start.supported() || end.supported();
         boolean falling = dy < FlyGuard.REAL_FALL_DY || player.getFallDistance() > 0.4F;
         boolean elytraAir = !onGround && hasElytra(player);
-        if (!elytraAir && seconds > 0.02 && seconds < 2.0) {
-            double horizontal = Math.sqrt(dx * dx + dz * dz) / seconds;
-            Material below = to.clone().subtract(0, 0.2, 0).getBlock().getType();
+        if (positionChanged && !elytraAir && positionSeconds > 0.02
+                && positionSeconds <= FlyGuard.MAX_SAMPLE_GAP_SECONDS) {
+            // Position packets can arrive close together after jitter even
+            // though each represents a full game tick of movement. Never
+            // infer speed from an interval shorter than one nominal tick.
+            double speedSeconds = Math.max(0.05, positionSeconds);
+            double horizontal = Math.sqrt(dx * dx + dz * dz) / speedSeconds;
             double multiplier = SpeedGuard.situationalMultiplier(
                     potionAmplifier(player, PotionEffectType.SPEED),
-                    below == Material.ICE || below == Material.PACKED_ICE
-                            || below == Material.BLUE_ICE || below == Material.FROSTED_ICE,
-                    below == Material.SLIME_BLOCK || below == Material.HONEY_BLOCK,
-                    below == Material.SOUL_SAND || below == Material.SOUL_SOIL,
-                    trace.inJumpChain(nowNanos));
+                    start.ice() || end.ice(), start.slimeOrHoney() || end.slimeOrHoney(),
+                    start.soulTerrain() || end.soulTerrain(), trace.inJumpChain(nowNanos));
             double limit = SpeedGuard.limit(config.maxMoveSpeed(), factor, multiplier);
             int streak = trace.speedExcessStreak();
             int verdict = SpeedGuard.verdict(horizontal, limit, config.speedHardCap(), streak);
             boolean grounded = (onGround || trace.inJumpChain(nowNanos)) && !falling;
-            if (verdict == SpeedGuard.OK) {
+            CheckType correctionCheck = grounded ? CheckType.SPEED : CheckType.FLY;
+            if (verdict == SpeedGuard.OK || !service.plan(correctionCheck).enabled()) {
                 trace.setSpeedExcessStreak(0);
             } else {
                 trace.setSpeedExcessStreak(streak + 1);
                 String detail = String.format(Locale.ROOT, "%.1f b/s (limit %.1f)", horizontal, limit);
-                if (verdict == SpeedGuard.ROLLBACK) {
-                    // Server authority, smoothly: sustained impossible movement
-                    // is clamped along its own direction (glide at the cap — no
-                    // rubber-band, no lag feel). Isolated impossible samples are
-                    // lag corrections and are ignored completely.
-                    if (config.serverAuthority() && streak >= 1) {
-                        double maxDist = limit * config.speedHardCap() * seconds;
+                if (verdict == SpeedGuard.ROLLBACK && streak >= 1) {
+                    if (config.serverAuthority()) {
+                        double maxDist = limit * config.speedHardCap() * speedSeconds;
                         double[] clamped = SpeedGuard.clampDelta(dx, dz, maxDist);
                         double nx = from.getX() + clamped[0];
                         double nz = from.getZ() + clamped[1];
                         event.setTo(new Location(from.getWorld(), nx, to.getY(), nz,
                                 to.getYaw(), to.getPitch()));
+                        trace.resetMovementChecks();
                         trace.recordPosition(nx, to.getY(), nz, nowNanos);
+                        trace.touchFlySample(nowNanos);
                         trace.setSpeedGraceUntilMillis(nowMillis + 250L);
-                        // Airborne impossible movement is a FLY offence, not a
-                        // speed one — the label always matches the hack.
-                        service.flag(player, grounded ? CheckType.SPEED : CheckType.FLY,
-                                2.5, detail + " — clamped");
+                        if (trace.shouldFlagMovement(correctionCheck, nowNanos)) {
+                            service.flag(player, correctionCheck, 2.5, detail + " — clamped");
+                        }
+                        obfuscator.scanAround(player);
+                        return;
                     }
-                } else if (grounded && verdict == SpeedGuard.FLAG) {
-                    service.flag(player, CheckType.SPEED, 1.0 + Math.min(3.0, (horizontal - limit) / 2.0), detail);
+                    if (trace.shouldFlagMovement(correctionCheck, nowNanos)) {
+                        service.flag(player, correctionCheck, 2.5, detail + " — hard cap");
+                    }
+                } else if (grounded && verdict == SpeedGuard.FLAG
+                        && trace.shouldFlagMovement(CheckType.SPEED, nowNanos)) {
+                    service.flag(player, CheckType.SPEED,
+                            1.0 + Math.min(3.0, (horizontal - limit) / 2.0), detail);
                 }
             }
+        } else if (positionChanged) {
+            // Do not join excess samples across a gap, a packet burst, or an
+            // elytra transition for which speed could not be evaluated.
+            trace.setSpeedExcessStreak(0);
         }
 
-        // Fly: staying airborne far longer than any jump without really falling.
-        // Three vertical tiers: real falls (dy < -0.35) drain the counter, while
-        // slow descents and hovering accumulate — a "no-fall" style slow-descent
-        // fly can no longer hide behind fake falling. Honey wall-slides are slow
-        // legitimate descents and reset the counter. Ground contact, levitation
-        // and slow falling reset it; creative, spectator, elytra, vehicles and
-        // riptide never reach this check at all.
-        boolean honeySlide = nearHoney(to) || nearHoney(from);
-        trace.setAirTicks(FlyGuard.step(trace.airTicks(), dy, onGround || honeySlide,
-                potionAmplifier(player, PotionEffectType.LEVITATION) >= 0,
-                potionAmplifier(player, PotionEffectType.SLOW_FALLING) >= 0));
-        if (trace.airTicks() > 0) {
-            int jumpBoost = potionAmplifier(player, PotionEffectType.JUMP_BOOST);
-            double maxAirSeconds = FlyGuard.maxAirSeconds(jumpBoost, factor);
-            double airborneSeconds = trace.airTicks() * 0.05;
-            if (airborneSeconds > maxAirSeconds) {
+        // A landing or takeoff at either endpoint resets accumulated airtime,
+        // including when only the player's edge overlaps a support shape.
+        boolean honeySlide = dy < 0.0 && (start.honeyContact() || end.honeyContact());
+        // REAL_FALL_DY is a per-tick threshold. Scale the positional delta
+        // to 50 ms so multiple sub-tick updates do not make a normal fast
+        // fall look like a long series of slow-fall samples.
+        double tickEquivalentDy = positionChanged && positionSeconds > 0.0
+                && positionSeconds <= FlyGuard.MAX_SAMPLE_GAP_SECONDS
+                ? dy * 0.05 / Math.max(0.005, positionSeconds) : dy;
+        if (!service.plan(CheckType.FLY).enabled()) {
+            // Re-enabling a check must not punish evidence collected while it
+            // was disabled.
+            trace.setAirSeconds(0.0);
+        } else {
+            trace.setAirSeconds(FlyGuard.step(trace.airSeconds(), tickEquivalentDy, flySeconds, onGround || honeySlide,
+                    potionAmplifier(player, PotionEffectType.LEVITATION) >= 0,
+                    potionAmplifier(player, PotionEffectType.SLOW_FALLING) >= 0));
+            double airborneSeconds = trace.airSeconds();
+            double maxAirSeconds = FlyGuard.maxAirSeconds(potionAmplifier(player, PotionEffectType.JUMP_BOOST), factor);
+            if (airborneSeconds > maxAirSeconds && trace.shouldFlagMovement(CheckType.FLY, nowNanos)) {
                 service.flag(player, CheckType.FLY,
-                        1.2 + Math.min(2.0, (airborneSeconds - maxAirSeconds)),
-                        String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)",
-                                airborneSeconds, dy));
-                // Server authority, smoothly: a gentle gravity-like pull (at
-                // most twice a second — no stutter) drains the hacked elevation
-                // while the kick/ban escalation handles anything that persists.
+                        1.2 + Math.min(2.0, airborneSeconds - maxAirSeconds),
+                        String.format(Locale.ROOT, "airborne %.1fs without falling (dy=%.2f)", airborneSeconds, dy));
                 if (config.serverAuthority() && nowMillis - trace.flyPullAtMillis() >= 500L) {
                     trace.setFlyPullAtMillis(nowMillis);
                     Vector velocity = player.getVelocity();
@@ -520,27 +562,6 @@ public final class AntiCheatListener implements Listener {
                 && !player.hasPermission("veltryx.anticheat.bypass")
                 && player.getGameMode() != GameMode.CREATIVE
                 && player.getGameMode() != GameMode.SPECTATOR;
-    }
-
-    /** Honey blocks on any side (or below) let players wall-slide down slowly. */
-    private static boolean nearHoney(Location location) {
-        if (location.getBlock().getType() == Material.HONEY_BLOCK) {
-            return true;
-        }
-        return location.clone().add(1, 0, 0).getBlock().getType() == Material.HONEY_BLOCK
-                || location.clone().add(-1, 0, 0).getBlock().getType() == Material.HONEY_BLOCK
-                || location.clone().add(0, 0, 1).getBlock().getType() == Material.HONEY_BLOCK
-                || location.clone().add(0, 0, -1).getBlock().getType() == Material.HONEY_BLOCK
-                || location.clone().subtract(0, 1, 0).getBlock().getType() == Material.HONEY_BLOCK;
-    }
-
-    private static boolean isClimbing(Material material) {
-        for (Material candidate : CLIMBING) {
-            if (candidate == material) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Amplifier of an active potion effect, or -1 when the effect is absent. */

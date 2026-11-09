@@ -14,6 +14,8 @@ public interface Entity {
     Location getLocation();
     World getWorld();
     BoundingBox getBoundingBox();
+    default double getWidth() { return 0.6; }
+    default double getHeight() { return 1.8; }
     boolean isDead();
     boolean isInsideVehicle();
     boolean isGliding();

@@ -19,6 +19,10 @@ public final class Bukkit {
     public static java.util.function.Function<NamespacedKey, org.bukkit.loot.LootTable> testLootFactory;
     public static org.bukkit.loot.LootTable getLootTable(NamespacedKey key) { return testLootFactory == null ? null : testLootFactory.apply(key); }
     public static org.bukkit.map.MapView createMap(World world) { return testMapFactory == null ? null : testMapFactory.apply(world); }
+    public static java.util.function.BiPredicate<Integer, Integer> testRegionOwnership;
+    public static boolean isOwnedByCurrentRegion(World world, int chunkX, int chunkZ) {
+        return testRegionOwnership == null || testRegionOwnership.test(chunkX, chunkZ);
+    }
     public static Server getServer() { return null; }
     public static Collection<? extends Player> getOnlinePlayers() { return testOnlinePlayers; }
     public static java.util.List<World> getWorlds() { return null; }

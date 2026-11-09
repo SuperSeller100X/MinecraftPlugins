@@ -44,6 +44,7 @@ find smoke -name '*.java' >target/smoke-sources.txt
 "$JAVA_BIN" -jar "$ECJ" -nowarn --release 25 -encoding UTF-8 \
   -cp "$OUT" -d "$SMOKE_OUT" @target/smoke-sources.txt
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SmokeTest
+"$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.MovementRegressionTest
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.Round12Test
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.SpawnerTest
 "$JAVA_BIN" -cp "$OUT:$SMOKE_OUT:src/main/resources" dev.superseller.veltryx.smoke.BigMoneyTest

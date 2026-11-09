@@ -177,52 +177,50 @@ public final class SmokeTest {
             t("new items sell<buy", newItemsBelowBuy(), Boolean.TRUE);
         }
 
-        // FlyGuard: three vertical tiers — the "no-fall" slow-descent fly must
-        // be caught, real falls and jumps must never flag
+        // FlyGuard: elapsed time, not number of movement/rotation events.
         {
-            t("fg ground resets", FlyGuard.step(20, 0.0, true, false, false), 0);
-            t("fg levitation resets", FlyGuard.step(20, 0.0, false, true, false), 0);
-            t("fg slow falling resets", FlyGuard.step(20, 0.0, false, false, true), 0);
-            t("fg hover accumulates", FlyGuard.step(5, 0.0, false, false, false), 6);
-            t("fg slow descent accumulates (no-fall fix)", FlyGuard.step(5, -0.2, false, false, false), 6);
-            t("fg bobbing accumulates", FlyGuard.step(5, -0.05, false, false, false), 6);
-            t("fg real fall decays", FlyGuard.step(10, -0.6, false, false, false), 6);
-            t("fg fall floors at zero", FlyGuard.step(2, -0.9, false, false, false), 0);
-            // regression: slow-descent fly (dy=-0.2/tick) is flagged within a second
+            t("fg ground resets", FlyGuard.step(1.0, 0.0, 0.05, true, false, false), 0.0);
+            t("fg levitation resets", FlyGuard.step(1.0, 0.0, 0.05, false, true, false), 0.0);
+            t("fg slow falling resets", FlyGuard.step(1.0, 0.0, 0.05, false, false, true), 0.0);
+            t("fg hover accumulates", Math.abs(FlyGuard.step(0.25, 0.0, 0.05, false, false, false) - 0.3) < 1e-9, true);
+            t("fg slow descent accumulates", Math.abs(FlyGuard.step(0.25, -0.2, 0.05, false, false, false) - 0.3) < 1e-9, true);
+            t("fg bobbing accumulates", Math.abs(FlyGuard.step(0.25, -0.05, 0.05, false, false, false) - 0.3) < 1e-9, true);
+            t("fg real fall decays", Math.abs(FlyGuard.step(0.5, -0.6, 0.05, false, false, false) - 0.3) < 1e-9, true);
+            t("fg fall floors at zero", FlyGuard.step(0.1, -0.9, 0.05, false, false, false), 0.0);
+            t("fg gap resets stale evidence", FlyGuard.step(0.75, 0.0, 0.30, false, false, false), 0.0);
+            double air = 0.0;
+            for (int n = 0; n < 1000; n++) air = FlyGuard.step(air, 0.0, 0.00001, false, false, false);
+            t("fg burst reflects elapsed time", Math.abs(air - 0.01) < 1e-9, true);
             int ticks = 0;
-            int air = 0;
-            double limit = FlyGuard.maxAirSeconds(0, 1.0);
-            while (air * 0.05 <= limit && ticks < 200) {
-                air = FlyGuard.step(air, -0.2, false, false, false);
+            air = 0.0;
+            double limit = FlyGuard.maxAirSeconds(-1, 1.0);
+            while (air <= limit && ticks < 200) {
+                air = FlyGuard.step(air, -0.2, 0.05, false, false, false);
                 ticks++;
             }
-            t("fg slow-descent fly caught fast", ticks <= 20, Boolean.TRUE);
-            // regression: a real fall (dy=-0.6/tick) never accumulates
-            air = 0;
-            int worst = 0;
+            t("fg slow-descent fly caught fast", ticks <= 20, true);
+            air = 0.0;
+            double worst = 0.0;
             for (int n = 0; n < 200; n++) {
-                air = FlyGuard.step(air, -0.6, false, false, false);
+                air = FlyGuard.step(air, -0.6, 0.05, false, false, false);
                 worst = Math.max(worst, air);
             }
-            t("fg real fall never flags", worst * 0.05 <= FlyGuard.maxAirSeconds(0, 1.0), Boolean.TRUE);
-            // regression: a long vanilla jump (0.7s airtime incl. slow apex) never flags
-            air = 0;
-            worst = 0;
+            t("fg real fall never flags", worst <= limit, true);
+            air = 0.0;
+            worst = 0.0;
             for (int n = 0; n < 12; n++) {
-                air = FlyGuard.step(air, 0.15, false, false, false);
+                air = FlyGuard.step(air, 0.15, 0.05, false, false, false);
                 worst = Math.max(worst, air);
             }
             for (int n = 0; n < 3; n++) {
-                air = FlyGuard.step(air, -0.1, false, false, false);
+                air = FlyGuard.step(air, -0.1, 0.05, false, false, false);
                 worst = Math.max(worst, air);
             }
-            for (int n = 0; n < 12; n++) {
-                air = FlyGuard.step(air, -0.6, false, false, false);
-            }
-            t("fg vanilla jump never flags", worst * 0.05 <= FlyGuard.maxAirSeconds(0, 1.0), Boolean.TRUE);
-            t("fg threshold base", Math.abs(FlyGuard.maxAirSeconds(0, 1.0) - 0.8) < 1e-9, Boolean.TRUE);
-            t("fg threshold jump boost", Math.abs(FlyGuard.maxAirSeconds(2, 1.0) - 1.04) < 1e-9, Boolean.TRUE);
-            t("fg threshold lag factor", Math.abs(FlyGuard.maxAirSeconds(0, 1.5) - 1.2) < 1e-9, Boolean.TRUE);
+            t("fg vanilla jump does not flag", worst <= limit, true);
+            t("fg threshold base", Math.abs(FlyGuard.maxAirSeconds(-1, 1.0) - 0.8) < 1e-9, true);
+            t("fg threshold jump boost I", Math.abs(FlyGuard.maxAirSeconds(0, 1.0) - 0.92) < 1e-9, true);
+            t("fg threshold jump boost III", Math.abs(FlyGuard.maxAirSeconds(2, 1.0) - 1.16) < 1e-9, true);
+            t("fg threshold lag factor", Math.abs(FlyGuard.maxAirSeconds(-1, 1.5) - 1.2) < 1e-9, true);
         }
 
         // JesusGuard: only surface skating, never divers/sea-floor walkers

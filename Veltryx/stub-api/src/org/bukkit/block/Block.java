@@ -10,6 +10,12 @@ public interface Block {
     Block getRelative(BlockFace face);
     Location getLocation();
     BlockData getBlockData();
+    default org.bukkit.util.VoxelShape getCollisionShape() {
+        return new org.bukkit.util.VoxelShape() {
+            public java.util.Collection<org.bukkit.util.BoundingBox> getBoundingBoxes() { return java.util.List.of(); }
+            public boolean overlaps(org.bukkit.util.BoundingBox other) { return false; }
+        };
+    }
     BlockState getState();
     void setType(Material type);
     boolean breakNaturally();

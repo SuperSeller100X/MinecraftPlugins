@@ -30,8 +30,8 @@ import org.bukkit.entity.Player;
  *   <li>kicks and bans additionally require healthy conditions
  *       ({@link PingGuard#reliable});</li>
  *   <li>a join grace period gives clients time to sync;</li>
- *   <li>violation levels decay continuously, so one-off lag spikes never
- *       accumulate into a punishment.</li>
+ *   <li>violation levels decay continuously to reduce accumulation from
+ *       isolated anomalies.</li>
  * </ul>
  */
 public final class AntiCheatService {
